@@ -1,0 +1,13 @@
+.idea
+.vscode
+.vs
+.DS_Store
+bin/
+cmake-build-debug/
+cmake-build-debugwithlogging/
+cmake-build-release/
+debug/
+release/
+**/src/Domain/Tests/Baselines/Current
+CMakeLists.txt.user
+bench/*/out
