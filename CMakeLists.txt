@@ -3,48 +3,45 @@ project(Elet)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(src)
+add_subdirectory(third_party/googletest)
+add_subdirectory(third_party/fmt)
 
-add_subdirectory(third_party/googletest EXCLUDE_FROM_ALL)
+add_definitions(-DBOOST_ALL_NO_LIB)
+set(Boost_USE_STATIC_LIBS ON)
+
+set(Boost_DEBUG on)
+set(Boost_USE_MULTITHREADED TRUE)
+find_package(Boost 1.67 COMPONENTS system filesystem regex REQUIRED)
+
+include_directories(
+    src
+    third_party/googletest/googletest/include
+    third_party/googletest/googlemock/include
+    ${Boost_INCLUDE_DIR}
+)
+
+file(GLOB FOUNDATION_SRC ${CMAKE_SOURCE_DIR}/src/Foundation/*)
+file(GLOB FOUNDATION_TEST ${CMAKE_SOURCE_DIR}/src/Foundation/Tests/* ${CMAKE_SOURCE_DIR}/src/Foundation/Tests/**/*)
+file(GLOB DOMAIN_SRC ${CMAKE_SOURCE_DIR}/src/Domain/*)
+file(GLOB DOMAIN_TEST ${CMAKE_SOURCE_DIR}/src/Domain/Tests/* ${CMAKE_SOURCE_DIR}/src/Domain/Tests/**/*)
 
 add_executable(
-    test
-    test.cpp
-    src/Foundation/Utf8String.h
-    src/Foundation/Utf8String.cpp
-    src/Foundation/Buffer.h
-    src/Foundation/Buffer.cpp
-    src/Foundation/HashTableMap.h
-    src/Foundation/HashTableMapImpl.h
-    src/Foundation/HashKeyValueNode.h
-    src/Foundation/HashKeyValueNodeImpl.h
-    src/Foundation/FirstCharacterHash.h
-    src/Foundation/FirstCharacterHashImpl.h
-    src/Foundation/Utf8StringView.h
-    src/Foundation/Utf8StringView.cpp
-    src/Foundation/Memory/MemoryPool.h
-    src/Foundation/Memory/MemoryPool.cpp
-    src/Foundation/Memory/TextSpan.h
-    src/Foundation/Memory/TextSpan.cpp
-    src/Foundation/Memory/Utf8Span.h
-    src/Foundation/Memory/Utf8Span.cpp
-    src/Foundation/Memory/Utf8SpanIterator.h
-    src/Foundation/Memory/Utf8SpanIterator.cpp
-    src/Foundation/Memory/TextSpanCharacterIterator.h
-    src/Foundation/Memory/TextSpanCharacterIterator.cpp
-    src/Foundation/Memory/TextSpanChunkIterator.h
-    src/Foundation/Memory/TextSpanChunkIterator.cpp
-    src/Domain/Scanner.cpp
-    src/Domain/Scanner.h
-    src/Domain/Parser.cpp
-    src/Domain/Parser.h
-    src/Domain/Syntax.h
-    src/Domain/Exceptions.h
-    src/Foundation/CommandLineImpl.h
-    src/Foundation/CommandLine.h
-    src/Domain/CommandLine/Command.cpp
-    src/Domain/CommandLine/Command.h
-    src/Domain/CommandLine/Command.Test.cpp
-    src/Foundation/Printer.cpp
-    src/Foundation/Printer.h
-)
+    baselinetest
+    baselinetest.cpp
+    ${FOUNDATION_SRC}
+    ${DOMAIN_SRC}
+        src/Foundation/FileReader.cpp src/Foundation/FileReader.h src/Foundation/DocumentExecutor.cpp src/Foundation/DocumentExecutor.h)
+
+add_executable(
+    unittest
+    unittest.cpp
+    ${FOUNDATION_SRC}
+    ${FOUNDATION_TEST}
+    ${DOMAIN_SRC}
+    ${DOMAIN_TEST}
+        src/Foundation/Tests/TestRunner.Test.cpp src/Foundation/Tests/FoundationFixture.h)
+
+set(LIBS fmt ${Boost_LIBRARIES})
+set(TEST_LIBS gtest gmock)
+target_link_libraries(unittest ${TEST_LIBS} ${LIBS})
+target_link_libraries(baselinetest ${LIBS})

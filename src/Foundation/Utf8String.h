@@ -5,9 +5,6 @@
 
 #define UTF8_EOF 0x04
 
-namespace elet::foundation
-{
-
 class Utf8String
 {
 public:
@@ -272,6 +269,3 @@ private:
     std::size_t
     _capacity;
 };
-
-}
-#endif //FLASHPOINT_UTF8SPAN_H

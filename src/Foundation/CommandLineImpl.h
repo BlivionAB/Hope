@@ -1,6 +1,7 @@
 #include "CommandLine.h"
 
 #include <utility>
+#include <Domain/CommandLine/BaselineTestCommand.h>
 #include "HashTableMap.h"
 
 template<typename C, typename F>
@@ -11,7 +12,7 @@ CommandLine<C, F>::CommandLine(int argc, char **argv, CommandDefinition<C, F> ro
     bool captureValue = false;
     F pendingCaptureFlag;
     CommandDefinition<C, F>* currentCommand = &_rootCommand;
-    std::map<const char*, CommandFlagDefinition<F>>* currentFlags = &_rootCommand.flags;
+    std::map<const char*, CommandFlagDefinition<F>, CompareStr>* currentFlags = &_rootCommand.flags;
     for (int i = 1; i < argc; i++)
     {
         const char* arg = argv[i];
@@ -37,21 +38,24 @@ CommandLine<C, F>::CommandLine(int argc, char **argv, CommandDefinition<C, F> ro
             }
             else
             {
-                throw UnknownCommandFlag(arg);
+                throw UnknownCommandFlag<CommandType>(arg, currentCommand->type);
             }
         }
         else {
             auto result = currentCommand->subCommands.find(arg);
-            if (result != currentCommand->subCommands.end()) {
+            if (result != currentCommand->subCommands.end())
+            {
                 currentCommand = result->second;
                 currentFlags = &currentCommand->flags;
             }
-            else {
+            else
+            {
                 throw UnknownCommand(arg);
             }
         }
         captureValue = false;
     }
+    command = currentCommand->type;
 }
 
 template<typename C, typename F>
@@ -59,4 +63,16 @@ bool
 CommandLine<C, F>::hasFlag(F flagType)
 {
     return _flags.find(flagType) != _flags.end();
+}
+
+template<typename C, typename F>
+const char*
+CommandLine<C, F>::getFlagValue(F flagType)
+{
+    auto value = _flags.find(flagType);
+    if (value != _flags.end())
+    {
+        return value->second;
+    }
+    return nullptr;
 }
