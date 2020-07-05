@@ -30,5 +30,8 @@ public:
     createDirectory(const Path& path);
 };
 
+struct FileReadError : std::exception
+{
 
+};
 #endif //FLASHPOINT_FILE_H

@@ -110,7 +110,7 @@ Path::getTemporaryDirectory()
 bool
 Path::exists(const Path& path)
 {
-    boost::filesystem::exists(boost::filesystem::path(path.toString().toString()));
+    return boost::filesystem::exists(boost::filesystem::path(path.toString().toString()));
 }
 
 List<Path>
@@ -540,7 +540,7 @@ Path::relative(const Path& base, const Path& path)
 {
     const char* baseString = base.toString().toString();
     const char* targetString = path.toString().toString();
-    boost::filesystem::path relativePath = boost::filesystem::relative(targetString, baseString);
+    boost::filesystem::path relativePath = boost::filesystem::path(baseString) / boost::filesystem::path(targetString);
     const char* relativePathString = relativePath.c_str();
     std::size_t size = strlen(relativePathString);
     char* copyOfRelativePathString = new char[size + 1];
@@ -558,4 +558,11 @@ bool
 Path::operator != (const Path& path) const
 {
     return toString() != path.toString();
+}
+
+Path
+Path::directory(const Path& file)
+{
+    boost::filesystem::path p(file.toString().asString());
+    return p.parent_path().c_str();
 }

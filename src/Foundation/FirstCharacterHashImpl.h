@@ -36,8 +36,9 @@ FirstCharacterHash<T>::operator () (const char* value, std::size_t tableSize) co
 }
 
 template<typename T>
+template<typename C, class>
 std::size_t
-FirstCharacterHash<T>::operator () (std::size_t value, std::size_t tableSize) const
+FirstCharacterHash<T>::operator () (C value, std::size_t tableSize) const
 {
-    return value % tableSize;
+    return static_cast<std::size_t>(value) % tableSize;
 }

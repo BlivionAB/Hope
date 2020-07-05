@@ -1,5 +1,5 @@
 #include "BaselineTestProject.h"
-
+#include "Path.h"
 template<typename TPath>
 BaselineTestProject<TPath>::BaselineTestProject(ProjectSettings& settings, TPath& path):
     settings(settings),
@@ -17,11 +17,11 @@ BaselineTestProject<TPath>::validate()
     {
         throw NoRootFolderException();
     }
-    if (!_path.exists(_path.relativePathTo(settings.rootFolder, "Tests")))
+    if (!_path.exists(_path.relative(settings.rootFolder, "Tests")))
     {
         throw NoTestsFolderException();
     }
-    if (!_path.exists(_path.relativePathTo(settings.rootFolder, "References")))
+    if (!_path.exists(_path.relative(settings.rootFolder, "References")))
     {
         throw NoReferenceFolderException();
     }

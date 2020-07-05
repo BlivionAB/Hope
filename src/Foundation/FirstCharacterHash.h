@@ -23,8 +23,9 @@ struct FirstCharacterHash
     std::size_t
     operator() (const char* value, std::size_t tableSize) const;
 
+    template<typename C = T, class=typename std::enable_if< std::is_enum<C>::value >::type>
     std::size_t
-    operator() (std::size_t value, std::size_t tableSize) const;
+    operator() (C value, std::size_t tableSize) const;
 };
 
 #include "FirstCharacterHashImpl.h"

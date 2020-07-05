@@ -12,16 +12,14 @@ struct TestSelection
     folder;
 };
 
-template<
-    typename TBaselineTestProject,
-    typename TPath>
+template<typename TBaselineTestProject>
 class TestRunner
 {
 
 public:
 
     explicit
-    TestRunner(TBaselineTestProject& project, TPath& path);
+    TestRunner(TBaselineTestProject& project);
 
     void
     execute(const TestSelection& testSelection);
@@ -30,9 +28,6 @@ private:
 
     TBaselineTestProject&
     _project;
-
-    Path&
-    _path;
 };
 
 #include "TestRunnerImpl.h"

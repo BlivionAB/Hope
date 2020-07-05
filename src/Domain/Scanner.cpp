@@ -1,5 +1,4 @@
 #include "Scanner.h"
-#include "Foundation/HashTableMap.h"
 #include "Exceptions.h"
 #include <optional>
 
@@ -18,6 +17,7 @@ Scanner::takeNextToken()
 {
     while (_sourceIterator != _endIterator)
     {
+        setTokenStartPosition();
         Character character = getCharacter();
         increment();
         switch (character)
@@ -25,12 +25,34 @@ Scanner::takeNextToken()
             case Character::CarriageReturn:
             case Character::Newline:
             case Character::Space:
-                setTokenStartPosition();
                 continue;
+            case Character::Comma:
+                return Token::Comma;
+            case Character::Asterisk:
+                return Token::Asterisk;
+            case Character::SingleQuote:
+                return Token::SingleQuote;
+            case Character::DoubleQuote:
+                return scanString();
+            case Character::Dot:
+                return Token::Dot;
+            case Character::Colon:
+                if (getCharacter() == Character::Colon)
+                {
+                    increment();
+                    return Token::DoubleColon;
+                }
+                return Token::Colon;
+            case Character::Semicolon:
+                return Token::SemiColon;
             case Character::OpenParen:
                 return Token::OpenParen;
             case Character::CloseParen:
                 return Token::CloseParen;
+            case Character::OpenBrace:
+                return Token::OpenBrace;
+            case Character::CloseBrace:
+                return Token::CloseBrace;
             default:
                 if (isIdentifierStart(character))
                 {
@@ -43,23 +65,13 @@ Scanner::takeNextToken()
                 return Token::Unknown;
         }
     }
+    return Token::EndOfFile;
 }
-
-using Token = Scanner::Token;
-const HashTableMap<const char*, Token, 18> eletTokenToString =
-{
-    { "object", Token::ObjectKeyword },
-    { "fn", Token::FunctionKeyword },
-    { "if", Token::IfKeyword },
-    { "else", Token::ElseKeyword },
-    { "return", Token::ReturnKeyword },
-    { "enum", Token::EnumKeyword },
-};
 
 Token
 Scanner::getTokenFromString(const Utf8StringView& string) const
 {
-    std::optional token = eletTokenToString.find(string);
+    std::optional token = eletStringToToken.find(string);
     if (token)
     {
         return *token;
@@ -71,7 +83,7 @@ Scanner::getTokenFromString(const Utf8StringView& string) const
 void
 Scanner::setTokenStartPosition()
 {
-    _startPositionOfToken = _sourceIterator.getPosition();
+    _startMemeryLocationOfToken = _sourceIterator.getPosition();
     _startColumnOfToken = _column;
     _startLineOfToken = _line;
 }
@@ -79,7 +91,7 @@ Scanner::setTokenStartPosition()
 Utf8StringView
 Scanner::getTokenValue() const
 {
-    return _source.slice(_startPositionOfToken, _sourceIterator.getPosition()).toString();
+    return _source.slice(_startMemeryLocationOfToken, _sourceIterator.getPosition()).toString();
 }
 
 Scanner::Character
@@ -127,10 +139,11 @@ void
 Scanner::saveCurrentLocation()
 {
     _savedLocations.emplace(
-        _position,
-        _line,
-        _column,
-        _sourceIterator.value
+            _position,
+            _line,
+            _column,
+            _sourceIterator.value,
+            _startMemeryLocationOfToken
     );
 }
 
@@ -150,11 +163,36 @@ Scanner::revertToSavedLocation()
     _line = location.line;
     _column = location.column;
     _position = location.position;
-    _sourceIterator.value = location.pointer;
+    _sourceIterator.value = location.positionPointer;
+    _startMemeryLocationOfToken = location.startMemoryLocationOfToken;
 }
 
-std::size_t
-Scanner::getPosition()
+
+char*
+Scanner::getPosition() const
 {
-    return _position;
+    return const_cast<char *>(_sourceIterator.value);
+}
+
+
+char*
+Scanner::getStartPosition() const
+{
+    return const_cast<char *>(_startMemeryLocationOfToken);
+}
+
+
+Token
+Scanner::scanString()
+{
+    while (true)
+    {
+        Character character = getCharacter();
+        increment();
+        if (character == Character::DoubleQuote || character == Character::EndOfFile)
+        {
+            break;
+        }
+    }
+    return Token::StringLiteral;
 }

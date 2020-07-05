@@ -23,6 +23,10 @@ public:
 
     static
     Path
+    directory(const Path& path);
+
+    static
+    Path
     cwd();
 
     static

@@ -81,7 +81,7 @@ public:
         KeyValue&
         operator *() const
         {
-            return *_currentItem;
+            return *reinterpret_cast<KeyValue*>(_currentItem);
         }
 
         const Iterator&

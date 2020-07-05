@@ -3,8 +3,6 @@
 #include <ostream>
 #include <string>
 
-namespace elet::foundation
-{
 
 Utf8String::Utf8String():
     _capacity(0)
@@ -349,6 +347,4 @@ Utf8String::Iterator::operator * () const
         codePoint = firstByte;
     }
     return static_cast<Character>(codePoint);
-}
-
 }

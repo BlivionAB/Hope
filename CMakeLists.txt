@@ -27,19 +27,19 @@ file(GLOB DOMAIN_TEST ${CMAKE_SOURCE_DIR}/src/Domain/Tests/* ${CMAKE_SOURCE_DIR}
 
 add_executable(
     baselinetest
-    baselinetest.cpp
+    src/baselinetest.cpp
     ${FOUNDATION_SRC}
     ${DOMAIN_SRC}
-        src/Foundation/FileReader.cpp src/Foundation/FileReader.h src/Foundation/DocumentExecutor.cpp src/Foundation/DocumentExecutor.h)
+        src/Domain/Compiler.cpp src/Domain/Compiler.h src/Tests/EletSourceDocumentExecutor.cpp src/Tests/EletSourceDocumentExecutor.h src/Domain/Parser.Error.h src/Domain/Mir.cpp src/Domain/Mir.h)
 
 add_executable(
     unittest
-    unittest.cpp
+    src/unittest.cpp
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
     ${DOMAIN_TEST}
-        src/Foundation/Tests/TestRunner.Test.cpp src/Foundation/Tests/FoundationFixture.h)
+)
 
 set(LIBS fmt ${Boost_LIBRARIES})
 set(TEST_LIBS gtest gmock)

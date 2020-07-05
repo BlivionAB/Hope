@@ -1,0 +1,11 @@
+import "./Process.l1";
+import "./Target.l1";
+import "./IOStream.l1";
+
+module Std:
+
+export Process::*;
+export Target::*;
+export IOStream::*;
+
+end Std;

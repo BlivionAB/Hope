@@ -1,0 +1,14 @@
+module Process:
+
+interface IOStream
+{
+    WriteLine(text: char*): void;
+}
+
+interface IProcess
+{
+    stdout: IOStream;
+    GetEnv(name: char*): char*;
+}
+
+end Process;

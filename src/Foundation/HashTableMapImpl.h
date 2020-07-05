@@ -102,9 +102,6 @@ HashTableMap<K, V, tableSize, H>::get(const K& key) const
         }
         item = item->next;
     }
-
-    // TODO: Rewrite std exceptions to include better formatting.
-    throw std::invalid_argument("Could not find key.");
 }
 
 template<typename K, typename V, std::size_t tableSize, typename H>

@@ -1,0 +1,13 @@
+module Target:
+
+enum Os
+{
+    Darwin,
+}
+
+enum Architecture
+{
+    x86_64,
+}
+
+end Target;

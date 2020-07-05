@@ -1,0 +1,39 @@
+module IOStream:
+
+interface IIOStream:
+    public
+{
+    fd: int;
+    WriteLine(char* text): void;
+}
+
+object IOStream:
+    implements IIOStream,
+    public,
+{
+    fd: int;
+}
+
+functions IOStream:
+    implements IIOStream
+
+fn WriteLine(char* text): void:
+    public,
+{
+    assembly:
+        target: (target::Os.Darwin, target::Architecture.x86_64),
+        inputs: (
+            ("text=", text),
+            ("length=", length),
+        ),
+        outputs: (),
+    {
+        mov rax, 0x02000004
+        mov rdi, 1
+        mov rsi, $text
+        mov rdx, $length
+    }
+}
+
+end IOStream functions;
+end IOStream module;

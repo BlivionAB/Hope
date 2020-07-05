@@ -37,7 +37,7 @@ struct ProjectSettings
     Path
     rootFolder;
 
-    List<BaselineDocument>
+    std::vector<BaselineDocument>
     documents;
 };
 

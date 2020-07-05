@@ -19,6 +19,7 @@ File::read(const Path& path)
         (std::istreambuf_iterator<char>(inputFileStream)),
         std::istreambuf_iterator<char>());
     const char* text = result.c_str();
+    inputFileStream.close();
     return Utf8String(text);
 }
 

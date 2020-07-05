@@ -151,7 +151,7 @@ public:
 
         MaxAsciiCharacter = 0x7F,     // DEL
 
-        End = 0xFFFF,
+        EndOfFile = 0xFFFF,
     };
 
 
@@ -269,3 +269,5 @@ private:
     std::size_t
     _capacity;
 };
+
+#endif

@@ -5,7 +5,6 @@
 #include "Utf8String.h"
 #include <fmt/format.h>
 
-using namespace elet::foundation;
 
 template<typename T>
 struct CommandFlagDefinition

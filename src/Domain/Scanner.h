@@ -2,14 +2,16 @@
 #define ELET_SCANNER_H
 
 #include <Foundation/Utf8StringView.h>
+#include <Foundation/HashTableMap.h>
 #include <stack>
 
 using namespace elet::foundation;
 
+
 class Scanner
 {
 public:
-    Scanner(const Utf8StringView& source);
+    explicit Scanner(const Utf8StringView& source);
 
     using Character = Utf8String::Character;
 
@@ -40,14 +42,20 @@ public:
         { }
     };
 
-    enum class Token
+    enum class Token : std::size_t
     {
         Unknown,
 
         Identifier,
 
         // Keywords
+        ImportKeyword,
+        ExportKeyword,
+        UseKeyword,
         ObjectKeyword,
+        InterfaceKeyword,
+        ModuleKeyword,
+        EndKeyword,
         ImplementKeyword,
         FunctionKeyword,
         EnumKeyword,
@@ -72,8 +80,25 @@ public:
         GreaterThan,
         LessThanEqual,
         GreaterThanEqual,
+        Comma,
+        Colon,
+        DoubleColon,
+        SemiColon,
+        Asterisk,
+        Dot,
+        DoubleQuote,
+        SingleQuote,
 
-        OneOfFile,
+        // Types
+        VoidKeyword,
+        IntKeyword,
+        UnsignedIntKeyword,
+        FloatKeyword,
+        DoubleKeyword,
+
+        StringLiteral,
+
+        EndOfFile,
     };
 
     Token
@@ -100,7 +125,10 @@ public:
         column;
 
         const char*
-        pointer;
+        startMemoryLocationOfToken;
+
+        const char*
+        positionPointer;
 
         SavedLocation(
             std::size_t
@@ -113,23 +141,33 @@ public:
             column,
 
             const char*
-            pointer
+            pointerPosition,
+
+            const char*
+            startPointerPositionOfToken
         ):
-            position(position),
-            line(line),
-            column(column),
-            pointer(pointer)
+                position(position),
+                line(line),
+                column(column),
+                positionPointer(pointerPosition),
+                startMemoryLocationOfToken(startPointerPositionOfToken)
         { }
 
     };
 
-    std::size_t
-    getPosition();
+    char*
+    getPosition() const;
+
+    char*
+    getStartPosition() const;
+
+    void
+    scan(const Utf8StringView& source);
 
 private:
 
     std::size_t
-    _position;
+    _position = 0;
 
     std::size_t
     _line = 1;
@@ -147,7 +185,7 @@ private:
     _endIterator;
 
     const char*
-    _startPositionOfToken = nullptr;
+    _startMemeryLocationOfToken = nullptr;
 
     std::stack<SavedLocation>
     _savedLocations;
@@ -159,13 +197,16 @@ private:
     _startColumnOfToken = 1;
 
     void
-    setTokenStartPosition();
+    increment();
 
     void
-    increment();
+    setTokenStartPosition();
 
     Character
     getCharacter() const;
+
+    Token
+    scanString();
 
     bool
     isIdentifierStart(Character character) const;
@@ -182,5 +223,55 @@ private:
     void
     revertToSavedLocation();
 };
+
+using Token = Scanner::Token;
+const HashTableMap<const char*, Token> eletStringToToken =
+{
+    { "enum", Token::EnumKeyword },
+    { "interface", Token::InterfaceKeyword },
+    { "module", Token::ModuleKeyword },
+    { "import", Token::ImportKeyword },
+    { "export", Token::ExportKeyword },
+    { "use", Token::UseKeyword },
+    { "implement", Token::ImplementKeyword },
+    { "module", Token::ModuleKeyword },
+    { "end", Token::EndKeyword },
+    { "object", Token::ObjectKeyword },
+    { "fn", Token::FunctionKeyword },
+    { "if", Token::IfKeyword },
+    { "else", Token::ElseKeyword },
+    { "return", Token::ReturnKeyword },
+    { "enum", Token::EnumKeyword },
+    { "int", Token::IntKeyword },
+    { "uint", Token::UnsignedIntKeyword },
+    { "void", Token::VoidKeyword },
+};
+
+const HashTableMap<Token, const char*> eletTokenToString =
+{
+    { Token::EnumKeyword, "enum" },
+    { Token::InterfaceKeyword, "interface" },
+    { Token::ModuleKeyword, "module" },
+    { Token::ImportKeyword, "import" },
+    { Token::ExportKeyword, "export" },
+    { Token::UseKeyword, "use" },
+    { Token::ImplementKeyword, "implement" },
+    { Token::ModuleKeyword, "module" },
+    { Token::EndKeyword , "end" },
+    { Token::ObjectKeyword, "object" },
+    { Token::FunctionKeyword, "fn" },
+    { Token::IfKeyword, "if" },
+    { Token::ElseKeyword, "else" },
+    { Token::ReturnKeyword, "return" },
+    { Token::EnumKeyword, "enum" },
+    { Token::IntKeyword, "int" },
+    { Token::UnsignedIntKeyword, "uint" },
+    { Token::VoidKeyword, "void" },
+
+    { Token::Identifier, "identifier" },
+    { Token::DoubleColon, "::" },
+    { Token::SemiColon, ";" },
+};
+
 
 #endif //ELET_SCANNER_H

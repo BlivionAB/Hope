@@ -71,7 +71,7 @@ BaselineTestCommand<TPrinter, TTestRunner>::execute(int argc, char** argv)
                         cli.getFlagValue(FlagType::FolderSelection)
                     };
                     _testRunner.execute(testSelection);
-                    break;
+                    return 0;
                 }
                 case CommandType::Accept:
                 {

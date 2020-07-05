@@ -86,6 +86,14 @@ Utf8StringView::operator == (const char* text) const
     return std::strncmp(_value, text, size()) == 0;
 }
 
+
+bool
+Utf8StringView::operator == (const Utf8StringView& other) const
+{
+    return *this == other.toString();
+}
+
+
 Utf8StringView::Iterator::Iterator(const char* value):
     value(value)
 {

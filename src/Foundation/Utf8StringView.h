@@ -83,6 +83,9 @@ public:
     bool
     operator == (const char* text) const;
 
+    bool
+    operator == (const Utf8StringView& other) const;
+
 private:
 
     const char*

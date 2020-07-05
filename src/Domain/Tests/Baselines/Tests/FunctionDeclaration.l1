@@ -1,0 +1,6 @@
+use Std::Process::{ IProcess };
+
+fn OnStart(process: IProcess): void
+{
+    process.stdout.WriteLine("Hello world");
+}
