@@ -13,7 +13,7 @@ class PathMock: public Path
 public:
     MOCK_METHOD(Path, cwd, ());
     MOCK_METHOD(bool, exists, (const Path& path));
-    MOCK_METHOD(Path, relative, (const Path& base, const Path& path));
+    MOCK_METHOD(Path, resolve, (const Path& base, const Path& path));
 };
 
 

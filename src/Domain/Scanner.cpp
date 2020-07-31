@@ -1,13 +1,10 @@
 #include "Scanner.h"
-#include "Exceptions.h"
-#include <optional>
 
 using Token = Scanner::Token;
+using namespace elet::foundation;
 
 Scanner::Scanner(const Utf8StringView& source):
-    _source(source),
-    _sourceIterator(source.begin()),
-    _endIterator(source.end())
+    BaseScanner(source)
 {
 
 }
@@ -45,6 +42,10 @@ Scanner::takeNextToken()
                 return Token::Colon;
             case Character::Semicolon:
                 return Token::SemiColon;
+            case Character::OpenBracket:
+                return Token::OpenBracket;
+            case Character::CloseBracket:
+                return Token::CloseBracket;
             case Character::OpenParen:
                 return Token::OpenParen;
             case Character::CloseParen:
@@ -53,6 +54,13 @@ Scanner::takeNextToken()
                 return Token::OpenBrace;
             case Character::CloseBrace:
                 return Token::CloseBrace;
+            case Character::Equal:
+                if (getCharacter() == Character::Equal)
+                {
+                    increment();
+                    return Token::EqualEqual;
+                }
+                return Token::Equal;
             default:
                 if (isIdentifierStart(character))
                 {
@@ -68,6 +76,7 @@ Scanner::takeNextToken()
     return Token::EndOfFile;
 }
 
+
 Token
 Scanner::getTokenFromString(const Utf8StringView& string) const
 {
@@ -80,72 +89,12 @@ Scanner::getTokenFromString(const Utf8StringView& string) const
 }
 
 
-void
-Scanner::setTokenStartPosition()
-{
-    _startMemeryLocationOfToken = _sourceIterator.getPosition();
-    _startColumnOfToken = _column;
-    _startLineOfToken = _line;
-}
-
 Utf8StringView
 Scanner::getTokenValue() const
 {
-    return _source.slice(_startMemeryLocationOfToken, _sourceIterator.getPosition()).toString();
+    return _source.slice(_startMemoryLocationOfToken, _sourceIterator.getPosition());
 }
 
-Scanner::Character
-Scanner::getCharacter() const
-{
-    return static_cast<Character>(*_sourceIterator);
-}
-
-void
-Scanner::increment()
-{
-    ++_sourceIterator;
-    ++_position;
-    _column++;
-}
-
-bool
-Scanner::isIdentifierStart(Scanner::Character character) const
-{
-    return (character >= Character::A && character <= Character::Z) ||
-           (character >= Character::a && character <= Character::z) ||
-           character == Character::_;
-}
-
-
-bool
-Scanner::isIdentifierPart(Scanner::Character character) const
-{
-    return (character >= Character::a && character <= Character::z) ||
-           (character >= Character::A && character <= Character::Z) ||
-           (character >= Character::_0 && character <= Character::_9) ||
-           character == Character::_;
-}
-
-Token
-Scanner::scanExpected(Token token) {
-    Token result = takeNextToken();
-    if (result == token)
-    {
-        return token;
-    }
-    throw UnexpectedToken("Unexpected token ", result);
-}
-void
-Scanner::saveCurrentLocation()
-{
-    _savedLocations.emplace(
-            _position,
-            _line,
-            _column,
-            _sourceIterator.value,
-            _startMemeryLocationOfToken
-    );
-}
 
 Token
 Scanner::peekNextToken()
@@ -154,31 +103,6 @@ Scanner::peekNextToken()
     Token token = takeNextToken();
     revertToSavedLocation();
     return token;
-}
-
-void
-Scanner::revertToSavedLocation()
-{
-    SavedLocation location = _savedLocations.top();
-    _line = location.line;
-    _column = location.column;
-    _position = location.position;
-    _sourceIterator.value = location.positionPointer;
-    _startMemeryLocationOfToken = location.startMemoryLocationOfToken;
-}
-
-
-char*
-Scanner::getPosition() const
-{
-    return const_cast<char *>(_sourceIterator.value);
-}
-
-
-char*
-Scanner::getStartPosition() const
-{
-    return const_cast<char *>(_startMemeryLocationOfToken);
 }
 
 

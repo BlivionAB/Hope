@@ -30,7 +30,7 @@ add_executable(
     src/baselinetest.cpp
     ${FOUNDATION_SRC}
     ${DOMAIN_SRC}
-        src/Domain/Compiler.cpp src/Domain/Compiler.h src/Tests/EletSourceDocumentExecutor.cpp src/Tests/EletSourceDocumentExecutor.h src/Domain/Parser.Error.h src/Domain/Mir.cpp src/Domain/Mir.h)
+        src/Domain/Compiler.cpp src/Domain/Compiler.h src/Tests/EletSourceDocumentExecutor.cpp src/Tests/EletSourceDocumentExecutor.h src/Domain/Parser.Error.h src/Domain/Instruction/Scanner.cpp src/Domain/Instruction/Scanner.h src/Foundation/BaseScanner.cpp src/Foundation/BaseScanner.h src/Domain/Instruction/Parser.cpp src/Domain/Instruction/Parser.h src/Domain/Instruction/Syntax.h src/Domain/Instruction/Parser.Error.h src/Domain/Instruction/Instruction.h src/Domain/Instruction/Transformer.cpp src/Domain/Instruction/Transformer.h src/Domain/Instruction/Assembly/Baseline/BaselineWriter.cpp src/Domain/Instruction/Assembly/Baseline/BaselineWriter.h src/Domain/Instruction/TextWriter.cpp src/Domain/Instruction/TextWriter.h src/Domain/Binder.cpp src/Domain/Binder.h src/Domain/Instruction/ObjectFileWriter/MachOFileWriter.h src/Domain/Instruction/AssemblyWriter.cpp src/Domain/Instruction/AssemblyWriter.h src/Domain/Instruction/Assembly/x86/X86_64Writer.cpp src/Domain/Instruction/Assembly/x86/X86_64Writer.h src/Domain/Instruction/Assembly/AssemblyWriterInterface.h src/Domain/Instruction/ObjectFileWriter/MachOFileWriter.cpp src/Domain/Instruction/ObjectFileWriter.cpp src/Domain/Instruction/ObjectFileWriter.h src/Domain/Instruction/ObjectFileWriter/ObjectFileWriterInterface.h)
 
 add_executable(
     unittest

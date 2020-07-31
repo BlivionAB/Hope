@@ -30,12 +30,14 @@ const char kPathSeparator =
     '/';
 #endif
 
+
 Utf8String
 Path::extension(const Path& path)
 {
     boost::filesystem::path p(path.toString().toString());
     return Utf8String(boost::filesystem::extension(p).c_str());
 }
+
 
 Path
 Path::cwd()
@@ -47,6 +49,7 @@ Path::cwd()
     std::strcpy(copyOfCwd, cwdString);
     return copyOfCwd;
 }
+
 
 Path
 Path::getTemporaryFile()
@@ -68,6 +71,7 @@ Path::getTemporaryFile()
     return Path(tempDirString);
 }
 
+
 Path
 Path::getCurrentWorkingDirectory()
 {
@@ -75,6 +79,7 @@ Path::getCurrentWorkingDirectory()
     GetCurrentDir(filename, FILENAME_MAX);
     return Path(filename);
 }
+
 
 Path
 Path::getTemporaryDirectory()
@@ -107,11 +112,13 @@ Path::getTemporaryDirectory()
 #endif
 }
 
+
 bool
 Path::exists(const Path& path)
 {
     return boost::filesystem::exists(boost::filesystem::path(path.toString().toString()));
 }
+
 
 List<Path>
 Path::find(const Path& path)
@@ -210,6 +217,7 @@ Path::findPathByPathSegmentList(Path::WildcardPathSegmentStack pathSegmentList, 
     return result;
 }
 
+
 Path::WildcardPathSegmentStack
 Path::segmentPathIntoWildcardPathSegments(const Path& path)
 {
@@ -269,6 +277,7 @@ Path::Path()
 
 }
 
+
 Path::Path(const Path& other)
 {
     _segments = other._segments;
@@ -278,20 +287,24 @@ Path::Path(const Path& other)
 #endif
 }
 
+
 Path::Path(const char* path)
 {
     distributeSegmentsFromPath(path);
 }
+
 
 Path::Path(Utf8String path)
 {
     distributeSegmentsFromPath(path.toString());
 }
 
+
 Path::~Path()
 {
 
 }
+
 
 void
 Path::up()
@@ -303,6 +316,7 @@ Path::up()
     }
     _segments.pop();
 }
+
 
 void
 Path::up(int folders)
@@ -331,6 +345,7 @@ Path::startsWith(const char* string) const
         : std::memcmp(thisPathString, targetString, sizeOfTargetString) == 0;
 }
 
+
 bool
 Path::isAbsolute() const
 {
@@ -338,12 +353,14 @@ Path::isAbsolute() const
     return currentPath.is_absolute();
 }
 
+
 bool
 Path::isRelative() const
 {
     boost::filesystem::path currentPath(toString().toString());
     return currentPath.is_relative();
 }
+
 
 void
 Path::add(const Path& path)
@@ -357,6 +374,7 @@ Path::add(const Path& path)
 #endif
 }
 
+
 template<typename ... TPath>
 void
 Path::add(const Path& path, TPath ... other)
@@ -365,11 +383,13 @@ Path::add(const Path& path, TPath ... other)
     add(other...);
 }
 
+
 void
 Path::add(const char* path)
 {
     distributeSegmentsFromPath(path);
 }
+
 
 Utf8String
 Path::toString() const
@@ -394,6 +414,7 @@ Path::toString() const
     }
     return _segments.join("/");
 }
+
 
 void
 Path::distributeSegmentsFromPath(const char* path)
@@ -451,6 +472,7 @@ Path::distributeSegmentsFromPath(const char* path)
 #endif
 }
 
+
 bool
 Path::isFile() const
 {
@@ -458,10 +480,12 @@ Path::isFile() const
     return boost::filesystem::is_regular_file(p);
 }
 
+
 Path::operator const char* ()
 {
     return toString().toString();
 }
+
 
 Stack<const char*>::Iterator
 Path::begin() const
@@ -469,11 +493,13 @@ Path::begin() const
     return _segments.begin();
 }
 
+
 Stack<const char*>::Iterator
 Path::end() const
 {
     return _segments.end();
 }
+
 
 Path
 Path::operator / (const char* path) const
@@ -483,6 +509,7 @@ Path::operator / (const char* path) const
     return result;
 }
 
+
 Path
 Path::operator / (const Utf8String& path) const
 {
@@ -490,6 +517,7 @@ Path::operator / (const Utf8String& path) const
     result.add(path.toString());
     return result;
 }
+
 
 Path&
 Path::operator = (const Path& other)
@@ -502,12 +530,14 @@ Path::operator = (const Path& other)
     return *this;
 }
 
+
 Path&
 Path::operator = (const Path&& other) noexcept
 {
     _segments = other._segments;
     return *this;
 }
+
 
 void
 Path::handlePathSegment(const char* segment)
@@ -529,14 +559,16 @@ Path::handlePathSegment(const char* segment)
     }
 }
 
+
 bool
 Path::isDescendentOf(const Path& parent, const Path& child)
 {
     return child.startsWith(parent.toString().asString());
 }
 
+
 Path
-Path::relative(const Path& base, const Path& path)
+Path::resolve(const Path& base, const Path& path)
 {
     const char* baseString = base.toString().toString();
     const char* targetString = path.toString().toString();
@@ -548,11 +580,13 @@ Path::relative(const Path& base, const Path& path)
     return Path(copyOfRelativePathString);
 }
 
+
 bool
 Path::operator == (const Path& path) const
 {
     return toString() == path.toString();
 }
+
 
 bool
 Path::operator != (const Path& path) const
@@ -560,9 +594,71 @@ Path::operator != (const Path& path) const
     return toString() != path.toString();
 }
 
+
 Path
-Path::directory(const Path& file)
+Path::folderOf(const Path& file)
 {
     boost::filesystem::path p(file.toString().asString());
     return p.parent_path().c_str();
+}
+
+
+Utf8String
+Path::stem(const Path& file)
+{
+    boost::filesystem::path p(file.toString().asString());
+    const char* stem = p.stem().c_str();
+    const std::size_t size = strlen(stem);
+    char* result = new char[size + 1];
+    std::strncpy(result, stem, size);
+    return result;
+}
+
+
+const char*
+Path::filename(const Path& file)
+{
+    boost::filesystem::path p(file.toString().asString());
+    std::string text = p.filename().string();
+    return text.c_str();
+}
+
+
+Path
+Path::relativeTo(const Path& base, const Path& target)
+{
+    Path result;
+    unsigned int baseLength = base.segmentLength();
+    unsigned int targetLength = target.segmentLength();
+    if (targetLength < baseLength)
+    {
+        throw TargetPathIsNotDescendentOfBasePathError();
+    }
+    for (int i = 0; i < targetLength; i++)
+    {
+        if (i <= baseLength - 1)
+        {
+            if (std::strcmp(base[i], target[i]) != 0)
+            {
+                throw TargetPathIsNotDescendentOfBasePathError();
+            }
+            continue;
+        }
+        result.add(target[i]);
+    }
+    return result;
+}
+
+
+unsigned int
+Path::segmentLength() const
+{
+    return _segments.size();
+}
+
+
+const char*
+Path::operator[](unsigned int index) const
+{
+    return _segments[index];
 }

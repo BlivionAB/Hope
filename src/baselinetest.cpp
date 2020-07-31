@@ -3,27 +3,28 @@
 #include <Foundation/Printer.h>
 #include <Tests/EletSourceDocumentExecutor.h>
 
+
 int
 main(int argc, char *argv[])
 {
     Printer printer;
     Path path;
     EletSourceDocumentExecutor executor;
-    BaselineDocument eletDocument
+    BaselineDocument<BaselineTestSelection> eletDocument
     {
         ".l1",
         executor
     };
-    ProjectSettings settings
+    ProjectSettings<BaselineTestSelection> settings
     {
-        Path::relative(Path::cwd(), "src/Domain/Tests/Baselines"),
+            Path::resolve(Path::cwd(), "src/Domain/Tests/Baselines"),
         { eletDocument }
     };
-    BaselineTestProject project(settings, path);
-    TestRunner<BaselineTestProject<Path>> testRunner(project);
+    BaselineTestProject<Path, BaselineTestSelection> project(settings, path);
+    TestRunner<BaselineTestProject<Path, BaselineTestSelection>, BaselineTestSelection> testRunner(project);
     BaselineTestCommand<
         Printer,
-        TestRunner<BaselineTestProject<Path>>
+        TestRunner<BaselineTestProject<Path, BaselineTestSelection>, BaselineTestSelection>
     > command(printer, testRunner);
     return command.execute(argc, argv);
 }

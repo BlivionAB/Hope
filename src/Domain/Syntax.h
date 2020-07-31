@@ -2,47 +2,96 @@
 #define ELET_SYNTAX_H
 
 #include <cstddef>
+#include <map>
 #include <Foundation/Memory/Utf8Span.h>
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
+#include "Instruction/Instruction.h"
 
-struct ParameterList;
+
+namespace elet::domain::compiler
+{
+
+namespace instruction
+{
+    namespace output
+    {
+        struct Instruction;
+    }
+}
+
+using namespace instruction;
+
+struct ParameterDeclarationList;
 struct Punctuation;
+struct Expression;
+struct Declaration;
+using NameToDeclarationMap = std::map<Utf8StringView, Declaration*>;
 
-enum class SyntaxKind
+struct File
+{
+    NameToDeclarationMap
+    declarations;
+};
+
+enum class SyntaxKind : std::uint8_t
 {
     Unknown,
+    AssemblyBlock,
+    AssemblyBody,
+    ArrayLiteral,
+    MetadataProperty,
+    DeclarationMetadata,
     FunctionDeclaration,
     EnumDeclaration,
     FunctionBody,
     ModuleDeclaration,
     ModuleAccessUsage,
-    ObjectDeclaration,
-    InterfaceDeclaration,
+    ModuleAccessExpression,
     PropertyDeclaration,
     ImportStatement,
     ExportStatement,
     UseStatement,
     EndStatement,
-    ParameterList,
+    ParameterDeclarationList,
     PropertyExpression,
     PropertyAccessExpression,
-    Parameter,
+    ParameterDeclaration,
+    Type,
     CallExpression,
     ArgumentList,
     ModuleSpecification,
     StringLiteral,
+    Tuple,
     ModuleScope,
     NamedUsage,
     WildcardUsage,
     Punctuation,
     Identifier,
+
+    // Expressions
+    LengthOfExpression,
+
+    // Declarations
+    ObjectDeclaration,
+    InterfaceDeclaration,
+    VariableDeclaration,
+
 };
+
+
+#define DECLARATION_LABEL       1 << 0
+#define BLOCK_LABEL             1 << 1
+#define NAMED_EXPRESSION_LABEL  1 << 2
+
 
 struct Syntax
 {
     SyntaxKind
     kind;
+
+    std::uint8_t
+    labels;
 
     char*
     start;
@@ -63,17 +112,59 @@ struct FunctionBody : Syntax
 {
     List<Syntax*>
     statements;
+
+    NameToDeclarationMap
+    symbols;
+};
+
+
+struct AssemblyBody : Syntax
+{
+    List<output::Instruction*>*
+    instructions;
+};
+
+
+struct MetadataProperty : Syntax
+{
+    Identifier*
+    name;
+
+    Expression*
+    value;
+};
+
+struct DeclarationMetadata : Syntax
+{
+    List<MetadataProperty*>
+    properties;
+};
+
+
+struct AssemblyBlock : Syntax
+{
+    DeclarationMetadata*
+    metadata;
+
+    AssemblyBody*
+    body;
 };
 
 
 enum class TypeKind
 {
     Int,
-    UnsignedInt,
+    Char,
+    UInt,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
     Float,
     Double,
     Void,
     Custom,
+    Length,
 };
 
 
@@ -83,19 +174,38 @@ struct Type : Syntax
     name;
 
     List<Punctuation*>
-    pointer;
+    pointers;
 
     TypeKind
     type;
+
+    std::size_t
+    size;
+
+    Identifier*
+    parameter;
+
+    Utf8String
+    display;
 };
 
 
-struct PropertyDeclaration : Syntax
+struct Declaration : Syntax
 {
     Identifier*
     name;
 
-    ParameterList*
+    std::size_t
+    offset;
+
+    Utf8String
+    symbol;
+};
+
+
+struct PropertyDeclaration : Declaration
+{
+    ParameterDeclarationList*
     parameters;
 
     Type*
@@ -103,49 +213,40 @@ struct PropertyDeclaration : Syntax
 };
 
 
-struct InterfaceDeclaration : Syntax
+struct InterfaceDeclaration : Declaration
 {
-    Identifier*
-    name;
-
     List<PropertyDeclaration*>
     properties;
 };
 
 
-struct EnumDeclaration : Syntax
+struct EnumDeclaration : Declaration
 {
-    Identifier*
-    name;
-
     List<Identifier*>
     values;
 };
 
 
-struct Parameter : Syntax
+struct ParameterDeclaration : Declaration
 {
-    Identifier*
-    name;
-
     Type*
     type;
+
+    Utf8String
+    display;
 };
 
 
-struct ParameterList : Syntax
+struct ParameterDeclarationList : Syntax
 {
-    List<Parameter*>
+    List<ParameterDeclaration*>
     parameters;
 };
 
 
-struct FunctionDeclaration : Syntax
+struct FunctionDeclaration : Declaration
 {
-    Identifier*
-    name;
-
-    ParameterList*
+    ParameterDeclarationList*
     parameterList;
 
     Type*
@@ -153,6 +254,19 @@ struct FunctionDeclaration : Syntax
 
     FunctionBody*
     body;
+};
+
+
+struct VariableDeclaration : Declaration
+{
+    Type*
+    type;
+
+    Punctuation*
+    equals;
+
+    Expression*
+    expression;
 };
 
 
@@ -170,7 +284,7 @@ struct ModuleSpecification : Syntax
 };
 
 
-struct ModuleDeclaration : Syntax
+struct ModuleDeclaration : Declaration
 {
     Identifier*
     name;
@@ -208,18 +322,24 @@ struct Expression : Syntax
 };
 
 
-struct PropertyExpression : Expression
+struct NamedExpression : Expression
 {
     Identifier*
     name;
+
+    Declaration*
+    referenceDeclaration;
 };
 
 
-struct PropertyAccessExpression : Expression
+struct PropertyExpression : NamedExpression
 {
-    Identifier*
-    name;
 
+};
+
+
+struct PropertyAccessExpression : NamedExpression
+{
     Punctuation*
     dot;
 
@@ -231,15 +351,41 @@ struct PropertyAccessExpression : Expression
 };
 
 
+struct ModuleAccessExpression : Expression
+{
+    Identifier*
+    name;
+
+    Expression*
+    expression;
+};
+
+
 struct BinaryOperator : Syntax
 {
 
 };
 
+
 struct StringLiteral : Expression
 {
 
 };
+
+
+struct ArrayLiteral : Expression
+{
+    List<Expression*>
+    values;
+};
+
+
+struct Tuple : Expression
+{
+    List<Expression*>
+    values;
+};
+
 
 struct BinaryExpression : Expression
 {
@@ -253,11 +399,13 @@ struct BinaryExpression : Expression
     right;
 };
 
+
 struct ImportStatement : Syntax
 {
     StringLiteral*
     path;
 };
+
 
 struct Usage : Syntax
 {
@@ -309,13 +457,20 @@ struct ArgumentList : Syntax
 };
 
 
-struct CallExpression : Expression
+struct CallExpression : NamedExpression
 {
-    Identifier*
-    name;
-
     ArgumentList*
     argumentList;
 };
+
+
+struct LengthOfExpression : Expression
+{
+    Identifier*
+    reference;
+};
+
+
+}
 
 #endif //ELET_SYNTAX_H

@@ -4,11 +4,11 @@
 #include <gmock/gmock.h>
 #include "Foundation/TestRunner.h"
 
-template <typename TBaselineProject>
-class TestRunnerMock : public TestRunner<TBaselineProject>
+template <typename TBaselineProject, typename TTestSelection>
+class TestRunnerMock : public TestRunner<TBaselineProject, TTestSelection>
 {
 public:
-    using TestRunner<TBaselineProject>::TestRunner;
+    using TestRunner<TBaselineProject, TTestSelection>::TestRunner;
 
     MOCK_METHOD(void, execute, (const TestSelection& testSelection));
 };

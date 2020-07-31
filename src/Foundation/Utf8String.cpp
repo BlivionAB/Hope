@@ -46,17 +46,20 @@ Utf8String::~Utf8String()
     delete[] _value;
 }
 
+
 void
 Utf8String::reserve(std::size_t size)
 {
     _capacity = size;
 }
 
+
 bool
 Utf8String::operator != (const Utf8String& target) const
 {
     return !(*this == target);
 }
+
 
 bool
 Utf8String::operator == (const Utf8String& target) const
@@ -68,11 +71,13 @@ Utf8String::operator == (const Utf8String& target) const
     return std::strncmp(_value, target._value, size()) == 0;
 }
 
+
 bool
 Utf8String::operator == (const char* target) const
 {
     return std::strncmp(_value, target, size()) == 0;
 }
+
 
 void
 Utf8String::operator += (const Utf8String& other)

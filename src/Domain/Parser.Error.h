@@ -5,6 +5,9 @@
 #include <Foundation/Utf8String.h>
 #include <fmt/format.h>
 #include "Scanner.h"
+namespace elet::domain::compiler
+{
+
 
 struct CompilerError
 {
@@ -27,7 +30,7 @@ struct ExpectedTokenError : CompilerError
 struct UnknownTypeError
 {
     Utf8String
-            feedback;
+    feedback;
 
     UnknownTypeError(Utf8String feedback = "Unknown type"):
         feedback(feedback)
@@ -42,10 +45,34 @@ struct UnexpectedEndOfModule : CompilerError
 };
 
 
+
+struct UnexpectedExpression : CompilerError
+{
+    UnexpectedExpression():
+        CompilerError("Expected expression, instead got .")
+    { }
+};
+
+
 struct UnexpectedModuleAccessUsage : CompilerError
 {
     UnexpectedModuleAccessUsage():
         CompilerError("Expected 'identifier', '{' or '*'.")
     { }
 };
+
+struct UnexpectedEndOfFile : CompilerError
+{
+
+};
+
+struct UnknownFileLevelStatement
+{
+
+};
+
+
+}
+
+
 #endif //ELET_PARSER_ERROR_H

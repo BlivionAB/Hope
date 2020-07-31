@@ -12,7 +12,8 @@ struct TestSelection
     folder;
 };
 
-template<typename TBaselineTestProject>
+
+template<typename TBaselineTestProject, typename TTestSelection>
 class TestRunner
 {
 
@@ -22,7 +23,7 @@ public:
     TestRunner(TBaselineTestProject& project);
 
     void
-    execute(const TestSelection& testSelection);
+    execute(const TTestSelection& testSelection);
 
 private:
 

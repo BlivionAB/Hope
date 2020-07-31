@@ -23,34 +23,38 @@ struct NoReferenceFolderException: std::exception
 
 };
 
+
+template<typename TTestSelection>
 struct BaselineDocument
 {
     const char*
     extension;
 
-    DocumentExecutor&
+    DocumentExecutor<TTestSelection>&
     executor;
 };
 
+
+template<typename TTestSelection>
 struct ProjectSettings
 {
     Path
     rootFolder;
 
-    std::vector<BaselineDocument>
+    std::vector<BaselineDocument<TTestSelection>>
     documents;
 };
 
 
-template<typename TPath>
+template<typename TPath, typename TTestSelection>
 class BaselineTestProject
 {
 public:
 
-    ProjectSettings&
+    ProjectSettings<TTestSelection>&
     settings;
 
-    BaselineTestProject(ProjectSettings& projectSettings, TPath& path);
+    BaselineTestProject(ProjectSettings<TTestSelection>& projectSettings, TPath& path);
 
     void
     validate();

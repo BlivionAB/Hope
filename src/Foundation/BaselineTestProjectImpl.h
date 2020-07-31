@@ -1,7 +1,7 @@
 #include "BaselineTestProject.h"
 #include "Path.h"
-template<typename TPath>
-BaselineTestProject<TPath>::BaselineTestProject(ProjectSettings& settings, TPath& path):
+template<typename TPath, typename TTestSelection>
+BaselineTestProject<TPath, TTestSelection>::BaselineTestProject(ProjectSettings<TTestSelection>& settings, TPath& path):
     settings(settings),
     _path(path)
 {
@@ -9,19 +9,19 @@ BaselineTestProject<TPath>::BaselineTestProject(ProjectSettings& settings, TPath
 }
 
 
-template<typename TPath>
+template<typename TPath, typename TTestSelection>
 void
-BaselineTestProject<TPath>::validate()
+BaselineTestProject<TPath, TTestSelection>::validate()
 {
     if (!_path.exists(settings.rootFolder))
     {
         throw NoRootFolderException();
     }
-    if (!_path.exists(_path.relative(settings.rootFolder, "Tests")))
+    if (!_path.exists(_path.resolve(settings.rootFolder, "Tests")))
     {
         throw NoTestsFolderException();
     }
-    if (!_path.exists(_path.relative(settings.rootFolder, "References")))
+    if (!_path.exists(_path.resolve(settings.rootFolder, "References")))
     {
         throw NoReferenceFolderException();
     }

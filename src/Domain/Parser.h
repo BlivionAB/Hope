@@ -6,17 +6,38 @@
 #include "Scanner.h"
 #include "Compiler.h"
 #include "Syntax.h"
+#include <Domain/Instruction/Parser.h>
+
+
+namespace elet::domain::compiler
+{
+
 
 using Token = Scanner::Token;
 
-struct SymbolLocation
-{
-    std::size_t
-    start;
 
-    std::size_t
-    end;
+struct ParsingTask;
+
+
+struct ParseResult
+{
+    List<Syntax*>
+    statements;
+
+    ParsingTask*
+    pendingParsingTask;
 };
+
+
+struct ParameterListResult
+{
+    ParameterDeclarationList*
+    parameterList;
+
+    Utf8String
+    display;
+};
+
 
 class Compiler;
 
@@ -27,8 +48,11 @@ public:
 
     Parser(Compiler* compiler);
 
-    List<Syntax*>
-    parse(const char* sourceStart, const char* sourceEnd, const Path *currentDirectory);
+    ParseResult
+    performWork(const ParsingTask& task);
+
+    void
+    seek(const BaseScanner::Location& location);
 
 private:
 
@@ -37,11 +61,24 @@ private:
     Path*
     _currentDirectory;
 
+    static
+    thread_local
+    const char*
+    _lastStatementLocationStart;
+
+    static
+    thread_local
+    const char*
+    _lastStatementLocationEnd;
+
     Scanner*
     _scanner;
 
-    char*
-    _lastStatement;
+    std::map<Utf8String, File*>&
+    _files;
+
+    InstructionParser*
+    _instructionParser = nullptr;
 
     Compiler*
     _compiler;
@@ -50,10 +87,19 @@ private:
     parseType();
 
     Syntax*
-    parseStatement();
+    parseFunctionLevelStatement();
+
+    Syntax*
+    parseFileLevelStatement();
+
+    Syntax*
+    parseModuleLevelStatement();
 
     FunctionDeclaration*
     parseFunctionDeclaration();
+
+    VariableDeclaration*
+    parseVariableDeclaration();
 
     CallExpression*
     parseCallExpressionOnIdentifier();
@@ -61,7 +107,7 @@ private:
     ArgumentList*
     parseArgumentListOnOpenParen();
 
-    ParameterList*
+    ParameterListResult
     parseParameterList();
 
     InterfaceDeclaration*
@@ -69,6 +115,15 @@ private:
 
     EnumDeclaration*
     parseEnumDeclaration();
+
+    AssemblyBlock*
+    parseAssemblyBlock();
+
+    DeclarationMetadata*
+    parseDeclarationMetadata();
+
+    Tuple*
+    parseTuple();
 
     ImportStatement*
     parseImportStatement();
@@ -82,7 +137,7 @@ private:
     ModuleDeclaration*
     parseModuleDeclaration();
 
-    EndStatement*
+    compiler::EndStatement*
     parseEndStatement();
 
     UseStatement*
@@ -91,11 +146,17 @@ private:
     NamedUsage*
     parseNamedUsageOnOpenBrace();
 
-    Parameter*
+    compiler::ParameterDeclaration*
     parseParameterOnIdentifier();
 
-    Expression*
+    compiler::Expression*
     parsePropertyAccessOrCallExpression();
+
+    compiler::Expression*
+    createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek);
+
+    compiler::Expression*
+    parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
 
     Identifier*
     parseIdentifier();
@@ -103,8 +164,17 @@ private:
     FunctionBody*
     parseFunctionBody();
 
-    Expression*
+    compiler::Expression*
     parseExpression();
+
+    LengthOfExpression*
+    parseLengthOfExpression();
+
+    ArrayLiteral*
+    parseArrayLiteral();
+
+    AssemblyBody*
+    parseAssemblyBody();
 
     Token
     peekNextToken();
@@ -112,15 +182,27 @@ private:
     Token
     takeNextToken();
 
-    Punctuation*
-    createPunctuation(PunctuationType type);
+    compiler::Punctuation*
+    createPunctuation(compiler::PunctuationType type);
 
     void
     skipNextToken();
 
     template<typename T>
     T*
-    createSyntax(SyntaxKind kind);
+    createSyntax(compiler::SyntaxKind kind);
+
+    template<typename T>
+    T*
+    createDeclaration(compiler::SyntaxKind kind);
+
+    template<typename T>
+    T*
+    createBlock(compiler::SyntaxKind kind);
+
+    template<typename T>
+    T*
+    createNamedExpression(compiler::SyntaxKind kind);
 
     template<typename T>
     void
@@ -135,8 +217,15 @@ private:
     Identifier*
     createIdentifer();
 
+    Utf8String
+    getParameterDisplay(compiler::ParameterDeclaration* parameter);
+
     bool
     hasEqualIdentifier(Identifier* id1, Identifier* id2);
 };
+
+
+}
+
 
 #endif //ELET_PARSER_H

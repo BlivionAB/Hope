@@ -5,7 +5,7 @@
 #include "HashTableMap.h"
 
 template<typename C, typename F>
-CommandLine<C, F>::CommandLine(int argc, char **argv, CommandDefinition<C, F> rootCommand):
+CommandLine<C, F>::CommandLine(int argc, char **argv, CommandDefinition<C, F> rootCommand, const std::map<C, const char*>& stringToCommand):
     _rootCommand(std::move(rootCommand)),
     command(C::Root)
 {
@@ -38,7 +38,7 @@ CommandLine<C, F>::CommandLine(int argc, char **argv, CommandDefinition<C, F> ro
             }
             else
             {
-                throw UnknownCommandFlag<CommandType>(arg, currentCommand->type);
+                throw UnknownCommandFlag<C>(arg, currentCommand->type, stringToCommand);
             }
         }
         else {
@@ -58,12 +58,14 @@ CommandLine<C, F>::CommandLine(int argc, char **argv, CommandDefinition<C, F> ro
     command = currentCommand->type;
 }
 
+
 template<typename C, typename F>
 bool
 CommandLine<C, F>::hasFlag(F flagType)
 {
     return _flags.find(flagType) != _flags.end();
 }
+
 
 template<typename C, typename F>
 const char*

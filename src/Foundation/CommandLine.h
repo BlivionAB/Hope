@@ -3,7 +3,20 @@
 
 #include <map>
 #include "Utf8String.h"
+#include "List.h"
 #include <fmt/format.h>
+
+
+using namespace elet::foundation;
+
+
+struct CompareStr
+{
+    bool operator()(char const *a, char const *b) const
+    {
+        return std::strcmp(a, b) < 0;
+    }
+};
 
 
 template<typename T>
@@ -19,12 +32,14 @@ struct CommandFlagDefinition
     hasValue;
 };
 
-struct CompareStr
+
+struct UnknownValueForFlag
 {
-    bool operator()(char const *a, char const *b) const
-    {
-        return std::strcmp(a, b) < 0;
-    }
+    const char*
+    flag;
+
+    const char*
+    value;
 };
 
 template<typename T, typename F>
@@ -44,7 +59,12 @@ template<typename C, typename F>
 class CommandLine
 {
 public:
-    CommandLine(int argc, char *argv[], CommandDefinition<C, F> rootCommand);
+    CommandLine(
+        int argc,
+        char *argv[],
+        CommandDefinition<C, F> rootCommand,
+        const std::map<C, const char*>& commandToString
+    );
 
     bool
     hasFlag(F flag);
@@ -73,25 +93,32 @@ struct UnknownCommandFlag : std::exception
     TCommandType
     command;
 
+    const std::map<TCommandType, const char*>&
+    stringToCommand;
+
     explicit UnknownCommandFlag(
         const char*
         flag,
 
         TCommandType
-        command
+        command,
+
+        const std::map<TCommandType, const char*>&
+        stringToCommand
     ):
         flag(flag),
-        command(command)
+        command(command),
+        stringToCommand(stringToCommand)
     { }
 
     std::string
     message() const
     {
-        if (command == CommandType::Root)
+        if (command == TCommandType::Root)
         {
             return fmt::format("Unknown flag '{0}'.", flag);
         }
-        auto commandString = commandTypeToString.find(command);
+        auto commandString = stringToCommand.find(command);
         return fmt::format("Unknown flag '{0}' in command '{1}'.", flag, commandString->second);
     }
 };

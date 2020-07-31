@@ -1,0 +1,18 @@
+fn WriteLine(text: char*, length: lengthof text): void
+{
+    assembly:
+        target: (Target::Os.Darwin)
+    {
+        Store32 R1, 0x02000004; // rax
+        Store32 R6, 1;          // rdi
+        Store64 R7, $text;      // rsi
+        Store32 R4, $length;    // rdx
+        End;
+    }
+}
+
+
+fn OnStart(): void
+{
+    WriteLine("Some");
+}

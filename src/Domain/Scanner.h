@@ -1,46 +1,18 @@
-#ifndef ELET_SCANNER_H
-#define ELET_SCANNER_H
+#ifndef ELET_SOME_SCANNER_H
+#define ELET_SOME_SCANNER_H
 
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/HashTableMap.h>
+#include <Foundation/BaseScanner.h>
 #include <stack>
 
 using namespace elet::foundation;
 
 
-class Scanner
+class Scanner : public elet::foundation::BaseScanner
 {
 public:
     explicit Scanner(const Utf8StringView& source);
-
-    using Character = Utf8String::Character;
-
-    struct SourceLocation
-    {
-        std::size_t
-        position;
-
-        std::size_t
-        line;
-
-        std::size_t
-        column;
-
-        SourceLocation(
-            std::size_t
-            position,
-
-            std::size_t
-            line,
-
-            std::size_t
-            column):
-
-            position(position),
-            line(line),
-            column(column)
-        { }
-    };
 
     enum class Token : std::size_t
     {
@@ -49,6 +21,7 @@ public:
         Identifier,
 
         // Keywords
+        AssemblyKeyword,
         ImportKeyword,
         ExportKeyword,
         UseKeyword,
@@ -57,7 +30,6 @@ public:
         ModuleKeyword,
         EndKeyword,
         ImplementKeyword,
-        FunctionKeyword,
         EnumKeyword,
         ReturnKeyword,
         IfKeyword,
@@ -70,12 +42,18 @@ public:
         OnKeyword,
         FromKeyword,
 
+        // Declarations
+        FunctionKeyword,
+        VarKeyword,
+
         OpenParen,
         CloseParen,
         OpenBrace,
         CloseBrace,
         OpenBracket,
         CloseBracket,
+        Equal,
+        EqualEqual,
         LessThan,
         GreaterThan,
         LessThanEqual,
@@ -93,8 +71,13 @@ public:
         VoidKeyword,
         IntKeyword,
         UnsignedIntKeyword,
+        CharKeyword,
         FloatKeyword,
         DoubleKeyword,
+
+        // Operators
+        LengthOfKeyword,
+        SizeOfKeyword,
 
         StringLiteral,
 
@@ -107,126 +90,24 @@ public:
     Token
     takeNextToken();
 
-    Token
-    scanExpected(Token token);
-
     Utf8StringView
     getTokenValue() const;
 
-    struct SavedLocation
-    {
-        std::size_t
-        position;
-
-        std::size_t
-        line;
-
-        std::size_t
-        column;
-
-        const char*
-        startMemoryLocationOfToken;
-
-        const char*
-        positionPointer;
-
-        SavedLocation(
-            std::size_t
-            position,
-
-            std::size_t
-            line,
-
-            std::size_t
-            column,
-
-            const char*
-            pointerPosition,
-
-            const char*
-            startPointerPositionOfToken
-        ):
-                position(position),
-                line(line),
-                column(column),
-                positionPointer(pointerPosition),
-                startMemoryLocationOfToken(startPointerPositionOfToken)
-        { }
-
-    };
-
-    char*
-    getPosition() const;
-
-    char*
-    getStartPosition() const;
-
-    void
-    scan(const Utf8StringView& source);
-
 private:
-
-    std::size_t
-    _position = 0;
-
-    std::size_t
-    _line = 1;
-
-    std::size_t
-    _column = 1;
-
-    Utf8StringView
-    _source;
-
-    Utf8StringView::Iterator
-    _sourceIterator;
-
-    Utf8StringView::Iterator
-    _endIterator;
-
-    const char*
-    _startMemeryLocationOfToken = nullptr;
-
-    std::stack<SavedLocation>
-    _savedLocations;
-
-    std::size_t
-    _startLineOfToken = 1;
-
-    std::size_t
-    _startColumnOfToken = 1;
-
-    void
-    increment();
-
-    void
-    setTokenStartPosition();
-
-    Character
-    getCharacter() const;
 
     Token
     scanString();
 
-    bool
-    isIdentifierStart(Character character) const;
-
-    bool
-    isIdentifierPart(Character character) const;
-
     Token
     getTokenFromString(const Utf8StringView& string) const;
-
-    void
-    saveCurrentLocation();
-
-    void
-    revertToSavedLocation();
 };
 
 using Token = Scanner::Token;
 const HashTableMap<const char*, Token> eletStringToToken =
 {
+    { "var", Token::VarKeyword },
+    { "lengthof", Token::LengthOfKeyword },
+    { "assembly", Token::AssemblyKeyword },
     { "enum", Token::EnumKeyword },
     { "interface", Token::InterfaceKeyword },
     { "module", Token::ModuleKeyword },
@@ -244,11 +125,16 @@ const HashTableMap<const char*, Token> eletStringToToken =
     { "enum", Token::EnumKeyword },
     { "int", Token::IntKeyword },
     { "uint", Token::UnsignedIntKeyword },
+    { "char", Token::CharKeyword },
     { "void", Token::VoidKeyword },
 };
 
+
 const HashTableMap<Token, const char*> eletTokenToString =
 {
+    { Token::VarKeyword, "var" },
+    { Token::LengthOfKeyword, "lengthof" },
+    { Token::AssemblyKeyword, "assembly" },
     { Token::EnumKeyword, "enum" },
     { Token::InterfaceKeyword, "interface" },
     { Token::ModuleKeyword, "module" },
@@ -266,12 +152,12 @@ const HashTableMap<Token, const char*> eletTokenToString =
     { Token::EnumKeyword, "enum" },
     { Token::IntKeyword, "int" },
     { Token::UnsignedIntKeyword, "uint" },
+    { Token::CharKeyword, "char" },
     { Token::VoidKeyword, "void" },
 
     { Token::Identifier, "identifier" },
     { Token::DoubleColon, "::" },
     { Token::SemiColon, ";" },
 };
-
 
 #endif //ELET_SCANNER_H

@@ -5,6 +5,10 @@
 #include "List.h"
 #include "Path.h"
 
+namespace elet::foundation
+{
+
+
 class File
 {
 public:
@@ -34,4 +38,7 @@ struct FileReadError : std::exception
 {
 
 };
+
+
+}
 #endif //FLASHPOINT_FILE_H

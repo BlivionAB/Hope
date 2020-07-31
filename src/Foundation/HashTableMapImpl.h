@@ -114,7 +114,7 @@ HashTableMap<K, V, tableSize, H>::find(T key) const
 
     while (item != nullptr)
     {
-        if (item->key == key)
+        if (key == item->key)
         {
             return item->value;
         }

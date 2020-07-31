@@ -23,7 +23,16 @@ public:
 
     static
     Path
-    directory(const Path& path);
+    folderOf(const Path& file);
+
+    static
+    const char*
+    filename(const Path& file);
+
+
+    static
+    Utf8String
+    stem(const Path& file);
 
     static
     Path
@@ -39,7 +48,11 @@ public:
 
     static
     Path
-    relative(const Path& base, const Path& path);
+    resolve(const Path& base, const Path& path);
+
+    static
+    Path
+    relativeTo(const Path& base, const Path& target);
 
     static
     bool
@@ -106,6 +119,9 @@ public:
     Utf8String
     toString() const;
 
+    unsigned int
+    segmentLength() const;
+
     Path
     operator / (const char* path) const;
 
@@ -123,6 +139,9 @@ public:
 
     bool
     operator != (const Path& path) const;
+
+    const char*
+    operator [] (unsigned int index) const;
 
     operator const char*();
 
@@ -161,12 +180,20 @@ private:
     findPathByPathSegmentList(WildcardPathSegmentStack pathSegmentList, const Path& currenPath);
 };
 
+
+struct TargetPathIsNotDescendentOfBasePathError
+{
+
+};
+
+
 struct PathSegment
 {
     Path path;
 
     PathSegment(Path path): path(path) { }
 };
+
 
 struct WildcardPathSegment
 {
@@ -175,6 +202,7 @@ struct WildcardPathSegment
     WildcardPathSegment(Path path): path(path) { }
 };
 
+
 struct NestedWildcardPathSegment
 {
     Path path;
@@ -182,10 +210,12 @@ struct NestedWildcardPathSegment
     NestedWildcardPathSegment(Path path): path(path) { }
 };
 
+
 using OneOfPathSegments = std::variant<
     PathSegment,
     NestedWildcardPathSegment,
     WildcardPathSegment>;
+
 
 template<typename ... TChar>
 void

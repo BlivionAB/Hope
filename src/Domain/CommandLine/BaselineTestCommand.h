@@ -2,13 +2,25 @@
 #define ELET_BASELINETESTCOMMAND_H
 
 #include <map>
+#include <Domain/Compiler.h>
+#include <Foundation/TestRunner.h>
+#include <Foundation/CommandLine.h>
 
-const char* HELP_TEXT =
-"This text is pretty long, but will be "
-"concatenated into just a single string. "
-"The disadvantage is that you have to quote "
-"each part, and newlines must be literal as "
-"usual.";
+
+using namespace elet::domain::compiler;
+
+
+struct BaselineTestSelection : public TestSelection
+{
+    AssemblyTarget
+    assembly;
+};
+
+
+static const std::map<const char*, AssemblyTarget, CompareStr> stringToTarget = {
+    { "baseline", AssemblyTarget::Baseline },
+    { "x86_64", AssemblyTarget::x86_64 },
+};
 
 enum class CommandType
 {
@@ -17,23 +29,28 @@ enum class CommandType
     Accept,
 };
 
+
 static const std::map<CommandType, const char*> commandTypeToString =
 {
     { CommandType::Run, "run" },
     { CommandType::Accept, "accept" }
 };
 
+
 enum class FlagType
 {
     Help,
     TestSelection,
     FolderSelection,
+    AssemblySelection,
 };
+
 
 template<typename TPrinter, typename TTestRunner>
 class BaselineTestCommand
 {
 public:
+
     BaselineTestCommand(TPrinter& printer, TTestRunner& testRunner);
 
     int
