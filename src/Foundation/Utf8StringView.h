@@ -69,7 +69,7 @@ public:
     end() const;
 
     [[nodiscard]] const char*
-    asString() const;
+    source() const;
 
     [[nodiscard]] const char*
     toString() const;

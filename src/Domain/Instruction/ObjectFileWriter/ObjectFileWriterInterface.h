@@ -4,7 +4,13 @@
 #include <map>
 #include <Foundation/Path.h>
 #include <Domain/Instruction/Instruction.h>
+#include <Domain/Compiler.h>
 
+
+namespace elet::domain::compiler
+{
+    struct Symbol;
+}
 
 namespace elet::domain::compiler::instruction::output
 {
@@ -12,11 +18,23 @@ namespace elet::domain::compiler::instruction::output
 
 struct AssemblySegments
 {
-    std::map<Routine*, List<std::uint8_t>*>*
+    List<Routine*>*
     text;
 
-    List<Utf8StringView>*
+    std::uint64_t
+    textSize;
+
+    List<Utf8StringView*>*
+    cstrings;
+
+    std::size_t
+    cstringSize;
+
+    List<Symbol*>*
     symbols;
+
+    std::size_t
+    symbolSize;
 };
 
 
@@ -28,6 +46,7 @@ public:
     virtual
     void
     writeToFile(const Path& file, const AssemblySegments& segments) = 0;
+
 };
 
 

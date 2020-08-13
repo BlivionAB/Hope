@@ -31,11 +31,11 @@ class BaselineWriter : public AssemblyWriterInterface
 
 public:
 
-    BaselineWriter(std::map<Routine*, List<std::uint8_t>*>& output, std::mutex& workMutex);
+    BaselineWriter();
 
     ~BaselineWriter();
 
-    List<std::uint8_t>*
+    void
     writeRoutine(Routine* routine);
 
 private:
@@ -61,7 +61,7 @@ private:
     writeOperand(output::Operand* operand);
 
     void
-    writeInteger(output::Int* operand);
+    writeInteger(output::Int32* operand);
 
     void
     writeRegister(output::Register* _register);

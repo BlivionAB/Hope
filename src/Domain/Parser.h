@@ -8,15 +8,51 @@
 #include "Syntax.h"
 #include <Domain/Instruction/Parser.h>
 
-
 namespace elet::domain::compiler
 {
+    class Compiler;
+    struct ParsingTask;
+}
+namespace elet::domain::compiler::instruction
+{
+    class InstructionParser;
+}
 
+namespace elet::domain::compiler::ast
+{
 
-using Token = Scanner::Token;
+struct ParameterDeclarationList;
+struct File;
+struct Type;
+struct Syntax;
+struct FunctionDeclaration;
+struct VariableDeclaration;
+struct CallExpression;
+struct ArgumentList;
+struct InterfaceDeclaration;
+struct EnumDeclaration;
+struct AssemblyBlock;
+struct DeclarationMetadata;
+struct Tuple;
+struct ImportStatement;
+struct ExportStatement;
+struct ModuleDeclaration;
+struct EndStatement;
+struct ModuleAccessUsage;
+struct UseStatement;
+struct NamedUsage;
+struct ParameterDeclaration;
+struct Expression;
+struct Identifier;
+struct FunctionBody;
+struct LengthOfExpression;
+struct ArrayLiteral;
+struct AssemblyBody;
+struct Punctuation;
+enum class PunctuationType;
+enum class SyntaxKind : std::uint8_t ;
 
-
-struct ParsingTask;
+    using Token = Scanner::Token;
 
 
 struct ParseResult
@@ -39,7 +75,6 @@ struct ParameterListResult
 };
 
 
-class Compiler;
 
 class Parser
 {
@@ -77,7 +112,7 @@ private:
     std::map<Utf8String, File*>&
     _files;
 
-    InstructionParser*
+    instruction::InstructionParser*
     _instructionParser = nullptr;
 
     Compiler*
@@ -137,7 +172,7 @@ private:
     ModuleDeclaration*
     parseModuleDeclaration();
 
-    compiler::EndStatement*
+    EndStatement*
     parseEndStatement();
 
     UseStatement*
@@ -146,16 +181,16 @@ private:
     NamedUsage*
     parseNamedUsageOnOpenBrace();
 
-    compiler::ParameterDeclaration*
+    ParameterDeclaration*
     parseParameterOnIdentifier();
 
-    compiler::Expression*
+    Expression*
     parsePropertyAccessOrCallExpression();
 
-    compiler::Expression*
+    Expression*
     createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek);
 
-    compiler::Expression*
+    Expression*
     parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
 
     Identifier*
@@ -164,7 +199,10 @@ private:
     FunctionBody*
     parseFunctionBody();
 
-    compiler::Expression*
+    Expression*
+    parseExpressionOnToken(Token token);
+
+    Expression*
     parseExpression();
 
     LengthOfExpression*
@@ -182,27 +220,27 @@ private:
     Token
     takeNextToken();
 
-    compiler::Punctuation*
-    createPunctuation(compiler::PunctuationType type);
+    Punctuation*
+    createPunctuation(PunctuationType type);
 
     void
     skipNextToken();
 
     template<typename T>
     T*
-    createSyntax(compiler::SyntaxKind kind);
+    createSyntax(SyntaxKind kind);
 
     template<typename T>
     T*
-    createDeclaration(compiler::SyntaxKind kind);
+    createDeclaration(SyntaxKind kind);
 
     template<typename T>
     T*
-    createBlock(compiler::SyntaxKind kind);
+    createBlock(SyntaxKind kind);
 
     template<typename T>
     T*
-    createNamedExpression(compiler::SyntaxKind kind);
+    createNamedExpression(SyntaxKind kind);
 
     template<typename T>
     void
@@ -218,7 +256,7 @@ private:
     createIdentifer();
 
     Utf8String
-    getParameterDisplay(compiler::ParameterDeclaration* parameter);
+    getParameterDisplay(ParameterDeclaration* parameter);
 
     bool
     hasEqualIdentifier(Identifier* id1, Identifier* id2);

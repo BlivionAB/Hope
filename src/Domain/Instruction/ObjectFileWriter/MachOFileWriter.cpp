@@ -1,15 +1,10 @@
 #include <map>
-#include <Domain/Instruction/Instruction.h>
+#include <cmath>
+//#include <Domain/Instruction/Instruction.h>
 #include "MachOFileWriter.h"
 
 namespace elet::domain::compiler::instruction::output
 {
-
-
-MachOFileWriter::MachOFileWriter()
-{
-
-}
 
 
 void
@@ -18,17 +13,29 @@ MachOFileWriter::writeToFile(const Path &file, const AssemblySegments& segments)
     std::ofstream outputFileStream(file.toString().asString(), std::ios::out | std::ios::binary);
     _outputFileStream = &outputFileStream;
     layoutCommands(segments);
-    writeCommands();
-    outputFileStream.close();
+    writeCommands(segments);
+    _outputFileStream->close();
 }
 
 
 void
-MachOFileWriter::writeCommands()
+MachOFileWriter::writeCommands(const AssemblySegments &segments)
 {
     writeHeader();
     writeSegmentCommand();
-    writeSections();
+    writeSectionCommands();
+    writeSymbolTableCommand();
+    writeSectionData();
+    writeSymbols(segments);
+}
+
+
+void
+MachOFileWriter::writeSymbolTableCommand()
+{
+//    _symbolTableCommand.stringTableOffset = _commandEndOffset + _dataOffset + _symbolTableCommand.commandSize;
+//    _symbolTableCommand.stringTableSize = 0;
+    write<SymbolTableCommand>(_symbolTableCommand);
 }
 
 
@@ -36,9 +43,16 @@ void
 MachOFileWriter::layoutCommands(const AssemblySegments& segments)
 {
     layoutSegmentCommand();
-    layoutSection("__text", "__TEXT", segments.text);
-    layoutSymtabCommand(nullptr);
-    _segmentCommand.fileOffset = _fileOffset;
+    layoutSymbolTableCommand(segments);
+    layoutSection("__text", "__TEXT", SectionDataType::Assembly, segments.text, segments.textSize, 1, (S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS));
+    layoutSection("__cstring", "__TEXT", SectionDataType::CString, segments.cstrings, segments.cstringSize, 1, S_CSTRING_LITERALS);
+    layoutDataOffsetInSections();
+    auto symbolOffset = _commandEndOffset + _dataOffset;
+    _symbolTableCommand.symbolTableOffset = symbolOffset;
+    auto stringTableOffset = segments.symbols->size() * sizeof(SymbolEntry64);
+    _symbolTableCommand.stringTableOffset = _symbolTableCommand.symbolTableOffset + stringTableOffset;
+    _symbolTableCommand.stringTableSize = segments.symbolSize;
+    _segmentCommand.fileOffset = _commandEndOffset;
 }
 
 
@@ -52,24 +66,105 @@ MachOFileWriter::writeHeader()
 void
 MachOFileWriter::writeSegmentCommand()
 {
-    _segmentCommand.fileOffset = _fileOffset;
+    _segmentCommand.fileOffset = _commandEndOffset;
     write<SegmentCommand64>(_segmentCommand);
 }
 
 
 void
-MachOFileWriter::writeSections()
+MachOFileWriter::layoutDataOffsetInSections()
 {
-    for (unsigned int i = 0; i < _layoutedSections.size(); i++)
+    for (const auto sectionData : _layoutedSections)
     {
-        SectionData* sectionData = _layoutedSections.front();
+        sectionData->definition->offset = _commandEndOffset + _dataOffset;
+        _dataOffset += sectionData->size + sectionData->fillBytes;
+    }
+}
+
+void
+MachOFileWriter::writeSectionCommands()
+{
+    for (const auto sectionData : _layoutedSections)
+    {
         write<Section64>(*sectionData->definition);
     }
 }
 
 
 void
-MachOFileWriter::layoutSection(const char* sectionName, const char* segmentName, std::map<Routine*, List<std::uint8_t>*>* data)
+MachOFileWriter::writeSectionData()
+{
+    for (const auto sectionData : _layoutedSections)
+    {
+        switch (sectionData->dataType)
+        {
+            case SectionDataType::Assembly:
+            {
+                auto routines = reinterpret_cast<const List<Routine*>*>(sectionData->data);
+                for (const auto routine : *routines)
+                {
+                    auto instructions = routine->machineInstructions;
+                    auto size = instructions->size();
+                    _outputFileStream->write((char*)&(*instructions)[0], size);
+                }
+                fillWithNullCharacter(sectionData->fillBytes);
+                break;
+            }
+            case SectionDataType::CString:
+            {
+                auto strings = reinterpret_cast<const List<Utf8StringView*>*>(sectionData->data);
+                for (const Utf8StringView* string : *strings)
+                {
+                    auto size = string->size();
+                    _outputFileStream->write(string->source(), size);
+                    writeNullCharacter();
+                }
+                fillWithNullCharacter(sectionData->fillBytes);
+                break;
+            }
+        }
+    }
+}
+
+
+void 
+MachOFileWriter::writeSymbols(const AssemblySegments& segments) 
+{
+    std::uint32_t offset = 1;
+    for (const Symbol* symbol : *segments.symbols)
+    {
+        SymbolEntry64 s {
+            offset,
+            N_SECT | N_EXT,
+            1,
+            0,
+            symbol->sectionOffset,
+        };
+        write<SymbolEntry64>(s);
+        offset += symbol->name->size() + 1;
+    }
+    writeNullCharacter();
+    for (const Symbol* symbol : *segments.symbols)
+    {
+        writeStringView(*symbol->name);
+        writeNullCharacter();
+    }
+}
+
+
+void
+MachOFileWriter::layoutRelocationOffsetInSections()
+{
+    for (const auto sectionData : _layoutedSections)
+    {
+        sectionData->definition->relocationOffset = _commandEndOffset + _dataOffset;
+        write<Section64>(*sectionData->definition);
+    }
+}
+
+
+void
+MachOFileWriter::layoutSection(const char *sectionName, const char *segmentName, const SectionDataType dataType, void* data, std::size_t size, std::uint32_t alignment, std::uint32_t flags)
 {
     std::array<char, 16> _sectionName {};
     std::memcpy(&_sectionName, sectionName, strlen(sectionName));
@@ -78,36 +173,43 @@ MachOFileWriter::layoutSection(const char* sectionName, const char* segmentName,
     auto section64 = new Section64 {
         _sectionName,
         _segmentName,
+        _currentSegmentAddress,
+        size,
         0,
-        data->size(),
+        alignment,
         0,
-        1,
         0,
-        1,
+        flags,
     };
-    auto sectionData = new SectionData {
+    _currentSegmentAddress += size;
+    auto restBytes = size % 8;
+    auto fillBytes = restBytes > 0 ? 8 - restBytes : 0;
+    auto sectionData = new SectionData (
         section64,
+        dataType,
         data,
-    };
-    _fileOffset += sizeof(Section64);
+        size,
+        fillBytes
+    );
+    _commandEndOffset += sizeof(Section64);
     _segmentCommand.commandSize += sizeof(Section64);
     _segmentCommand.numberOfSections++;
-    _segmentCommand.fileSize += data->size();
+    _segmentCommand.virtualMemorySize += size;
+    _segmentCommand.fileSize += size;
     _header.sizeOfCommands += sizeof(Section64);
-    _layoutedSections.push(sectionData);
+    _layoutedSections.add(sectionData);
 }
 
 
 template<typename T>
-void MachOFileWriter::write(T& data)
+void MachOFileWriter::write(const T& data)
 {
     _outputFileStream->write((char*)&data, sizeof(data));
-    _fileOffset += sizeof(sizeof(data));
 }
 
 
 template<typename T>
-void MachOFileWriter::write(T&& some)
+void MachOFileWriter::write(const T&& some)
 {
     auto ptr = reinterpret_cast<unsigned char*>(&some);
     _output.insert(_output.end(), ptr, ptr + sizeof(some));
@@ -115,19 +217,45 @@ void MachOFileWriter::write(T&& some)
 
 
 void
-MachOFileWriter::layoutSegmentCommand()
+MachOFileWriter::writeStringView(const Utf8StringView &string)
 {
-    _fileOffset += sizeof(SegmentCommand64);
-    _header.sizeOfCommands += sizeof(SegmentCommand64);
-    _header.numberOfCommands++;
+    std::size_t size = string.size();
+    _outputFileStream->write(string.source(), size);
 }
 
 
 void
-MachOFileWriter::layoutSymtabCommand(List<Utf8StringView>* symbols)
+MachOFileWriter::writeNullCharacter()
 {
-    _fileOffset += sizeof(SymTab);
-    _header.sizeOfCommands += sizeof(SymTab);
+    _outputFileStream->write("\0", 1);
+}
+
+
+void
+MachOFileWriter::fillWithNullCharacter(std::size_t rest)
+{
+    for (unsigned int i = 0; i < rest; i++)
+    {
+        writeNullCharacter();
+    }
+}
+
+
+void
+MachOFileWriter::layoutSegmentCommand()
+{
+    _header.numberOfCommands++;
+    _commandEndOffset += sizeof(SegmentCommand64);
+    _header.sizeOfCommands += sizeof(SegmentCommand64);
+}
+
+
+void
+MachOFileWriter::layoutSymbolTableCommand(const AssemblySegments& segments)
+{
+    _symbolTableCommand.numberOfSymbols = segments.symbols->size();
+    _commandEndOffset += sizeof(SymbolTableCommand);
+    _header.sizeOfCommands += sizeof(SymbolTableCommand);
     _header.numberOfCommands++;
 }
 

@@ -11,8 +11,8 @@ TextWriter*
 BaselineWriter::_tw = nullptr;
 
 
-BaselineWriter::BaselineWriter(std::map<Routine*, List<std::uint8_t>*>& output, std::mutex &workMutex):
-    AssemblyWriterInterface(output, workMutex)
+BaselineWriter::BaselineWriter():
+    AssemblyWriterInterface()
 {
 
 }
@@ -27,7 +27,7 @@ BaselineWriter::~BaselineWriter()
 }
 
 
-List<std::uint8_t>*
+void
 BaselineWriter::writeRoutine(Routine *routine)
 {
     _tw = createTextWriter();
@@ -49,9 +49,8 @@ BaselineWriter::writeRoutine(Routine *routine)
         _tw->write(_function->name);
         _tw->writeCharacter('(');
         bool firstParameter = true;
-        for (const Utf8StringView& order : _function->parameterOrder)
+        for (const Parameter* parameter : _function->parameters)
         {
-            Parameter* parameter = _function->parameters.find(order)->second;
             if (!firstParameter)
             {
                 _tw->write(", ");
@@ -80,7 +79,6 @@ BaselineWriter::writeRoutine(Routine *routine)
     {
         result->add(static_cast<std::uint8_t>(ch));
     }
-    return result;
 }
 
 
@@ -113,8 +111,8 @@ BaselineWriter::writeOperand(output::Operand *operand)
         case OperandKind::Register:
             writeRegister(reinterpret_cast<output::Register*>(operand));
             break;
-        case OperandKind::Int:
-            writeInteger(reinterpret_cast<output::Int*>(operand));
+        case OperandKind::Int32:
+            writeInteger(reinterpret_cast<output::Int32*>(operand));
             break;
         case OperandKind::VariableReference:
             writeVariableReference(reinterpret_cast<output::VariableReference *>(operand));
@@ -134,7 +132,7 @@ BaselineWriter::writeRegister(output::Register *_register)
 
 
 void
-BaselineWriter::writeInteger(output::Int* value)
+BaselineWriter::writeInteger(output::Int32* value)
 {
     _tw->write("0x");
     unsigned int v = value->value;

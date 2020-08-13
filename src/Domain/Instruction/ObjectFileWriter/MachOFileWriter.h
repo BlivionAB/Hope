@@ -34,6 +34,11 @@ using namespace elet::foundation;
 #define CPU_TYPE_X86_64 (CPU_TYPE_X86 | CPU_ARCH_ABI64)
 #define CPU_SUBTYPE_X86_64_ALL 0x3
 
+#define S_ATTR_PURE_INSTRUCTIONS 0x80000000
+#define S_ATTR_SOME_INSTRUCTIONS 0x00000400
+#define S_CSTRING_LITERALS       0x00000002
+
+
 struct MachHeader64
 {
     std::uint32_t
@@ -121,7 +126,7 @@ struct SegmentCommand64
     vmAddress;
 
     std::uint64_t
-    vmSize;
+    virtualMemorySize;
 
     std::uint64_t
     fileOffset;
@@ -193,9 +198,8 @@ struct SymbolTableCommand
     std::uint32_t
     commandSize;
 
-    /* symbol table offset */
     std::uint32_t
-    symbolOffset;
+    symbolTableOffset;
 
     std::uint32_t
     numberOfSymbols;
@@ -211,7 +215,7 @@ struct SymbolTableCommand
 struct SymbolEntry64
 {
     /* index into the string table */
-    std::int32_t
+    std::uint32_t
     index;
 
     /* type flag, see below */
@@ -220,16 +224,17 @@ struct SymbolEntry64
 
     /* section number or NO_SECT */
     std::uint8_t
-    sectionNumber;
+    sectionIndex;
 
     /* see <mach-o/stab.h> */
-    int16_t
+    std::uint16_t
     description;
 
     /* value of this symbol (or stab offset) */
-    uint32_t
+    std::uint64_t
     value;
 };
+
 
 /*
  * Symbols with a index into the string table of zero (n_un.n_strx == 0) are
@@ -246,10 +251,10 @@ struct SymbolEntry64
  *		      N_EXT:1;
  * which are used via the following masks.
  */
-#define	N_STAB	0xe0  /* if any of these bits set, a symbolic debugging entry */
-#define	N_PEXT	0x10  /* private external symbol bit */
-#define	N_TYPE	0x0e  /* mask for the type bits */
-#define	N_EXT	0x01  /* external symbol bit, set for external symbols */
+#define	N_STAB	(std::uint8_t)0xe0  /* if any of these bits set, a symbolic debugging entry */
+#define	N_PEXT	(std::uint8_t)0x10  /* private external symbol bit */
+#define	N_SECT	(std::uint8_t)0x0e  /* mask for the type bits */
+#define	N_EXT	(std::uint8_t)0x01  /* external symbol bit, set for external symbols */
 
 static const MachHeader64 DEFAULT_HEADER =
 {
@@ -262,48 +267,44 @@ static const MachHeader64 DEFAULT_HEADER =
 };
 
 
+enum class SectionDataType : std::uint8_t
+{
+    Assembly,
+    CString,
+    Constants,
+};
+
+
 struct SectionData
 {
     Section64*
     definition;
 
-    std::map<Routine*, List<std::uint8_t>*>*
+    const SectionDataType
+    dataType;
+
+    const void*
     data;
 
-    SectionData(Section64* definition, std::map<Routine*, List<std::uint8_t>*>* data):
+    std::size_t
+    size;
+
+    std::uint8_t
+    fillBytes;
+
+    SectionData(Section64* definition, const SectionDataType dataType, const void* data, std::size_t size, std::uint8_t fillBytes):
         definition(definition),
-        data(data)
+        dataType(dataType),
+        data(data),
+        size(size),
+        fillBytes(fillBytes)
     { }
-};
-
-struct SymTab
-{
-    /* LC_SYMTAB */
-    std::uint32_t
-    command;
-
-    std::uint32_t
-    commandSize;
-
-    std::uint32_t
-    symbolTableOffset;
-
-    std::uint32_t
-    numberOfSymbols;
-
-    std::uint32_t
-    stringTableOffset;
-
-    std::uint32_t
-    stringTableSize;
 };
 
 
 class MachOFileWriter : public ObjectFileWriterInterface
 {
 public:
-
-    MachOFileWriter();
 
     void
     writeToFile(const Path& file, const AssemblySegments& segments);
@@ -320,27 +321,51 @@ private:
     writeSegmentCommand();
 
     void
-    writeSections();
+    layoutDataOffsetInSections();
 
     void
-    layoutSection(const char* sectionName, const char* segmentName, std::map<Routine*, List<std::uint8_t>*>* data);
+    layoutRelocationOffsetInSections();
+
+    void
+    layoutSection(const char *sectionName, const char *segmentName, SectionDataType dataType, void *data, std::size_t size, std::uint32_t alignment, std::uint32_t flags);
 
     void
     layoutSegmentCommand();
 
     void
-    writeCommands();
+    writeCommands(const AssemblySegments &segments);
 
     void
-    layoutSymtabCommand(List<Utf8StringView>* symbols);
+    writeSymbolTableCommand();
+
+    void
+    writeSectionCommands();
+
+    void
+    writeSectionData();
+
+    void
+    writeSymbols(const AssemblySegments &segments);
+
+    void
+    layoutSymbolTableCommand(const AssemblySegments& segments);
+
+    void
+    writeStringView(const Utf8StringView& string);
+
+    void
+    writeNullCharacter();
+
+    void
+    fillWithNullCharacter(std::size_t rest);
 
     template<typename T>
     void
-    write(T& data);
+    write(const T& data);
 
     template<typename T>
     void
-    write(T&& type);
+    write(const T&& type);
 
     std::ofstream*
     _outputFileStream;
@@ -365,7 +390,7 @@ private:
     _segmentCommand =
     {
         LC_SEGMENT_64,
-        0,
+        sizeof(SegmentCommand64),
         "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
         0,
         0,
@@ -373,26 +398,35 @@ private:
         0,
         VM_PROTECTION_ALL,
         VM_PROTECTION_ALL,
-        2,
+        0,
         0,
     };
 
-    SymTab
-    _symTab =
+    std::uint32_t
+    _currentSegmentAddress = 0;
+
+    SymbolTableCommand
+    _symbolTableCommand =
     {
         LC_SYMTAB,
-        sizeof(SymTab),
+        sizeof(SymbolTableCommand),
         0,
         0,
         0,
         0
     };
 
-    std::queue<SectionData*>
+    List<SectionData*>
     _layoutedSections;
 
     std::uint32_t
-    _fileOffset = 0;
+    _commandEndOffset = sizeof(MachHeader64);
+
+    std::uint32_t
+    _dataOffset = 0;
+
+    std::uint32_t
+    _relocationOffset = 0;
 };
 
 

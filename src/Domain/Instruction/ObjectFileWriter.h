@@ -8,6 +8,10 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
+struct AssemblySegments;
+struct ObjectFileWriterInterface;
+
+
 using namespace elet::foundation;
 
 enum class ObjectFileTarget

@@ -161,7 +161,7 @@ BaseScanner::getDecimalValue() const
 {
     Utf8StringView token = getTokenValue();
     std::size_t lastIndex = token.size() - 1;
-    const char* digits = token.asString();
+    const char* digits = token.source();
     unsigned exponent = 1;
     std::size_t result = 0;
     for (int i = lastIndex; i >= 0; i--)
@@ -179,7 +179,7 @@ BaseScanner::getHexadecimalValue() const
 {
     Utf8StringView token = getTokenValue();
     std::size_t lastIndex = token.size() - 1;
-    const char* digits = token.asString();
+    const char* digits = token.source();
     unsigned int exponent = 1;
     std::size_t result = 0;
     for (int i = lastIndex; i >= 2; i--)

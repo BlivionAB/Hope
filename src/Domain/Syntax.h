@@ -9,16 +9,17 @@
 #include "Instruction/Instruction.h"
 
 
-namespace elet::domain::compiler
-{
-
-namespace instruction
+namespace elet::domain::compiler::instruction
 {
     namespace output
     {
         struct Instruction;
     }
 }
+
+namespace elet::domain::compiler::ast
+{
+
 
 using namespace instruction;
 
@@ -369,7 +370,11 @@ struct BinaryOperator : Syntax
 
 struct StringLiteral : Expression
 {
+    const char*
+    stringStart;
 
+    const char*
+    stringEnd;
 };
 
 

@@ -42,7 +42,7 @@ Utf8StringView::end() const
 }
 
 const char*
-Utf8StringView::asString() const
+Utf8StringView::source() const
 {
     return _value;
 }
@@ -79,11 +79,13 @@ Utf8StringView::size() const
     return _end - _value;
 }
 
+
 char
 Utf8StringView::operator[](std::size_t memoryIndex) const
 {
     return _value[memoryIndex];
 }
+
 
 bool
 Utf8StringView::operator == (const char* text) const
@@ -102,6 +104,7 @@ Utf8StringView::operator == (const Utf8StringView& other) const
     return *this == other.toString();
 }
 
+
 bool
 Utf8StringView::operator < (const Utf8StringView &other) const
 {
@@ -115,11 +118,13 @@ Utf8StringView::Iterator::Iterator(const char* value):
 
 }
 
+
 const char*
 Utf8StringView::Iterator::getPosition() const
 {
     return value;
 }
+
 
 void
 Utf8StringView::Iterator::setPosition(const char* position)
@@ -245,7 +250,7 @@ operator += (Utf8String& string1, const Utf8StringView& string2)
 bool
 operator == (const char* string1, const Utf8StringView& string2)
 {
-    return std::strncmp(string1, string2.asString(), string2.size()) == 0;
+    return std::strncmp(string1, string2.source(), string2.size()) == 0;
 }
 
 }

@@ -160,7 +160,7 @@ InstructionParser::parseOperand()
     {
         case InstructionToken::Register:
         {
-            Register* reg = createSyntax<Register>(SyntaxKind::Register);
+            embedded::Register* reg = createSyntax<embedded::Register>(SyntaxKind::Register);
             reg->__count = _scanner.getRegisterCount();
             finishSyntax(reg);
             return reg;
@@ -260,7 +260,7 @@ InstructionParser::createOutputOperandFromEmbeddedOperand(embedded::Operand* ope
         case SyntaxKind::BinaryLiteral:
         case SyntaxKind::DecimalLiteral:
         case SyntaxKind::HexadecimalLiteral:
-            return new output::Int(reinterpret_cast<embedded::NumberLiteral*>(operand)->__value);
+            return new output::Int32(reinterpret_cast<embedded::NumberLiteral*>(operand)->__value);
         default:
             throw std::exception();
     }

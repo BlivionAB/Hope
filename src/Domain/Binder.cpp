@@ -5,7 +5,7 @@ namespace elet::domain::compiler
 {
 
 thread_local
-std::map<Utf8StringView, Declaration*>*
+std::map<Utf8StringView, ast::Declaration*>*
 Binder::fileDeclaration = nullptr;
 
 
@@ -19,29 +19,29 @@ void
 Binder::performWork(BindingWork& work)
 {
     fileDeclaration = &work.file->declarations;
-    if (work.declaration->kind == SyntaxKind::FunctionDeclaration)
+    if (work.declaration->kind == ast::SyntaxKind::FunctionDeclaration)
     {
-        bindFunction(reinterpret_cast<FunctionDeclaration*>(work.declaration));
+        bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
     }
 }
 
 
 void
-Binder::bindFunction(FunctionDeclaration* declaration)
+Binder::bindFunction(ast::FunctionDeclaration* declaration)
 {
-    for (ParameterDeclaration* parameterDeclaration : declaration->parameterList->parameters)
+    for (ast::ParameterDeclaration* parameterDeclaration : declaration->parameterList->parameters)
     {
         declaration->body->symbols[parameterDeclaration->name->name] = parameterDeclaration;
     }
-    for (Syntax* statement : declaration->body->statements)
+    for (ast::Syntax* statement : declaration->body->statements)
     {
         switch (statement->kind)
         {
-            case SyntaxKind::AssemblyBlock:
-                bindAssemblyBlock(reinterpret_cast<AssemblyBlock*>(statement), declaration->body->symbols);
+            case ast::SyntaxKind::AssemblyBlock:
+                bindAssemblyBlock(reinterpret_cast<ast::AssemblyBlock*>(statement), declaration->body->symbols);
                 break;
-            case SyntaxKind::CallExpression:
-                bindCallExpression(reinterpret_cast<CallExpression*>(statement));
+            case ast::SyntaxKind::CallExpression:
+                bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
         }
     }
@@ -49,7 +49,7 @@ Binder::bindFunction(FunctionDeclaration* declaration)
 
 
 void
-Binder::bindAssemblyBlock(AssemblyBlock* assemblyBlock, SymbolMap& symbols)
+Binder::bindAssemblyBlock(ast::AssemblyBlock* assemblyBlock, SymbolMap& symbols)
 {
     for (output::Instruction* instruction : *assemblyBlock->body->instructions)
     {
@@ -64,7 +64,7 @@ Binder::tryBindOperand(output::Operand* operand, SymbolMap& symbols)
 {
     if (operand && operand->kind == output::OperandKind::AssemblyReference)
     {
-        output::AssemblyReference* assemblyReference = reinterpret_cast<output::AssemblyReference*>(operand);
+        auto assemblyReference = reinterpret_cast<output::AssemblyReference*>(operand);
         auto result = symbols.find(assemblyReference->name);
         if (result != symbols.end())
         {
@@ -74,7 +74,7 @@ Binder::tryBindOperand(output::Operand* operand, SymbolMap& symbols)
 }
 
 void
-Binder::bindCallExpression(CallExpression* callExpression)
+Binder::bindCallExpression(ast::CallExpression* callExpression)
 {
     auto result = fileDeclaration->find(callExpression->name->name);
     if (result == fileDeclaration->end())

@@ -13,16 +13,22 @@
 namespace elet::domain::compiler
 {
 
-
 Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
     _assemblyTarget(assemblyTarget),
     _objectFileTarget(objectFileTarget),
-    _parser(new compiler::Parser(this)),
-    _transformer(new Transformer(_routines, _transformationWorkMutex)),
-    _assemblyWriter(new AssemblyWriter(assemblyTarget, _output, _writingWorkMutex)),
+    _parser(new ast::Parser(this)),
+    _assemblyWriter(new AssemblyWriter(assemblyTarget)),
     _objectFileWriter(new ObjectFileWriter(objectFileTarget)),
     _binder(new Binder())
-{ }
+{
+    const auto callingConvention = new CallingConvention {
+       { 7, 6, 3, 2, 8, 9 },
+       6,
+       { 0 },
+       1,
+    };
+    _transformer = new Transformer(callingConvention, _routines, _transformationWorkMutex, &_cstrings, _cstringOffset, _dataMutex);
+}
 
 
 void
@@ -51,7 +57,7 @@ Compiler::addFile(const Path& file)
     {
         return;
     }
-    File* compilerFile = new File();
+    ast::File* compilerFile = new ast::File();
     files.insert(std::pair(fileString, compilerFile));
     _pendingParsingFiles++;
     static const std::size_t BUFFER_SIZE = 16*1024;
@@ -216,15 +222,15 @@ Compiler::acceptParsingWork()
                     _pendingParsingFiles--;
                 }
             }
-            for (Syntax* statement : result.statements)
+            for (ast::Syntax* statement : result.statements)
             {
                 if (statement->labels & DECLARATION_LABEL)
                 {
-                    Declaration* declaration = reinterpret_cast<Declaration*>(statement);
-                    if (declaration->kind == compiler::SyntaxKind::FunctionDeclaration)
+                    ast::Declaration* declaration = reinterpret_cast<ast::Declaration*>(statement);
+                    if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
                     {
-                        FunctionDeclaration* functionDeclaration = reinterpret_cast<FunctionDeclaration*>(declaration);
-                        _bindingWork.emplace(functionDeclaration, task.sourceFile);
+                        ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
+                        _bindingWork.push(new BindingWork(functionDeclaration, task.sourceFile));
                     }
                     else
                     {
@@ -270,12 +276,12 @@ Compiler::acceptBindingWork()
             }
             continue;
         }
-        BindingWork work = _bindingWork.front();
+        BindingWork* work = _bindingWork.front();
         _bindingWork.pop();
         _bindingWorkMutex.unlock();
         _pendingBindingWork++;
-        _binder->performWork(work);
-        _transformationWork.push(work.declaration);
+        _binder->performWork(*work);
+        _transformationWork.push(work->declaration);
         _pendingBindingWork--;
     }
 }
@@ -284,6 +290,8 @@ Compiler::acceptBindingWork()
 void
 Compiler::acceptTransformationWork()
 {
+    _transformer->symbols = new List<Symbol*>();
+
     while (_compilationStage == CompilationStage::Transformation)
     {
 //        _display_mutex.lock();
@@ -309,7 +317,7 @@ Compiler::acceptTransformationWork()
             }
             continue;
         }
-        Declaration* declaration = _transformationWork.front();
+        ast::Declaration* declaration = _transformationWork.front();
         _transformationWork.pop();
 //        _display_mutex.lock();
 //        std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
@@ -327,6 +335,19 @@ Compiler::acceptTransformationWork()
 //        _display_mutex.unlock();
         _routines.push(_transformer->transform(declaration));
         _pendingTransformationTasks--;
+    }
+
+
+    {
+        std::unique_lock symbolOffsetWorkLock(_symbolOffsetWorkMutex);
+        std::uint64_t thisThreadTotalOffset = 1;
+        for (Symbol* symbol : *_transformer->symbols)
+        {
+            thisThreadTotalOffset += symbol->name->size() + 1;
+            symbol->sectionOffset += _symbolSectionOffset;
+            _symbols.add(symbol);
+        }
+        _symbolSectionOffset += thisThreadTotalOffset;
     }
 }
 
@@ -362,9 +383,9 @@ Compiler::acceptAssemblyWritingWork()
 //        std::cout << "taking writing work"<< std::endl;
 //        _display_mutex.unlock();
         _pendingWritingTasks++;
-        _output.insert(
-            std::pair(routine, _assemblyWriter->writeRoutine(routine))
-        );
+        _assemblyWriter->writeRoutine(routine);
+        _output.add(routine);
+        _outputSize += routine->machineInstructions->size();
         _pendingWritingTasks--;
     }
 }
@@ -379,6 +400,11 @@ Compiler::writeToOutputFile()
     }
     const AssemblySegments segments = {
         &_output,
+        _outputSize,
+        &_cstrings,
+        _cstringOffset,
+        &_symbols,
+        _symbolSectionOffset,
     };
     _objectFileWriter->writeToFile(*_outputFile, segments);
 }

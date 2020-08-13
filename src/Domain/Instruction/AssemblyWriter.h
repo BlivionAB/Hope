@@ -16,14 +16,17 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
+struct AssemblyWriterInterface;
+
+
 class AssemblyWriter
 {
 
 public:
 
-    AssemblyWriter(AssemblyTarget target, std::map<Routine*, List<std::uint8_t>*>& output, std::mutex& workMutex);
+    AssemblyWriter(AssemblyTarget target);
 
-    List<std::uint8_t>*
+    void
     writeRoutine(Routine *routine);
 
 private:
@@ -33,6 +36,11 @@ private:
 
     AssemblyWriterInterface*
     _assemblyWriter;
+
+    static
+    thread_local
+    std::uint64_t
+    _symbolOffset;
 };
 
 

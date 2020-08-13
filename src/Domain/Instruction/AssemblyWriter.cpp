@@ -6,24 +6,31 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
-AssemblyWriter::AssemblyWriter(compiler::AssemblyTarget target, std::map<Routine*, List<std::uint8_t>*>& output, std::mutex& workMutex) :
+thread_local
+std::uint64_t
+AssemblyWriter::_symbolOffset = 0;
+
+AssemblyWriter::AssemblyWriter(
+    compiler::AssemblyTarget target) :
     _target(target)
 {
     switch (_target)
     {
         case compiler::AssemblyTarget::Baseline:
-            _assemblyWriter = new BaselineWriter(output, workMutex);
+//            _assemblyWriter = new BaselineWriter();
             break;
         case compiler::AssemblyTarget::x86_64:
-            _assemblyWriter = new X86_64Writer(output, workMutex);
+            _assemblyWriter = new X86_64Writer();
             break;
     }
 }
 
-List<std::uint8_t>*
+void
 AssemblyWriter::writeRoutine(Routine *routine)
 {
-    return _assemblyWriter->writeRoutine(routine);
+    routine->symbol->sectionOffset = _symbolOffset;
+    _assemblyWriter->writeRoutine(routine);
+    _symbolOffset += routine->machineInstructions->size();
 }
 
 

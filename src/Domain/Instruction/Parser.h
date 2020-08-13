@@ -12,6 +12,12 @@ namespace elet::domain::compiler::instruction
 {
 
 
+namespace output
+{
+    struct Instruction;
+    struct Operand;
+}
+
 using namespace foundation;
 using namespace embedded;
 

@@ -5,23 +5,36 @@
 #include <map>
 #include <Foundation/Utf8StringView.h>
 #include "Syntax.h"
+#include "Instruction/Instruction.h"
+
 
 namespace elet::domain::compiler
 {
 
+namespace ast
+{
+    struct Declaration;
+}
 
+namespace instruction::output
+{
+    struct Operand;
+    struct Parameter;
+}
+
+
+using namespace instruction;
 using namespace foundation;
-
 
 struct BindingWork
 {
-    Declaration*
+    ast::Declaration*
     declaration;
 
-    File*
+    ast::File*
     file;
 
-    BindingWork(Declaration* declaration, File* file):
+    BindingWork(ast::Declaration* declaration, ast::File* file):
         declaration(declaration),
         file(file)
     { }
@@ -39,27 +52,27 @@ public:
     performWork(BindingWork& work);
 
     void
-    bindFunction(FunctionDeclaration* declaration);
+    bindFunction(ast::FunctionDeclaration* declaration);
 
-    using SymbolMap = std::map<Utf8StringView, Declaration*>;
+    using SymbolMap = std::map<Utf8StringView, ast::Declaration*>;
 
 private:
 
     static
     thread_local
-    std::map<Utf8StringView, Declaration*>*
+    std::map<Utf8StringView, ast::Declaration*>*
     fileDeclaration;
 
     void
-    bindAssemblyBlock(AssemblyBlock* assemblyBlock, SymbolMap& symbols);
+    bindAssemblyBlock(ast::AssemblyBlock* assemblyBlock, SymbolMap& symbols);
 
     void
     tryBindOperand(output::Operand* operand, SymbolMap& symbols);
 
     void
-    bindCallExpression(CallExpression* callExpression);
+    bindCallExpression(ast::CallExpression* callExpression);
 
-    List<compiler::Expression*>
+    List<ast::Expression*>
     _forwardedReferences;
 };
 
