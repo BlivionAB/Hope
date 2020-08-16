@@ -34,6 +34,7 @@ enum class OperandKind : std::uint64_t
     Register,
     Argument,
     StringReference,
+    FunctionReference,
     AssemblyReference,
     VariableReference,
     Label,
@@ -76,14 +77,6 @@ struct DataReference : Operand
     DataReference(OperandKind kind, Utf8StringView* data):
         data(data),
         Operand(kind)
-    { }
-};
-
-
-struct StringReference : DataReference
-{
-    StringReference(Utf8StringView* data):
-        DataReference(OperandKind::StringReference, data)
     { }
 };
 
@@ -162,23 +155,51 @@ struct Int64 : Operand
     std::uint64_t
     value;
 
-    std::uint32_t
-    relocationOffset = 0;
-
-    RelocationType
-    relocationType = RelocationType::None;
-
     Int64(std::uint64_t value):
         value(value),
         Operand(OperandKind::Int64)
     { }
+};
 
-    Int64(RelocationType relocationType, std::uint32_t relocationOffset):
-        value(0/* Will be relocated by the linker/loader. */),
-        relocationType(relocationType),
-        relocationOffset(relocationOffset),
 
-        Operand(OperandKind::Int64)
+struct RelocationOperand : Operand
+{
+    std::uint32_t
+    dataOffset;
+
+    std::uint32_t
+    textOffset;
+
+    Symbol*
+    symbol;
+
+    RelocationOperand(OperandKind kind):
+        Operand(kind)
+    { }
+};
+
+
+struct StringReference : RelocationOperand
+{
+    StringReference(std::uint32_t dataOffset):
+        RelocationOperand(OperandKind::StringReference)
+    {
+        this->dataOffset = dataOffset;
+    }
+};
+
+
+struct FunctionReference : RelocationOperand
+{
+    const Utf8StringView
+    reference;
+
+    Symbol*
+    symbol;
+
+    FunctionReference(const Utf8StringView reference):
+        reference(reference),
+        RelocationOperand(OperandKind::FunctionReference)
     { }
 };
 
@@ -220,6 +241,12 @@ struct Routine
 
     Symbol*
     symbol;
+
+    List<RelocationOperand*>*
+    symbolicRelocations;
+
+    List<RelocationOperand*>*
+    relativeRelocations;
 };
 
 

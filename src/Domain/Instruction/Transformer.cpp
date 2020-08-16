@@ -10,9 +10,11 @@ thread_local
 List<Symbol*>*
 Transformer::symbols = nullptr;
 
+
 thread_local
 std::uint64_t
 Transformer::_symbolOffset = 0;
+
 
 Transformer::Transformer(const CallingConvention* callingConvention, std::queue<output::Routine*>& routines, std::mutex& routineWorkMutex, List<Utf8StringView*>* cstrings, std::uint64_t& cstringOffset, std::mutex& dataMutex):
     _callingConvention(callingConvention),
@@ -32,9 +34,7 @@ Transformer::transform(ast::Declaration* declaration)
     if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
     {
         ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
-        auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, &functionDeclaration->name->name);
-        _symbolOffset += functionDeclaration->name->name.size() + 1;
-        symbols->emplace(symbol);
+        auto symbol = createSymbol(functionDeclaration);
         output::Function* _function = createFunction(functionDeclaration->name->name, symbol);
         std::size_t offset = 0;
         unsigned int index = 0;
@@ -196,8 +196,8 @@ Transformer::transformCallExpression(ast::CallExpression* callExpression, List<o
         assignedParameters++;
     }
     auto instruction = createInstruction(embedded::InstructionType::Call);
-    Utf8StringView symbol = getSymbol(callExpression);
-    instruction->operand1 = new output::Label(symbol);
+    Utf8StringView reference = getSymbolReference(callExpression);
+    instruction->operand1 = new output::FunctionReference(reference);
     routine->add(instruction);
 }
 
@@ -208,24 +208,35 @@ Transformer::transformStringParameter(std::size_t& numberOfParameterRegisters, u
     if (numberOfParameterRegisters > 0)
     {
         std::uint8_t registerIndex = _callingConvention->parameterRegisters[parameterIndex];
-        auto instruction = createInstruction(embedded::InstructionType::Store64);
+        auto instruction = createInstruction(embedded::InstructionType::StoreAddress64);
         instruction->operand1 = new output::Register(registerIndex);
-        instruction->operand2 = new output::Int64(output::RelocationType::CString, _cstringOffset);
+        instruction->operand2 = new output::StringReference(_cstringOffset);
         routine->add(instruction);
     }
 }
 
 
 Utf8String
-Transformer::getSymbol(ast::NamedExpression *expression) const
+Transformer::getSymbolReference(ast::NamedExpression *expression) const
 {
     return expression->referenceDeclaration->symbol;
 }
+
 
 void
 Transformer::addStaticConstantString(const char* start, const char* end)
 {
     _cstrings->add(new Utf8StringView(start, end));
+}
+
+
+Symbol*
+Transformer::createSymbol(const ast::Declaration* declaration)
+{
+    auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, &declaration->name->name);
+    _symbolOffset += declaration->name->name.size() + 1;
+    symbols->add(symbol);
+    return symbol;
 }
 
 

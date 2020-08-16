@@ -18,6 +18,9 @@ namespace elet::domain::compiler::instruction::output
 {
     class AssemblyWriter;
     class ObjectFileWriter;
+    struct StringReference;
+    struct RelocationOperand;
+    struct FunctionReference;
 }
 namespace elet::domain::compiler::instruction
 {
@@ -112,6 +115,25 @@ struct PendingParsingTask
 };
 
 
+struct RelativeRelocationTask
+{
+    output::Routine*
+    routine;
+
+    std::uint64_t
+    offset;
+
+    RelocationOperand*
+    relocation;
+
+    RelativeRelocationTask(output::Routine* routine, std::uint64_t offset, RelocationOperand* relocation):
+        routine(routine),
+        offset(offset),
+        relocation(relocation)
+    { }
+};
+
+
 enum class SymbolSectionIndex : std::uint8_t
 {
     Text,
@@ -121,19 +143,22 @@ enum class SymbolSectionIndex : std::uint8_t
 
 struct Symbol
 {
+    std::uint32_t
+    index = 0;
+
     SymbolSectionIndex
     sectionIndex;
 
     std::uint32_t
-    sectionOffset;
+    textOffset;
 
-    Utf8StringView*
+    const Utf8StringView*
     name;
 
-    Symbol(SymbolSectionIndex sectionIndex, std::uint64_t sectionOffset, Utf8StringView* name):
-        sectionIndex(sectionIndex),
-        sectionOffset(sectionOffset),
-        name(name)
+    Symbol(SymbolSectionIndex sectionIndex, std::uint32_t textOffset, const Utf8StringView* name):
+            sectionIndex(sectionIndex),
+            textOffset(textOffset),
+            name(name)
     { }
 };
 
@@ -181,6 +206,12 @@ private:
 
     void
     acceptAssemblyWritingWork();
+
+    void
+    relocateRelatively(RelocationOperand* relocation, output::Routine* routine, List<RelativeRelocationTask>& relativeRelocationTasks);
+
+    void
+    relocateSymbolically(FunctionReference* relocation);
 
     List<ast::Syntax*>
     _syntaxTree;
@@ -299,8 +330,17 @@ private:
     List<output::Routine*>
     _output;
 
+    std::mutex
+    _outputAdditionMutex;
+
     std::uint64_t
     _outputSize = 0;
+
+    List<RelocationOperand*>
+    _relativeRelocations;
+
+    List<RelocationOperand*>
+    _symbolicRelocations;
 
     const Path*
     _outputFile;
@@ -323,11 +363,23 @@ private:
     List<Symbol*>
     _symbols;
 
+    std::uint32_t
+    _symbolIndex = 0;
+
+    std::map<Utf8StringView, Symbol*>
+    _symbolMap;
+
     std::uint64_t
     _symbolSectionOffset = 0;
 
     std::mutex
     _symbolOffsetWorkMutex;
+
+    std::uint64_t
+    _relocationOffset = 0;
+
+    std::mutex
+    _relocationWorkMutex;
 };
 
 

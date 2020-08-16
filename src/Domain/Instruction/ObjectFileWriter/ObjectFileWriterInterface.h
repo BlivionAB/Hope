@@ -16,6 +16,9 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
+struct RelocationOperand;
+
+
 struct AssemblySegments
 {
     List<Routine*>*
@@ -35,6 +38,12 @@ struct AssemblySegments
 
     std::size_t
     symbolSize;
+
+    List<RelocationOperand*>*
+    symbolicRelocations;
+
+    List<RelocationOperand*>*
+    relativeRelocations;
 };
 
 

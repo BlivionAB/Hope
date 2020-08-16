@@ -2,6 +2,78 @@
 #define ELET_ADDRESSFORM32_H
 
 // 32-bit addressing forms
+#define AF32__EAX__TO__EAX      (std::uint8_t)0x00
+#define AF32__ECX__TO__EAX      (std::uint8_t)0x01
+#define AF32__EDX__TO__EAX      (std::uint8_t)0x02
+#define AF32__EBX__TO__EAX      (std::uint8_t)0x03
+#define AF32__SIB__TO__EAX      (std::uint8_t)0x04
+#define AF32__DISP32__TO__EAX   (std::uint8_t)0x05
+#define AF32__ESI__TO__EAX      (std::uint8_t)0x06
+#define AF32__EDI__TO__EAX      (std::uint8_t)0x07
+
+#define AF32__EAX__TO__ECX      (std::uint8_t)0x08
+#define AF32__ECX__TO__ECX      (std::uint8_t)0x09
+#define AF32__EDX__TO__ECX      (std::uint8_t)0x0a
+#define AF32__EBX__TO__ECX      (std::uint8_t)0x0b
+#define AF32__SIB__TO__ECX      (std::uint8_t)0x0c
+#define AF32__DISP32__TO__ECX   (std::uint8_t)0x0d
+#define AF32__ESI__TO__ECX      (std::uint8_t)0x0e
+#define AF32__EDI__TO__ECX      (std::uint8_t)0x0f
+
+#define AF32__EAX__TO__EDX      (std::uint8_t)0x10
+#define AF32__ECX__TO__EDX      (std::uint8_t)0x11
+#define AF32__EDX__TO__EDX      (std::uint8_t)0x12
+#define AF32__EBX__TO__EDX      (std::uint8_t)0x13
+#define AF32__SIB__TO__EDX      (std::uint8_t)0x14
+#define AF32__DISP32__TO__EDX   (std::uint8_t)0x15
+#define AF32__ESI__TO__EDX      (std::uint8_t)0x16
+#define AF32__EDI__TO__EDX      (std::uint8_t)0x17
+
+#define AF32__EAX__TO__EBX      (std::uint8_t)0x18
+#define AF32__ECX__TO__EBX      (std::uint8_t)0x19
+#define AF32__EDX__TO__EBX      (std::uint8_t)0x1a
+#define AF32__EBX__TO__EBX      (std::uint8_t)0x1b
+#define AF32__SIB__TO__EBX      (std::uint8_t)0x1c
+#define AF32__DISP32__TO__EBX   (std::uint8_t)0x1d
+#define AF32__ESI__TO__EBX      (std::uint8_t)0x1e
+#define AF32__EDI__TO__EBX      (std::uint8_t)0x1f
+
+#define AF32__EAX__TO__ESP      (std::uint8_t)0x20
+#define AF32__ECX__TO__ESP      (std::uint8_t)0x21
+#define AF32__EDX__TO__ESP      (std::uint8_t)0x22
+#define AF32__EBX__TO__ESP      (std::uint8_t)0x23
+#define AF32__SIB__TO__ESP      (std::uint8_t)0x24
+#define AF32__DISP32__TO__ESP   (std::uint8_t)0x25
+#define AF32__ESI__TO__ESP      (std::uint8_t)0x26
+#define AF32__EDI__TO__ESP      (std::uint8_t)0x27
+
+#define AF32__EAX__TO__EBP      (std::uint8_t)0x28
+#define AF32__ECX__TO__EBP      (std::uint8_t)0x29
+#define AF32__EDX__TO__EBP      (std::uint8_t)0x2a
+#define AF32__EBX__TO__EBP      (std::uint8_t)0x2b
+#define AF32__SIB__TO__EBP      (std::uint8_t)0x2c
+#define AF32__DISP32__TO__EBP   (std::uint8_t)0x2d
+#define AF32__ESI__TO__EBP      (std::uint8_t)0x2e
+#define AF32__EDI__TO__EBP      (std::uint8_t)0x2f
+
+#define AF32__EAX__TO__ESI      (std::uint8_t)0x30
+#define AF32__ECX__TO__ESI      (std::uint8_t)0x31
+#define AF32__EDX__TO__ESI      (std::uint8_t)0x32
+#define AF32__EBX__TO__ESI      (std::uint8_t)0x33
+#define AF32__SIB__TO__ESI      (std::uint8_t)0x34
+#define AF32__DISP32__TO__ESI   (std::uint8_t)0x35
+#define AF32__ESI__TO__ESI      (std::uint8_t)0x36
+#define AF32__EDI__TO__ESI      (std::uint8_t)0x37
+
+#define AF32__EAX__TO__EDI      (std::uint8_t)0x38
+#define AF32__ECX__TO__EDI      (std::uint8_t)0x39
+#define AF32__EDX__TO__EDI      (std::uint8_t)0x3a
+#define AF32__EBX__TO__EDI      (std::uint8_t)0x3b
+#define AF32__SIB__TO__EDI      (std::uint8_t)0x3c
+#define AF32__DISP32__TO__EDI   (std::uint8_t)0x3d
+#define AF32__ESI__TO__EDI      (std::uint8_t)0x3e
+#define AF32__EDI__TO__EDI      (std::uint8_t)0x3f
+
 #define AF32__EAX_PLUS_DISP8__TO__EAX (std::uint8_t)0x40
 #define AF32__ECX_PLUS_DISP8__TO__EAX (std::uint8_t)0x41
 #define AF32__EDX_PLUS_DISP8__TO__EAX (std::uint8_t)0x42

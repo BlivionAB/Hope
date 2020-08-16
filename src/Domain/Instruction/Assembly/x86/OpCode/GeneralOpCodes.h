@@ -14,4 +14,15 @@
 #define OP_PUSH_rSI 0x56
 #define OP_PUSH_rDI 0x57
 
+
+
+#define OP_TWO_BYTE_PREFIX  (std::uint8_t)0x0f
+#define OP_SYSCALL          (std::uint8_t)0x05
+
+#define OP_LEA_Gv_M (std::uint8_t)(0x8d)
+
+#define OP_CALL     (std::uint8_t)(0xe8)
+
+
+
 #endif //ELET_GENERALOPCODES_H

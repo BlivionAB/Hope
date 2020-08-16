@@ -31,6 +31,7 @@ namespace output
     struct Function;
     struct Parameter;
     struct Operand;
+    struct FunctionReference;
 }
 using namespace compiler;
 
@@ -95,6 +96,9 @@ public:
 
 private:
 
+    Symbol*
+    createSymbol(const ast::Declaration *declaration);
+
     output::Instruction*
     createInstruction(embedded::InstructionType type);
 
@@ -117,7 +121,7 @@ private:
     lazilyResolveTypeSize(ast::Type* type) const;
 
     Utf8String
-    getSymbol(ast::NamedExpression *expression) const;
+    getSymbolReference(ast::NamedExpression *expression) const;
 
     void
     transformCallExpression(ast::CallExpression* callExpression, List<output::Instruction*>* routine);

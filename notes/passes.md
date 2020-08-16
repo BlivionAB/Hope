@@ -18,6 +18,10 @@ We tokenize a stream of characters into tokens, which the parser then combines i
 
 The binder binds references to their respective declarations. For easy, declaration lookup in a different pass.
 
+## Overload binding of call expressions
+
+We don't do the binding of call expressions in this stage. It's on the checking stage where we can do overload resolution, where we actually do the real binding.
+
 _Note 1, the binding step cannot happen in the same step as in parsing and scanning, since we support hoisted references(you don't need to declare first before reference)_
 
 

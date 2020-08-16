@@ -10,25 +10,30 @@ thread_local
 std::uint64_t
 AssemblyWriter::_symbolOffset = 0;
 
+
 AssemblyWriter::AssemblyWriter(
+    std::map<Utf8StringView, Symbol*>& symbolMap,
     compiler::AssemblyTarget target) :
     _target(target)
 {
     switch (_target)
     {
-        case compiler::AssemblyTarget::Baseline:
-//            _assemblyWriter = new BaselineWriter();
+        case AssemblyTarget::Baseline:
+            _assemblyWriter = new BaselineWriter(symbolMap);
             break;
-        case compiler::AssemblyTarget::x86_64:
-            _assemblyWriter = new X86_64Writer();
+        case AssemblyTarget::x86_64:
+            _assemblyWriter = new X86_64Writer(symbolMap);
             break;
     }
 }
 
+
 void
 AssemblyWriter::writeRoutine(Routine *routine)
 {
-    routine->symbol->sectionOffset = _symbolOffset;
+    routine->symbolicRelocations = new List<RelocationOperand*>();
+    routine->relativeRelocations = new List<RelocationOperand*>();
+    routine->symbol->textOffset = _symbolOffset;
     _assemblyWriter->writeRoutine(routine);
     _symbolOffset += routine->machineInstructions->size();
 }

@@ -6,13 +6,14 @@
 namespace elet::domain::compiler::instruction::output
 {
 
+
 thread_local
 TextWriter*
 BaselineWriter::_tw = nullptr;
 
 
-BaselineWriter::BaselineWriter():
-    AssemblyWriterInterface()
+BaselineWriter::BaselineWriter(std::map<Utf8StringView, Symbol*>& symbolMap):
+    AssemblyWriterInterface(symbolMap)
 {
 
 }
@@ -28,8 +29,9 @@ BaselineWriter::~BaselineWriter()
 
 
 void
-BaselineWriter::writeRoutine(Routine *routine)
+BaselineWriter::writeRoutine(Routine* routine)
 {
+    _currentRoutine = routine;
     _tw = createTextWriter();
     if (routine->kind == RoutineKind::Routine)
     {
@@ -203,7 +205,7 @@ TextWriter*
 BaselineWriter::createTextWriter()
 {
     auto textWriter = new TextWriter();
-    _textWriters.emplace(textWriter);
+    _textWriters.add(textWriter);
     return textWriter;
 }
 

@@ -31,7 +31,7 @@ class BaselineWriter : public AssemblyWriterInterface
 
 public:
 
-    BaselineWriter();
+    BaselineWriter(std::map<Utf8StringView, Symbol*>& symbolMap);
 
     ~BaselineWriter();
 
@@ -44,6 +44,9 @@ private:
     thread_local
     TextWriter*
     _tw;
+
+    output::Routine*
+    _currentRoutine;
 
     List<TextWriter*>
     _textWriters;

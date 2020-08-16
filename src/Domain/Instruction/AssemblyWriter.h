@@ -24,7 +24,9 @@ class AssemblyWriter
 
 public:
 
-    AssemblyWriter(AssemblyTarget target);
+    AssemblyWriter(
+        std::map<Utf8StringView, Symbol*>& symbolMap,
+        AssemblyTarget target);
 
     void
     writeRoutine(Routine *routine);
@@ -34,13 +36,13 @@ private:
     AssemblyTarget
     _target;
 
-    AssemblyWriterInterface*
-    _assemblyWriter;
-
     static
     thread_local
     std::uint64_t
     _symbolOffset;
+
+    AssemblyWriterInterface*
+    _assemblyWriter;
 };
 
 

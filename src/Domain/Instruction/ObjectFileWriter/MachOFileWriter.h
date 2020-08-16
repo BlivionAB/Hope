@@ -38,6 +38,16 @@ using namespace elet::foundation;
 #define S_ATTR_SOME_INSTRUCTIONS 0x00000400
 #define S_CSTRING_LITERALS       0x00000002
 
+#define RELOCATION_TYPE_X86_64_UNSIGNED     0x0
+#define RELOCATION_TYPE_X86_64_SIGNED       0x1
+#define RELOCATION_TYPE_X86_64_BRANCH       0x2
+#define RELOCATION_TYPE_X86_64_GOT_LOAD     0x3
+#define RELOCATION_TYPE_X86_64_GOT          0x4
+#define RELOCATION_TYPE_X86_64_SUBTRACTOR   0x5
+#define RELOCATION_TYPE_X86_64_SIGNED1      0x6
+#define RELOCATION_TYPE_X86_64_SIGNED2      0x7
+#define RELOCATION_TYPE_X86_64_SIGNED4      0x8
+
 
 struct MachHeader64
 {
@@ -189,6 +199,20 @@ struct Section64
 };
 
 
+struct RelocationInfo
+{
+    std::uint32_t
+    address;
+
+    std::uint32_t
+    symbolNumber: 24,
+    programCounterRelative: 1,
+    length: 2,
+    external: 1,
+    type: 4;
+};
+
+
 struct SymbolTableCommand
 {
     /* LC_SYMTAB */
@@ -324,9 +348,6 @@ private:
     layoutDataOffsetInSections();
 
     void
-    layoutRelocationOffsetInSections();
-
-    void
     layoutSection(const char *sectionName, const char *segmentName, SectionDataType dataType, void *data, std::size_t size, std::uint32_t alignment, std::uint32_t flags);
 
     void
@@ -345,7 +366,13 @@ private:
     writeSectionData();
 
     void
+    writeRelocations(const List<RelocationOperand*>* relocations);
+
+    void
     writeSymbols(const AssemblySegments &segments);
+
+    void
+    layoutRelocations(const List<RelocationOperand*>* relocations);
 
     void
     layoutSymbolTableCommand(const AssemblySegments& segments);
@@ -365,7 +392,10 @@ private:
 
     template<typename T>
     void
-    write(const T&& type);
+    write(const T&& data);
+
+    std::size_t
+    _written;
 
     std::ofstream*
     _outputFileStream;

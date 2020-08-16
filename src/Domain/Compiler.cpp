@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <Foundation/Path.h>
 #include <Foundation/File.h>
+#include <iostream>
 
 
 namespace elet::domain::compiler
@@ -17,7 +18,7 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
     _assemblyTarget(assemblyTarget),
     _objectFileTarget(objectFileTarget),
     _parser(new ast::Parser(this)),
-    _assemblyWriter(new AssemblyWriter(assemblyTarget)),
+    _assemblyWriter(new AssemblyWriter(_symbolMap, assemblyTarget)),
     _objectFileWriter(new ObjectFileWriter(objectFileTarget)),
     _binder(new Binder())
 {
@@ -344,8 +345,10 @@ Compiler::acceptTransformationWork()
         for (Symbol* symbol : *_transformer->symbols)
         {
             thisThreadTotalOffset += symbol->name->size() + 1;
-            symbol->sectionOffset += _symbolSectionOffset;
+            symbol->textOffset += _symbolSectionOffset;
+            symbol->index = _symbolIndex;
             _symbols.add(symbol);
+            _symbolMap.insert(std::pair(*symbol->name, symbol));
         }
         _symbolSectionOffset += thisThreadTotalOffset;
     }
@@ -384,8 +387,9 @@ Compiler::acceptAssemblyWritingWork()
 //        _display_mutex.unlock();
         _pendingWritingTasks++;
         _assemblyWriter->writeRoutine(routine);
+        _outputAdditionMutex.lock();
         _output.add(routine);
-        _outputSize += routine->machineInstructions->size();
+        _outputAdditionMutex.unlock();
         _pendingWritingTasks--;
     }
 }
@@ -393,6 +397,31 @@ Compiler::acceptAssemblyWritingWork()
 void
 Compiler::writeToOutputFile()
 {
+    List<RelativeRelocationTask> relativeRelocationTasks;
+    for (const auto routine : _output)
+    {
+        routine->symbol->textOffset = _outputSize;
+        for (const auto relocation : *routine->symbolicRelocations)
+        {
+            relocateSymbolically(reinterpret_cast<FunctionReference*>(relocation));
+        }
+        for (const auto relocation : *routine->relativeRelocations)
+        {
+            relocateRelatively(relocation, routine, relativeRelocationTasks);
+        }
+        auto size = routine->machineInstructions->size();
+        _outputSize += size;
+    }
+
+    // Relocate relatively
+    for (const RelativeRelocationTask& relocationTask : relativeRelocationTasks)
+    {
+        if (relocationTask.relocation->kind == OperandKind::StringReference)
+        {
+            auto address = reinterpret_cast<std::uint32_t*>(&(*relocationTask.routine->machineInstructions)[relocationTask.offset]);
+            *address = (std::uint32_t)(_outputSize - relocationTask.relocation->textOffset + 4) + relocationTask.relocation->dataOffset;
+        }
+    }
     auto directory = Path::folderOf(*_outputFile);
     if (!Path::exists(directory))
     {
@@ -405,8 +434,29 @@ Compiler::writeToOutputFile()
         _cstringOffset,
         &_symbols,
         _symbolSectionOffset,
+        &_symbolicRelocations,
+        &_relativeRelocations,
     };
     _objectFileWriter->writeToFile(*_outputFile, segments);
+}
+
+
+inline
+void
+Compiler::relocateSymbolically(FunctionReference* relocation)
+{
+    relocation->textOffset += _outputSize;
+    _symbolicRelocations.add(relocation);
+}
+
+
+inline
+void
+Compiler::relocateRelatively(RelocationOperand* relocation, output::Routine* routine, List<RelativeRelocationTask>& relativeRelocationTasks)
+{
+    relativeRelocationTasks.emplace(routine, relocation->textOffset, relocation);
+    relocation->textOffset += _outputSize;
+    _relativeRelocations.add(relocation);
 }
 
 

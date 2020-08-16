@@ -5,9 +5,17 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
+X86_64Writer::X86_64Writer(std::map<Utf8StringView, Symbol*>& symbolMap):
+    AssemblyWriterInterface(symbolMap)
+{
+
+}
+
+
 void
 X86_64Writer::writeRoutine(Routine *routine)
 {
+    _currentRoutine = routine;
     _routineOutput = new List<std::uint8_t>();
     if (routine->kind == RoutineKind::Function)
     {
@@ -39,10 +47,33 @@ X86_64Writer::writeRoutine(Routine *routine)
         {
             switch (instruction->type)
             {
-                case embedded::InstructionType::SysCall:
-                    _routineOutput->add(OPCODE_TWO_BYTE_PREFIX);
-                    _routineOutput->add(OPCODE_SYSCALL);
+                case embedded::InstructionType::Call:
+                {
+                    _routineOutput->add(OP_CALL);
+                    std::uint32_t offset = _routineOutput->size();
+                    writeUint32(0);
+                    auto functionReference = reinterpret_cast<FunctionReference*>(instruction->operand1);
+                    functionReference->textOffset = offset;
+                    functionReference->symbol = _symbolMap.find(functionReference->reference)->second;
+                    _currentRoutine->symbolicRelocations->add(functionReference);
                     break;
+                }
+                case embedded::InstructionType::SysCall:
+                    _routineOutput->add(OP_TWO_BYTE_PREFIX);
+                    _routineOutput->add(OP_SYSCALL);
+                    break;
+                case embedded::InstructionType::StoreAddress64:
+                {
+                    auto _register = reinterpret_cast<Register *>(instruction->operand1);
+                    if (instruction->operand2->kind == OperandKind::StringReference) {
+                        // Put this here temporarily, until we have support for references.
+                        _routineOutput->add(REX_PREFIX_MAGIC | REX_PREFIX_W);
+
+                        auto stringReference = reinterpret_cast<StringReference *>(instruction->operand2);
+                        writeLoadEffectiveAddressFromStringReference(_register->index, stringReference);
+                    }
+                    break;
+                }
                 case embedded::InstructionType::Store64:
 //                    _routineOutput->add(REX_PREFIX_MAGIC | REX_PREFIX_W);
                 case embedded::InstructionType::Store32:
@@ -56,7 +87,7 @@ X86_64Writer::writeRoutine(Routine *routine)
                         }
                         else if (instruction->operand2->kind == OperandKind::Int64)
                         {
-                            // Put this here temporarily, unitl we have support for references.
+                            // Put this here temporarily, until we have support for references.
                             _routineOutput->add(REX_PREFIX_MAGIC | REX_PREFIX_W);
 
                             auto int64 = reinterpret_cast<Int64*>(instruction->operand2);
@@ -70,6 +101,7 @@ X86_64Writer::writeRoutine(Routine *routine)
 
     routine->machineInstructions = _routineOutput;
 }
+
 
 void
 X86_64Writer::writeMoveImmediateOpcode(unsigned int registerIndex)
@@ -107,9 +139,8 @@ X86_64Writer::writeMoveImmediateOpcode(unsigned int registerIndex)
 
 
 void
-X86_64Writer::addInt32(Int32* value)
+X86_64Writer::writeUint32(std::uint32_t integer)
 {
-    std::uint32_t integer = value->value;
     _routineOutput->add(integer & (std::uint8_t)0xff);
     _routineOutput->add((integer >> (std::uint8_t)8) & (std::uint8_t)0xff);
     _routineOutput->add((integer >> (std::uint8_t)16) & (std::uint8_t)0xff);
@@ -118,9 +149,8 @@ X86_64Writer::addInt32(Int32* value)
 
 
 void
-X86_64Writer::addInt64(Int64* value)
+X86_64Writer::writeUint64(std::uint64_t integer)
 {
-    std::uint64_t integer = value->value;
     _routineOutput->add((std::uint8_t)integer & (std::uint8_t)0xff);
     _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)8) & (std::uint8_t)0xff);
     _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)16) & (std::uint8_t)0xff);
@@ -133,10 +163,22 @@ X86_64Writer::addInt64(Int64* value)
 
 
 void
+X86_64Writer::writeLoadEffectiveAddressFromStringReference(unsigned char registerIndex, StringReference* stringReference)
+{
+    _routineOutput->add(OP_LEA_Gv_M);
+    ModRmByte mrRmByte { 5, registerIndex, 0 };
+    _routineOutput->add(*(std::uint8_t*)&mrRmByte);
+    _currentRoutine->relativeRelocations->add(stringReference);
+    stringReference->textOffset = _routineOutput->size();
+    writeUint32(0);
+}
+
+
+void
 X86_64Writer::writeMoveInt64ToRegisterOpcode(unsigned int registerIndex, Int64* value)
 {
     writeMoveImmediateOpcode(registerIndex);
-    addInt64(value);
+    writeUint64(value->value);
 }
 
 
@@ -144,7 +186,7 @@ void
 X86_64Writer::writeMoveInt32ToRegisterOpcode(unsigned int registerIndex, Int32* value)
 {
     writeMoveImmediateOpcode(registerIndex);
-    addInt32(value);
+    writeUint32(value->value);
 }
 
 

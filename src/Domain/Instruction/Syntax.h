@@ -34,6 +34,8 @@ enum class InstructionType
 {
     Store32,
     Store64,
+    StoreAddress32,
+    StoreAddress64,
     Call,
     SysCall,
 };
@@ -43,6 +45,8 @@ const HashTableMap<InstructionType, const char*> instructionTypeToString =
 {
     {InstructionType::Store32, "Store32" },
     {InstructionType::Store64, "Store64" },
+    {InstructionType::StoreAddress32, "StoreAddress32" },
+    {InstructionType::StoreAddress64, "StoreAddress64" },
     {InstructionType::SysCall, "SysCall" },
     {InstructionType::Call,    "Call" },
 };

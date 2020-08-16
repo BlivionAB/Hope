@@ -26,6 +26,7 @@ MachOFileWriter::writeCommands(const AssemblySegments &segments)
     writeSectionCommands();
     writeSymbolTableCommand();
     writeSectionData();
+    writeRelocations(segments.symbolicRelocations);
     writeSymbols(segments);
 }
 
@@ -47,12 +48,23 @@ MachOFileWriter::layoutCommands(const AssemblySegments& segments)
     layoutSection("__text", "__TEXT", SectionDataType::Assembly, segments.text, segments.textSize, 1, (S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS));
     layoutSection("__cstring", "__TEXT", SectionDataType::CString, segments.cstrings, segments.cstringSize, 1, S_CSTRING_LITERALS);
     layoutDataOffsetInSections();
+    layoutRelocations(segments.symbolicRelocations);
     auto symbolOffset = _commandEndOffset + _dataOffset;
     _symbolTableCommand.symbolTableOffset = symbolOffset;
     auto stringTableOffset = segments.symbols->size() * sizeof(SymbolEntry64);
     _symbolTableCommand.stringTableOffset = _symbolTableCommand.symbolTableOffset + stringTableOffset;
     _symbolTableCommand.stringTableSize = segments.symbolSize;
     _segmentCommand.fileOffset = _commandEndOffset;
+}
+
+
+void
+MachOFileWriter::layoutRelocations(const List<RelocationOperand*>* relocations)
+{
+    auto textSection = _layoutedSections[0]->definition;
+    textSection->relocationOffset = _commandEndOffset + _dataOffset;
+    auto size = textSection->numberOfRelocations = relocations->size();
+    _dataOffset += size * sizeof(RelocationInfo);
 }
 
 
@@ -81,6 +93,7 @@ MachOFileWriter::layoutDataOffsetInSections()
     }
 }
 
+
 void
 MachOFileWriter::writeSectionCommands()
 {
@@ -100,6 +113,7 @@ MachOFileWriter::writeSectionData()
         {
             case SectionDataType::Assembly:
             {
+
                 auto routines = reinterpret_cast<const List<Routine*>*>(sectionData->data);
                 for (const auto routine : *routines)
                 {
@@ -127,6 +141,26 @@ MachOFileWriter::writeSectionData()
 }
 
 
+void
+MachOFileWriter::writeRelocations(const List<RelocationOperand*>* relocations)
+{
+    for (const auto relocation : *relocations)
+    {
+        if (relocation->symbol)
+        {
+            write<RelocationInfo>({
+                relocation->textOffset,
+                relocation->symbol->index,
+                1,
+                4,
+                1,
+                RELOCATION_TYPE_X86_64_BRANCH
+            });
+        }
+    }
+}
+
+
 void 
 MachOFileWriter::writeSymbols(const AssemblySegments& segments) 
 {
@@ -138,7 +172,7 @@ MachOFileWriter::writeSymbols(const AssemblySegments& segments)
             N_SECT | N_EXT,
             1,
             0,
-            symbol->sectionOffset,
+            symbol->textOffset,
         };
         write<SymbolEntry64>(s);
         offset += symbol->name->size() + 1;
@@ -148,17 +182,6 @@ MachOFileWriter::writeSymbols(const AssemblySegments& segments)
     {
         writeStringView(*symbol->name);
         writeNullCharacter();
-    }
-}
-
-
-void
-MachOFileWriter::layoutRelocationOffsetInSections()
-{
-    for (const auto sectionData : _layoutedSections)
-    {
-        sectionData->definition->relocationOffset = _commandEndOffset + _dataOffset;
-        write<Section64>(*sectionData->definition);
     }
 }
 
@@ -205,14 +228,16 @@ template<typename T>
 void MachOFileWriter::write(const T& data)
 {
     _outputFileStream->write((char*)&data, sizeof(data));
+    _written += sizeof(data);
 }
 
 
 template<typename T>
-void MachOFileWriter::write(const T&& some)
+void MachOFileWriter::write(const T&& data)
 {
-    auto ptr = reinterpret_cast<unsigned char*>(&some);
-    _output.insert(_output.end(), ptr, ptr + sizeof(some));
+    auto ptr = reinterpret_cast<const unsigned char*>(&data);
+    _output.insert(_output.end(), ptr, ptr + sizeof(data));
+    _written += sizeof(data);
 }
 
 
@@ -220,6 +245,7 @@ void
 MachOFileWriter::writeStringView(const Utf8StringView &string)
 {
     std::size_t size = string.size();
+    _written += size;
     _outputFileStream->write(string.source(), size);
 }
 
@@ -227,6 +253,7 @@ MachOFileWriter::writeStringView(const Utf8StringView &string)
 void
 MachOFileWriter::writeNullCharacter()
 {
+    _written++;
     _outputFileStream->write("\0", 1);
 }
 
