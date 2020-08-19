@@ -22,6 +22,16 @@ const char*
 Parser::_lastStatementLocationEnd = nullptr;
 
 
+thread_local
+List<Symbol*>*
+Parser::symbols = nullptr;
+
+
+thread_local
+std::uint64_t
+Parser::_symbolOffset = 0;
+
+
 Parser::Parser(Compiler* compiler):
     _compiler(compiler),
     _files(compiler->files),
@@ -53,7 +63,8 @@ Parser::performWork(const ParsingTask& task)
             if (statement->labels & DECLARATION_LABEL)
             {
                 Declaration* declaration = reinterpret_cast<Declaration*>(statement);
-                task.sourceFile->declarations[declaration->name->name] = declaration;
+                task.sourceFile->declarations[declaration->symbol->name] = declaration;
+                declaration->sourceFile = task.sourceFile;
             }
             _lastStatementLocationStart = statement->end;
             statements.add(statement);
@@ -171,7 +182,7 @@ Parser::parseFunctionDeclaration()
     expectToken(Token::Colon);
     _function->type = parseType();
     _function->body = parseFunctionBody();
-    _function->symbol = Utf8String(_function->name->name.toString()) + parameterListResult.display;
+    addSymbol(_function, _function->name->name.toString() + parameterListResult.display);
     finishSyntax<FunctionDeclaration>(_function);
     return _function;
 }
@@ -199,7 +210,7 @@ Parser::parseVariableDeclaration()
 }
 
 
-Identifier*
+Name*
 Parser::parseIdentifier()
 {
     expectToken(Token::Identifier);
@@ -406,10 +417,10 @@ Parser::parseType()
 }
 
 
-Identifier*
+Name*
 Parser::createIdentifer()
 {
-    Identifier* identifier = createSyntax<Identifier>(SyntaxKind::Identifier);
+    Name* identifier = createSyntax<Name>(SyntaxKind::Identifier);
     identifier->name = getTokenValue();
     finishSyntax(identifier);
     return identifier;
@@ -634,7 +645,7 @@ Parser::parseModuleDeclaration()
 }
 
 bool
-Parser::hasEqualIdentifier(Identifier *id1, Identifier* id2)
+Parser::hasEqualIdentifier(Name *id1, Name* id2)
 {
     return id1->name == id2->name;
 }
@@ -738,7 +749,6 @@ Parser::parseInterfaceDeclaration()
         {
             auto result = parseParameterList();;
             property->parameters = result.parameterList;
-            property->symbol = Utf8String(property->name->name.toString()) + result.display;
         }
         expectToken(Token::Colon);
         property->type = parseType();
@@ -905,6 +915,16 @@ Parser::getParameterDisplay(ParameterDeclaration* parameter)
         label += "*";
     }
     return label;
+}
+
+
+void
+Parser::addSymbol(Declaration* declaration, const Utf8StringView& identifier)
+{
+    auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, identifier);
+    _symbolOffset += declaration->name->name.size() + 1;
+    symbols->add(symbol);
+    declaration->symbol = symbol;
 }
 
 

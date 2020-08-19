@@ -45,7 +45,7 @@ MachOFileWriter::layoutCommands(const AssemblySegments& segments)
 {
     layoutSegmentCommand();
     layoutSymbolTableCommand(segments);
-    layoutSection("__text", "__TEXT", SectionDataType::Assembly, segments.text, segments.textSize, 1, (S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS));
+    layoutSection("__text", "__TEXT", SectionDataType::Assembly, segments.text, segments.textSize, 4, (S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS));
     layoutSection("__cstring", "__TEXT", SectionDataType::CString, segments.cstrings, segments.cstringSize, 1, S_CSTRING_LITERALS);
     layoutDataOffsetInSections();
     layoutRelocations(segments.symbolicRelocations);
@@ -235,8 +235,7 @@ void MachOFileWriter::write(const T& data)
 template<typename T>
 void MachOFileWriter::write(const T&& data)
 {
-    auto ptr = reinterpret_cast<const unsigned char*>(&data);
-    _output.insert(_output.end(), ptr, ptr + sizeof(data));
+    _outputFileStream->write((char*)&data, sizeof(data));
     _written += sizeof(data);
 }
 

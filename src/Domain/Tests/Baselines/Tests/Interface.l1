@@ -1,0 +1,20 @@
+if House
+{
+    name: String;
+}
+
+
+obj House
+{
+    name: String;
+}
+
+
+fn TearDownHoust(): void
+{
+    var myHouse: House =
+    {
+         name: "owijedodjd",
+    };
+
+}

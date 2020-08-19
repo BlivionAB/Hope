@@ -194,9 +194,6 @@ struct FunctionReference : RelocationOperand
     const Utf8StringView
     reference;
 
-    Symbol*
-    symbol;
-
     FunctionReference(const Utf8StringView reference):
         reference(reference),
         RelocationOperand(OperandKind::FunctionReference)

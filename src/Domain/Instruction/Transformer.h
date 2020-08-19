@@ -84,15 +84,16 @@ class Transformer
 {
 public:
 
-    Transformer(const CallingConvention* callingConvention, std::queue<output::Routine*>& routines, std::mutex& routineWorkMutex, List<Utf8StringView*>* data, std::uint64_t& cstringOffset, std::mutex& dataMutex);
+    Transformer(
+        const CallingConvention* callingConvention,
+        std::queue<output::Routine*>& routines,
+        std::mutex& routineWorkMutex,
+        List<Utf8StringView*>* data,
+        std::uint64_t& cstringOffset,
+        std::mutex& dataMutex);
 
     output::Routine*
     transform(ast::Declaration* declaration);
-
-    static
-    thread_local
-    List<Symbol*>*
-    symbols;
 
 private:
 
@@ -156,11 +157,6 @@ private:
      */
     std::uint64_t&
     _cstringOffset;
-
-    static
-    thread_local
-    std::uint64_t
-    _symbolOffset;
 
     std::mutex&
     _dataMutex;

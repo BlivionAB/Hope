@@ -26,15 +26,16 @@ namespace instruction::output
 using namespace instruction;
 using namespace foundation;
 
-struct BindingWork
+
+struct DeclarationWork
 {
     ast::Declaration*
     declaration;
 
-    ast::File*
+    ast::SourceFile*
     file;
 
-    BindingWork(ast::Declaration* declaration, ast::File* file):
+    DeclarationWork(ast::Declaration* declaration, ast::SourceFile* file):
         declaration(declaration),
         file(file)
     { }
@@ -49,7 +50,7 @@ public:
     Binder();
 
     void
-    performWork(BindingWork& work);
+    performWork(DeclarationWork& work);
 
     void
     bindFunction(ast::FunctionDeclaration* declaration);

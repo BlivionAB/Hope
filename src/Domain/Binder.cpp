@@ -16,7 +16,7 @@ Binder::Binder()
 
 
 void
-Binder::performWork(BindingWork& work)
+Binder::performWork(DeclarationWork& work)
 {
     fileDeclaration = &work.file->declarations;
     if (work.declaration->kind == ast::SyntaxKind::FunctionDeclaration)
@@ -40,9 +40,9 @@ Binder::bindFunction(ast::FunctionDeclaration* declaration)
             case ast::SyntaxKind::AssemblyBlock:
                 bindAssemblyBlock(reinterpret_cast<ast::AssemblyBlock*>(statement), declaration->body->symbols);
                 break;
-            case ast::SyntaxKind::CallExpression:
-                bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
-                break;
+//            case ast::SyntaxKind::CallExpression:
+//                bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
+//                break;
         }
     }
 }
@@ -73,17 +73,18 @@ Binder::tryBindOperand(output::Operand* operand, SymbolMap& symbols)
     }
 }
 
-void
-Binder::bindCallExpression(ast::CallExpression* callExpression)
-{
-    auto result = fileDeclaration->find(callExpression->name->name);
-    if (result == fileDeclaration->end())
-    {
-        _forwardedReferences.add(callExpression);
-        return;
-    }
-    callExpression->referenceDeclaration = result->second;
-}
+
+//void
+//Binder::bindCallExpression(ast::CallExpression* callExpression)
+//{
+//    auto result = fileDeclaration->find(callExpression->name->name);
+//    if (result == fileDeclaration->end())
+//    {
+//        _forwardedReferences.add(callExpression);
+//        return;
+//    }
+//    callExpression->referenceDeclaration = result->second;
+//}
 
 
 }

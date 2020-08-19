@@ -12,7 +12,7 @@ fn WriteLine(text: char*, length: lengthof text): void
 }
 
 
-fn OnStart(): void
+fn OnProcessStart(): void
 {
     WriteLine("Some");
 }

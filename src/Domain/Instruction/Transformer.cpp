@@ -6,17 +6,14 @@ namespace elet::domain::compiler::instruction
 using namespace compiler;
 
 
-thread_local
-List<Symbol*>*
-Transformer::symbols = nullptr;
+Transformer::Transformer(
+    const CallingConvention* callingConvention,
+    std::queue<output::Routine*>& routines,
+    std::mutex& routineWorkMutex,
+    List<Utf8StringView*>* cstrings,
+    std::uint64_t& cstringOffset,
+    std::mutex& dataMutex):
 
-
-thread_local
-std::uint64_t
-Transformer::_symbolOffset = 0;
-
-
-Transformer::Transformer(const CallingConvention* callingConvention, std::queue<output::Routine*>& routines, std::mutex& routineWorkMutex, List<Utf8StringView*>* cstrings, std::uint64_t& cstringOffset, std::mutex& dataMutex):
     _callingConvention(callingConvention),
     _routines(routines),
     _routineWorkMutex(routineWorkMutex),
@@ -227,16 +224,6 @@ void
 Transformer::addStaticConstantString(const char* start, const char* end)
 {
     _cstrings->add(new Utf8StringView(start, end));
-}
-
-
-Symbol*
-Transformer::createSymbol(const ast::Declaration* declaration)
-{
-    auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, &declaration->name->name);
-    _symbolOffset += declaration->name->name.size() + 1;
-    symbols->add(symbol);
-    return symbol;
 }
 
 

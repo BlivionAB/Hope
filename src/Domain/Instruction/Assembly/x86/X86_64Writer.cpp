@@ -17,6 +17,7 @@ X86_64Writer::writeRoutine(Routine *routine)
 {
     _currentRoutine = routine;
     _routineOutput = new List<std::uint8_t>();
+    routine->symbol->textOffset = _routineOutput->size();
     if (routine->kind == RoutineKind::Function)
     {
         _routineOutput->add(OP_PUSH_rBP);

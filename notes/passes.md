@@ -13,12 +13,14 @@ The steps that is involved on the compiler are:
 
 We tokenize a stream of characters into tokens, which the parser then combines into the structure that represesents the grammar of the Elet programming language in an Abstract Syntax Tree(AST).
 
+## Symbol
+In the parsing step we also resolve symbol names for all declarations. We separate `name` from `identifier`, name is non-unique string used for lookup of all overloads of a function and identifier of a function is a unique string representing a specific overload(including generic resolution). Generic resolution is done in the checking step, where all the types are resolved.
 
 # Binding 
 
 The binder binds references to their respective declarations. For easy, declaration lookup in a different pass.
 
-## Overload binding of call expressions
+## Overload binding
 
 We don't do the binding of call expressions in this stage. It's on the checking stage where we can do overload resolution, where we actually do the real binding.
 

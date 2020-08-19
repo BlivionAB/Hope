@@ -1,6 +1,7 @@
 #include "Compiler.h"
 #include "Parser.h"
 #include "Binder.h"
+#include "Checker.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <vector>
@@ -8,11 +9,11 @@
 #include <sys/stat.h>
 #include <Foundation/Path.h>
 #include <Foundation/File.h>
-#include <iostream>
 
 
 namespace elet::domain::compiler
 {
+
 
 Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
     _assemblyTarget(assemblyTarget),
@@ -20,7 +21,8 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
     _parser(new ast::Parser(this)),
     _assemblyWriter(new AssemblyWriter(_symbolMap, assemblyTarget)),
     _objectFileWriter(new ObjectFileWriter(objectFileTarget)),
-    _binder(new Binder())
+    _binder(new Binder()),
+    _checker(new Checker())
 {
     const auto callingConvention = new CallingConvention {
        { 7, 6, 3, 2, 8, 9 },
@@ -28,7 +30,7 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
        { 0 },
        1,
     };
-    _transformer = new Transformer(callingConvention, _routines, _transformationWorkMutex, &_cstrings, _cstringOffset, _dataMutex);
+    _transformer = new Transformer(callingConvention, _routines, _transformationWorkMutex, &_cstrings, _cstringOffset, _dataMutex, _symbolMap);
 }
 
 
@@ -58,7 +60,7 @@ Compiler::addFile(const Path& file)
     {
         return;
     }
-    ast::File* compilerFile = new ast::File();
+    ast::SourceFile* compilerFile = new ast::SourceFile();
     files.insert(std::pair(fileString, compilerFile));
     _pendingParsingFiles++;
     static const std::size_t BUFFER_SIZE = 16*1024;
@@ -107,6 +109,7 @@ Compiler::startWorker()
     _startWorkerCondition.notify_one();
     acceptParsingWork();
     acceptBindingWork();
+    acceptCheckingWork();
     acceptTransformationWork();
     acceptAssemblyWritingWork();
     _display_mutex.lock();
@@ -174,36 +177,20 @@ Compiler::endWorkers()
 void
 Compiler::acceptParsingWork()
 {
+    _parser->symbols = new List<Symbol*>();
     while (_compilationStage == CompilationStage::Parsing)
     {
-//        _display_mutex.lock();
-//        std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//        std::cout << "loop" << std::endl;
-//        _display_mutex.unlock();
         std::unique_lock<std::mutex> lock(_parsingWorkMutex);
         _parsingWorkCondition.wait(lock, [&]
         {
-//            std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//            std::cout << "waiting for parsing work" << std::endl;
-//            std::cout << "parsingwork: " << _parsingWork.size() << std::endl;
-//            std::cout << "_pendingParsingFiles: " << _pendingParsingFiles << std::endl;
-//            std::cout << "_pendingParsingTasks: " << _pendingParsingTasks << std::endl;
             return !_parsingWork.empty() || !_pendingParsingWork.empty() || (_pendingParsingFiles == 0 && _pendingParsingTasks == 0);
         });
         if (_compilationStage != CompilationStage::Parsing)
         {
-//            _display_mutex.lock();
-//            std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//            std::cout << "break: _compilationStage != CompilationStage::Parsing" << std::endl;
-//            _display_mutex.unlock();
             break;
         }
         if (!_parsingWork.empty())
         {
-//            _display_mutex.lock();
-//            std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//            std::cout << "taking parsing work"<< std::endl;
-//            _display_mutex.unlock();
             _pendingParsingTasks++;
             ParsingTask task = _parsingWork.front();
             _parsingWork.pop();
@@ -231,32 +218,38 @@ Compiler::acceptParsingWork()
                     if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
                     {
                         ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
-                        _bindingWork.push(new BindingWork(functionDeclaration, task.sourceFile));
+                        _bindingWork.push(new DeclarationWork(functionDeclaration, task.sourceFile));
                     }
                     else
                     {
-                        _transformationWork.push(declaration);
+                        throw std::logic_error("Doesnt accept other works now");
                     }
                 }
                 _syntaxTree.add(statement);
             }
-//            _display_mutex.lock();
-//            std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//            std::cout << "ended parsing tasks"<< std::endl;
-//            _display_mutex.unlock();
+
             _pendingParsingTasks--;
             // Break early, instead of waiting for condition, that might not fire.
             if (_pendingParsingFiles == 0 && _pendingParsingTasks == 0)
             {
                 _compilationStage = CompilationStage::Binding;
-//                _display_mutex.lock();
-//                std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//                std::cout << "break" << std::endl;
-//                _display_mutex.unlock();
                 _parsingWorkCondition.notify_all();
                 break;
             }
         }
+    }
+
+    {
+        std::unique_lock symbolOffsetWorkLock(_symbolOffsetWorkMutex);
+        std::uint64_t thisThreadTotalOffset = 1;
+        for (Symbol* symbol : *_parser->symbols)
+        {
+            thisThreadTotalOffset += symbol->identifier.size() + 1;
+            symbol->textOffset += _symbolSectionOffset;
+            symbol->index = _symbolIndex;
+            _symbols.add(symbol);
+        }
+        _symbolSectionOffset += thisThreadTotalOffset;
     }
 }
 
@@ -272,18 +265,42 @@ Compiler::acceptBindingWork()
             _bindingWorkMutex.unlock();
             if (_pendingBindingWork == 0)
             {
+                _compilationStage = CompilationStage::Checking;
+                break;
+            }
+            continue;
+        }
+        DeclarationWork* work = _bindingWork.front();
+        _bindingWork.pop();
+        _bindingWorkMutex.unlock();
+        _pendingBindingWork++;
+        _binder->performWork(*work);
+        _checkingWork.push(work->declaration);
+        _pendingBindingWork--;
+    }
+}
+
+
+void
+Compiler::acceptCheckingWork()
+{
+    while (_compilationStage == CompilationStage::Checking)
+    {
+        _checkingWorkMutex.lock();
+        if (_checkingWork.empty()) {
+            _checkingWorkMutex.unlock();
+            if (_pendingBindingWork == 0)
+            {
                 _compilationStage = CompilationStage::Transformation;
                 break;
             }
             continue;
         }
-        BindingWork* work = _bindingWork.front();
-        _bindingWork.pop();
-        _bindingWorkMutex.unlock();
-        _pendingBindingWork++;
-        _binder->performWork(*work);
-        _transformationWork.push(work->declaration);
-        _pendingBindingWork--;
+        ast::Declaration* declaration = _checkingWork.front();
+        _checkingWork.pop();
+        _checkingWorkMutex.unlock();
+        _checker->checkTopLevelDeclaration(declaration,);
+        _transformationWork.push(declaration);
     }
 }
 
@@ -291,8 +308,6 @@ Compiler::acceptBindingWork()
 void
 Compiler::acceptTransformationWork()
 {
-    _transformer->symbols = new List<Symbol*>();
-
     while (_compilationStage == CompilationStage::Transformation)
     {
 //        _display_mutex.lock();
@@ -336,21 +351,6 @@ Compiler::acceptTransformationWork()
 //        _display_mutex.unlock();
         _routines.push(_transformer->transform(declaration));
         _pendingTransformationTasks--;
-    }
-
-
-    {
-        std::unique_lock symbolOffsetWorkLock(_symbolOffsetWorkMutex);
-        std::uint64_t thisThreadTotalOffset = 1;
-        for (Symbol* symbol : *_transformer->symbols)
-        {
-            thisThreadTotalOffset += symbol->name->size() + 1;
-            symbol->textOffset += _symbolSectionOffset;
-            symbol->index = _symbolIndex;
-            _symbols.add(symbol);
-            _symbolMap.insert(std::pair(*symbol->name, symbol));
-        }
-        _symbolSectionOffset += thisThreadTotalOffset;
     }
 }
 

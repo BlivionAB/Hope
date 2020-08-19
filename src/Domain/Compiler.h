@@ -1,6 +1,7 @@
 #ifndef ELET_COMPILER_H
 #define ELET_COMPILER_H
 
+#include <map>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -8,6 +9,7 @@
 #include "Parser.h"
 #include "Binder.h"
 #include "Syntax.h"
+#include "Checker.h"
 #include "Instruction/Instruction.h"
 #include "Instruction/Transformer.h"
 #include "Domain/Instruction/AssemblyWriter.h"
@@ -37,8 +39,9 @@ namespace elet::domain::compiler
 {
 
 
-struct Binder;
-struct BindingWork;
+class Binder;
+class Checker;
+struct DeclarationWork;
 
 
 namespace ast
@@ -69,7 +72,7 @@ struct ParsingTask
     const Path*
     sourceDirectory;
 
-    ast::File*
+    ast::SourceFile*
     sourceFile;
 
     bool
@@ -85,7 +88,7 @@ struct ParsingTask
         const Path*
         directory,
 
-        ast::File*
+        ast::SourceFile*
         file,
 
         bool
@@ -146,21 +149,27 @@ struct Symbol
     std::uint32_t
     index = 0;
 
+    const
+    Utf8StringView
+    identifier;
+
+    const
+    Utf8StringView
+    name;
+
     SymbolSectionIndex
     sectionIndex;
 
     std::uint32_t
     textOffset;
 
-    const Utf8StringView*
-    name;
-
-    Symbol(SymbolSectionIndex sectionIndex, std::uint32_t textOffset, const Utf8StringView* name):
-            sectionIndex(sectionIndex),
-            textOffset(textOffset),
-            name(name)
+    Symbol(SymbolSectionIndex sectionIndex, std::uint32_t textOffset, const Utf8StringView identifier):
+        sectionIndex(sectionIndex),
+        textOffset(textOffset),
+        identifier(identifier)
     { }
 };
+
 
 // Note: there are no checking in CLion, due to forward declaration of class Compiler in Parser.h
 class Compiler
@@ -187,7 +196,7 @@ public:
     void
     parseStandardLibrary();
 
-    std::map<Utf8String, ast::File*>
+    std::map<Utf8String, ast::SourceFile*>
     files;
 
 private:
@@ -200,6 +209,9 @@ private:
 
     void
     acceptBindingWork();
+
+    void
+    acceptCheckingWork();
 
     void
     acceptTransformationWork();
@@ -220,9 +232,12 @@ private:
     _transformationWorkMutex;
 
     std::queue<ast::Declaration*>
+    _checkingWork;
+
+    std::queue<ast::Declaration*>
     _transformationWork;
 
-    std::queue<BindingWork*>
+    std::queue<DeclarationWork*>
     _bindingWork;
 
     std::queue<output::Routine*>
@@ -269,6 +284,9 @@ private:
 
     std::mutex
     _bindingWorkMutex;
+
+    std::mutex
+    _checkingWorkMutex;
 
     std::mutex
     _display_mutex;
@@ -324,6 +342,9 @@ private:
     Binder*
     _binder;
 
+    Checker*
+    _checker;
+
     AssemblyWriter*
     _assemblyWriter;
 
@@ -351,7 +372,7 @@ private:
     unsigned int
     _pendingParsingTasks = 0;
 
-    std::map<Utf8StringView, ast::File*>
+    std::map<Utf8StringView, ast::SourceFile*>
     _urlToSymbolMap;
 
     ObjectFileWriter*
@@ -366,7 +387,7 @@ private:
     std::uint32_t
     _symbolIndex = 0;
 
-    std::map<Utf8StringView, Symbol*>
+    std::multimap<Utf8StringView, Symbol*>
     _symbolMap;
 
     std::uint64_t

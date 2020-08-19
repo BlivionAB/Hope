@@ -8,21 +8,26 @@
 #include "Syntax.h"
 #include <Domain/Instruction/Parser.h>
 
+
 namespace elet::domain::compiler
 {
     class Compiler;
+    struct Symbol;
     struct ParsingTask;
 }
+
+
 namespace elet::domain::compiler::instruction
 {
     class InstructionParser;
 }
 
+
 namespace elet::domain::compiler::ast
 {
 
 struct ParameterDeclarationList;
-struct File;
+struct SourceFile;
 struct Type;
 struct Syntax;
 struct FunctionDeclaration;
@@ -43,16 +48,16 @@ struct UseStatement;
 struct NamedUsage;
 struct ParameterDeclaration;
 struct Expression;
-struct Identifier;
+struct Name;
 struct FunctionBody;
 struct LengthOfExpression;
 struct ArrayLiteral;
 struct AssemblyBody;
 struct Punctuation;
 enum class PunctuationType;
-enum class SyntaxKind : std::uint8_t ;
+enum class SyntaxKind : std::uint8_t;
 
-    using Token = Scanner::Token;
+using Token = Scanner::Token;
 
 
 struct ParseResult
@@ -89,6 +94,11 @@ public:
     void
     seek(const BaseScanner::Location& location);
 
+    static
+    thread_local
+    List<Symbol*>*
+    symbols;
+
 private:
 
     static
@@ -106,10 +116,15 @@ private:
     const char*
     _lastStatementLocationEnd;
 
+    static
+    thread_local
+    std::uint64_t
+    _symbolOffset;
+
     Scanner*
     _scanner;
 
-    std::map<Utf8String, File*>&
+    std::map<Utf8String, SourceFile*>&
     _files;
 
     instruction::InstructionParser*
@@ -193,7 +208,7 @@ private:
     Expression*
     parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
 
-    Identifier*
+    Name*
     parseIdentifier();
 
     FunctionBody*
@@ -252,14 +267,18 @@ private:
     Utf8StringView
     getTokenValue();
 
-    Identifier*
+    Name*
     createIdentifer();
 
     Utf8String
     getParameterDisplay(ParameterDeclaration* parameter);
 
     bool
-    hasEqualIdentifier(Identifier* id1, Identifier* id2);
+    hasEqualIdentifier(Name* id1, Name* id2);
+
+    static
+    void
+    addSymbol(Declaration* declaration, const Utf8StringView& identifier);
 };
 
 

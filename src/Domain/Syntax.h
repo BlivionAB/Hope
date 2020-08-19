@@ -8,13 +8,18 @@
 #include <Foundation/List.h>
 #include "Instruction/Instruction.h"
 
-
-namespace elet::domain::compiler::instruction
+namespace elet::domain::compiler
 {
-    namespace output
-    {
-        struct Instruction;
-    }
+
+struct Symbol;
+
+
+}
+namespace elet::domain::compiler::instruction::output
+{
+
+struct Instruction;
+
 }
 
 namespace elet::domain::compiler::ast
@@ -29,10 +34,13 @@ struct Expression;
 struct Declaration;
 using NameToDeclarationMap = std::map<Utf8StringView, Declaration*>;
 
-struct File
+struct SourceFile
 {
     NameToDeclarationMap
     declarations;
+
+    std::multimap<Utf8StringView, Declaration*>
+    names;
 };
 
 enum class SyntaxKind : std::uint8_t
@@ -81,9 +89,9 @@ enum class SyntaxKind : std::uint8_t
 };
 
 
-#define DECLARATION_LABEL       1 << 0
-#define BLOCK_LABEL             1 << 1
-#define NAMED_EXPRESSION_LABEL  1 << 2
+#define DECLARATION_LABEL       (std::uint8_t)(1 << 0)
+#define BLOCK_LABEL             (std::uint8_t)(1 << 1)
+#define NAMED_EXPRESSION_LABEL  (std::uint8_t)(1 << 2)
 
 
 struct Syntax
@@ -102,7 +110,7 @@ struct Syntax
 };
 
 
-struct Identifier : Syntax
+struct Name : Syntax
 {
     Utf8StringView
     name;
@@ -128,7 +136,7 @@ struct AssemblyBody : Syntax
 
 struct MetadataProperty : Syntax
 {
-    Identifier*
+    Name*
     name;
 
     Expression*
@@ -171,7 +179,7 @@ enum class TypeKind
 
 struct Type : Syntax
 {
-    Identifier*
+    Name*
     name;
 
     List<Punctuation*>
@@ -183,7 +191,7 @@ struct Type : Syntax
     std::size_t
     size;
 
-    Identifier*
+    Name*
     parameter;
 
     Utf8String
@@ -193,14 +201,17 @@ struct Type : Syntax
 
 struct Declaration : Syntax
 {
-    Identifier*
+    Name*
     name;
 
     std::size_t
     offset;
 
-    Utf8String
+    Symbol*
     symbol;
+
+    SourceFile*
+    sourceFile;
 };
 
 
@@ -223,7 +234,7 @@ struct InterfaceDeclaration : Declaration
 
 struct EnumDeclaration : Declaration
 {
-    List<Identifier*>
+    List<Name*>
     values;
 };
 
@@ -273,21 +284,21 @@ struct VariableDeclaration : Declaration
 
 struct EndStatement : Syntax
 {
-    Identifier*
+    Name*
     name;
 };
 
 
 struct ModuleSpecification : Syntax
 {
-    Identifier*
+    Name*
     name;
 };
 
 
 struct ModuleDeclaration : Declaration
 {
-    Identifier*
+    Name*
     name;
 
     List<Syntax*>
@@ -325,7 +336,7 @@ struct Expression : Syntax
 
 struct NamedExpression : Expression
 {
-    Identifier*
+    Name*
     name;
 
     Declaration*
@@ -354,7 +365,7 @@ struct PropertyAccessExpression : NamedExpression
 
 struct ModuleAccessExpression : Expression
 {
-    Identifier*
+    Name*
     name;
 
     Expression*
@@ -426,14 +437,14 @@ struct WildcardUsage : Usage
 
 struct NamedUsage : Usage
 {
-    List<Identifier*>
+    List<Name*>
     names;
 };
 
 
 struct ModuleAccessUsage : Usage
 {
-    Identifier*
+    Name*
     name;
 
     Usage*
@@ -471,7 +482,7 @@ struct CallExpression : NamedExpression
 
 struct LengthOfExpression : Expression
 {
-    Identifier*
+    Name*
     reference;
 };
 
