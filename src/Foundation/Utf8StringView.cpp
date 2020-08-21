@@ -111,6 +111,13 @@ Utf8StringView::operator < (const Utf8StringView &other) const
     return std::strncmp(_value, other._value, size()) < 0;
 }
 
+void
+Utf8StringView::operator = (const Utf8StringView &other)
+{
+    _value = other._value;
+    _end = other._end;
+}
+
 
 Utf8StringView::Iterator::Iterator(const char* value):
     value(value)

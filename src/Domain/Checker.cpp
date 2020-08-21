@@ -6,7 +6,7 @@ namespace elet::domain::compiler
 
 
 void
-Checker::checkTopLevelDeclaration(const ast::Declaration *declaration)
+Checker::checkTopLevelDeclaration(const ast::Declaration* declaration)
 {
     _sourceFile = declaration->sourceFile;
     switch (declaration->kind)
@@ -35,12 +35,74 @@ Checker::checkFunctionDeclaration(const ast::FunctionDeclaration *functionDeclar
 void
 Checker::checkCallExpression(const ast::CallExpression* callExpression)
 {
-    auto result = _sourceFile->names.find(callExpression->name->name);
-    if (result != _sourceFile->names.end())
+    auto result = _sourceFile->names.equal_range(callExpression->name->name);
+    for (auto it = result.first; it != result.second; ++it)
     {
-
+        auto functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(it->second);
+        unsigned int index = 0;
+        unsigned int maxIndex = std::min(callExpression->argumentList->arguments.size() - 1, (std::size_t)0);
+        for (ast::ParameterDeclaration* parameter : functionDeclaration->parameterList->parameters)
+        {
+            if (index < maxIndex)
+            {
+                const ast::Expression* expression = callExpression->argumentList->arguments[index];
+                Type assignmentType = getTypeFromExpression(expression);
+                Type placeholderType = getTypeFromTypeAssignment(parameter->type);
+                if (!isTypeAssignableToPlaceholder(assignmentType, placeholderType))
+                {
+                    std::cout << "not assignable" << std::endl;
+                }
+            }
+            index++;
+        }
     }
-    result->second;
+}
+
+
+Type
+Checker::getTypeFromExpression(const ast::Expression* expression)
+{
+    switch (expression->kind)
+    {
+        case ast::SyntaxKind::StringLiteral:
+        {
+            return Type(TYPE_CHAR, 1);
+        }
+        default:;
+    }
+}
+
+bool
+Checker::isTypeAssignableToPlaceholder(Type &assignment, Type& placeholder)
+{
+    switch (placeholder.kind)
+    {
+        case TYPE_CHAR:
+            if (assignment.kind != TYPE_CHAR)
+            {
+                return false;
+            }
+            if (assignment.pointers != placeholder.pointers)
+            {
+                return false;
+            }
+    }
+    return true;
+}
+
+
+Type
+Checker::getTypeFromTypeAssignment(ast::TypeAssignment* typeAssignment)
+{
+    Type result;
+    result.pointers = typeAssignment->pointers.size();
+    switch (typeAssignment->type)
+    {
+        case ast::TypeKind::Char:
+            result.kind = TYPE_CHAR;
+            break;
+    }
+    return result;
 }
 
 

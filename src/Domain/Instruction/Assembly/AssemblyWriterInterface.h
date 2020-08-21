@@ -31,18 +31,9 @@ class AssemblyWriterInterface
 
 public:
 
-    explicit AssemblyWriterInterface(std::map<Utf8StringView, Symbol*>& symbolMap):
-        _symbolMap(symbolMap)
-    { }
-
     virtual
     void
     writeRoutine(Routine *routine) = 0;
-
-protected:
-
-    std::map<Utf8StringView, Symbol*>&
-    _symbolMap;
 };
 
 

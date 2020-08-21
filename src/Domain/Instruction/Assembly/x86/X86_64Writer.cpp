@@ -5,8 +5,8 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
-X86_64Writer::X86_64Writer(std::map<Utf8StringView, Symbol*>& symbolMap):
-    AssemblyWriterInterface(symbolMap)
+X86_64Writer::X86_64Writer():
+    AssemblyWriterInterface()
 {
 
 }
@@ -17,7 +17,7 @@ X86_64Writer::writeRoutine(Routine *routine)
 {
     _currentRoutine = routine;
     _routineOutput = new List<std::uint8_t>();
-    routine->symbol->textOffset = _routineOutput->size();
+//    routine->symbol->textOffset = _routineOutput->size();
     if (routine->kind == RoutineKind::Function)
     {
         _routineOutput->add(OP_PUSH_rBP);
@@ -55,7 +55,6 @@ X86_64Writer::writeRoutine(Routine *routine)
                     writeUint32(0);
                     auto functionReference = reinterpret_cast<FunctionReference*>(instruction->operand1);
                     functionReference->textOffset = offset;
-                    functionReference->symbol = _symbolMap.find(functionReference->reference)->second;
                     _currentRoutine->symbolicRelocations->add(functionReference);
                     break;
                 }

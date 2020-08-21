@@ -24,9 +24,7 @@ class AssemblyWriter
 
 public:
 
-    AssemblyWriter(
-        std::map<Utf8StringView, Symbol*>& symbolMap,
-        AssemblyTarget target);
+    AssemblyWriter(AssemblyTarget target);
 
     void
     writeRoutine(Routine *routine);

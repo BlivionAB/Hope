@@ -31,8 +31,7 @@ Transformer::transform(ast::Declaration* declaration)
     if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
     {
         ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
-        auto symbol = createSymbol(functionDeclaration);
-        output::Function* _function = createFunction(functionDeclaration->name->name, symbol);
+        output::Function* _function = createFunction(functionDeclaration->name->name);
         std::size_t offset = 0;
         unsigned int index = 0;
         for (const ast::ParameterDeclaration* parameter : functionDeclaration->parameterList->parameters)
@@ -69,12 +68,11 @@ Transformer::createRoutine(Utf8StringView& name)
 
 
 output::Function*
-Transformer::createFunction(Utf8StringView& name, Symbol* symbol)
+Transformer::createFunction(Utf8StringView& name)
 {
     output::Function* _function = new output::Function();
     _function->kind = output::RoutineKind::Function;
     _function->name = name;
-    _function->symbol = symbol;
     return _function;
 }
 
@@ -128,7 +126,7 @@ Transformer::resolveAssemblyReference(output::Operand** operand, List<output::Pa
 
 
 std::size_t
-Transformer::lazilyResolveTypeSize(ast::Type* type) const
+Transformer::lazilyResolveTypeSize(ast::TypeAssignment* type) const
 {
     if (type->size == 0)
     {
@@ -213,10 +211,10 @@ Transformer::transformStringParameter(std::size_t& numberOfParameterRegisters, u
 }
 
 
-Utf8String
+Utf8StringView
 Transformer::getSymbolReference(ast::NamedExpression *expression) const
 {
-    return expression->referenceDeclaration->symbol;
+    return expression->name->name;
 }
 
 

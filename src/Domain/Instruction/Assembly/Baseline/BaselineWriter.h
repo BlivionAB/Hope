@@ -31,7 +31,7 @@ class BaselineWriter : public AssemblyWriterInterface
 
 public:
 
-    BaselineWriter(std::map<Utf8StringView, Symbol*>& symbolMap);
+    BaselineWriter();
 
     ~BaselineWriter();
 

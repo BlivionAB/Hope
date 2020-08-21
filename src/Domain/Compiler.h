@@ -153,7 +153,6 @@ struct Symbol
     Utf8StringView
     identifier;
 
-    const
     Utf8StringView
     name;
 
@@ -163,10 +162,10 @@ struct Symbol
     std::uint32_t
     textOffset;
 
-    Symbol(SymbolSectionIndex sectionIndex, std::uint32_t textOffset, const Utf8StringView identifier):
+    Symbol(SymbolSectionIndex sectionIndex, std::uint32_t textOffset, const Utf8StringView name):
         sectionIndex(sectionIndex),
         textOffset(textOffset),
-        identifier(identifier)
+        name(name)
     { }
 };
 

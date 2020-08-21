@@ -89,6 +89,9 @@ public:
     bool
     operator < (const Utf8StringView& other) const;
 
+    void
+    operator = (const Utf8StringView& other);
+
 private:
 
     const char*

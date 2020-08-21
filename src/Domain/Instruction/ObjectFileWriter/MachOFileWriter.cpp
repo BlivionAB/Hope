@@ -175,12 +175,12 @@ MachOFileWriter::writeSymbols(const AssemblySegments& segments)
             symbol->textOffset,
         };
         write<SymbolEntry64>(s);
-        offset += symbol->name->size() + 1;
+        offset += symbol->name.size() + 1;
     }
     writeNullCharacter();
     for (const Symbol* symbol : *segments.symbols)
     {
-        writeStringView(*symbol->name);
+        writeStringView(symbol->name);
         writeNullCharacter();
     }
 }

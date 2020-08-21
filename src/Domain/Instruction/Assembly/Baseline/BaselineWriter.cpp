@@ -12,8 +12,8 @@ TextWriter*
 BaselineWriter::_tw = nullptr;
 
 
-BaselineWriter::BaselineWriter(std::map<Utf8StringView, Symbol*>& symbolMap):
-    AssemblyWriterInterface(symbolMap)
+BaselineWriter::BaselineWriter():
+    AssemblyWriterInterface()
 {
 
 }

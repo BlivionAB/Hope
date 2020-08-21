@@ -44,7 +44,7 @@ Parser::Parser(Compiler* compiler):
 ParseResult
 Parser::performWork(const ParsingTask& task)
 {
-    _lastStatementLocationStart = const_cast<char *>(task.sourceStart);
+    _lastStatementLocationStart = const_cast<char*>(task.sourceStart);
     Utf8StringView sourceContent(task.sourceStart, task.sourceEnd);
     Scanner scanner(sourceContent);
     _currentDirectory = const_cast<Path*>(task.sourceDirectory);
@@ -63,7 +63,7 @@ Parser::performWork(const ParsingTask& task)
             if (statement->labels & DECLARATION_LABEL)
             {
                 Declaration* declaration = reinterpret_cast<Declaration*>(statement);
-                task.sourceFile->declarations[declaration->symbol->name] = declaration;
+                task.sourceFile->names.insert({ declaration->symbol->name, declaration });
                 declaration->sourceFile = task.sourceFile;
             }
             _lastStatementLocationStart = statement->end;
@@ -175,16 +175,16 @@ Parser::parseFunctionLevelStatement()
 FunctionDeclaration*
 Parser::parseFunctionDeclaration()
 {
-    FunctionDeclaration* _function = createDeclaration<FunctionDeclaration>(SyntaxKind::FunctionDeclaration);
-    _function->name = parseIdentifier();
+    auto functionDeclaration = createDeclaration<FunctionDeclaration>(SyntaxKind::FunctionDeclaration);
+    functionDeclaration->name = parseIdentifier();
     auto parameterListResult = parseParameterList();
-    _function->parameterList = parameterListResult.parameterList;
+    functionDeclaration->parameterList = parameterListResult.parameterList;
     expectToken(Token::Colon);
-    _function->type = parseType();
-    _function->body = parseFunctionBody();
-    addSymbol(_function, _function->name->name.toString() + parameterListResult.display);
-    finishSyntax<FunctionDeclaration>(_function);
-    return _function;
+    functionDeclaration->type = parseType();
+    functionDeclaration->body = parseFunctionBody();
+    addSymbol(functionDeclaration);
+    finishSyntax<FunctionDeclaration>(functionDeclaration);
+    return functionDeclaration;
 }
 
 
@@ -368,10 +368,10 @@ Parser::takeNextToken()
 }
 
 
-Type*
+TypeAssignment*
 Parser::parseType()
 {
-    Type* type = createSyntax<Type>(SyntaxKind::Type);
+    TypeAssignment* type = createSyntax<TypeAssignment>(SyntaxKind::Type);
     Token token = _scanner->takeNextToken();
     switch (token) {
         case Token::IntKeyword:
@@ -919,10 +919,9 @@ Parser::getParameterDisplay(ParameterDeclaration* parameter)
 
 
 void
-Parser::addSymbol(Declaration* declaration, const Utf8StringView& identifier)
+Parser::addSymbol(Declaration* declaration)
 {
-    auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, identifier);
-    _symbolOffset += declaration->name->name.size() + 1;
+    auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, declaration->name->name);
     symbols->add(symbol);
     declaration->symbol = symbol;
 }

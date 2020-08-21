@@ -48,7 +48,7 @@ class X86_64Writer : public AssemblyWriterInterface
 
 public:
 
-    X86_64Writer(std::map<Utf8StringView, Symbol*>& symbolMap);
+    X86_64Writer();
 
     void
     writeRoutine(Routine *routine);

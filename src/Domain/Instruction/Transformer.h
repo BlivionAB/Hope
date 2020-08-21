@@ -97,9 +97,6 @@ public:
 
 private:
 
-    Symbol*
-    createSymbol(const ast::Declaration *declaration);
-
     output::Instruction*
     createInstruction(embedded::InstructionType type);
 
@@ -107,7 +104,7 @@ private:
     createRoutine(Utf8StringView& name);
 
     output::Function*
-    createFunction(Utf8StringView& name, Symbol* symbol);
+    createFunction(Utf8StringView& name);
 
     List<output::Instruction*>*
     transformFunctionBody(ast::FunctionBody* body, List<output::Parameter*>& parameters);
@@ -119,9 +116,9 @@ private:
     resolveAssemblyReference(output::Operand** operand, List<output::Parameter*>& parameters);
 
     std::size_t
-    lazilyResolveTypeSize(ast::Type* type) const;
+    lazilyResolveTypeSize(ast::TypeAssignment* type) const;
 
-    Utf8String
+    Utf8StringView
     getSymbolReference(ast::NamedExpression *expression) const;
 
     void

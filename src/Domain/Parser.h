@@ -28,7 +28,7 @@ namespace elet::domain::compiler::ast
 
 struct ParameterDeclarationList;
 struct SourceFile;
-struct Type;
+struct TypeAssignment;
 struct Syntax;
 struct FunctionDeclaration;
 struct VariableDeclaration;
@@ -54,6 +54,7 @@ struct LengthOfExpression;
 struct ArrayLiteral;
 struct AssemblyBody;
 struct Punctuation;
+struct Declaration;
 enum class PunctuationType;
 enum class SyntaxKind : std::uint8_t;
 
@@ -133,7 +134,7 @@ private:
     Compiler*
     _compiler;
 
-    Type*
+    TypeAssignment*
     parseType();
 
     Syntax*
@@ -278,7 +279,7 @@ private:
 
     static
     void
-    addSymbol(Declaration* declaration, const Utf8StringView& identifier);
+    addSymbol(Declaration* declaration);
 };
 
 

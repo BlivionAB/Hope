@@ -169,6 +169,7 @@ enum class TypeKind
     UInt16,
     UInt32,
     UInt64,
+    Pointer,
     Float,
     Double,
     Void,
@@ -177,7 +178,7 @@ enum class TypeKind
 };
 
 
-struct Type : Syntax
+struct TypeAssignment : Syntax
 {
     Name*
     name;
@@ -220,7 +221,7 @@ struct PropertyDeclaration : Declaration
     ParameterDeclarationList*
     parameters;
 
-    Type*
+    TypeAssignment*
     type;
 };
 
@@ -241,7 +242,7 @@ struct EnumDeclaration : Declaration
 
 struct ParameterDeclaration : Declaration
 {
-    Type*
+    TypeAssignment*
     type;
 
     Utf8String
@@ -261,7 +262,7 @@ struct FunctionDeclaration : Declaration
     ParameterDeclarationList*
     parameterList;
 
-    Type*
+    TypeAssignment*
     type;
 
     FunctionBody*
@@ -271,7 +272,7 @@ struct FunctionDeclaration : Declaration
 
 struct VariableDeclaration : Declaration
 {
-    Type*
+    TypeAssignment*
     type;
 
     Punctuation*

@@ -19,7 +19,7 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
     _assemblyTarget(assemblyTarget),
     _objectFileTarget(objectFileTarget),
     _parser(new ast::Parser(this)),
-    _assemblyWriter(new AssemblyWriter(_symbolMap, assemblyTarget)),
+    _assemblyWriter(new AssemblyWriter(assemblyTarget)),
     _objectFileWriter(new ObjectFileWriter(objectFileTarget)),
     _binder(new Binder()),
     _checker(new Checker())
@@ -30,7 +30,7 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
        { 0 },
        1,
     };
-    _transformer = new Transformer(callingConvention, _routines, _transformationWorkMutex, &_cstrings, _cstringOffset, _dataMutex, _symbolMap);
+    _transformer = new Transformer(callingConvention, _routines, _transformationWorkMutex, &_cstrings, _cstringOffset, _dataMutex);
 }
 
 
@@ -299,7 +299,7 @@ Compiler::acceptCheckingWork()
         ast::Declaration* declaration = _checkingWork.front();
         _checkingWork.pop();
         _checkingWorkMutex.unlock();
-        _checker->checkTopLevelDeclaration(declaration,);
+        _checker->checkTopLevelDeclaration(declaration);
         _transformationWork.push(declaration);
     }
 }
