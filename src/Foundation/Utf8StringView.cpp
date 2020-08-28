@@ -101,7 +101,11 @@ Utf8StringView::operator == (const char* text) const
 bool
 Utf8StringView::operator == (const Utf8StringView& other) const
 {
-    return *this == other.toString();
+    if (size() != other.size())
+    {
+        return false;
+    }
+    return std::strncmp(_value, other._value, size()) == 0;
 }
 
 

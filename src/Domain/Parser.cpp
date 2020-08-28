@@ -84,6 +84,14 @@ Parser::parseFileLevelStatement()
     Token token = _scanner->takeNextToken();
     switch (token)
     {
+        case Token::ContextKeyword:
+            return parseContextDeclaration();
+        case Token::DomainKeyword:
+            return parseDomainDeclaration();
+        case Token::ConstructorKeyword:
+            return parseConstructorImplementation();
+        case Token::ObjectKeyword:
+            return parseObjectDeclaration();
         case Token::InterfaceKeyword:
             return parseInterfaceDeclaration();
         case Token::EnumKeyword:
@@ -114,6 +122,8 @@ Parser::parseModuleLevelStatement()
     Token token = _scanner->takeNextToken();
     switch (token)
     {
+        case Token::ObjectKeyword:
+            return parseObjectDeclaration();
         case Token::InterfaceKeyword:
             return parseInterfaceDeclaration();
         case Token::EnumKeyword:
@@ -138,37 +148,43 @@ Syntax*
 Parser::parseFunctionLevelStatement()
 {
     Token token = _scanner->takeNextToken();
+    Syntax* statement;
     switch (token)
     {
         case Token::VarKeyword:
-            return parseVariableDeclaration();
+            statement = parseVariableDeclaration();
+            break;
         case Token::AssemblyKeyword:
             return parseAssemblyBlock();
-        case Token::Identifier:
+        case Token::Name:
         {
             Token peek = peekNextToken();
             switch (peek)
             {
                 case Token::OpenParen:
-                    return parseCallExpressionOnIdentifier();
+                    statement = parseCallExpressionOnName();
+                    goto outer;
                 case Token::Colon:
                     return nullptr;
                 case Token::Dot:
                 {
                     PropertyAccessExpression *propertyAccessExpression = createSyntax<PropertyAccessExpression>(SyntaxKind::PropertyAccessExpression);
-                    propertyAccessExpression->name = createIdentifer();
+                    propertyAccessExpression->name = createName();
                     skipNextToken();
                     propertyAccessExpression->dot = createPunctuation(PunctuationType::Dot);
                     propertyAccessExpression->expression = parsePropertyAccessOrCallExpression();
-                    return propertyAccessExpression;
+                    statement = propertyAccessExpression;
                 }
             }
         }
         case Token::EndOfFile:
             return nullptr;
         default:
-            return parseExpression();
+            statement = parseExpression();
     }
+    outer:
+    expectToken(Token::SemiColon);
+    return statement;
 }
 
 
@@ -176,12 +192,12 @@ FunctionDeclaration*
 Parser::parseFunctionDeclaration()
 {
     auto functionDeclaration = createDeclaration<FunctionDeclaration>(SyntaxKind::FunctionDeclaration);
-    functionDeclaration->name = parseIdentifier();
+    functionDeclaration->name = parseName();
     auto parameterListResult = parseParameterList();
     functionDeclaration->parameterList = parameterListResult.parameterList;
     expectToken(Token::Colon);
     functionDeclaration->type = parseType();
-    functionDeclaration->body = parseFunctionBody();
+    functionDeclaration->body = parseFunctionBodyOnOpenBrace();
     addSymbol(functionDeclaration);
     finishSyntax<FunctionDeclaration>(functionDeclaration);
     return functionDeclaration;
@@ -192,7 +208,7 @@ VariableDeclaration*
 Parser::parseVariableDeclaration()
 {
     VariableDeclaration* variableDeclaration = createDeclaration<VariableDeclaration>(SyntaxKind::VariableDeclaration);
-    variableDeclaration->name = parseIdentifier();
+    variableDeclaration->name = parseName();
     Token peek = peekNextToken();
     if (peek == Token::Colon)
     {
@@ -205,16 +221,15 @@ Parser::parseVariableDeclaration()
         skipNextToken();
         variableDeclaration->expression = parseExpression();
     }
-    expectToken(Token::SemiColon);
     return variableDeclaration;
 }
 
 
 Name*
-Parser::parseIdentifier()
+Parser::parseName()
 {
-    expectToken(Token::Identifier);
-    return createIdentifer();
+    expectToken(Token::Name);
+    return createName();
 }
 
 ParameterListResult
@@ -230,9 +245,9 @@ Parser::parseParameterList()
         {
             break;
         }
-        if (token != Token::Identifier)
+        if (token != Token::Name)
         {
-            throw ExpectedTokenError(Token::Identifier, getTokenValue());
+            throw ExpectedTokenError(Token::Name, getTokenValue());
         }
         ParameterDeclaration* parameter = parseParameterOnIdentifier();
         parameter->display = getParameterDisplay(parameter);
@@ -256,7 +271,7 @@ ParameterDeclaration*
 Parser::parseParameterOnIdentifier()
 {
     ParameterDeclaration* parameter = createSyntax<ParameterDeclaration>(SyntaxKind::ParameterDeclaration);
-    parameter->name = createIdentifer();
+    parameter->name = createName();
     expectToken(Token::Colon);
     parameter->type = parseType();
     finishSyntax(parameter);
@@ -267,7 +282,6 @@ Parser::parseParameterOnIdentifier()
 FunctionBody*
 Parser::parseFunctionBody()
 {
-    expectToken(Token::OpenBrace);
     FunctionBody* body = createBlock<FunctionBody>(SyntaxKind::FunctionBody);
     List<Syntax*> statements;
     while (peekNextToken() != Token::CloseBrace)
@@ -282,6 +296,14 @@ Parser::parseFunctionBody()
     body->statements = statements;
     expectToken(Token::CloseBrace);
     return body;
+}
+
+
+FunctionBody*
+Parser::parseFunctionBodyOnOpenBrace()
+{
+    expectToken(Token::OpenBrace);
+    return parseFunctionBody();
 }
 
 
@@ -323,7 +345,7 @@ Parser::createNamedExpression(SyntaxKind kind)
 {
     T* syntax = createSyntax<T>(kind);
     syntax->labels = NAMED_EXPRESSION_LABEL;
-    syntax->name = createIdentifer();
+    syntax->name = createName();
     return syntax;
 }
 
@@ -371,70 +393,87 @@ Parser::takeNextToken()
 TypeAssignment*
 Parser::parseType()
 {
-    TypeAssignment* type = createSyntax<TypeAssignment>(SyntaxKind::Type);
+    TypeAssignment* typeAssignment = createSyntax<TypeAssignment>(SyntaxKind::Type);
     Token token = _scanner->takeNextToken();
     switch (token) {
         case Token::IntKeyword:
-            type->type = TypeKind::Int;
+            typeAssignment->type = TypeKind::Int;
             break;
         case Token::UnsignedIntKeyword:
-            type->type = TypeKind::UInt;
+            typeAssignment->type = TypeKind::UInt;
             break;
         case Token::CharKeyword:
-            type->type = TypeKind::Char;
+            typeAssignment->type = TypeKind::Char;
             break;
         case Token::VoidKeyword:
-            type->type = TypeKind::Void;
+            typeAssignment->type = TypeKind::Void;
+            break;
+        case Token::USizeKeyword:
+            typeAssignment->type = TypeKind::USize;
             break;
         case Token::LengthOfKeyword:
-            type->type = TypeKind::Length;
-            type->size = 0;
-            type->name = createIdentifer();
-            type->parameter = parseIdentifier();
-            return type;
-        case Token::Identifier:
-            type->type = TypeKind::Custom;
+            typeAssignment->type = TypeKind::Length;
+            typeAssignment->size = 0;
+            typeAssignment->name = createName();
+            typeAssignment->parameter = parseName();
+            return typeAssignment;
+        case Token::StringKeyword:
+        case Token::Name:
+            typeAssignment->type = TypeKind::Custom;
             break;
         default:
             throw UnknownTypeError();
     }
-    type->size = 0; // Size is set in the transformer.
-    type->name = createIdentifer();
+    typeAssignment->size = 0; // Size is set in the transformer.
+    typeAssignment->name = createName();
     while (true)
     {
         Token peek = peekNextToken();
         if (peek == Token::Asterisk)
         {
+            if (typeAssignment->isLiteral)
+            {
+                throw ExpectedTokenError(Token::CloseParen, getTokenValue());
+            }
             skipNextToken();
-            type->pointers.add(createPunctuation(PunctuationType::Asterisk));
+            typeAssignment->pointers.add(createPunctuation(PunctuationType::Asterisk));
+        }
+        else if (peek == Token::LiteralKeyword)
+        {
+            typeAssignment->isLiteral = true;
+            skipNextToken();
+        }
+        else if (peek == Token::Ampersand)
+        {
+            typeAssignment->addressOf = true;
+            skipNextToken();
         }
         else
         {
             break;
         }
     }
-    return type;
+    return typeAssignment;
 }
 
 
 Name*
-Parser::createIdentifer()
+Parser::createName()
 {
-    Name* identifier = createSyntax<Name>(SyntaxKind::Identifier);
-    identifier->name = getTokenValue();
-    finishSyntax(identifier);
-    return identifier;
+    Name* name = createSyntax<Name>(SyntaxKind::Name);
+    name->name = getTokenValue();
+    finishSyntax(name);
+    return name;
 }
 
 
 CallExpression*
-Parser::parseCallExpressionOnIdentifier()
+Parser::parseCallExpressionOnName()
 {
     CallExpression* expression = createNamedExpression<CallExpression>(SyntaxKind::CallExpression);
     expectToken(Token::OpenParen);
     expression->argumentList = parseArgumentListOnOpenParen();
     finishSyntax(expression);
-    expectToken(Token::SemiColon);
     return expression;
 }
 
@@ -477,6 +516,8 @@ Parser::parseExpressionOnToken(Token token)
 {
     switch (token)
     {
+        case Token::Ampersand:
+            return parseAddressOfExpression();
         case Token::StringLiteral:
         {
             StringLiteral *stringLiteral = createSyntax<StringLiteral>(SyntaxKind::StringLiteral);
@@ -491,7 +532,7 @@ Parser::parseExpressionOnToken(Token token)
             return parseTuple();
         case Token::LengthOfKeyword:
             return parseLengthOfExpression();
-        case Token::Identifier:
+        case Token::Name:
             return parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
     }
     throw UnexpectedExpression();
@@ -529,7 +570,7 @@ UseStatement*
 Parser::parseUseStatement()
 {
     UseStatement* useStatement = createSyntax<UseStatement>(SyntaxKind::UseStatement);
-    expectToken(Token::Identifier);
+    expectToken(Token::Name);
     useStatement->usage = parseModuleAccessUsageOnIdentifier();
     finishSyntax(useStatement);
     return useStatement;
@@ -549,7 +590,7 @@ Parser::createPunctuation(PunctuationType type)
 Expression*
 Parser::parsePropertyAccessOrCallExpression()
 {
-    expectToken(Token::Identifier);
+    expectToken(Token::Name);
     Token peek = peekNextToken();
     return createPropertyAccessExpressionOrCallExpressionFromPeek(peek);
 }
@@ -560,7 +601,7 @@ Parser::createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek)
 {
     if (peek == Token::Dot)
     {
-        PropertyAccessExpression* propertyAccessExpression = createSyntax<PropertyAccessExpression>(SyntaxKind::PropertyAccessExpression);
+        auto propertyAccessExpression = createSyntax<PropertyAccessExpression>(SyntaxKind::PropertyAccessExpression);
         skipNextToken();
         propertyAccessExpression->expression = parsePropertyAccessOrCallExpression();
         finishSyntax(propertyAccessExpression);
@@ -568,10 +609,10 @@ Parser::createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek)
     }
     if (peek == Token::OpenParen)
     {
-        return parseCallExpressionOnIdentifier();
+        return parseCallExpressionOnName();
     }
-    PropertyExpression* propertyExpression = createSyntax<PropertyExpression>(SyntaxKind::PropertyExpression);
-    propertyExpression->name = createIdentifer();
+    auto propertyExpression = createSyntax<PropertyExpression>(SyntaxKind::PropertyExpression);
+    propertyExpression->name = createName();
     finishSyntax(propertyExpression);
     return propertyExpression;
 }
@@ -587,9 +628,9 @@ Parser::skipNextToken()
 ImportStatement*
 Parser::parseImportStatement()
 {
-    ImportStatement* importStatement = createSyntax<ImportStatement>(SyntaxKind::ImportStatement);
+    auto importStatement = createSyntax<ImportStatement>(SyntaxKind::ImportStatement);
     expectToken(Token::StringLiteral);
-    StringLiteral* stringLiteral = createSyntax<StringLiteral>(SyntaxKind::StringLiteral);
+    auto stringLiteral = createSyntax<StringLiteral>(SyntaxKind::StringLiteral);
     finishSyntax(stringLiteral);
     Utf8StringView source(stringLiteral->start + 1, stringLiteral->end - 1);
     Path* newCurrenctDirectory = new Path(_currentDirectory->toString().toString());
@@ -607,7 +648,7 @@ ExportStatement*
 Parser::parseExportStatement()
 {
     ExportStatement* exportStatement = createSyntax<ExportStatement>(SyntaxKind::ImportStatement);
-    expectToken(Token::Identifier);
+    expectToken(Token::Name);
     exportStatement->usage = parseModuleAccessUsageOnIdentifier();
     return exportStatement;
 }
@@ -617,7 +658,7 @@ ModuleDeclaration*
 Parser::parseModuleDeclaration()
 {
     ModuleDeclaration* module = createDeclaration<ModuleDeclaration>(SyntaxKind::ModuleDeclaration);
-    module->name = parseIdentifier();
+    module->name = parseName();
     expectToken(Token::Colon);
     while(true)
     {
@@ -654,7 +695,7 @@ EndStatement*
 Parser::parseEndStatement()
 {
     EndStatement* endStatement = createSyntax<EndStatement>(SyntaxKind::EndStatement);
-    endStatement->name = parseIdentifier();
+    endStatement->name = parseName();
     finishSyntax(endStatement);
     expectToken(Token::SemiColon);
     return endStatement;
@@ -664,10 +705,10 @@ ModuleAccessUsage*
 Parser::parseModuleAccessUsageOnIdentifier()
 {
     ModuleAccessUsage* moduleAccessUsage = createSyntax<ModuleAccessUsage>(SyntaxKind::ModuleAccessUsage);
-    moduleAccessUsage->name = createIdentifer();
+    moduleAccessUsage->name = createName();
     expectToken(Token::DoubleColon);
     Token peek = peekNextToken();
-    if (peek == Token::Identifier)
+    if (peek == Token::Name)
     {
         skipNextToken();
         moduleAccessUsage->usage = parseModuleAccessUsageOnIdentifier();
@@ -705,7 +746,7 @@ Parser::parseNamedUsageOnOpenBrace()
         {
             if (isInitialUsage)
             {
-                throw ExpectedTokenError(Token::Identifier, getTokenValue());
+                throw ExpectedTokenError(Token::Name, getTokenValue());
             }
             token = takeNextToken();
         }
@@ -713,11 +754,11 @@ Parser::parseNamedUsageOnOpenBrace()
         {
             break;
         }
-        if (token != Token::Identifier)
+        if (token != Token::Name)
         {
-            throw ExpectedTokenError(Token::Identifier, getTokenValue());
+            throw ExpectedTokenError(Token::Name, getTokenValue());
         }
-        namedUsage->names.add(createIdentifer());
+        namedUsage->names.add(createName());
         isInitialUsage = false;
     }
     finishSyntax(namedUsage);
@@ -725,11 +766,21 @@ Parser::parseNamedUsageOnOpenBrace()
     return namedUsage;
 }
 
-InterfaceDeclaration*
-Parser::parseInterfaceDeclaration()
+
+ObjectDeclaration*
+Parser::parseObjectDeclaration()
 {
-    InterfaceDeclaration* interface = createDeclaration<InterfaceDeclaration>(SyntaxKind::InterfaceDeclaration);
-    interface->name = parseIdentifier();
+    ObjectDeclaration* objectDeclaration = createDeclaration<ObjectDeclaration>(SyntaxKind::ObjectDeclaration);
+    _scanner->setFlag(TREAT_STRING_KEYWORD_AS_NAME);
+    Token token = takeNextToken();
+    if (token == Token::Name || token == Token::StringKeyword)
+    {
+        objectDeclaration->name = createName();
+    }
+    else
+    {
+        throw ExpectedTokenError(Token::Name, getTokenValue());
+    }
     expectToken(Token::OpenBrace);
     while (true)
     {
@@ -738,33 +789,170 @@ Parser::parseInterfaceDeclaration()
         {
             break;
         }
-        if (token != Token::Identifier)
+        if (token != Token::Name)
         {
-            throw ExpectedTokenError(Token::Identifier, getTokenValue());
+            throw ExpectedTokenError(Token::Name, getTokenValue());
         }
-        Token peek = peekNextToken();
-        PropertyDeclaration* property = createSyntax<PropertyDeclaration>(SyntaxKind::PropertyDeclaration);
-        property->name = createIdentifer();
-        if (peek == Token::OpenParen)
+        Name* name = createName();
+        if (objectDeclaration->kind == SyntaxKind::ObjectDeclaration && name->name == objectDeclaration->name->name)
         {
-            auto result = parseParameterList();;
-            property->parameters = result.parameterList;
+            objectDeclaration->constructor = parseConstructorDeclaration();
+            expectToken(Token::SemiColon);
         }
-        expectToken(Token::Colon);
-        property->type = parseType();
-        expectToken(Token::SemiColon);
-        finishSyntax(property);
-        interface->properties.add(property);
+        else
+        {
+            objectDeclaration->properties.add(parsePropertyOnIdentifier(name));
+        }
+    }
+    finishSyntax(objectDeclaration);
+    _scanner->resetFlags();
+    addSymbol(objectDeclaration);
+    return objectDeclaration;
+}
+
+
+InterfaceDeclaration*
+Parser::parseInterfaceDeclaration()
+{
+    auto interface = createDeclaration<InterfaceDeclaration>(SyntaxKind::InterfaceDeclaration);
+    interface->name = parseName();
+    expectToken(Token::OpenBrace);
+    while (true)
+    {
+        Token token = takeNextToken();
+        if (token == Token::CloseBrace)
+        {
+            break;
+        }
+        if (token != Token::Name)
+        {
+            throw ExpectedTokenError(Token::Name, getTokenValue());
+        }
+        interface->properties.add(parsePropertyOnIdentifier(nullptr));
     }
     finishSyntax(interface);
     return interface;
 }
 
+
+ContextDeclaration*
+Parser::parseContextDeclaration()
+{
+    auto context = createDeclaration<ContextDeclaration>(SyntaxKind::InterfaceDeclaration);
+    context->name = parseName();
+    expectToken(Token::OpenBrace);
+    while (true)
+    {
+        Token token = takeNextToken();
+        if (token == Token::CloseBrace)
+        {
+            break;
+        }
+        if (token != Token::Name)
+        {
+            throw ExpectedTokenError(Token::Name, getTokenValue());
+        }
+        context->properties.add(parsePropertyOnIdentifier(nullptr));
+    }
+    addSymbol(context);
+    finishSyntax(context);
+    return context;
+}
+
+
+ConstructorDeclaration*
+Parser::parseConstructorDeclaration()
+{
+    auto constructor = createSyntax<ConstructorDeclaration>(SyntaxKind::ConstructorDeclaration);
+    auto result = parseParameterList();;
+    constructor->parameterList = result.parameterList;
+    finishSyntax(constructor);
+    return constructor;
+}
+
+
+ConstructorImplementation*
+Parser::parseConstructorImplementation()
+{
+    auto impl = createDeclaration<ConstructorImplementation>(SyntaxKind::ConstructorImplementation);
+    _scanner->setFlag(TREAT_STRING_KEYWORD_AS_NAME);
+    impl->name = parseName();
+    auto result = parseParameterList();;
+    impl->parameterList = result.parameterList;
+    Token token = takeNextToken();
+    if (token == Token::Colon)
+    {
+        impl->initializationList = parseInitializationList();
+    }
+    impl->body = parseFunctionBodyOnOpenBrace();
+    finishSyntax(impl);
+    addSymbol(impl);
+    _scanner->resetFlags();
+    return impl;
+}
+
+
+List<CallExpression*>*
+Parser::parseInitializationList()
+{
+    expectToken(Token::Name);
+    auto list = new List<CallExpression*>();
+    while (true)
+    {
+        list->add(parseCallExpressionOnName());
+        Token token = takeNextToken();
+        if (token == Token::Comma)
+        {
+            Token peek = peekNextToken();
+            if (peek == Token::Name)
+            {
+                skipNextToken();
+                continue;
+            }
+            if (peek == Token::OpenBrace)
+            {
+                break;
+            }
+            throw ExpectedTokenError(Token::OpenBrace, getTokenValue());
+        }
+        else if (token == Token::OpenBrace)
+        {
+            break;
+        }
+        throw ExpectedTokenError(Token::OpenBrace, getTokenValue());
+    }
+    return list;
+}
+
+
+PropertyDeclaration*
+Parser::parsePropertyOnIdentifier(Name* name)
+{
+    if (name == nullptr)
+    {
+        name = createName();
+    }
+    PropertyDeclaration* property = createSyntax<PropertyDeclaration>(SyntaxKind::PropertyDeclaration);
+    property->name = name;
+    Token peek = peekNextToken();
+    if (peek == Token::OpenParen)
+    {
+        auto result = parseParameterList();;
+        property->parameters = result.parameterList;
+    }
+    expectToken(Token::Colon);
+    property->type = parseType();
+    expectToken(Token::SemiColon);
+    finishSyntax(property);
+    return property;
+}
+
+
 EnumDeclaration*
 Parser::parseEnumDeclaration()
 {
     EnumDeclaration* enumDeclaration = createDeclaration<EnumDeclaration>(SyntaxKind::EnumDeclaration);
-    enumDeclaration->name = parseIdentifier();
+    enumDeclaration->name = parseName();
     expectToken(Token::OpenBrace);
     while (true)
     {
@@ -773,16 +961,17 @@ Parser::parseEnumDeclaration()
         {
             break;
         }
-        if (token != Token::Identifier)
+        if (token != Token::Name)
         {
-            throw ExpectedTokenError(Token::Identifier, getTokenValue());
+            throw ExpectedTokenError(Token::Name, getTokenValue());
         }
-        enumDeclaration->values.add(createIdentifer());
+        enumDeclaration->values.add(createName());
         expectToken(Token::Comma);
     }
     finishSyntax(enumDeclaration);
     return enumDeclaration;
 }
+
 
 AssemblyBlock*
 Parser::parseAssemblyBlock()
@@ -795,6 +984,50 @@ Parser::parseAssemblyBlock()
     return assemblyBlock;
 }
 
+
+
+
+DomainDeclaration*
+Parser::parseDomainDeclaration()
+{
+    auto domain = createDeclaration<DomainDeclaration>(SyntaxKind::DomainDeclaration);
+    expectToken(Token::DoubleColon);
+    Token token = takeNextToken();
+    if (token != Token::StartKeyword && token != Token::EndKeyword)
+    {
+        throw ExpectedTokenError(Token::StartKeyword, getTokenValue());
+    }
+    token = takeNextToken();
+    char* start = _scanner->getStartPosition();
+    while (true)
+    {
+        if (token != Token::Name)
+        {
+            throw ExpectedTokenError(Token::Name, getTokenValue());
+        }
+        domain->names.add(createName());
+        char* end = _scanner->getPosition();
+        token = takeNextToken();
+        if (token == Token::SemiColon)
+        {
+            auto name = createSyntax<Name>(SyntaxKind::Name);
+            name->start = start;
+            name->end = end;
+            name->name = Utf8StringView(start, end);
+            domain->name = name;
+            addSymbol(domain);
+            finishSyntax(domain);
+            return domain;
+        }
+        if (token != Token::DoubleColon)
+        {
+            token = takeNextToken();
+            throw ExpectedTokenError(Token::DoubleColon, getTokenValue());
+        }
+    }
+}
+
+
 DeclarationMetadata*
 Parser::parseDeclarationMetadata()
 {
@@ -806,12 +1039,12 @@ Parser::parseDeclarationMetadata()
         {
             break;
         }
-        if (token != Token::Identifier)
+        if (token != Token::Name)
         {
-            throw ExpectedTokenError(Token::Identifier, getTokenValue());
+            throw ExpectedTokenError(Token::Name, getTokenValue());
         }
         MetadataProperty* property = createSyntax<MetadataProperty>(SyntaxKind::MetadataProperty);
-        property->name = createIdentifer();
+        property->name = createName();
         expectToken(Token::Colon);
         property->value = parseExpression();
         finishSyntax(property);
@@ -826,6 +1059,7 @@ Parser::parseDeclarationMetadata()
     return metadata;
 }
 
+
 Expression*
 Parser::parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier()
 {
@@ -833,9 +1067,9 @@ Parser::parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier()
     if (peek == Token::DoubleColon)
     {
         ModuleAccessExpression* moduleAccessExpression = createSyntax<ModuleAccessExpression>(SyntaxKind::ModuleAccessExpression);
-        moduleAccessExpression->name = createIdentifer();
+        moduleAccessExpression->name = createName();
         skipNextToken();
-        expectToken(Token::Identifier);
+        expectToken(Token::Name);
         moduleAccessExpression->expression = parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
         finishSyntax(moduleAccessExpression);
         return moduleAccessExpression;
@@ -850,7 +1084,7 @@ Parser::parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier()
 ArrayLiteral*
 Parser::parseArrayLiteral()
 {
-    ArrayLiteral* arrayLiteral = createSyntax<ArrayLiteral>(SyntaxKind::ArrayLiteral);
+    auto arrayLiteral = createSyntax<ArrayLiteral>(SyntaxKind::ArrayLiteral);
     Token peek = peekNextToken();
     while (true)
     {
@@ -901,7 +1135,7 @@ LengthOfExpression*
 Parser::parseLengthOfExpression()
 {
     LengthOfExpression* expression = createSyntax<LengthOfExpression>(SyntaxKind::LengthOfExpression);
-    expression->reference = parseIdentifier();
+    expression->reference = parseName();
     return expression;
 }
 
@@ -924,6 +1158,16 @@ Parser::addSymbol(Declaration* declaration)
     auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, declaration->name->name);
     symbols->add(symbol);
     declaration->symbol = symbol;
+}
+
+
+AddressOfExpression*
+Parser::parseAddressOfExpression()
+{
+    auto addressOfExpression = createSyntax<AddressOfExpression>(SyntaxKind::AddressOfExpression);
+    addressOfExpression->expression = parseExpression();
+    finishSyntax(addressOfExpression);
+    return addressOfExpression;
 }
 
 

@@ -35,6 +35,7 @@ struct VariableDeclaration;
 struct CallExpression;
 struct ArgumentList;
 struct InterfaceDeclaration;
+struct ObjectDeclaration;
 struct EnumDeclaration;
 struct AssemblyBlock;
 struct DeclarationMetadata;
@@ -55,6 +56,12 @@ struct ArrayLiteral;
 struct AssemblyBody;
 struct Punctuation;
 struct Declaration;
+struct AddressOfExpression;
+struct PropertyDeclaration;
+struct ConstructorDeclaration;
+struct ConstructorImplementation;
+struct DomainDeclaration;
+struct ContextDeclaration;
 enum class PunctuationType;
 enum class SyntaxKind : std::uint8_t;
 
@@ -153,7 +160,7 @@ private:
     parseVariableDeclaration();
 
     CallExpression*
-    parseCallExpressionOnIdentifier();
+    parseCallExpressionOnName();
 
     ArgumentList*
     parseArgumentListOnOpenParen();
@@ -209,14 +216,41 @@ private:
     Expression*
     parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
 
+    AddressOfExpression*
+    parseAddressOfExpression();
+
+    ObjectDeclaration*
+    parseObjectDeclaration();
+
+    PropertyDeclaration*
+    parsePropertyOnIdentifier(Name* name);
+
+    ConstructorDeclaration*
+    parseConstructorDeclaration();
+
+    ConstructorImplementation*
+    parseConstructorImplementation();
+
     Name*
-    parseIdentifier();
+    parseName();
 
     FunctionBody*
     parseFunctionBody();
 
+    FunctionBody*
+    parseFunctionBodyOnOpenBrace();
+
+    ContextDeclaration*
+    parseContextDeclaration();
+
     Expression*
     parseExpressionOnToken(Token token);
+
+    DomainDeclaration*
+    parseDomainDeclaration();
+
+    List<CallExpression*>*
+    parseInitializationList();
 
     Expression*
     parseExpression();
@@ -269,7 +303,7 @@ private:
     getTokenValue();
 
     Name*
-    createIdentifer();
+    createName();
 
     Utf8String
     getParameterDisplay(ParameterDeclaration* parameter);

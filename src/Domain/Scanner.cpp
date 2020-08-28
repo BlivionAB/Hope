@@ -54,6 +54,8 @@ Scanner::takeNextToken()
                 return Token::OpenBrace;
             case Character::CloseBrace:
                 return Token::CloseBrace;
+            case Character::Ampersand:
+                return Token::Ampersand;
             case Character::Equal:
                 if (getCharacter() == Character::Equal)
                 {
@@ -83,9 +85,13 @@ Scanner::getTokenFromString(const Utf8StringView& string) const
     std::optional token = eletStringToToken.find(string);
     if (token)
     {
+        if (token == Token::StringKeyword && _stage & TREAT_STRING_KEYWORD_AS_NAME)
+        {
+            return Token::Name;
+        }
         return *token;
     }
-    return Token::Identifier;
+    return Token::Name;
 }
 
 
@@ -119,4 +125,16 @@ Scanner::scanString()
         }
     }
     return Token::StringLiteral;
+}
+
+void
+Scanner::setFlag(std::uint8_t stage)
+{
+    _stage = stage;
+}
+
+void
+Scanner::resetFlags()
+{
+    _stage = 0;
 }

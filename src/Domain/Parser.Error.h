@@ -20,12 +20,14 @@ struct CompilerError
     { }
 };
 
+
 struct ExpectedTokenError : CompilerError
 {
     ExpectedTokenError(Token expected, Utf8StringView result):
         CompilerError("Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), result.toString())
     { }
 };
+
 
 struct UnknownTypeError
 {
@@ -61,10 +63,12 @@ struct UnexpectedModuleAccessUsage : CompilerError
     { }
 };
 
+
 struct UnexpectedEndOfFile : CompilerError
 {
 
 };
+
 
 struct UnknownFileLevelStatement
 {

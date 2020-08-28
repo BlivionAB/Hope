@@ -28,10 +28,12 @@ namespace elet::domain::compiler::ast
 
 using namespace instruction;
 
+struct ParameterDeclaration;
 struct ParameterDeclarationList;
 struct Punctuation;
 struct Expression;
 struct Declaration;
+struct CallExpression;
 using NameToDeclarationMap = std::map<Utf8StringView, Declaration*>;
 
 struct SourceFile
@@ -58,6 +60,9 @@ enum class SyntaxKind : std::uint8_t
     ModuleAccessUsage,
     ModuleAccessExpression,
     PropertyDeclaration,
+    ConstructorDeclaration,
+    ConstructorImplementation,
+    MethodImplementation,
     ImportStatement,
     ExportStatement,
     UseStatement,
@@ -76,15 +81,17 @@ enum class SyntaxKind : std::uint8_t
     NamedUsage,
     WildcardUsage,
     Punctuation,
-    Identifier,
+    Name,
 
     // Expressions
     LengthOfExpression,
+    AddressOfExpression,
 
     // Declarations
     ObjectDeclaration,
     InterfaceDeclaration,
     VariableDeclaration,
+    DomainDeclaration,
 
 };
 
@@ -169,9 +176,10 @@ enum class TypeKind
     UInt16,
     UInt32,
     UInt64,
+    USize,
     Pointer,
-    Float,
-    Double,
+    F32,
+    F64,
     Void,
     Custom,
     Length,
@@ -186,6 +194,9 @@ struct TypeAssignment : Syntax
     List<Punctuation*>
     pointers;
 
+    bool
+    addressOf;
+
     TypeKind
     type;
 
@@ -197,6 +208,9 @@ struct TypeAssignment : Syntax
 
     Utf8String
     display;
+
+    bool
+    isLiteral = false;
 };
 
 
@@ -215,6 +229,23 @@ struct Declaration : Syntax
     sourceFile;
 };
 
+enum class DomainType
+{
+    Unknown,
+    Start,
+    End,
+};
+
+
+struct DomainDeclaration : Declaration
+{
+    List<Name*>
+    names;
+
+    DomainType
+    type;
+};
+
 
 struct PropertyDeclaration : Declaration
 {
@@ -226,7 +257,44 @@ struct PropertyDeclaration : Declaration
 };
 
 
+struct ConstructorDeclaration : Declaration
+{
+    ParameterDeclarationList*
+    parameterList;
+};
+
+
+struct ConstructorImplementation : Declaration
+{
+    ParameterDeclarationList*
+    parameterList;
+
+    List<CallExpression*>*
+    initializationList;
+
+    FunctionBody*
+    body;
+};
+
+
+struct ObjectDeclaration : Declaration
+{
+    List<PropertyDeclaration*>
+    properties;
+
+    ConstructorDeclaration*
+    constructor;
+};
+
+
 struct InterfaceDeclaration : Declaration
+{
+    List<PropertyDeclaration*>
+    properties;
+};
+
+
+struct ContextDeclaration : Declaration
 {
     List<PropertyDeclaration*>
     properties;
@@ -369,6 +437,13 @@ struct ModuleAccessExpression : Expression
     Name*
     name;
 
+    Expression*
+    expression;
+};
+
+
+struct AddressOfExpression : Expression
+{
     Expression*
     expression;
 };

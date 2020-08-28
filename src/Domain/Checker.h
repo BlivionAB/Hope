@@ -27,7 +27,7 @@ namespace ast
 #define TYPE_UINT16     (std::uint8_t)0x7
 #define TYPE_UINT32     (std::uint8_t)0x8
 #define TYPE_UINT64     (std::uint8_t)0x9
-
+#define TYPE_CUSTOM     (std::uint8_t)0xa
 
 struct Type
 {

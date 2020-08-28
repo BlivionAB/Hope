@@ -40,7 +40,7 @@ Checker::checkCallExpression(const ast::CallExpression* callExpression)
     {
         auto functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(it->second);
         unsigned int index = 0;
-        unsigned int maxIndex = std::min(callExpression->argumentList->arguments.size() - 1, (std::size_t)0);
+        unsigned int maxIndex = callExpression->argumentList->arguments.size();
         for (ast::ParameterDeclaration* parameter : functionDeclaration->parameterList->parameters)
         {
             if (index < maxIndex)
@@ -86,6 +86,8 @@ Checker::isTypeAssignableToPlaceholder(Type &assignment, Type& placeholder)
             {
                 return false;
             }
+        case TYPE_CUSTOM:
+            break;
     }
     return true;
 }
@@ -100,6 +102,9 @@ Checker::getTypeFromTypeAssignment(ast::TypeAssignment* typeAssignment)
     {
         case ast::TypeKind::Char:
             result.kind = TYPE_CHAR;
+            break;
+        case ast::TypeKind::Custom:
+            result.kind = TYPE_CUSTOM;
             break;
     }
     return result;

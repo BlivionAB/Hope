@@ -8,6 +8,7 @@
 
 using namespace elet::foundation;
 
+#define TREAT_STRING_KEYWORD_AS_NAME (std::uint8_t)0x1
 
 class Scanner : public elet::foundation::BaseScanner
 {
@@ -18,17 +19,11 @@ public:
     {
         Unknown,
 
-        Identifier,
+        Name,
 
         // Keywords
-        AssemblyKeyword,
-        ImportKeyword,
-        ExportKeyword,
         UseKeyword,
-        ObjectKeyword,
-        InterfaceKeyword,
         ModuleKeyword,
-        EndKeyword,
         ImplementKeyword,
         EnumKeyword,
         ReturnKeyword,
@@ -43,9 +38,20 @@ public:
         FromKeyword,
 
         // Declarations
+        AssemblyKeyword,
+        ImportKeyword,
+        ExportKeyword,
         FunctionKeyword,
         VarKeyword,
+        DomainKeyword,
+        ObjectKeyword,
+        ConstructorKeyword,
+        InterfaceKeyword,
+        ContextKeyword,
+        StartKeyword,
+        EndKeyword,
 
+        Ampersand,
         OpenParen,
         CloseParen,
         OpenBrace,
@@ -72,8 +78,11 @@ public:
         IntKeyword,
         UnsignedIntKeyword,
         CharKeyword,
-        FloatKeyword,
-        DoubleKeyword,
+        StringKeyword,
+        F32Keyword,
+        F64Keyword,
+        USizeKeyword,
+        LiteralKeyword,
 
         // Operators
         LengthOfKeyword,
@@ -93,6 +102,12 @@ public:
     Utf8StringView
     getTokenValue() const;
 
+    void
+    setFlag(std::uint8_t stage);
+
+    void
+    resetFlags();
+
 private:
 
     Token
@@ -100,24 +115,32 @@ private:
 
     Token
     getTokenFromString(const Utf8StringView& string) const;
+
+    std::uint8_t
+    _stage;
 };
 
 using Token = Scanner::Token;
 const HashTableMap<const char*, Token> eletStringToToken =
 {
+    { "context", Token::ContextKeyword },
+    { "literal", Token::LiteralKeyword, },
+    { "domain", Token::DomainKeyword },
     { "var", Token::VarKeyword },
     { "lengthof", Token::LengthOfKeyword },
     { "assembly", Token::AssemblyKeyword },
     { "enum", Token::EnumKeyword },
-    { "interface", Token::InterfaceKeyword },
     { "module", Token::ModuleKeyword },
     { "import", Token::ImportKeyword },
     { "export", Token::ExportKeyword },
     { "use", Token::UseKeyword },
     { "implement", Token::ImplementKeyword },
     { "module", Token::ModuleKeyword },
+    { "start", Token::StartKeyword },
     { "end", Token::EndKeyword },
+    { "interface", Token::InterfaceKeyword },
     { "object", Token::ObjectKeyword },
+    { "constructor", Token::ConstructorKeyword },
     { "fn", Token::FunctionKeyword },
     { "if", Token::IfKeyword },
     { "else", Token::ElseKeyword },
@@ -125,13 +148,18 @@ const HashTableMap<const char*, Token> eletStringToToken =
     { "enum", Token::EnumKeyword },
     { "int", Token::IntKeyword },
     { "uint", Token::UnsignedIntKeyword },
+    { "usize", Token::USizeKeyword },
     { "char", Token::CharKeyword },
+    { "string", Token::StringKeyword },
     { "void", Token::VoidKeyword },
 };
 
 
 const HashTableMap<Token, const char*> eletTokenToString =
 {
+    { Token::ContextKeyword, "context" },
+    { Token::LiteralKeyword, "literal" },
+    { Token::DomainKeyword, "domain"},
     { Token::VarKeyword, "var" },
     { Token::LengthOfKeyword, "lengthof" },
     { Token::AssemblyKeyword, "assembly" },
@@ -143,21 +171,25 @@ const HashTableMap<Token, const char*> eletTokenToString =
     { Token::UseKeyword, "use" },
     { Token::ImplementKeyword, "implement" },
     { Token::ModuleKeyword, "module" },
+    { Token::StartKeyword, "start" },
     { Token::EndKeyword , "end" },
     { Token::ObjectKeyword, "object" },
+    { Token::ConstructorKeyword, "constructor" },
     { Token::FunctionKeyword, "fn" },
     { Token::IfKeyword, "if" },
-    { Token::ElseKeyword, "else" },
-    { Token::ReturnKeyword, "return" },
-    { Token::EnumKeyword, "enum" },
-    { Token::IntKeyword, "int" },
+    { Token::ElseKeyword,        "else" },
+    { Token::ReturnKeyword,      "return" },
+    { Token::EnumKeyword,        "enum" },
+    { Token::IntKeyword,         "int" },
     { Token::UnsignedIntKeyword, "uint" },
-    { Token::CharKeyword, "char" },
-    { Token::VoidKeyword, "void" },
+    { Token::USizeKeyword,       "usize" },
+    { Token::CharKeyword,        "char" },
+    { Token::StringKeyword,      "string" },
+    { Token::VoidKeyword,        "void" },
 
-    { Token::Identifier, "identifier" },
-    { Token::DoubleColon, "::" },
-    { Token::SemiColon, ";" },
+    { Token::Name,               "identifier" },
+    { Token::DoubleColon,        "::" },
+    { Token::SemiColon,          ";" },
 };
 
 #endif //ELET_SCANNER_H
