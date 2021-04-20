@@ -1,0 +1,33 @@
+
+
+class ListView
+{
+    ListView(items):
+    children: List<View*>;
+}
+
+
+class TextView
+{
+    TextView(text: String)
+}
+
+
+fn OnProcessStart(): void
+{
+    var some: LText;
+    var body = ListView(children: [
+        LText("SomeText", plural) => some,
+        if (some) VStackImage(),
+        if (some)
+        {
+            var lte = "color";
+            VStackImage(lite);
+        },
+        for (item in range)
+        {
+            SomeStack(item.name);
+        },
+    ]);
+    onHover(some);
+}

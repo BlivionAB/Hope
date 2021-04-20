@@ -1,0 +1,24 @@
+domain Std;
+
+
+interface IRequestContext
+{
+    allocator: Allocator;
+}
+
+
+object String
+{
+    _text: char*;
+    _length: usize;
+
+    String(text: char* literal);
+    Length(): usize;
+}
+
+
+fn OnProcessStart(): void
+{
+    var allocator = Allocator();
+    var some = String();
+}

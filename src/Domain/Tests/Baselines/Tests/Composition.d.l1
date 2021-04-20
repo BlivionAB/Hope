@@ -1,0 +1,55 @@
+
+
+class Editor
+{
+    Editor();
+    ~Editor();
+    AddText(text: char* literal);
+    ZoomIn from _workspace;
+    ZoomOut from _workspace;
+
+    _text: char*;
+    _length: usize;
+    _Length(): usize;
+
+    _workspace = Workspace;
+}
+
+
+class Workspace from Editor
+{
+    _editor = Editor;
+    zoom = Zoom;
+    AddGuideline(): void;
+}
+
+
+fn AddGuideline from Workspace
+    types (T)
+    returns void
+    params (some: T)
+{
+    _editor.AddText();
+    _zoom.ZoomLevel;
+}
+
+
+fn _Length from Editor
+{
+
+}
+
+
+class Zoom from Workspace
+{
+    ZoomLevel: float;
+    ZoomIn(): void;
+    ZoomOut(): void;
+}
+
+
+class Behavior from Human
+{
+    BeAngry(): void;
+    BeGlad(): void;
+}

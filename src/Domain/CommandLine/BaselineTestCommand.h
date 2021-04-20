@@ -2,7 +2,7 @@
 #define ELET_BASELINETESTCOMMAND_H
 
 #include <map>
-#include <Domain/Compiler.h>
+#include <Domain/Compiler/Compiler.h>
 #include <Foundation/TestRunner.h>
 #include <Foundation/CommandLine.h>
 

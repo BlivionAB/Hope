@@ -1,0 +1,28 @@
+implement Std::IProcessFileInterface;
+
+using Std::Http { IRequestContext };
+using Std::FileSystem;
+
+
+fn TestFunction<T>(): void
+{
+
+}
+
+
+fn OnProcessStart:
+    typeparams <
+        T
+    >,
+    params (
+        argc: int,
+        argv: char[],
+        some: T,
+    ),
+    context (
+        some: IRequestContext,
+    ),
+    returns void,
+{
+
+}

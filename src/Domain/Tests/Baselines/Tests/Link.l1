@@ -1,0 +1,31 @@
+domain Std::Console implements IConsole
+{
+
+public:
+
+    interface IConsole
+    {
+        WriteLine(text: char*): void static;
+    }
+
+
+    fn WriteLine(text: char*): void
+    {
+        puts(text);
+    }
+
+private:
+
+    extern "C"
+    {
+        fn puts(source: char*): int;
+    }
+}
+
+
+using Std::Console::{ WriteLine };
+
+fn OnProcessStart(): void
+{
+    WriteLine("Hello World!");
+}

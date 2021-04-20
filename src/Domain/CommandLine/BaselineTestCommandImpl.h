@@ -2,7 +2,7 @@
 #include <iostream>
 #include <Foundation/CommandLine.h>
 #include <Foundation/Tests/Mocks/TestRunnerMock.h>
-#include <Domain/Compiler.h>
+#include <Domain/Compiler/Compiler.h>
 
 
 using namespace elet::domain::compiler;

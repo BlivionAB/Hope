@@ -1,0 +1,44 @@
+
+
+fn Some(): void
+    throws UnauthorizedException
+{
+    var s = new String();
+    if (true)
+    {
+        // dealloc in reverse order.
+        throw UnauthorizedException();
+    }
+}
+
+
+fn OnProcessStart(): void
+{
+    try
+    {
+        Some();
+    }
+    catch (authError: UnauthorizedError):
+        sm
+
+    try (Some())
+    catch (authError: UnauthorizedError):
+    finally:
+
+    switch(some)
+    {
+        case (authError: UnauthorizedError) if (some):
+        {
+
+        }
+        case 2:
+        {
+
+        }
+        default:
+        {
+
+        }
+    }
+
+}

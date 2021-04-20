@@ -4,7 +4,7 @@
 #include <Foundation/DocumentExecutor.h>
 #include <Foundation/Utf8String.h>
 #include <Foundation/Path.h>
-#include <Domain/Compiler.h>
+#include <Domain/Compiler/Compiler.h>
 #include <Domain/CommandLine/BaselineTestCommand.h>
 
 using namespace elet::domain::compiler;

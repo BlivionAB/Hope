@@ -1,0 +1,24 @@
+implement domain Std;
+
+fn String.String(text: char* literal):
+    _text(text),
+    _length(lengthof text),
+{
+
+}
+
+
+fn String.Length():
+    context (
+        RequestContext
+    ),
+    returns: usize,
+{
+    return _length;
+}
+
+
+fn onProcessStart(argc: int, argv char[]): void
+{
+
+}

@@ -22,7 +22,7 @@ include_directories(
 
 file(GLOB FOUNDATION_SRC ${CMAKE_SOURCE_DIR}/src/Foundation/*)
 file(GLOB FOUNDATION_TEST ${CMAKE_SOURCE_DIR}/src/Foundation/Tests/* ${CMAKE_SOURCE_DIR}/src/Foundation/Tests/**/*)
-file(GLOB DOMAIN_SRC ${CMAKE_SOURCE_DIR}/src/Domain/*)
+file(GLOB DOMAIN_SRC ${CMAKE_SOURCE_DIR}/src/Domain/**)
 file(GLOB DOMAIN_TEST ${CMAKE_SOURCE_DIR}/src/Domain/Tests/* ${CMAKE_SOURCE_DIR}/src/Domain/Tests/**/*)
 
 add_executable(
@@ -30,7 +30,49 @@ add_executable(
     src/baselinetest.cpp
     ${FOUNDATION_SRC}
     ${DOMAIN_SRC}
-        src/Domain/Compiler.cpp src/Domain/Compiler.h src/Tests/EletSourceDocumentExecutor.cpp src/Tests/EletSourceDocumentExecutor.h src/Domain/Parser.Error.h src/Domain/Instruction/Scanner.cpp src/Domain/Instruction/Scanner.h src/Foundation/BaseScanner.cpp src/Foundation/BaseScanner.h src/Domain/Instruction/Parser.cpp src/Domain/Instruction/Parser.h src/Domain/Instruction/Syntax.h src/Domain/Instruction/Parser.Error.h src/Domain/Instruction/Instruction.h src/Domain/Instruction/Transformer.cpp src/Domain/Instruction/Transformer.h src/Domain/Instruction/Assembly/Baseline/BaselineWriter.cpp src/Domain/Instruction/Assembly/Baseline/BaselineWriter.h src/Domain/Instruction/TextWriter.cpp src/Domain/Instruction/TextWriter.h src/Domain/Binder.cpp src/Domain/Binder.h src/Domain/Instruction/ObjectFileWriter/MachOFileWriter.h src/Domain/Instruction/AssemblyWriter.cpp src/Domain/Instruction/AssemblyWriter.h src/Domain/Instruction/Assembly/x86/X86_64Writer.cpp src/Domain/Instruction/Assembly/x86/X86_64Writer.h src/Domain/Instruction/Assembly/AssemblyWriterInterface.h src/Domain/Instruction/ObjectFileWriter/MachOFileWriter.cpp src/Domain/Instruction/ObjectFileWriter.cpp src/Domain/Instruction/ObjectFileWriter.h src/Domain/Instruction/ObjectFileWriter/ObjectFileWriterInterface.h src/Domain/Instruction/Assembly/x86/OpCode/Mov.h src/Domain/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h src/Domain/Instruction/Assembly/x86/OpCode/AddressForm32.h src/Domain/Checker.cpp src/Domain/Checker.h)
+    src/Domain/Compiler/Compiler.cpp
+    src/Domain/Compiler/Compiler.h
+    src/Tests/EletSourceDocumentExecutor.cpp
+    src/Tests/EletSourceDocumentExecutor.h
+    src/Domain/Compiler/Parser.Error.h
+    src/Domain/Compiler/Parser.cpp
+    src/Domain/Compiler/Scanner.cpp
+    src/Domain/Compiler/Instruction/Scanner.cpp
+    src/Domain/Compiler/Instruction/Scanner.h
+    src/Foundation/BaseScanner.cpp
+    src/Foundation/BaseScanner.h
+    src/Domain/Compiler/Instruction/Parser.cpp
+    src/Domain/Compiler/Instruction/Parser.h
+    src/Domain/Compiler/Instruction/Syntax.h
+    src/Domain/Compiler/Instruction/Parser.Error.h
+    src/Domain/Compiler/Instruction/Instruction.h
+    src/Domain/Compiler/Instruction/Transformer.cpp
+    src/Domain/Compiler/Instruction/Transformer.h
+    src/Domain/Compiler/Instruction/Assembly/Baseline/BaselineWriter.cpp
+    src/Domain/Compiler/Instruction/Assembly/Baseline/BaselineWriter.h
+    src/Domain/Compiler/Instruction/TextWriter.cpp
+    src/Domain/Compiler/Instruction/TextWriter.h
+    src/Domain/Compiler/Binder.cpp
+    src/Domain/Compiler/Binder.h
+    src/Domain/Compiler/Instruction/ObjectFileWriter/MachOFileWriter.h
+    src/Domain/Compiler/Instruction/AssemblyWriter.cpp
+    src/Domain/Compiler/Instruction/AssemblyWriter.h
+    src/Domain/Compiler/Instruction/Assembly/x86/X86_64Writer.cpp
+    src/Domain/Compiler/Instruction/Assembly/x86/X86_64Writer.h
+    src/Domain/Compiler/Instruction/Assembly/AssemblyWriterInterface.h
+    src/Domain/Compiler/Instruction/ObjectFileWriter/MachOFileWriter.cpp
+    src/Domain/Compiler/Instruction/ObjectFileWriter.cpp
+    src/Domain/Compiler/Instruction/ObjectFileWriter.h
+    src/Domain/Compiler/Instruction/ObjectFileWriter/ObjectFileWriterInterface.h
+    src/Domain/Compiler/Instruction/Assembly/x86/OpCode/Mov.h
+    src/Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h
+    src/Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h
+    src/Domain/Compiler/Checker.cpp src/Domain/Compiler/Checker.h
+        src/Domain/Compiler/Syntax/Syntax.Definition.h
+        src/Domain/Compiler/Syntax/Syntax.Kind.h
+        src/Domain/Compiler/Syntax/Syntax.Labels.h
+        src/Domain/Compiler/Syntax/Syntax.Block.h
+)
 
 add_executable(
     unittest

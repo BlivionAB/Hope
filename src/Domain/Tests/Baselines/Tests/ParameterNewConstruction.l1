@@ -1,0 +1,21 @@
+
+
+class Utf8String
+{
+    new(size: usize):
+        context (allocator: IMyAllocator)
+}
+
+
+fn new(size: usize): *Utf8String from Utf8String
+{
+    var string = allocator.allocate(size);
+    return string;
+}
+
+
+fn OnRequest(): void
+{
+    var allocator = new Allocator(100000);
+    new Utf8String() context (allocator);
+}
