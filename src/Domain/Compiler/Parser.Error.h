@@ -79,6 +79,14 @@ struct UnexpectedEndOfFile : CompilerError
 };
 
 
+struct UndefinedDomainAccessError : CompilerError
+{
+    UndefinedDomainAccessError():
+        CompilerError("Could not get access domain")
+    { }
+};
+
+
 struct UnknownFileLevelStatement
 {
 

@@ -1,5 +1,6 @@
 #include "Binder.h"
-
+#include "Parser.Error.h"
+#include <variant>
 
 namespace elet::domain::compiler
 {
@@ -19,10 +20,47 @@ void
 Binder::performWork(DeclarationWork& work)
 {
     _fileDeclaration = &work.file->declarations;
-    if (work.declaration->kind == ast::SyntaxKind::FunctionDeclaration)
+
+    switch (work.declaration->kind)
     {
-        bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
+        case ast::SyntaxKind::UsingStatement:
+            bindUsingStatement(reinterpret_cast<ast::UsingStatement*>(work.declaration));
+            break;
+        case ast::SyntaxKind::FunctionDeclaration:
+            bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
+            break;
     }
+}
+
+
+void
+Binder::bindUsingStatement(ast::UsingStatement* usingStatement)
+{
+    auto declarationMap = getDomainDeclarations(usingStatement->usage, &_globalDeclarations);
+}
+
+
+std::map<Utf8StringView, ast::Declaration*>*
+Binder::getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const AccessMap* accessMap)
+{
+    auto result = accessMap->find(domainAccessUsage->name->name);
+    if (result != accessMap->end())
+    {
+        if (auto declarationMap = std::get_if<std::map<Utf8StringView, ast::Declaration*>*>(&result->second))
+        {
+            return *declarationMap;
+        }
+        else
+        {
+            if (domainAccessUsage->usage && domainAccessUsage->usage->kind == ast::SyntaxKind::DomainAccessUsage)
+            {
+                auto accessMap = reinterpret_cast<AccessMap*>(std::get<void*>(result->second));
+                return getDomainDeclarations(reinterpret_cast<ast::DomainAccessUsage*>(domainAccessUsage->usage), accessMap);
+            }
+        }
+    }
+
+    throw UndefinedDomainAccessError();
 }
 
 

@@ -29,7 +29,7 @@ using namespace foundation;
 
 struct DeclarationWork
 {
-    ast::Declaration*
+    ast::Syntax*
     declaration;
 
     ast::SourceFile*
@@ -64,6 +64,16 @@ private:
     std::map<Utf8StringView, ast::Declaration*>*
     _fileDeclaration;
 
+    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> AccessMap;
+
+    AccessMap
+    _globalDeclarations;
+
+//    static
+//    thread_local
+//    std::map<Utf8StringView, ast::UsingStatement*>*
+//    _importSymbols;
+
     static
     thread_local
     ast::FunctionDeclaration*
@@ -77,6 +87,12 @@ private:
 
     void
     bindExpression(ast::Expression* expression);
+
+    void
+    bindUsingStatement(ast::UsingStatement* usingStatement);
+
+    std::map<Utf8StringView, ast::Declaration*>*
+    getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const AccessMap* accessMap);
 
     void
     bindPropertyExpression(ast::PropertyExpression* property);

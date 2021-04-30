@@ -182,7 +182,7 @@ Parser::parseFileLevelDeclarations()
         case Token::EnumKeyword:
             return parseEnumDeclaration();
         case Token::UsingKeyword:
-            return parseUseStatement();
+            return parseUsingStatement();
         case Token::FunctionKeyword:
             return parseFunctionDeclaration();
         case Token::EndOfFile:
@@ -207,7 +207,7 @@ Parser::parseModuleLevelStatement()
         case Token::EnumKeyword:
             return parseEnumDeclaration();
         case Token::UsingKeyword:
-            return parseUseStatement();
+            return parseUsingStatement();
         case Token::FunctionKeyword:
             return parseFunctionDeclaration();
         case Token::EndOfFile:
@@ -725,12 +725,12 @@ Parser::parseTuple()
 }
 
 
-UseStatement*
-Parser::parseUseStatement()
+UsingStatement*
+Parser::parseUsingStatement()
 {
-    UseStatement* useStatement = createSyntax<UseStatement>(SyntaxKind::UsingStatement);
+    UsingStatement* useStatement = createSyntax<UsingStatement>(SyntaxKind::UsingStatement);
     expectToken(Token::Identifier);
-    useStatement->usage = parseModuleAccessUsageOnIdentifier();
+    useStatement->usage = parseDomainAccessUsageOnIdentifier();
     finishSyntax(useStatement);
     return useStatement;
 }
@@ -860,37 +860,37 @@ Parser::hasEqualIdentifier(Name *id1, Name* id2)
 //    return endStatement;
 //}
 
-ModuleAccessUsage*
-Parser::parseModuleAccessUsageOnIdentifier()
+DomainAccessUsage*
+Parser::parseDomainAccessUsageOnIdentifier()
 {
-    ModuleAccessUsage* moduleAccessUsage = createSyntax<ModuleAccessUsage>(SyntaxKind::ModuleAccessUsage);
-    moduleAccessUsage->name = createName();
+    DomainAccessUsage* domainAccessUsage = createSyntax<DomainAccessUsage>(SyntaxKind::DomainAccessUsage);
+    domainAccessUsage->name = createName();
     expectToken(Token::DoubleColon);
     Token peek = peekNextToken();
     if (peek == Token::Identifier)
     {
         skipNextToken();
-        moduleAccessUsage->usage = parseModuleAccessUsageOnIdentifier();
+        domainAccessUsage->usage = parseDomainAccessUsageOnIdentifier();
     }
     else if (peek == Token::OpenBrace)
     {
         skipNextToken();
-        moduleAccessUsage->usage = parseNamedUsageOnOpenBrace();
+        domainAccessUsage->usage = parseNamedUsageOnOpenBrace();
     }
     else if (peek == Token::Asterisk)
     {
         skipNextToken();
         WildcardUsage* wildcardUsage = createSyntax<WildcardUsage>(SyntaxKind::WildcardUsage);
         finishSyntax(wildcardUsage);
-        moduleAccessUsage->usage = wildcardUsage;
+        domainAccessUsage->usage = wildcardUsage;
         expectToken(Token::SemiColon);
     }
     else
     {
         throw UnexpectedModuleAccessUsage();
     }
-    finishSyntax(moduleAccessUsage);
-    return moduleAccessUsage;
+    finishSyntax(domainAccessUsage);
+    return domainAccessUsage;
 }
 
 NamedUsage*

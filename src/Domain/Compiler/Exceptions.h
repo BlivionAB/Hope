@@ -19,4 +19,6 @@ struct UnexpectedToken
     { }
 };
 
+
+struct
 #endif //ELET_EXCEPTIONS_H

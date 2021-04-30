@@ -43,8 +43,8 @@ struct ExternCBlock;
 struct DeclarationMetadata;
 struct Tuple;
 struct EndStatement;
-struct ModuleAccessUsage;
-struct UseStatement;
+struct DomainAccessUsage;
+struct UsingStatement;
 struct NamedUsage;
 struct ParameterDeclaration;
 struct Expression;
@@ -196,14 +196,14 @@ private:
     Tuple*
     parseTuple();
 
-    ModuleAccessUsage*
-    parseModuleAccessUsageOnIdentifier();
+    DomainAccessUsage*
+    parseDomainAccessUsageOnIdentifier();
 
 //    ModuleDeclaration*
 //    parseModuleDeclaration();
 
-    UseStatement*
-    parseUseStatement();
+    UsingStatement*
+    parseUsingStatement();
 
     NamedUsage*
     parseNamedUsageOnOpenBrace();
