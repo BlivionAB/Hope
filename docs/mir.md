@@ -203,7 +203,7 @@ Str a_1, R
 Jumps: [
     Jump {
         conditions: [
-            Jg a_1, 0,
+            Jg a_1, 0.5,
         ],
         target: Block3
     }
@@ -218,12 +218,21 @@ BLock3:
 Jumps: [
     Jump {
         conditions: [],
-        target: Block2
+        target Block6
+    }
+]
+Next: Block4
+
+Block4:
+Jumps: [
+    Jump {
+        conditions: [],
+        target Block2
     }
 ]
 
 
-BLock4:
+BLock5:
 Str a_2, 0
 Jumps: [
     Jump {
@@ -232,8 +241,8 @@ Jumps: [
     }
 ]
 
-Block5:
-Str a_3, 3
+Block6:
+Str a_3, 2
 Jumps: [
     Jump {
         conditions: [],
@@ -241,7 +250,7 @@ Jumps: [
     }
 ]
 
-Block6:
+Block7:
 Str a_4, 1
 Jumps: [
     Jump {
