@@ -71,11 +71,6 @@ struct Name : Syntax
 };
 
 
-
-
-
-
-
 struct MetadataProperty : Syntax
 {
     Name*
@@ -308,7 +303,7 @@ struct NamedUsage : Usage
 };
 
 
-struct ModuleAccessUsage : Usage
+struct DomainAccessUsage : Usage
 {
     Name*
     name;
@@ -320,14 +315,14 @@ struct ModuleAccessUsage : Usage
 
 struct ExportStatement : Syntax
 {
-    ModuleAccessUsage*
+    DomainAccessUsage*
     usage;
 };
 
 
-struct UseStatement : Syntax
+struct UsingStatement : Syntax
 {
-    ModuleAccessUsage*
+    DomainAccessUsage*
     usage;
 };
 

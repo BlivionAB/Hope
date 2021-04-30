@@ -17,7 +17,7 @@ namespace elet::domain::compiler::ast
         EnumDeclaration,
         FunctionBody,
         ModuleDeclaration,
-        ModuleAccessUsage,
+        DomainAccessUsage,
         ModuleAccessExpression,
         PropertyDeclaration,
         ConstructorDeclaration,
