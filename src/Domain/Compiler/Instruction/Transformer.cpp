@@ -227,6 +227,8 @@ Transformer::transformArgument(ast::Expression* expression, std::size_t numberOf
             }
             break;
         }
+        default:
+            throw UnknownExpressionForBinding();
     }
 }
 
@@ -246,7 +248,7 @@ Transformer::transformStringParameter(std::size_t& numberOfParameterRegisters, u
 
 
 Utf8StringView
-Transformer::getSymbolReference(ast::NamedExpression *expression) const
+Transformer::getSymbolReference(ast::NamedExpression *expression)
 {
     return expression->name->name;
 }

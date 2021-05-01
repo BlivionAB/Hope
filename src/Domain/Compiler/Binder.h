@@ -86,6 +86,7 @@ private:
     void
     tryBindOperand(output::Operand* operand, SymbolMap& symbols);
 
+    static
     void
     bindExpression(ast::Expression* expression);
 
@@ -95,6 +96,7 @@ private:
     std::map<Utf8StringView, ast::Declaration*>*
     getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const AccessMap* accessMap);
 
+    static
     void
     bindPropertyExpression(ast::PropertyExpression* property);
 

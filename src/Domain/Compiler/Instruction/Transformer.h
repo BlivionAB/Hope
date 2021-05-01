@@ -112,14 +112,16 @@ private:
     List<output::Instruction*>*
     transformLocalStatements(List<ast::Syntax*>& statements, List<output::Parameter*>& parameters);
 
+    static
     void
     resolveAssemblyReference(output::Operand** operand, List<output::Parameter*>& parameters);
 
     std::size_t
     resolvePrimitiveTypeSize(ast::TypeAssignment* type) const;
 
+    static
     Utf8StringView
-    getSymbolReference(ast::NamedExpression *expression) const;
+    getSymbolReference(ast::NamedExpression *expression);
 
     void
     transformCallExpression(ast::CallExpression* callExpression, List<output::Instruction*>* routine);

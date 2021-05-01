@@ -103,13 +103,21 @@ struct UnrecognizedDeclaration : CompilerError
 };
 
 
-
 struct UnrecognizedPrimitiveType : CompilerError
 {
     UnrecognizedPrimitiveType():
         CompilerError("Cannot recognize declaration.")
     { }
 };
+
+
+struct UnknownExpressionForBinding : CompilerError
+{
+    UnknownExpressionForBinding():
+        CompilerError("Unknown expression for binding.")
+    { }
+};
+
 
 struct UnrecognizedBindingStatement : CompilerError
 {

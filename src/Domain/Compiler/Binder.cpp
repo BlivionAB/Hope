@@ -147,6 +147,8 @@ Binder::bindExpression(ast::Expression* expression)
         case ast::SyntaxKind::PropertyExpression:
             bindPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression));
             break;
+        default:
+            throw UnknownExpressionForBinding();
     }
 }
 
