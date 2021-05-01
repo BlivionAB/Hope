@@ -134,7 +134,7 @@ Transformer::resolveAssemblyReference(output::Operand** operand, List<output::Pa
 
 
 std::size_t
-Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type)
+Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type) const
 {
     if (type->size == 0)
     {

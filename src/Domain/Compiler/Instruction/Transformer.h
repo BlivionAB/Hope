@@ -119,7 +119,6 @@ private:
     void
     resolveAssemblyReference(output::Operand** operand, List<output::Parameter*>& parameters);
 
-    static
     std::size_t
     resolvePrimitiveTypeSize(ast::TypeAssignment* type) const;
 

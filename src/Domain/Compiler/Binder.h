@@ -5,6 +5,7 @@
 #include <map>
 #include <Foundation/Utf8StringView.h>
 #include "Syntax/Syntax.h"
+#include "Parser.h"
 #include "Domain/Compiler/Instruction/Instruction.h"
 
 
@@ -15,6 +16,7 @@ namespace ast
 {
     struct Declaration;
     struct PropertyExpression;
+    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> DomainDeclarationMap;
 }
 
 namespace instruction::output
@@ -51,7 +53,7 @@ public:
     Binder();
 
     void
-    performWork(DeclarationWork& work);
+    performWork(DeclarationWork& work, const ast::DomainDeclarationMap* domainDeclarationMap);
 
     void
     bindFunction(ast::FunctionDeclaration* declaration);
@@ -65,10 +67,8 @@ private:
     std::map<Utf8StringView, ast::Declaration*>*
     _fileDeclaration;
 
-    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> AccessMap;
-
-    AccessMap*
-    _globalDeclarations;
+    const ast::DomainDeclarationMap*
+    _domainDeclarationMap;
 
 //    static
 //    thread_local
@@ -94,7 +94,7 @@ private:
     bindUsingStatement(ast::UsingStatement* usingStatement);
 
     std::map<Utf8StringView, ast::Declaration*>*
-    getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const AccessMap* accessMap);
+    getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const ast::DomainDeclarationMap* domainDeclarationMap);
 
     static
     void

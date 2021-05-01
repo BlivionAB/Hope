@@ -1141,7 +1141,7 @@ Parser::parseDomainDeclaration()
 
     setAccessMap:
     std::size_t last = domain->names.size();
-    AccessMap* currentAccessMap = &_domains;
+    ast::DomainDeclarationMap* currentAccessMap = &domainDeclarationMap;
     for (int i = 0; i <= last; i++)
     {
         auto name = domain->names[i];
@@ -1150,7 +1150,7 @@ Parser::parseDomainDeclaration()
             currentAccessMap->insert({ name->name, &domain->block->symbols });
             break;
         }
-        AccessMap* newAccessMap = new AccessMap();
+        ast::DomainDeclarationMap* newAccessMap = new ast::DomainDeclarationMap();
         currentAccessMap->insert({ name->name, newAccessMap });
         currentAccessMap = newAccessMap;
     }

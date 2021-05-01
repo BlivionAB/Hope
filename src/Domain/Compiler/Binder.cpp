@@ -14,15 +14,17 @@ ast::FunctionDeclaration*
 Binder::_currentFunctionDeclaration = nullptr;
 
 
-Binder::Binder()
+Binder::Binder():
+    _domainDeclarationMap(nullptr)
 {
 
 }
 
 
 void
-Binder::performWork(DeclarationWork& work)
+Binder::performWork(DeclarationWork& work, const ast::DomainDeclarationMap* domainDeclarationMap)
 {
+    _domainDeclarationMap = domainDeclarationMap;
     _fileDeclaration = &work.file->declarations;
 
     switch (work.declaration->kind)
@@ -42,15 +44,15 @@ Binder::performWork(DeclarationWork& work)
 void
 Binder::bindUsingStatement(ast::UsingStatement* usingStatement)
 {
-    auto declarationMap = getDomainDeclarations(usingStatement->usage, _globalDeclarations);
+    auto declarationMap = getDomainDeclarations(usingStatement->usage, _domainDeclarationMap);
 }
 
 
 std::map<Utf8StringView, ast::Declaration*>*
-Binder::getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const AccessMap* accessMap)
+Binder::getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const ast::DomainDeclarationMap* domainDeclarationMap)
 {
-    auto result = accessMap->find(domainAccessUsage->name->name);
-    if (result != accessMap->end())
+    auto result = domainDeclarationMap->find(domainAccessUsage->name->name);
+    if (result != domainDeclarationMap->end())
     {
         if (auto declarationMap = std::get_if<std::map<Utf8StringView, ast::Declaration*>*>(&result->second))
         {
@@ -62,7 +64,7 @@ Binder::getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, c
             {
                 return getDomainDeclarations(
                     reinterpret_cast<ast::DomainAccessUsage*>(domainAccessUsage->usage),
-                    reinterpret_cast<AccessMap*>(std::get<void*>(result->second)));
+                    reinterpret_cast<ast::DomainDeclarationMap*>(std::get<void*>(result->second)));
             }
         }
     }

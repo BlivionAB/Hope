@@ -280,7 +280,7 @@ Compiler::acceptBindingWork()
         _bindingWork.pop();
         _bindingWorkMutex.unlock();
         _pendingBindingWork++;
-        _binder->performWork(*work);
+        _binder->performWork(*work, &_parser->domainDeclarationMap);
         _checkingWork.push(work->declaration);
         _pendingBindingWork--;
     }

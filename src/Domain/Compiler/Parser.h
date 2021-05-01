@@ -87,7 +87,7 @@ struct ParameterListResult
     display;
 };
 
-
+typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> DomainDeclarationMap;
 
 class Parser
 {
@@ -106,6 +106,9 @@ public:
     thread_local
     List<Symbol*>*
     symbols;
+
+    DomainDeclarationMap
+    domainDeclarationMap;
 
 private:
 
@@ -136,9 +139,6 @@ private:
     _files;
 
 
-    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> AccessMap;
-    AccessMap
-    _domains;
 
     instruction::InstructionParser*
     _instructionParser = nullptr;
