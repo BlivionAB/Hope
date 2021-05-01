@@ -34,7 +34,6 @@ add_executable(
     src/Domain/Compiler/Compiler.h
     src/Tests/EletSourceDocumentExecutor.cpp
     src/Tests/EletSourceDocumentExecutor.h
-    src/Domain/Compiler/Parser.Error.h
     src/Domain/Compiler/Parser.cpp
     src/Domain/Compiler/Scanner.cpp
     src/Domain/Compiler/Instruction/Scanner.cpp
