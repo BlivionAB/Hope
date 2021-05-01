@@ -67,10 +67,10 @@ add_executable(
     src/Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h
     src/Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h
     src/Domain/Compiler/Checker.cpp src/Domain/Compiler/Checker.h
-        src/Domain/Compiler/Syntax/Syntax.Definition.h
-        src/Domain/Compiler/Syntax/Syntax.Kind.h
-        src/Domain/Compiler/Syntax/Syntax.Labels.h
-        src/Domain/Compiler/Syntax/Syntax.Block.h
+    src/Domain/Compiler/Syntax/Syntax.Definition.h
+    src/Domain/Compiler/Syntax/Syntax.Kind.h
+    src/Domain/Compiler/Syntax/Syntax.Labels.h
+    src/Domain/Compiler/Syntax/Syntax.Block.h
 )
 
 add_executable(
