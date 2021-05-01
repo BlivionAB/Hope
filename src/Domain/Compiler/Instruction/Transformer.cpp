@@ -1,4 +1,5 @@
 #include "Transformer.h"
+#include "Domain/Compiler/Exceptions.h"
 
 namespace elet::domain::compiler::instruction
 {
@@ -49,6 +50,7 @@ Transformer::transform(ast::Declaration* declaration)
         _function->instructions = transformFunctionBody(functionDeclaration->body, _function->parameters);
         return _function;
     }
+    throw UnrecognizedDeclaration();
 }
 
 
@@ -107,6 +109,8 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements, List<outpu
             case ast::SyntaxKind::AssemblyBlock:
                 transformAssemblyBlock(reinterpret_cast<ast::AssemblyBlock*>(statement), list, parameters);
                 break;
+            default:
+                throw UnrecognizedLocalStatement();
         }
     }
     return list;
@@ -147,6 +151,8 @@ Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type) const
             case ast::TypeKind::UInt8:
             case ast::TypeKind::Char:
                 return 8;
+            default:
+                throw UnrecognizedPrimitiveType();
         }
     }
     return type->size;

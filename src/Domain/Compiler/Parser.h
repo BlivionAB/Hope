@@ -135,6 +135,11 @@ private:
     std::map<Utf8String, SourceFile*>&
     _files;
 
+
+    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> AccessMap;
+    AccessMap
+    _domains;
+
     instruction::InstructionParser*
     _instructionParser = nullptr;
 

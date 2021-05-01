@@ -4,6 +4,8 @@ Checks: '
 bugprone-*,
 cppcoreguidelines-*,
 -cppcoreguidelines-pro-type-reinterpret-cast,
+-cppcoreguidelines-avoid-goto,
+-cppcoreguidelines-owning-memory,
 modernize-*,
 -modernize-use-trailing-return-type,
 -modernize-use-auto,

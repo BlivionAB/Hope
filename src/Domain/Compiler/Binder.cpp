@@ -1,5 +1,5 @@
 #include "Binder.h"
-#include "Parser.Error.h"
+#include "Exceptions.h"
 #include <variant>
 
 namespace elet::domain::compiler
@@ -8,6 +8,10 @@ namespace elet::domain::compiler
 thread_local
 std::map<Utf8StringView, ast::Declaration*>*
 Binder::_fileDeclaration = nullptr;
+
+thread_local
+ast::FunctionDeclaration*
+Binder::_currentFunctionDeclaration = nullptr;
 
 
 Binder::Binder()
@@ -29,6 +33,8 @@ Binder::performWork(DeclarationWork& work)
         case ast::SyntaxKind::FunctionDeclaration:
             bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
             break;
+        default:
+            throw UnrecognizedDeclaration();
     }
 }
 
@@ -36,7 +42,7 @@ Binder::performWork(DeclarationWork& work)
 void
 Binder::bindUsingStatement(ast::UsingStatement* usingStatement)
 {
-    auto declarationMap = getDomainDeclarations(usingStatement->usage, &_globalDeclarations);
+    auto declarationMap = getDomainDeclarations(usingStatement->usage, _globalDeclarations);
 }
 
 
@@ -83,6 +89,8 @@ Binder::bindFunction(ast::FunctionDeclaration* declaration)
             case ast::SyntaxKind::CallExpression:
                 bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
+            default:
+                throw UnrecognizedBindingStatement();
         }
     }
 }

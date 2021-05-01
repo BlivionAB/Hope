@@ -102,6 +102,7 @@ HashTableMap<K, V, tableSize, H>::get(const K& key) const
         }
         item = item->next;
     }
+    throw std::invalid_argument("Could not find key");
 }
 
 template<typename K, typename V, std::size_t tableSize, typename H>

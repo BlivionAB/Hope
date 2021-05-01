@@ -1,6 +1,5 @@
 #include <Foundation/Path.h>
 #include "Parser.h"
-#include "Parser.Error.h"
 #include "Exceptions.h"
 
 namespace elet::domain::compiler::ast
@@ -1094,21 +1093,23 @@ Parser::parseAssemblyBlock()
 
 
 
-
 DomainDeclaration*
 Parser::parseDomainDeclaration()
 {
     auto domain = createDeclaration<DomainDeclaration>(SyntaxKind::DomainDeclaration);
     Token token = takeNextToken();
     char* start = _scanner->getStartPosition();
-    while (true) {
-        if (token != Token::Identifier) {
+    while (true)
+    {
+        if (token != Token::Identifier)
+        {
             throw ExpectedTokenError(Token::Identifier, getTokenValue());
         }
         domain->names.add(createName());
         char *end = _scanner->getPosition();
         token = takeNextToken();
-        if (token == Token::SemiColon) {
+        if (token == Token::SemiColon)
+        {
             auto name = createSyntax<Name>(SyntaxKind::Name);
             name->start = start;
             name->end = end;
@@ -1124,12 +1125,12 @@ Parser::parseDomainDeclaration()
             domain->implementsClause = parseName();
             expectToken(Token::OpenBrace);
             domain->block = parseDeclarationBlock();
-            return domain;
+            goto setAccessMap;
         }
         if (token == Token::OpenBrace)
         {
             domain->block = parseDeclarationBlock();
-            return domain;
+            goto setAccessMap;
         }
         if (token != Token::DoubleColon)
         {
@@ -1137,6 +1138,23 @@ Parser::parseDomainDeclaration()
         }
         token = takeNextToken();
     }
+
+    setAccessMap:
+    std::size_t last = domain->names.size();
+    AccessMap* currentAccessMap = &_domains;
+    for (int i = 0; i <= last; i++)
+    {
+        auto name = domain->names[i];
+        if (last)
+        {
+            currentAccessMap->insert({ name->name, &domain->block->symbols });
+            break;
+        }
+        AccessMap* newAccessMap = new AccessMap();
+        currentAccessMap->insert({ name->name, newAccessMap });
+        currentAccessMap = newAccessMap;
+    }
+    return domain;
 }
 
 

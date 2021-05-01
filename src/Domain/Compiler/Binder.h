@@ -14,6 +14,7 @@ namespace elet::domain::compiler
 namespace ast
 {
     struct Declaration;
+    struct PropertyExpression;
 }
 
 namespace instruction::output
@@ -29,7 +30,7 @@ using namespace foundation;
 
 struct DeclarationWork
 {
-    ast::Syntax*
+    ast::Declaration*
     declaration;
 
     ast::SourceFile*
@@ -66,7 +67,7 @@ private:
 
     typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> AccessMap;
 
-    AccessMap
+    AccessMap*
     _globalDeclarations;
 
 //    static
