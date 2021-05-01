@@ -134,23 +134,23 @@ Transformer::resolveAssemblyReference(output::Operand** operand, List<output::Pa
 
 
 std::size_t
-Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type) const
+Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type)
 {
     if (type->size == 0)
     {
         if (!type->pointers.isEmpty())
         {
-            return 64;
+            return TYPE_SIZE_64;
         }
         switch (type->type)
         {
             case ast::TypeKind::Int:
             case ast::TypeKind::UInt:
             case ast::TypeKind::UInt64:
-                return 64;
+                return TYPE_SIZE_64;
             case ast::TypeKind::UInt8:
             case ast::TypeKind::Char:
-                return 8;
+                return TYPE_SIZE_8;
             default:
                 throw UnrecognizedPrimitiveType();
         }

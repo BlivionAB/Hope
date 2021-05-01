@@ -7,6 +7,9 @@
 #include <queue>
 #include <Domain/Compiler/Compiler.h>
 
+#define TYPE_SIZE_64 64
+#define TYPE_SIZE_32 32
+#define TYPE_SIZE_8 8
 
 using namespace elet::domain::compiler::instruction;
 
@@ -100,10 +103,10 @@ private:
     static output::Instruction*
     createInstruction(embedded::InstructionType type);
 
-    output::Routine*
+    static output::Routine*
     createRoutine(Utf8StringView& name);
 
-    output::Function*
+    static output::Function*
     createFunction(Utf8StringView& name);
 
     List<output::Instruction*>*
@@ -116,6 +119,7 @@ private:
     void
     resolveAssemblyReference(output::Operand** operand, List<output::Parameter*>& parameters);
 
+    static
     std::size_t
     resolvePrimitiveTypeSize(ast::TypeAssignment* type) const;
 
@@ -132,6 +136,7 @@ private:
     void
     transformVariableDeclaration(ast::VariableDeclaration* variableDeclaration);
 
+    static
     void
     transformAssemblyBlock(ast::AssemblyBlock* assemblyBlock, List<output::Instruction*>* routine, List<output::Parameter*>& parameters);
 
