@@ -54,8 +54,9 @@ Binder::getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, c
         {
             if (domainAccessUsage->usage && domainAccessUsage->usage->kind == ast::SyntaxKind::DomainAccessUsage)
             {
-                auto accessMap = reinterpret_cast<AccessMap*>(std::get<void*>(result->second));
-                return getDomainDeclarations(reinterpret_cast<ast::DomainAccessUsage*>(domainAccessUsage->usage), accessMap);
+                return getDomainDeclarations(
+                    reinterpret_cast<ast::DomainAccessUsage*>(domainAccessUsage->usage),
+                    reinterpret_cast<AccessMap*>(std::get<void*>(result->second)));
             }
         }
     }

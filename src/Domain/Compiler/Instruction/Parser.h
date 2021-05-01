@@ -67,6 +67,7 @@ private:
     EmbeddedInstruction*
     parseInstruction(InstructionToken token);
 
+    static
     InstructionType
     getMnemonicKindFromToken(InstructionToken token);
 
@@ -79,9 +80,11 @@ private:
     Punctuation*
     createPunctuation(PunctuationType type);
 
+    static
     unsigned int
     getNumberOfOperandsFromToken(InstructionToken token);
 
+    static
     output::Operand*
     createOutputOperandFromEmbeddedOperand(embedded::Operand* operand);
 };

@@ -9,13 +9,13 @@ namespace elet::domain::compiler
 {
 
 
-struct CompilerError
+struct CompilerError : std::exception
 {
     Utf8String
     message;
 
     template<typename... Args>
-    CompilerError(const char* message, Args... args):
+    explicit CompilerError(const char* message, Args... args):
         message(fmt::format(message, args...).c_str())
     { }
 };
@@ -41,7 +41,7 @@ struct UnknownTypeError
     Utf8String
     feedback;
 
-    UnknownTypeError(Utf8String feedback = "Unknown type"):
+    explicit UnknownTypeError(Utf8String feedback = "Unknown type"):
         feedback(feedback)
     { }
 };

@@ -105,7 +105,7 @@ InstructionParser::getMnemonicKindFromToken(InstructionToken token)
     }
 }
 
-EmbeddedInstruction *
+EmbeddedInstruction*
 InstructionParser::createInstructionFromToken(InstructionToken token)
 {
     EmbeddedInstruction* instruction = createSyntax<EmbeddedInstruction>(SyntaxKind::EmbeddedInstruction);
