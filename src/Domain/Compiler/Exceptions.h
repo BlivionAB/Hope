@@ -95,17 +95,17 @@ struct UnknownFileLevelStatement : CompilerError
 };
 
 
-struct UnrecognizedDeclaration : CompilerError
+struct UnknownDeclaration : CompilerError
 {
-    UnrecognizedDeclaration():
+    UnknownDeclaration():
         CompilerError("Cannot recognize declaration.")
     { }
 };
 
 
-struct UnrecognizedPrimitiveType : CompilerError
+struct UnknownPrimitiveType : CompilerError
 {
-    UnrecognizedPrimitiveType():
+    UnknownPrimitiveType():
         CompilerError("Cannot recognize declaration.")
     { }
 };
@@ -119,18 +119,18 @@ struct UnknownExpressionForBinding : CompilerError
 };
 
 
-struct UnrecognizedBindingStatement : CompilerError
+struct UnknownBindingStatement : CompilerError
 {
-    UnrecognizedBindingStatement():
+    UnknownBindingStatement():
         CompilerError("Cannot recognize binding statement.")
     { }
 };
 
 
 
-struct UnrecognizedLocalStatement : CompilerError
+struct UnknownLocalStatement : CompilerError
 {
-    UnrecognizedLocalStatement():
+    UnknownLocalStatement():
         CompilerError("Cannot recognize binding statement.")
     { }
 };

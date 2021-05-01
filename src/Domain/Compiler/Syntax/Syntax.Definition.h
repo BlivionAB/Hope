@@ -7,6 +7,7 @@
 namespace elet::domain::compiler::ast
 {
     struct StatementBlock;
+    struct DomainDeclaration;
 
     struct Declaration : Syntax
     {
@@ -27,6 +28,9 @@ namespace elet::domain::compiler::ast
 
         std::size_t
         __size;
+
+        const DomainDeclaration*
+        __domain;
     };
 
 
@@ -43,6 +47,9 @@ namespace elet::domain::compiler::ast
 
         Name*
         implementsClause;
+
+        std::map<Utf8StringView, ast::Declaration*>
+        usages;
     };
 
 

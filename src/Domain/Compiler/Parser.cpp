@@ -75,7 +75,7 @@ Parser::performWork(const ParsingTask& task)
 void
 Parser::addSymbolToSourceFile(Syntax* statement, SourceFile* sourceFile)
 {
-    if (statement->labels & DECLARATION_LABEL)
+    if (statement->labels & LABEL__DECLARATION)
     {
         auto declaration = reinterpret_cast<Declaration*>(statement);
         if (declaration->kind == SyntaxKind::DomainDeclaration)
@@ -111,7 +111,7 @@ Parser::parseDeclarationBlock()
             auto label = reinterpret_cast<AccessabilityLabel*>(statement);
             accessibility = label->__type;
         }
-        if (statement->labels & DECLARATION_LABEL)
+        if (statement->labels & LABEL__DECLARATION)
         {
             auto declaration = reinterpret_cast<Declaration*>(statement);
             declaration->__accessability = accessibility;
@@ -129,6 +129,8 @@ Parser::parseDomainLevelDeclaration()
     Token token = _scanner->takeNextToken();
     switch (token)
     {
+        case Token::UsingKeyword:
+            return parseUsingStatement();
         case Token::PublicKeyword:
         {
             expectToken(Token::Colon);
@@ -461,11 +463,12 @@ Parser::createSyntax(SyntaxKind kind)
 
 template<typename T>
 T*
-Parser::createDeclaration(SyntaxKind kind)
+Parser::createDeclaration(const SyntaxKind kind)
 {
-    T* syntax = createSyntax<T>(kind);
-    syntax->labels = DECLARATION_LABEL;
+    auto syntax = createSyntax<T>(kind);
+    syntax->labels = LABEL__DECLARATION;
     syntax->offset = 0;
+    syntax->__domain = _currentDomain;
     return syntax;
 }
 
@@ -475,7 +478,7 @@ T*
 Parser::createTypeDeclaration(SyntaxKind kind)
 {
     T* syntax = createSyntax<T>(kind);
-    syntax->labels = TYPE_DECLARATION_LABEL;
+    syntax->labels = LABEL__TYPE_DECLARATION;
     syntax->offset = 0;
     return syntax;
 }
@@ -486,7 +489,7 @@ T*
 Parser::createBlock(SyntaxKind kind)
 {
     T* syntax = createSyntax<T>(kind);
-    syntax->labels = BLOCK_LABEL;
+    syntax->labels = LABEL__BLOCK;
     return syntax;
 }
 
@@ -496,7 +499,7 @@ T*
 Parser::createNamedExpression(SyntaxKind kind)
 {
     T* syntax = createSyntax<T>(kind);
-    syntax->labels = NAMED_EXPRESSION_LABEL;
+    syntax->labels = LABEL__NAMED_EXPRESSION;
     syntax->name = createName();
     return syntax;
 }
@@ -727,11 +730,33 @@ Parser::parseTuple()
 UsingStatement*
 Parser::parseUsingStatement()
 {
-    UsingStatement* useStatement = createSyntax<UsingStatement>(SyntaxKind::UsingStatement);
+    UsingStatement* usingStatement = createSyntax<UsingStatement>(SyntaxKind::UsingStatement);
+    usingStatement->labels |= LABEL__USING_STATEMENT;
+    usingStatement->domain = _currentDomain;
     expectToken(Token::Identifier);
-    useStatement->usage = parseDomainAccessUsageOnIdentifier();
-    finishSyntax(useStatement);
-    return useStatement;
+    usingStatement->domains.add(createName());
+    expectToken(Token::DoubleColon);
+    while (true)
+    {
+        Token token = takeNextToken();
+        if (token == Token::Identifier)
+        {
+            usingStatement->domains.add(createName());
+            expectToken(Token::DoubleColon);
+            continue;
+        }
+        else if (token == Token::OpenBrace)
+        {
+            usingStatement->usageClause = parseUsageClauseOnOpenBrace();
+            break;
+        }
+        else
+        {
+            throw ExpectedTokenError(Token::OpenBrace, getTokenValue());
+        }
+    }
+    finishSyntax(usingStatement);
+    return usingStatement;
 }
 
 
@@ -859,43 +884,46 @@ Parser::hasEqualIdentifier(Name *id1, Name* id2)
 //    return endStatement;
 //}
 
-DomainAccessUsage*
-Parser::parseDomainAccessUsageOnIdentifier()
-{
-    DomainAccessUsage* domainAccessUsage = createSyntax<DomainAccessUsage>(SyntaxKind::DomainAccessUsage);
-    domainAccessUsage->name = createName();
-    expectToken(Token::DoubleColon);
-    Token peek = peekNextToken();
-    if (peek == Token::Identifier)
-    {
-        skipNextToken();
-        domainAccessUsage->usage = parseDomainAccessUsageOnIdentifier();
-    }
-    else if (peek == Token::OpenBrace)
-    {
-        skipNextToken();
-        domainAccessUsage->usage = parseNamedUsageOnOpenBrace();
-    }
-    else if (peek == Token::Asterisk)
-    {
-        skipNextToken();
-        WildcardUsage* wildcardUsage = createSyntax<WildcardUsage>(SyntaxKind::WildcardUsage);
-        finishSyntax(wildcardUsage);
-        domainAccessUsage->usage = wildcardUsage;
-        expectToken(Token::SemiColon);
-    }
-    else
-    {
-        throw UnexpectedModuleAccessUsage();
-    }
-    finishSyntax(domainAccessUsage);
-    return domainAccessUsage;
-}
+//DomainAccessUsage*
+//Parser::parseDomainAccessUsageOnIdentifier()
+//{
+//    DomainAccessUsage* domainAccessUsage = createSyntax<DomainAccessUsage>(SyntaxKind::DomainAccessUsage);
+//    domainAccessUsage->names.add(createName());
+//    expectToken(Token::DoubleColon);
+//    Token peek = peekNextToken();
+//    while (peek == Token::Identifier)
+//    {
+//        skipNextToken();
+//        domainAccessUsage->names = parseDomainAccessUsageOnIdentifier();
+//    }
+//    if (peek == Token::Identifier)
+//    {
+//    }
+//    else if (peek == Token::OpenBrace)
+//    {
+//        skipNextToken();
+//        domainAccessUsage->usage = parseUsageClauseOnOpenBrace();
+//    }
+//    else if (peek == Token::Asterisk)
+//    {
+//        skipNextToken();
+//        WildcardUsage* wildcardUsage = createSyntax<WildcardUsage>(SyntaxKind::WildcardUsage);
+//        finishSyntax(wildcardUsage);
+//        domainAccessUsage->usage = wildcardUsage;
+//        expectToken(Token::SemiColon);
+//    }
+//    else
+//    {
+//        throw UnexpectedModuleAccessUsage();
+//    }
+//    finishSyntax(domainAccessUsage);
+//    return domainAccessUsage;
+//}
 
-NamedUsage*
-Parser::parseNamedUsageOnOpenBrace()
+UsageClause*
+Parser::parseUsageClauseOnOpenBrace()
 {
-    NamedUsage* namedUsage = createSyntax<NamedUsage>(SyntaxKind::NamedUsage);
+    UsageClause* usageClause = createSyntax<UsageClause>(SyntaxKind::NamedUsage);
     bool isInitialUsage = true;
     while (true)
     {
@@ -916,12 +944,12 @@ Parser::parseNamedUsageOnOpenBrace()
         {
             throw ExpectedTokenError(Token::Identifier, getTokenValue());
         }
-        namedUsage->names.add(createName());
+        usageClause->names.add(createName());
         isInitialUsage = false;
     }
-    finishSyntax(namedUsage);
+    finishSyntax(usageClause);
     expectToken(Token::SemiColon);
-    return namedUsage;
+    return usageClause;
 }
 
 
@@ -1096,7 +1124,7 @@ Parser::parseAssemblyBlock()
 DomainDeclaration*
 Parser::parseDomainDeclaration()
 {
-    auto domain = createDeclaration<DomainDeclaration>(SyntaxKind::DomainDeclaration);
+    _currentDomain = createDeclaration<DomainDeclaration>(SyntaxKind::DomainDeclaration);
     Token token = takeNextToken();
     char* start = _scanner->getStartPosition();
     while (true)
@@ -1105,7 +1133,7 @@ Parser::parseDomainDeclaration()
         {
             throw ExpectedTokenError(Token::Identifier, getTokenValue());
         }
-        domain->names.add(createName());
+        _currentDomain->names.add(createName());
         char *end = _scanner->getPosition();
         token = takeNextToken();
         if (token == Token::SemiColon)
@@ -1114,22 +1142,22 @@ Parser::parseDomainDeclaration()
             name->start = start;
             name->end = end;
             name->name = Utf8StringView(start, end);
-            domain->name = name;
-            addSymbol(domain);
-            finishSyntax(domain);
-            domain->block = nullptr;
-            return domain;
+            _currentDomain->name = name;
+            addSymbol(_currentDomain);
+            finishSyntax(_currentDomain);
+            _currentDomain->block = nullptr;
+            return _currentDomain;
         }
         if (token == Token::ImplementsKeyword)
         {
-            domain->implementsClause = parseName();
+            _currentDomain->implementsClause = parseName();
             expectToken(Token::OpenBrace);
-            domain->block = parseDeclarationBlock();
+            _currentDomain->block = parseDeclarationBlock();
             goto setAccessMap;
         }
         if (token == Token::OpenBrace)
         {
-            domain->block = parseDeclarationBlock();
+            _currentDomain->block = parseDeclarationBlock();
             goto setAccessMap;
         }
         if (token != Token::DoubleColon)
@@ -1140,21 +1168,21 @@ Parser::parseDomainDeclaration()
     }
 
     setAccessMap:
-    std::size_t last = domain->names.size();
+    std::size_t last = _currentDomain->names.size() - 1;
     ast::DomainDeclarationMap* currentAccessMap = &domainDeclarationMap;
     for (int i = 0; i <= last; i++)
     {
-        auto name = domain->names[i];
-        if (last)
+        auto name = _currentDomain->names[i];
+        if (i == last)
         {
-            currentAccessMap->insert({ name->name, &domain->block->symbols });
+            currentAccessMap->insert({ name->name, &_currentDomain->block->symbols });
             break;
         }
         ast::DomainDeclarationMap* newAccessMap = new ast::DomainDeclarationMap();
         currentAccessMap->insert({ name->name, newAccessMap });
         currentAccessMap = newAccessMap;
     }
-    return domain;
+    return _currentDomain;
 }
 
 

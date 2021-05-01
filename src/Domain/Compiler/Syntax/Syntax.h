@@ -29,6 +29,7 @@ namespace elet::domain::compiler::ast
 using namespace instruction;
 
 struct ParameterDeclaration;
+struct DomainDeclaration;
 struct ParameterDeclarationList;
 struct Punctuation;
 struct Expression;
@@ -277,53 +278,23 @@ struct BinaryExpression : Expression
 };
 
 
-struct ImportStatement : Syntax
-{
-    StringLiteral*
-    path;
-};
-
-
-struct Usage : Syntax
-{
-
-};
-
-
-struct WildcardUsage : Usage
-{
-
-};
-
-
-struct NamedUsage : Usage
+struct UsageClause : Syntax
 {
     List<Name*>
     names;
 };
 
 
-struct DomainAccessUsage : Usage
-{
-    Name*
-    name;
-
-    Usage*
-    usage;
-};
-
-
-struct ExportStatement : Syntax
-{
-    DomainAccessUsage*
-    usage;
-};
-
-
 struct UsingStatement : Syntax
 {
-    DomainAccessUsage*
-    usage;
+    List<Name*>
+    domains;
+
+    UsageClause*
+    usageClause;
+
+    DomainDeclaration*
+    domain;
 };
 
 

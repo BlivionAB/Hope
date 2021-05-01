@@ -50,7 +50,7 @@ Transformer::transform(ast::Declaration* declaration)
         _function->instructions = transformFunctionBody(functionDeclaration->body, _function->parameters);
         return _function;
     }
-    throw UnrecognizedDeclaration();
+    throw UnknownDeclaration();
 }
 
 
@@ -110,7 +110,7 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements, List<outpu
                 transformAssemblyBlock(reinterpret_cast<ast::AssemblyBlock*>(statement), list, parameters);
                 break;
             default:
-                throw UnrecognizedLocalStatement();
+                throw UnknownLocalStatement();
         }
     }
     return list;
@@ -134,7 +134,7 @@ Transformer::resolveAssemblyReference(output::Operand** operand, List<output::Pa
 
 
 std::size_t
-Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type) const
+Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type)
 {
     if (type->size == 0)
     {
@@ -152,7 +152,7 @@ Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type) const
             case ast::TypeKind::Char:
                 return TYPE_SIZE_8;
             default:
-                throw UnrecognizedPrimitiveType();
+                throw UnknownPrimitiveType();
         }
     }
     return type->size;
@@ -221,9 +221,12 @@ Transformer::transformArgument(ast::Expression* expression, std::size_t numberOf
             switch (ref->kind)
             {
                 case ast::SyntaxKind::ParameterDeclaration:
+                {
                     auto storeInstruction = createInstruction(embedded::InstructionType::StoreAddress64);
 //                    storeInstruction->operand1 = new output::Register();
                     break;
+                }
+                default:;
             }
             break;
         }

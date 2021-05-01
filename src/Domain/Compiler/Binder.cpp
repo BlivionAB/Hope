@@ -22,7 +22,7 @@ Binder::Binder():
 
 
 void
-Binder::performWork(DeclarationWork& work, const ast::DomainDeclarationMap* domainDeclarationMap)
+Binder::performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDeclarationMap)
 {
     _domainDeclarationMap = domainDeclarationMap;
     _fileDeclaration = &work.file->declarations;
@@ -36,7 +36,7 @@ Binder::performWork(DeclarationWork& work, const ast::DomainDeclarationMap* doma
             bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
             break;
         default:
-            throw UnrecognizedDeclaration();
+            throw UnknownDeclaration();
     }
 }
 
@@ -44,14 +44,23 @@ Binder::performWork(DeclarationWork& work, const ast::DomainDeclarationMap* doma
 void
 Binder::bindUsingStatement(ast::UsingStatement* usingStatement)
 {
-    auto declarationMap = getDomainDeclarations(usingStatement->usage, _domainDeclarationMap);
+    auto declarationMap = getDomainDeclarations(usingStatement->domains, 0, _domainDeclarationMap);
+    for (const auto& name : usingStatement->usageClause->names)
+    {
+        auto it = declarationMap->find(name->name);
+        if (it != declarationMap->end())
+        {
+            usingStatement->domain->usages.insert({ name->name, reinterpret_cast<ast::Declaration*>(it->second) });
+        }
+    }
 }
 
 
 std::map<Utf8StringView, ast::Declaration*>*
-Binder::getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const ast::DomainDeclarationMap* domainDeclarationMap)
+Binder::getDomainDeclarations(const List<ast::Name*>& domains, unsigned int domainIndex, const ast::DomainDeclarationMap* domainDeclarationMap)
 {
-    auto result = domainDeclarationMap->find(domainAccessUsage->name->name);
+    auto domain = domains[domainIndex];
+    auto result = domainDeclarationMap->find(domain->name);
     if (result != domainDeclarationMap->end())
     {
         if (auto declarationMap = std::get_if<std::map<Utf8StringView, ast::Declaration*>*>(&result->second))
@@ -60,12 +69,7 @@ Binder::getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, c
         }
         else
         {
-            if (domainAccessUsage->usage && domainAccessUsage->usage->kind == ast::SyntaxKind::DomainAccessUsage)
-            {
-                return getDomainDeclarations(
-                    reinterpret_cast<ast::DomainAccessUsage*>(domainAccessUsage->usage),
-                    reinterpret_cast<ast::DomainDeclarationMap*>(std::get<void*>(result->second)));
-            }
+            return getDomainDeclarations(domains, domainIndex + 1, reinterpret_cast<ast::DomainDeclarationMap*>(std::get<void*>(result->second)));
         }
     }
 
@@ -92,7 +96,7 @@ Binder::bindFunction(ast::FunctionDeclaration* declaration)
                 bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
             default:
-                throw UnrecognizedBindingStatement();
+                throw UnknownBindingStatement();
         }
     }
 }
@@ -149,8 +153,7 @@ Binder::bindExpression(ast::Expression* expression)
         case ast::SyntaxKind::PropertyExpression:
             bindPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression));
             break;
-        default:
-            throw UnknownExpressionForBinding();
+        default:;
     }
 }
 

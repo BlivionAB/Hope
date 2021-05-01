@@ -15,6 +15,7 @@ namespace elet::domain::compiler
 namespace ast
 {
     struct Declaration;
+    struct DomainDeclaration;
     struct PropertyExpression;
     typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> DomainDeclarationMap;
 }
@@ -30,15 +31,15 @@ using namespace instruction;
 using namespace foundation;
 
 
-struct DeclarationWork
+struct BindingWork
 {
-    ast::Declaration*
+    ast::Syntax*
     declaration;
 
     ast::SourceFile*
     file;
 
-    DeclarationWork(ast::Declaration* declaration, ast::SourceFile* file):
+    BindingWork(ast::Syntax* declaration, ast::SourceFile* file):
         declaration(declaration),
         file(file)
     { }
@@ -53,7 +54,7 @@ public:
     Binder();
 
     void
-    performWork(DeclarationWork& work, const ast::DomainDeclarationMap* domainDeclarationMap);
+    performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDeclarationMap);
 
     void
     bindFunction(ast::FunctionDeclaration* declaration);
@@ -69,6 +70,9 @@ private:
 
     const ast::DomainDeclarationMap*
     _domainDeclarationMap;
+
+    const std::map<Utf8StringView, ast::Declaration*>
+    _usages;
 
 //    static
 //    thread_local
@@ -94,7 +98,7 @@ private:
     bindUsingStatement(ast::UsingStatement* usingStatement);
 
     std::map<Utf8StringView, ast::Declaration*>*
-    getDomainDeclarations(const ast::DomainAccessUsage* domainAccessUsage, const ast::DomainDeclarationMap* domainDeclarationMap);
+    getDomainDeclarations(const List<ast::Name*>& domains, unsigned int domainIndex, const ast::DomainDeclarationMap* domainDeclarationMap);
 
     static
     void

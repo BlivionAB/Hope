@@ -110,5 +110,11 @@ Checker::getTypeFromTypeAssignment(ast::TypeAssignment* typeAssignment)
     return result;
 }
 
+void
+Checker::checkUsingStatement(const ast::UsingStatement* usingStatement)
+{
+
+}
+
 
 }

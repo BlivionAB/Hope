@@ -1,4 +1,4 @@
-domain Std::Console implements IConsole
+domain Common::Console implements IConsole
 {
 
 public:
@@ -22,10 +22,14 @@ private:
     }
 }
 
-
-using Std::Console::{ WriteLine };
-
-fn OnProcessStart(): void
+domain Common::MyApplication implements IConsoleApplication
 {
-    WriteLine("Hello World!");
+    using Common::Console::{ WriteLine };
+
+public:
+
+    fn OnProcessStart(): void
+    {
+        WriteLine("Hello World!");
+    }
 }

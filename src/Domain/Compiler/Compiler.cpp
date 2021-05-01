@@ -241,19 +241,23 @@ Compiler::pushBindingWork(const List<ast::Syntax*> statements, ast::SourceFile* 
 {
     for (ast::Syntax* statement : statements)
     {
-        if (statement->labels & DECLARATION_LABEL)
+        if (statement->labels & LABEL__DECLARATION)
         {
             auto declaration = reinterpret_cast<ast::Declaration*>(statement);
             if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
             {
                 auto functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
-                _bindingWork.push(new DeclarationWork(functionDeclaration, sourceFile));
+                _bindingWork.push(new BindingWork(functionDeclaration, sourceFile));
             }
             else if (declaration->kind == ast::SyntaxKind::DomainDeclaration)
             {
                 auto domain = reinterpret_cast<ast::DomainDeclaration*>(declaration);
                 pushBindingWork(domain->block->declarations, sourceFile);
             }
+        }
+        else if (statement->labels & LABEL__USING_STATEMENT)
+        {
+            _bindingWork.push(new BindingWork(reinterpret_cast<ast::UsingStatement*>(statement), sourceFile));
         }
         _syntaxTree.add(statement);
     }
@@ -276,7 +280,7 @@ Compiler::acceptBindingWork()
             }
             continue;
         }
-        DeclarationWork* work = _bindingWork.front();
+        BindingWork* work = _bindingWork.front();
         _bindingWork.pop();
         _bindingWorkMutex.unlock();
         _pendingBindingWork++;
@@ -303,11 +307,19 @@ Compiler::acceptCheckingWork()
             }
             continue;
         }
-        ast::Declaration* declaration = _checkingWork.front();
+        ast::Syntax* statement = _checkingWork.front();
         _checkingWork.pop();
         _checkingWorkMutex.unlock();
-        _checker->checkTopLevelDeclaration(declaration);
-        _transformationWork.push(declaration);
+        if (statement->labels & LABEL__DECLARATION)
+        {
+            auto declaration = reinterpret_cast<ast::Declaration*>(statement);
+            _checker->checkTopLevelDeclaration(declaration);
+            _transformationWork.push(declaration);
+        }
+        else if (statement->labels & LABEL__USING_STATEMENT)
+        {
+            _checker->checkUsingStatement(reinterpret_cast<ast::UsingStatement*>(statement));
+        }
     }
 }
 

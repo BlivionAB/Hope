@@ -41,7 +41,7 @@ namespace elet::domain::compiler
 
 class Binder;
 class Checker;
-struct DeclarationWork;
+struct BindingWork;
 
 
 namespace ast
@@ -233,13 +233,13 @@ private:
     std::mutex
     _transformationWorkMutex;
 
-    std::queue<ast::Declaration*>
+    std::queue<ast::Syntax*>
     _checkingWork;
 
     std::queue<ast::Declaration*>
     _transformationWork;
 
-    std::queue<DeclarationWork*>
+    std::queue<BindingWork*>
     _bindingWork;
 
     std::queue<output::Routine*>

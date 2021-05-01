@@ -55,6 +55,9 @@ class Checker
 public:
 
     void
+    checkUsingStatement(const ast::UsingStatement* usingStatement);
+
+    void
     checkTopLevelDeclaration(const ast::Declaration* declaration);
 
     void

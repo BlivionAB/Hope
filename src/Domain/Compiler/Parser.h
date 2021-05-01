@@ -45,7 +45,7 @@ struct Tuple;
 struct EndStatement;
 struct DomainAccessUsage;
 struct UsingStatement;
-struct NamedUsage;
+struct UsageClause;
 struct ParameterDeclaration;
 struct Expression;
 struct Name;
@@ -138,7 +138,8 @@ private:
     std::map<Utf8String, SourceFile*>&
     _files;
 
-
+    ast::DomainDeclaration*
+    _currentDomain = nullptr;
 
     instruction::InstructionParser*
     _instructionParser = nullptr;
@@ -201,8 +202,8 @@ private:
     Tuple*
     parseTuple();
 
-    DomainAccessUsage*
-    parseDomainAccessUsageOnIdentifier();
+//    DomainAccessUsage*
+//    parseDomainAccessUsageOnIdentifier();
 
 //    ModuleDeclaration*
 //    parseModuleDeclaration();
@@ -210,8 +211,8 @@ private:
     UsingStatement*
     parseUsingStatement();
 
-    NamedUsage*
-    parseNamedUsageOnOpenBrace();
+    UsageClause*
+    parseUsageClauseOnOpenBrace();
 
     ParameterDeclaration*
     parseParameterOnIdentifier();
@@ -303,7 +304,7 @@ private:
 
     template<typename T>
     T*
-    createDeclaration(SyntaxKind kind);
+    createDeclaration(const SyntaxKind kind);
 
     template<typename T>
     T*
