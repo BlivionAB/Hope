@@ -254,7 +254,7 @@ private:
     parseDomainDeclaration();
 
     Syntax* // Block or Declaration
-    parseDomainLevelDeclaration();
+    parseDomainLevelStatements();
 
     AccessabilityLabel*
     parseAccessabilityLabel(AccessibilityType);
@@ -275,7 +275,7 @@ private:
     parseLengthOfExpression();
 
     ExternCBlock*
-    parseExternBlock();
+    parseExternCBlock();
 
     List<Declaration*>
     parseExternCBlockLevelDeclarations();

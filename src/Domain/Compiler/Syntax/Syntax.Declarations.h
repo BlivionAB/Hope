@@ -1,11 +1,19 @@
-#ifndef ELET_SYNTAX_DEFINITION_H
-#define ELET_SYNTAX_DEFINITION_H
+#ifndef ELET_SYNTAX_DECLARATIONS_H
+#define ELET_SYNTAX_DECLARATIONS_H
 
 #include "Syntax.h"
 #include "Syntax.Block.h"
+#include "Instruction.h"
+
+namespace elet::domain::compiler::instruction::output
+{
+    struct Routine;
+}
+
 
 namespace elet::domain::compiler::ast
 {
+    using namespace elet::domain::compiler::instruction;
     struct StatementBlock;
     struct DomainDeclaration;
 
@@ -24,13 +32,13 @@ namespace elet::domain::compiler::ast
         sourceFile;
 
         AccessibilityType
-        __accessability;
+        accessability;
 
         std::size_t
         __size;
 
         const DomainDeclaration*
-        __domain;
+        domain;
     };
 
 
@@ -163,10 +171,10 @@ namespace elet::domain::compiler::ast
         body;
 
         // Used for deciding
-        List<output::Parameter*>
-        instructionParameters;
+        output::Routine*
+        routine;
     };
 }
 
 
-#endif //ELET_SYNTAX_DEFINITION_H
+#endif //ELET_SYNTAX_DECLARATIONS_H

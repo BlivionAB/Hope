@@ -44,7 +44,7 @@ add_executable(
     src/Domain/Compiler/Instruction/Parser.h
     src/Domain/Compiler/Instruction/Syntax.h
     src/Domain/Compiler/Instruction/Parser.Error.h
-    src/Domain/Compiler/Instruction/Instruction.h
+        src/Domain/Compiler/Syntax/Instruction.h
     src/Domain/Compiler/Instruction/Transformer.cpp
     src/Domain/Compiler/Instruction/Transformer.h
     src/Domain/Compiler/Instruction/Assembly/Baseline/BaselineWriter.cpp
@@ -67,7 +67,7 @@ add_executable(
     src/Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h
     src/Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h
     src/Domain/Compiler/Checker.cpp src/Domain/Compiler/Checker.h
-    src/Domain/Compiler/Syntax/Syntax.Definition.h
+        src/Domain/Compiler/Syntax/Syntax.Declarations.h
     src/Domain/Compiler/Syntax/Syntax.Kind.h
     src/Domain/Compiler/Syntax/Syntax.Labels.h
     src/Domain/Compiler/Syntax/Syntax.Block.h

@@ -6,7 +6,7 @@
 #include <map>
 #include <Foundation/Utf8String.h>
 #include <Domain/Compiler/Instruction/AssemblyWriter.h>
-#include "Domain/Compiler/Instruction/Instruction.h"
+#include "Domain/Compiler/Syntax/Instruction.h"
 #include "Domain/Compiler/Instruction/TextWriter.h"
 
 

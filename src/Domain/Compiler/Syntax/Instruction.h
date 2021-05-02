@@ -6,7 +6,7 @@
 #include <Foundation/List.h>
 #include <Domain/Compiler/Syntax/Syntax.h>
 #include <Domain/Compiler/Compiler.h>
-#include "Syntax.h"
+#include "Domain/Compiler/Instruction/Syntax.h"
 
 
 namespace elet::domain::compiler::ast
@@ -21,6 +21,7 @@ namespace elet::domain::compiler
 namespace elet::domain::compiler::instruction::output
 {
 
+struct Routine;
 
 using namespace embedded;
 using namespace foundation;
@@ -38,6 +39,66 @@ enum class OperandKind : std::uint64_t
     AssemblyReference,
     VariableReference,
     Label,
+};
+
+
+struct Instruction
+{
+
+};
+
+
+struct CallInstruction : Instruction
+{
+
+};
+
+
+struct Condition
+{
+
+};
+
+
+struct Jump
+{
+    Condition*
+    condition;
+
+    Routine*
+    routine;
+};
+
+
+struct Routine
+{
+    Utf8StringView
+    name;
+
+    List<Instruction*>
+    instructions;
+
+    List<Jump*>
+    jumps;
+
+    Routine*
+    next;
+};
+
+typedef std::variant<unsigned int, int, Utf8StringView*> ArgumentValue;
+
+struct ArgumentDeclaration : Instruction
+{
+    unsigned int
+    index;
+
+    ArgumentValue
+    value;
+
+    ArgumentDeclaration(unsigned int index, const ArgumentValue& value):
+        index(index),
+        value(value)
+    { }
 };
 
 struct Operand
@@ -201,50 +262,37 @@ struct FunctionReference : RelocationOperand
 };
 
 
-struct Instruction
-{
-    InstructionType
-    type;
-
-    Operand*
-    operand1;
-
-    Operand*
-    operand2;
-};
-
-
-enum class RoutineKind
-{
-    Unknown,
-    Routine,
-    Function,
-};
-
-
-struct Routine
-{
-    RoutineKind
-    kind;
-
-    Utf8StringView
-    name;
-
-    List<Instruction*>*
-    instructions;
-
-    List<std::uint8_t>*
-    machineInstructions;
-
-    Symbol*
-    symbol;
-
-    List<RelocationOperand*>*
-    symbolicRelocations;
-
-    List<RelocationOperand*>*
-    relativeRelocations;
-};
+//enum class RoutineKind
+//{
+//    Unknown,
+//    Routine,
+//    Function,
+//};
+//
+//
+//struct Routine
+//{
+//    RoutineKind
+//    kind;
+//
+//    Utf8StringView
+//    name;
+//
+//    List<Instruction*>*
+//    instructions;
+//
+//    List<std::uint8_t>*
+//    machineInstructions;
+//
+//    Symbol*
+//    symbol;
+//
+//    List<RelocationOperand*>*
+//    symbolicRelocations;
+//
+//    List<RelocationOperand*>*
+//    relativeRelocations;
+//};
 
 
 struct Parameter

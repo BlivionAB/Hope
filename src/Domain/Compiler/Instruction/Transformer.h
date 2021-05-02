@@ -3,7 +3,7 @@
 
 
 #include "Domain/Compiler/Syntax/Syntax.h"
-#include "Instruction.h"
+#include "Domain/Compiler/Syntax/Instruction.h"
 #include <queue>
 #include <Domain/Compiler/Compiler.h>
 
@@ -22,6 +22,7 @@ namespace elet::domain::compiler
     {
         struct Declaration;
         struct NamedExpression;
+        struct StringLiteral;
     }
 }
 
@@ -30,11 +31,13 @@ namespace elet::domain::compiler::instruction
 
 namespace output
 {
-    struct Routine;
     struct Function;
     struct Parameter;
     struct Operand;
     struct FunctionReference;
+    struct ArgumentDeclaration;
+    typedef std::variant<unsigned int, int, Utf8StringView*> ArgumentValue;
+    struct Routine;
 }
 using namespace compiler;
 
@@ -88,11 +91,6 @@ class Transformer
 public:
 
     Transformer(
-        const CallingConvention* callingConvention,
-        std::queue<output::Routine*>& routines,
-        std::mutex& routineWorkMutex,
-        List<Utf8StringView*>* data,
-        std::uint64_t& cstringOffset,
         std::mutex& dataMutex);
 
     output::Routine*
@@ -100,24 +98,21 @@ public:
 
 private:
 
-    static output::Instruction*
-    createInstruction(embedded::InstructionType type);
+    output::Routine*
+    transformFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration);
 
-    static output::Routine*
-    createRoutine(Utf8StringView& name);
-
-    static output::Function*
-    createFunction(Utf8StringView& name);
-
-    List<output::Instruction*>*
-    transformFunctionBody(ast::StatementBlock* body, List<output::Parameter*>& parameters);
-
-    List<output::Instruction*>*
-    transformLocalStatements(List<ast::Syntax*>& statements, List<output::Parameter*>& parameters);
-
-    static
     void
-    resolveAssemblyReference(output::Operand** operand, List<output::Parameter*>& parameters);
+    transformArgumentStringLiteral(ast::StringLiteral* stringLiteral);
+
+    output::Routine*
+    createRoutine(const Utf8StringView& name);
+
+    output::ArgumentDeclaration*
+    createArgumentDeclaration(output::ArgumentValue value);
+
+    List<output::Instruction*>*
+    transformLocalStatements(List<ast::Syntax*>& statements);
+
 
     static
     std::size_t
@@ -128,45 +123,22 @@ private:
     getSymbolReference(ast::NamedExpression *expression);
 
     void
-    transformCallExpression(ast::CallExpression* callExpression, List<output::Instruction*>* routine);
+    transformCallExpression(const ast::CallExpression* callExpression);
 
-    void
-    transformArgument(ast::Expression* expression, std::size_t numberOfParameterRegisters, unsigned int assignedParameter, List<output::Instruction*>* routine);
+    Utf8StringView*
+    addStaticConstantString(ast::StringLiteral* stringLiteral);
 
-    void
-    transformVariableDeclaration(ast::VariableDeclaration* variableDeclaration);
-
-    static
-    void
-    transformAssemblyBlock(ast::AssemblyBlock* assemblyBlock, List<output::Instruction*>* routine, List<output::Parameter*>& parameters);
-
-    void
-    addStaticConstantString(const char* start, const char* end);
-
-    void
-    transformStringParameter(std::size_t& numberOfParameterRegisters, unsigned int& parameterIndex, List<output::Instruction*>* routine);
-
-    const CallingConvention*
-    _callingConvention;
-
-    std::queue<output::Routine*>&
-    _routines;
-
-    std::mutex&
-    _routineWorkMutex;
-
-    List<Utf8StringView*>*
+    List<Utf8StringView*>
     _cstrings;
 
-    /**
-     * The data offset is calculated during the transform phase and kept immutable after. It's offset based,
-     * hence position independent data. The object file just need to relocate the data in order for usage.
-     */
-    std::uint64_t&
-    _cstringOffset;
+    unsigned int
+    _currentArgumentIndex = 0;
 
     std::mutex&
     _dataMutex;
+
+    output::Routine*
+    _currentRoutine;
 };
 
 

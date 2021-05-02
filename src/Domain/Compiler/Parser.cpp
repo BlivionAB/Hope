@@ -101,21 +101,36 @@ Parser::parseDeclarationBlock()
     AccessibilityType accessibility = AccessibilityType::Private;
     while (true)
     {
-        Syntax* statement = parseDomainLevelDeclaration();
+        Syntax* statement = parseDomainLevelStatements();
         if (!statement)
         {
             break;
         }
-        if (statement->kind == SyntaxKind::AccessabilityLabel)
+        switch (statement->kind)
         {
-            auto label = reinterpret_cast<AccessabilityLabel*>(statement);
-            accessibility = label->__type;
-        }
-        if (statement->labels & LABEL__DECLARATION)
-        {
-            auto declaration = reinterpret_cast<Declaration*>(statement);
-            declaration->__accessability = accessibility;
-            block->symbols.insert({ declaration->name->name, declaration });
+            case SyntaxKind::AccessabilityLabel:
+            {
+                auto label = reinterpret_cast<AccessabilityLabel*>(statement);
+                accessibility = label->__type;
+                break;
+            }
+            case SyntaxKind::FunctionDeclaration:
+            {
+                auto declaration = reinterpret_cast<Declaration*>(statement);
+                declaration->accessability = accessibility;
+                block->symbols.insert({ declaration->name->name, declaration });
+                break;
+            }
+            case SyntaxKind::ExternCBlock:
+            {
+                auto cblock = reinterpret_cast<ExternCBlock*>(statement);
+                for (const auto& decl : cblock->declarations)
+                {
+                    decl->accessability = accessibility;
+                    block->symbols.insert({ decl->name->name, decl });
+                }
+            }
+            default:;
         }
         block->declarations.add(statement);
         _lastStatementLocationStart = statement->end;
@@ -124,7 +139,7 @@ Parser::parseDeclarationBlock()
 }
 
 Syntax*
-Parser::parseDomainLevelDeclaration()
+Parser::parseDomainLevelStatements()
 {
     Token token = _scanner->takeNextToken();
     switch (token)
@@ -148,7 +163,7 @@ Parser::parseDomainLevelDeclaration()
             return label;
         }
         case Token::ExternKeyword:
-            return parseExternBlock();
+            return parseExternCBlock();
         case Token::DomainKeyword:
             return parseDomainDeclaration();
         case Token::ClassKeyword:
@@ -301,6 +316,7 @@ Parser::parseFunctionDeclaration()
 
 finishDeclaration:
     finishDeclaration(functionDeclaration);
+    functionDeclaration->domain = _currentDomain;
     return functionDeclaration;
 }
 
@@ -468,7 +484,7 @@ Parser::createDeclaration(const SyntaxKind kind)
     auto syntax = createSyntax<T>(kind);
     syntax->labels = LABEL__DECLARATION;
     syntax->offset = 0;
-    syntax->__domain = _currentDomain;
+    syntax->domain = _currentDomain;
     return syntax;
 }
 
@@ -1357,7 +1373,7 @@ Parser::parseAddressOfExpression()
 
 
 ExternCBlock*
-Parser::parseExternBlock()
+Parser::parseExternCBlock()
 {
     ExternCBlock* block = createSyntax<ExternCBlock>(SyntaxKind::ExternCBlock);
     expectToken(Token::StringLiteral);

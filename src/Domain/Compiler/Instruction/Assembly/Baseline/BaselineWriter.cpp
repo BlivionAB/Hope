@@ -31,73 +31,73 @@ BaselineWriter::~BaselineWriter()
 void
 BaselineWriter::writeRoutine(Routine* routine)
 {
-    _currentRoutine = routine;
-    _tw = createTextWriter();
-    if (routine->kind == RoutineKind::Routine)
-    {
-        _tw->write(routine->name);
-        _tw->writeCharacter(':');
-        _tw->newline();
-        _tw->indent();
-        for (const auto& instruction : *routine->instructions)
-        {
-            writeInstruction(instruction);
-        }
-        _tw->unindent();
-    }
-    else if (routine->kind == RoutineKind::Function)
-    {
-        Function* _function = reinterpret_cast<Function*>(routine);
-        _tw->write(_function->name);
-        _tw->writeCharacter('(');
-        bool firstParameter = true;
-        for (const Parameter* parameter : _function->parameters)
-        {
-            if (!firstParameter)
-            {
-                _tw->write(", ");
-            }
-            _tw->write(parameter->typeLabel);
-            firstParameter = false;
-        }
-        _tw->writeCharacter(')');
-        _tw->writeCharacter(':');
-        _tw->indent();
-        _tw->newline();
-        for (output::Instruction* instruction : *routine->instructions)
-        {
-            writeInstruction(instruction);
-        }
-        _tw->unindent();
-    }
-    else
-    {
-        throw UnknownRoutineError();
-    }
-    _tw->newline();
-    auto result = new List<std::uint8_t>();
-    auto string = _tw->toString();
-    for (const auto& ch : string)
-    {
-        result->add(static_cast<std::uint8_t>(ch));
-    }
+//    _currentRoutine = routine;
+//    _tw = createTextWriter();
+//    if (routine->kind == RoutineKind::Routine)
+//    {
+//        _tw->write(routine->name);
+//        _tw->writeCharacter(':');
+//        _tw->newline();
+//        _tw->indent();
+//        for (const auto& instruction : *routine->instructions)
+//        {
+//            writeInstruction(instruction);
+//        }
+//        _tw->unindent();
+//    }
+//    else if (routine->kind == RoutineKind::Function)
+//    {
+//        Function* _function = reinterpret_cast<Function*>(routine);
+//        _tw->write(_function->name);
+//        _tw->writeCharacter('(');
+//        bool firstParameter = true;
+//        for (const Parameter* parameter : _function->parameters)
+//        {
+//            if (!firstParameter)
+//            {
+//                _tw->write(", ");
+//            }
+//            _tw->write(parameter->typeLabel);
+//            firstParameter = false;
+//        }
+//        _tw->writeCharacter(')');
+//        _tw->writeCharacter(':');
+//        _tw->indent();
+//        _tw->newline();
+//        for (output::Instruction* instruction : *routine->instructions)
+//        {
+//            writeInstruction(instruction);
+//        }
+//        _tw->unindent();
+//    }
+//    else
+//    {
+//        throw UnknownRoutineError();
+//    }
+//    _tw->newline();
+//    auto result = new List<std::uint8_t>();
+//    auto string = _tw->toString();
+//    for (const auto& ch : string)
+//    {
+//        result->add(static_cast<std::uint8_t>(ch));
+//    }
 }
 
 
 void
 BaselineWriter::writeInstruction(output::Instruction* instruction)
 {
-    _tw->write(instructionTypeToString.get(instruction->type));
-    if (instruction->operand1)
-    {
-        writeOperand(instruction->operand1);
-    }
-    if (instruction->operand2)
-    {
-        writeOperand(instruction->operand2);
-    }
-    _tw->writeCharacter(';');
-    _tw->newline();
+//    _tw->write(instructionTypeToString.get(instruction->type));
+//    if (instruction->operand1)
+//    {
+//        writeOperand(instruction->operand1);
+//    }
+//    if (instruction->operand2)
+//    {
+//        writeOperand(instruction->operand2);
+//    }
+//    _tw->writeCharacter(';');
+//    _tw->newline();
 }
 
 

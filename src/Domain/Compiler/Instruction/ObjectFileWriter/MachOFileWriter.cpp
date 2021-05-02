@@ -107,37 +107,37 @@ MachOFileWriter::writeSectionCommands()
 void
 MachOFileWriter::writeSectionData()
 {
-    for (const auto sectionData : _layoutedSections)
-    {
-        switch (sectionData->dataType)
-        {
-            case SectionDataType::Assembly:
-            {
-
-                auto routines = reinterpret_cast<const List<Routine*>*>(sectionData->data);
-                for (const auto routine : *routines)
-                {
-                    auto instructions = routine->machineInstructions;
-                    auto size = instructions->size();
-                    _outputFileStream->write((char*)&(*instructions)[0], size);
-                }
-                fillWithNullCharacter(sectionData->fillBytes);
-                break;
-            }
-            case SectionDataType::CString:
-            {
-                auto strings = reinterpret_cast<const List<Utf8StringView*>*>(sectionData->data);
-                for (const Utf8StringView* string : *strings)
-                {
-                    auto size = string->size();
-                    _outputFileStream->write(string->source(), size);
-                    writeNullCharacter();
-                }
-                fillWithNullCharacter(sectionData->fillBytes);
-                break;
-            }
-        }
-    }
+//    for (const auto sectionData : _layoutedSections)
+//    {
+//        switch (sectionData->dataType)
+//        {
+//            case SectionDataType::Assembly:
+//            {
+//
+//                auto routines = reinterpret_cast<const List<Routine*>*>(sectionData->data);
+//                for (const auto routine : *routines)
+//                {
+//                    auto instructions = routine->machineInstructions;
+//                    auto size = instructions->size();
+//                    _outputFileStream->write((char*)&(*instructions)[0], size);
+//                }
+//                fillWithNullCharacter(sectionData->fillBytes);
+//                break;
+//            }
+//            case SectionDataType::CString:
+//            {
+//                auto strings = reinterpret_cast<const List<Utf8StringView*>*>(sectionData->data);
+//                for (const Utf8StringView* string : *strings)
+//                {
+//                    auto size = string->size();
+//                    _outputFileStream->write(string->source(), size);
+//                    writeNullCharacter();
+//                }
+//                fillWithNullCharacter(sectionData->fillBytes);
+//                break;
+//            }
+//        }
+//    }
 }
 
 

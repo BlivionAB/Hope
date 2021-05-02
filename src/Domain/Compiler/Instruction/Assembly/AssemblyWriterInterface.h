@@ -1,7 +1,7 @@
 #ifndef ELET_ASSEMBLYWRITERINTERFACE_H
 #define ELET_ASSEMBLYWRITERINTERFACE_H
 
-#include <Domain/Compiler/Instruction/Instruction.h>
+#include <Domain/Compiler/Syntax/Instruction.h>
 
 namespace elet::domain::compiler
 {

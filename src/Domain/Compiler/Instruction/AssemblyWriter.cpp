@@ -29,11 +29,11 @@ AssemblyWriter::AssemblyWriter(compiler::AssemblyTarget target) :
 void
 AssemblyWriter::writeRoutine(Routine *routine)
 {
-    routine->symbolicRelocations = new List<RelocationOperand*>();
-    routine->relativeRelocations = new List<RelocationOperand*>();
-//    routine->symbol->textOffset = _symbolOffset;
-    _assemblyWriter->writeRoutine(routine);
-    _symbolOffset += routine->machineInstructions->size();
+//    routine->symbolicRelocations = new List<RelocationOperand*>();
+//    routine->relativeRelocations = new List<RelocationOperand*>();
+////    routine->symbol->textOffset = _symbolOffset;
+//    _assemblyWriter->writeRoutine(routine);
+//    _symbolOffset += routine->machineInstructions->size();
 }
 
 

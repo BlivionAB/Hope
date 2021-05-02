@@ -1,12 +1,12 @@
 #ifndef ELET_X86_64WRITER_H
 #define ELET_X86_64WRITER_H
 
-#include <Domain/Compiler/Instruction/Instruction.h>
+#include <Domain/Compiler/Syntax/Instruction.h>
 
 #include <queue>
 
 #include <Domain/Compiler/Instruction/Assembly/AssemblyWriterInterface.h>
-#include <Domain/Compiler/Instruction/Instruction.h>
+#include <Domain/Compiler/Syntax/Instruction.h>
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/Mov.h"
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h"
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h"

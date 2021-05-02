@@ -8,6 +8,6 @@
 #define LABEL__BLOCK               (std::uint8_t)(1 << 3)
 #define LABEL__NAMED_EXPRESSION    (std::uint8_t)(1 << 4)
 #define LABEL__USING_STATEMENT     (std::uint8_t)(1 << 5)
-
+#define LABEL__CONTROL_FLOW        (std::uint8_t)(1 << 6)
 
 #endif //ELET_SYNTAX_LABELS_H

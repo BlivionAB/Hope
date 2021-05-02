@@ -30,7 +30,7 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
        { 0 },
        1,
     };
-    _transformer = new Transformer(callingConvention, _routines, _transformationWorkMutex, &_cstrings, _cstringOffset, _dataMutex);
+    _transformer = new Transformer(_dataMutex);
 }
 
 
@@ -210,7 +210,7 @@ Compiler::acceptParsingWork()
                     _pendingParsingFiles--;
                 }
             }
-            pushBindingWork(result.statements, task.sourceFile);
+            pushBindingWork(result.statements);
             _pendingParsingTasks--;
             // Break early, instead of waiting for condition, that might not fire.
             if (_pendingParsingFiles == 0 && _pendingParsingTasks == 0)
@@ -237,7 +237,7 @@ Compiler::acceptParsingWork()
 }
 
 void
-Compiler::pushBindingWork(const List<ast::Syntax*> statements, ast::SourceFile* sourceFile)
+Compiler::pushBindingWork(const List<ast::Syntax*> statements)
 {
     for (ast::Syntax* statement : statements)
     {
@@ -247,17 +247,17 @@ Compiler::pushBindingWork(const List<ast::Syntax*> statements, ast::SourceFile* 
             if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
             {
                 auto functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
-                _bindingWork.push(new BindingWork(functionDeclaration, sourceFile));
+                _bindingWork.push(new BindingWork(functionDeclaration));
             }
             else if (declaration->kind == ast::SyntaxKind::DomainDeclaration)
             {
                 auto domain = reinterpret_cast<ast::DomainDeclaration*>(declaration);
-                pushBindingWork(domain->block->declarations, sourceFile);
+                pushBindingWork(domain->block->declarations);
             }
         }
         else if (statement->labels & LABEL__USING_STATEMENT)
         {
-            _bindingWork.push(new BindingWork(reinterpret_cast<ast::UsingStatement*>(statement), sourceFile));
+            _bindingWork.push(new BindingWork(reinterpret_cast<ast::UsingStatement*>(statement)));
         }
         _syntaxTree.add(statement);
     }
@@ -416,47 +416,47 @@ Compiler::acceptAssemblyWritingWork()
 void
 Compiler::writeToOutputFile()
 {
-    List<RelativeRelocationTask> relativeRelocationTasks;
-    for (const auto routine : _output)
-    {
-        routine->symbol->textOffset = _outputSize;
-        for (const auto relocation : *routine->symbolicRelocations)
-        {
-            relocateSymbolically(reinterpret_cast<FunctionReference*>(relocation));
-        }
-        for (const auto relocation : *routine->relativeRelocations)
-        {
-            relocateRelatively(relocation, routine, relativeRelocationTasks);
-        }
-        auto size = routine->machineInstructions->size();
-        _outputSize += size;
-    }
-
-    // Relocate relatively
-    for (const RelativeRelocationTask& relocationTask : relativeRelocationTasks)
-    {
-        if (relocationTask.relocation->kind == OperandKind::StringReference)
-        {
-            auto address = reinterpret_cast<std::uint32_t*>(&(*relocationTask.routine->machineInstructions)[relocationTask.offset]);
-            *address = (std::uint32_t)(_outputSize - relocationTask.relocation->textOffset + 4) + relocationTask.relocation->dataOffset;
-        }
-    }
-    auto directory = Path::folderOf(*_outputFile);
-    if (!Path::exists(directory))
-    {
-        foundation::File::createDirectory(directory);
-    }
-    const AssemblySegments segments = {
-        &_output,
-        _outputSize,
-        &_cstrings,
-        _cstringOffset,
-        &_symbols,
-        _symbolSectionOffset,
-        &_symbolicRelocations,
-        &_relativeRelocations,
-    };
-    _objectFileWriter->writeToFile(*_outputFile, segments);
+//    List<RelativeRelocationTask> relativeRelocationTasks;
+//    for (const auto routine : _output)
+//    {
+//        routine->symbol->textOffset = _outputSize;
+//        for (const auto relocation : *routine->symbolicRelocations)
+//        {
+//            relocateSymbolically(reinterpret_cast<FunctionReference*>(relocation));
+//        }
+//        for (const auto relocation : *routine->relativeRelocations)
+//        {
+//            relocateRelatively(relocation, routine, relativeRelocationTasks);
+//        }
+//        auto size = routine->machineInstructions->size();
+//        _outputSize += size;
+//    }
+//
+//    // Relocate relatively
+//    for (const RelativeRelocationTask& relocationTask : relativeRelocationTasks)
+//    {
+//        if (relocationTask.relocation->kind == OperandKind::StringReference)
+//        {
+//            auto address = reinterpret_cast<std::uint32_t*>(&(*relocationTask.routine->machineInstructions)[relocationTask.offset]);
+//            *address = (std::uint32_t)(_outputSize - relocationTask.relocation->textOffset + 4) + relocationTask.relocation->dataOffset;
+//        }
+//    }
+//    auto directory = Path::folderOf(*_outputFile);
+//    if (!Path::exists(directory))
+//    {
+//        foundation::File::createDirectory(directory);
+//    }
+//    const AssemblySegments segments = {
+//        &_output,
+//        _outputSize,
+//        &_cstrings,
+//        _cstringOffset,
+//        &_symbols,
+//        _symbolSectionOffset,
+//        &_symbolicRelocations,
+//        &_relativeRelocations,
+//    };
+//    _objectFileWriter->writeToFile(*_outputFile, segments);
 }
 
 

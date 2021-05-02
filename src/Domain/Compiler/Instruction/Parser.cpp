@@ -209,40 +209,40 @@ InstructionParser::createPunctuation(PunctuationType type)
 List<output::Instruction*>*
 InstructionParser::parse()
 {
-    List<EmbeddedSyntax*> syntaxTree;
-    while (true)
-    {
-        EmbeddedSyntax* statement = parseStatement();
-        if (!statement)
-        {
-            break;
-        }
-        syntaxTree.add(statement);
-        if (statement->kind == SyntaxKind::EndStatement)
-        {
-            break;
-        }
-    }
-    auto list = new List<output::Instruction*>();
-    for (const auto& statement : syntaxTree)
-    {
-        if (statement->kind == SyntaxKind::EmbeddedInstruction)
-        {
-            auto embeddedInstruction = reinterpret_cast<embedded::EmbeddedInstruction*>(statement);
-            auto instruction = new output::Instruction();
-            instruction->type = embeddedInstruction->mnemonic->type;
-            if (embeddedInstruction->operand1)
-            {
-                instruction->operand1 = createOutputOperandFromEmbeddedOperand(embeddedInstruction->operand1);
-            }
-            if (embeddedInstruction->operand2)
-            {
-                instruction->operand2 = createOutputOperandFromEmbeddedOperand(embeddedInstruction->operand2);
-            }
-            list->add(instruction);
-        }
-    }
-    return list;
+//    List<EmbeddedSyntax*> syntaxTree;
+//    while (true)
+//    {
+//        EmbeddedSyntax* statement = parseStatement();
+//        if (!statement)
+//        {
+//            break;
+//        }
+//        syntaxTree.add(statement);
+//        if (statement->kind == SyntaxKind::EndStatement)
+//        {
+//            break;
+//        }
+//    }
+//    auto list = new List<output::Instruction*>();
+//    for (const auto& statement : syntaxTree)
+//    {
+//        if (statement->kind == SyntaxKind::EmbeddedInstruction)
+//        {
+//            auto embeddedInstruction = reinterpret_cast<embedded::EmbeddedInstruction*>(statement);
+//            auto instruction = new output::Instruction();
+//            instruction->type = embeddedInstruction->mnemonic->type;
+//            if (embeddedInstruction->operand1)
+//            {
+//                instruction->operand1 = createOutputOperandFromEmbeddedOperand(embeddedInstruction->operand1);
+//            }
+//            if (embeddedInstruction->operand2)
+//            {
+//                instruction->operand2 = createOutputOperandFromEmbeddedOperand(embeddedInstruction->operand2);
+//            }
+//            list->add(instruction);
+//        }
+//    }
+//    return list;
 }
 
 output::Operand*

@@ -6,7 +6,7 @@
 #include <Foundation/Utf8StringView.h>
 #include "Syntax/Syntax.h"
 #include "Parser.h"
-#include "Domain/Compiler/Instruction/Instruction.h"
+#include "Domain/Compiler/Syntax/Instruction.h"
 
 
 namespace elet::domain::compiler
@@ -36,12 +36,8 @@ struct BindingWork
     ast::Syntax*
     declaration;
 
-    ast::SourceFile*
-    file;
-
-    BindingWork(ast::Syntax* declaration, ast::SourceFile* file):
-        declaration(declaration),
-        file(file)
+    BindingWork(ast::Syntax* declaration):
+        declaration(declaration)
     { }
 };
 
@@ -63,11 +59,6 @@ public:
 
 private:
 
-    static
-    thread_local
-    std::map<Utf8StringView, ast::Declaration*>*
-    _fileDeclaration;
-
     const ast::DomainDeclarationMap*
     _domainDeclarationMap;
 
@@ -83,12 +74,6 @@ private:
     thread_local
     ast::FunctionDeclaration*
     _currentFunctionDeclaration;
-
-    void
-    bindAssemblyBlock(ast::AssemblyBlock* assemblyBlock, SymbolMap& symbols);
-
-    void
-    tryBindOperand(output::Operand* operand, SymbolMap& symbols);
 
     static
     void

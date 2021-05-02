@@ -21,13 +21,6 @@ namespace elet::domain::compiler::ast
     };
 
 
-    struct ExternCBlock : Syntax
-    {
-        List<Declaration*>
-        declarations;
-    };
-
-
     struct AssemblyBody : Syntax
     {
         List<output::Instruction*>*
@@ -53,6 +46,14 @@ namespace elet::domain::compiler::ast
         NameToDeclarationMap
         symbols;
     };
+
+
+    struct ExternCBlock : Syntax
+    {
+        List<Declaration*>
+        declarations;
+    };
+
 
     enum class AccessibilityType
     {

@@ -5,9 +5,6 @@
 namespace elet::domain::compiler
 {
 
-thread_local
-std::map<Utf8StringView, ast::Declaration*>*
-Binder::_fileDeclaration = nullptr;
 
 thread_local
 ast::FunctionDeclaration*
@@ -25,7 +22,6 @@ void
 Binder::performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDeclarationMap)
 {
     _domainDeclarationMap = domainDeclarationMap;
-    _fileDeclaration = &work.file->declarations;
 
     switch (work.declaration->kind)
     {
@@ -89,40 +85,11 @@ Binder::bindFunction(ast::FunctionDeclaration* declaration)
     {
         switch (statement->kind)
         {
-            case ast::SyntaxKind::AssemblyBlock:
-                bindAssemblyBlock(reinterpret_cast<ast::AssemblyBlock*>(statement), declaration->body->symbols);
-                break;
             case ast::SyntaxKind::CallExpression:
                 bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
             default:
                 throw UnknownBindingStatement();
-        }
-    }
-}
-
-
-void
-Binder::bindAssemblyBlock(ast::AssemblyBlock* assemblyBlock, SymbolMap& symbols)
-{
-    for (output::Instruction* instruction : *assemblyBlock->body->instructions)
-    {
-        tryBindOperand(instruction->operand1, symbols);
-        tryBindOperand(instruction->operand2, symbols);
-    }
-}
-
-
-void
-Binder::tryBindOperand(output::Operand* operand, SymbolMap& symbols)
-{
-    if (operand && operand->kind == output::OperandKind::AssemblyReference)
-    {
-        auto assemblyReference = reinterpret_cast<output::AssemblyReference*>(operand);
-        auto result = symbols.find(assemblyReference->name);
-        if (result != symbols.end())
-        {
-            assemblyReference->reference = result->second;
         }
     }
 }
@@ -135,13 +102,22 @@ Binder::bindCallExpression(ast::CallExpression* callExpression)
     {
         bindExpression(expr);
     }
-    auto result = _fileDeclaration->find(callExpression->name->name);
-    if (result == _fileDeclaration->end())
+    const auto& name = callExpression->name->name;
+    const auto& domain = _currentFunctionDeclaration->domain;
+    const auto& usages = domain->usages;
+    const auto& usagesIt = usages.find(name);
+    if (usagesIt != usages.end())
     {
-        _forwardedReferences.add(callExpression);
+        callExpression->referenceDeclaration = usagesIt->second;
         return;
     }
-    callExpression->referenceDeclaration = result->second;
+    const auto& symbols = domain->block->symbols;
+    const auto& domainSymbolsIt = symbols.find(name);
+    if (domainSymbolsIt != symbols.end())
+    {
+        callExpression->referenceDeclaration = domainSymbolsIt->second;
+        return;
+    }
 }
 
 

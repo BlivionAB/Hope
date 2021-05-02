@@ -6,7 +6,7 @@
 #include <Foundation/Memory/Utf8Span.h>
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
-#include "Domain/Compiler/Instruction/Instruction.h"
+#include "Instruction.h"
 #include "Syntax.Labels.h"
 #include "Syntax.Kind.h"
 
@@ -321,7 +321,7 @@ struct LengthOfExpression : Expression
 }
 
 
-#include "Syntax.Definition.h"
+#include "Syntax.Declarations.h"
 #include "Syntax.Block.h"
 
 

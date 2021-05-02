@@ -10,7 +10,7 @@
 #include "Binder.h"
 #include "Checker.h"
 #include "Syntax/Syntax.h"
-#include "Domain/Compiler/Instruction/Instruction.h"
+#include "Domain/Compiler/Syntax/Instruction.h"
 #include "Domain/Compiler/Instruction/Transformer.h"
 #include "Domain/Compiler/Instruction/AssemblyWriter.h"
 #include "Domain/Compiler/Instruction/ObjectFileWriter.h"
@@ -225,7 +225,7 @@ private:
     relocateSymbolically(FunctionReference* relocation);
 
     void
-    pushBindingWork(const List<ast::Syntax*> statements, ast::SourceFile* sourceFile);
+    pushBindingWork(const List<ast::Syntax*> statements);
 
     List<ast::Syntax*>
     _syntaxTree;
