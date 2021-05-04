@@ -306,6 +306,7 @@ Parser::parseFunctionDeclaration()
     }
     if (token == Token::SemiColon)
     {
+        functionDeclaration->body = nullptr;
         goto finishDeclaration;
     }
     else if (token != Token::OpenBrace)
@@ -314,7 +315,7 @@ Parser::parseFunctionDeclaration()
     }
     functionDeclaration->body = parseFunctionBodyOnOpenBrace();
 
-finishDeclaration:
+    finishDeclaration:
     finishDeclaration(functionDeclaration);
     functionDeclaration->domain = _currentDomain;
     return functionDeclaration;
@@ -1141,6 +1142,7 @@ DomainDeclaration*
 Parser::parseDomainDeclaration()
 {
     _currentDomain = createDeclaration<DomainDeclaration>(SyntaxKind::DomainDeclaration);
+    _currentDomain->implementsClause = nullptr;
     Token token = takeNextToken();
     char* start = _scanner->getStartPosition();
     while (true)

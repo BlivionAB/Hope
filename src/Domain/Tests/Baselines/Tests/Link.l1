@@ -1,13 +1,7 @@
-domain Common::Console implements IConsole
+domain Common::Console
 {
 
 public:
-
-    interface IConsole
-    {
-        WriteLine(text: char*): void static;
-    }
-
 
     fn WriteLine(text: char*): void
     {

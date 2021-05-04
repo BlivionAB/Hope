@@ -30,7 +30,7 @@ namespace elet::domain::compiler::instruction
 
     namespace output
     {
-        struct Routine;
+        struct FunctionRoutine;
         enum class ObjectFileTarget;
     }
 }
@@ -120,7 +120,7 @@ struct PendingParsingTask
 
 struct RelativeRelocationTask
 {
-    output::Routine*
+    output::FunctionRoutine*
     routine;
 
     std::uint64_t
@@ -129,7 +129,7 @@ struct RelativeRelocationTask
     RelocationOperand*
     relocation;
 
-    RelativeRelocationTask(output::Routine* routine, std::uint64_t offset, RelocationOperand* relocation):
+    RelativeRelocationTask(output::FunctionRoutine* routine, std::uint64_t offset, RelocationOperand* relocation):
         routine(routine),
         offset(offset),
         relocation(relocation)
@@ -219,7 +219,7 @@ private:
     acceptAssemblyWritingWork();
 
     void
-    relocateRelatively(RelocationOperand* relocation, output::Routine* routine, List<RelativeRelocationTask>& relativeRelocationTasks);
+    relocateRelatively(RelocationOperand* relocation, output::FunctionRoutine* routine, List<RelativeRelocationTask>& relativeRelocationTasks);
 
     void
     relocateSymbolically(FunctionReference* relocation);
@@ -236,13 +236,13 @@ private:
     std::queue<ast::Syntax*>
     _checkingWork;
 
-    std::queue<ast::Declaration*>
+    std::queue<ast::FunctionDeclaration*>
     _transformationWork;
 
     std::queue<BindingWork*>
     _bindingWork;
 
-    std::queue<output::Routine*>
+    std::queue<output::FunctionRoutine*>
     _routines;
 
     List<Utf8StringView*>
@@ -350,7 +350,7 @@ private:
     AssemblyWriter*
     _assemblyWriter;
 
-    List<output::Routine*>
+    List<output::FunctionRoutine*>
     _output;
 
     std::mutex

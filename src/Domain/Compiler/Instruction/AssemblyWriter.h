@@ -26,9 +26,6 @@ public:
 
     AssemblyWriter(AssemblyTarget target);
 
-    void
-    writeRoutine(Routine *routine);
-
 private:
 
     AssemblyTarget

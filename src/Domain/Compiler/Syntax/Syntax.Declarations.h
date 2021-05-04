@@ -7,7 +7,7 @@
 
 namespace elet::domain::compiler::instruction::output
 {
-    struct Routine;
+    struct FunctionRoutine;
 }
 
 
@@ -16,6 +16,7 @@ namespace elet::domain::compiler::ast
     using namespace elet::domain::compiler::instruction;
     struct StatementBlock;
     struct DomainDeclaration;
+    struct InterfaceDeclaration;
 
     struct Declaration : Syntax
     {
@@ -33,9 +34,6 @@ namespace elet::domain::compiler::ast
 
         AccessibilityType
         accessability;
-
-        std::size_t
-        __size;
 
         const DomainDeclaration*
         domain;
@@ -58,6 +56,9 @@ namespace elet::domain::compiler::ast
 
         std::map<Utf8StringView, ast::Declaration*>
         usages;
+
+        InterfaceDeclaration*
+        implements;
     };
 
 
@@ -171,7 +172,7 @@ namespace elet::domain::compiler::ast
         body;
 
         // Used for deciding
-        output::Routine*
+        output::FunctionRoutine*
         routine;
     };
 }

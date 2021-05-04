@@ -22,7 +22,6 @@ namespace elet::domain::compiler::instruction::output
 {
 
 struct Routine;
-
 using namespace embedded;
 using namespace foundation;
 
@@ -50,7 +49,12 @@ struct Instruction
 
 struct CallInstruction : Instruction
 {
+    Routine*
+    routine;
 
+    CallInstruction(Routine* routine):
+        routine(routine)
+    { }
 };
 
 
@@ -70,20 +74,92 @@ struct Jump
 };
 
 
+enum class RoutineKind
+{
+    Function,
+    Block,
+    External,
+};
+
+
 struct Routine
 {
-    Utf8StringView
-    name;
+    RoutineKind
+    kind;
 
+    Routine(RoutineKind kind):
+        kind(kind)
+    { }
+};
+
+
+struct InternalRoutine : Routine
+{
     List<Instruction*>
     instructions;
 
     List<Jump*>
     jumps;
 
-    Routine*
+    InternalRoutine*
     next;
+
+    InternalRoutine(RoutineKind kind):
+        Routine(kind)
+    { }
 };
+
+
+struct ExternalRoutine : Routine
+{
+    Utf8StringView
+    name;
+
+    ExternalRoutine(Utf8StringView& name):
+        name(name),
+        Routine(RoutineKind::External)
+    { }
+};
+
+
+struct FunctionRoutine : InternalRoutine
+{
+    Utf8StringView
+    name;
+
+    FunctionRoutine(const Utf8StringView& name):
+        name(name),
+        InternalRoutine(RoutineKind::Function)
+    { }
+};
+
+static int blockRoutineIndex = 0;
+struct BlockRoutine : InternalRoutine
+{
+    std::size_t
+    index;
+
+    BlockRoutine():
+        index(blockRoutineIndex++),
+        InternalRoutine(RoutineKind::Block)
+    { }
+};
+
+//struct FunctionRoutine
+//{
+//    Utf8StringView
+//    name;
+//
+//    List<Instruction*>
+//    instructions;
+//
+//    List<Jump*>
+//    jumps;
+//
+//    Routine*
+//    next;
+//};
+
 
 typedef std::variant<unsigned int, int, Utf8StringView*> ArgumentValue;
 
@@ -262,39 +338,6 @@ struct FunctionReference : RelocationOperand
 };
 
 
-//enum class RoutineKind
-//{
-//    Unknown,
-//    Routine,
-//    Function,
-//};
-//
-//
-//struct Routine
-//{
-//    RoutineKind
-//    kind;
-//
-//    Utf8StringView
-//    name;
-//
-//    List<Instruction*>*
-//    instructions;
-//
-//    List<std::uint8_t>*
-//    machineInstructions;
-//
-//    Symbol*
-//    symbol;
-//
-//    List<RelocationOperand*>*
-//    symbolicRelocations;
-//
-//    List<RelocationOperand*>*
-//    relativeRelocations;
-//};
-
-
 struct Parameter
 {
     std::size_t
@@ -337,7 +380,7 @@ struct Parameter
 };
 
 
-struct Function : Routine
+struct Function : FunctionRoutine
 {
     List<Parameter*>
     parameters;

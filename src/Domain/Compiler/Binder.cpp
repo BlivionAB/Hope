@@ -11,6 +11,11 @@ ast::FunctionDeclaration*
 Binder::_currentFunctionDeclaration = nullptr;
 
 
+
+ast::DomainDeclaration*
+Binder::startDomainDeclaration = nullptr;
+
+
 Binder::Binder():
     _domainDeclarationMap(nullptr)
 {
@@ -25,6 +30,9 @@ Binder::performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDe
 
     switch (work.declaration->kind)
     {
+        case ast::SyntaxKind::DomainDeclaration:
+            bindDomainDeclaration(reinterpret_cast<ast::DomainDeclaration*>(work.declaration));
+            break;
         case ast::SyntaxKind::UsingStatement:
             bindUsingStatement(reinterpret_cast<ast::UsingStatement*>(work.declaration));
             break;
@@ -33,6 +41,46 @@ Binder::performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDe
             break;
         default:
             throw UnknownDeclaration();
+    }
+}
+
+
+void
+Binder::bindDomainDeclaration(ast::DomainDeclaration* domain)
+{
+    if (domain->implementsClause)
+    {
+        if (domain->implementsClause->name == "IConsoleApplication")
+        {
+            startDomainDeclaration = domain;
+            static auto consoleAppInterface = new ast::InterfaceDeclaration();
+            ast::Name* name = consoleAppInterface->name = new ast::Name();
+            name->name = "IConsoleApplication";
+
+            ast::PropertyDeclaration* onProcessStartProperty = new ast::PropertyDeclaration();
+            onProcessStartProperty->name = new ast::Name();
+            onProcessStartProperty->name->name = "OnProgressStart";
+            onProcessStartProperty->parameters = new ast::ParameterDeclarationList();
+            onProcessStartProperty->type = new ast::TypeAssignment();
+            onProcessStartProperty->type->type = ast::TypeKind::Void;
+            consoleAppInterface->properties = {
+                onProcessStartProperty
+            };
+            domain->implements = consoleAppInterface;
+        }
+    }
+    for (const auto& decl : domain->block->declarations)
+    {
+        switch (decl->kind)
+        {
+            case ast::SyntaxKind::UsingStatement:
+                bindUsingStatement(reinterpret_cast<ast::UsingStatement*>(decl));
+                break;
+            case ast::SyntaxKind::FunctionDeclaration:
+                bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(decl));
+                break;
+            default:;
+        }
     }
 }
 

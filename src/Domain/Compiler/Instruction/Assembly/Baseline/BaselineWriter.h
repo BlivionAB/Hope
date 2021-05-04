@@ -36,7 +36,7 @@ public:
     ~BaselineWriter();
 
     void
-    writeRoutine(Routine* routine);
+    writeRoutine(FunctionRoutine* routine);
 
 private:
 
@@ -45,13 +45,13 @@ private:
     TextWriter*
     _tw;
 
-    output::Routine*
+    output::FunctionRoutine*
     _currentRoutine;
 
     List<TextWriter*>
     _textWriters;
 
-    std::map<Routine*, Utf8String>
+    std::map<FunctionRoutine*, Utf8String>
     _baselineOutput;
 
     TextWriter*

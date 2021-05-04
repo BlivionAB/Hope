@@ -3,12 +3,16 @@
 
 #include <map>
 #include <Foundation/Utf8StringView.h>
+#include "Binder.h"
 #include "Syntax/Syntax.h"
 
 using namespace elet::foundation;
 
 namespace elet::domain::compiler
 {
+
+
+class Binder;
 
 
 namespace ast
@@ -54,6 +58,8 @@ class Checker
 {
 public:
 
+    Checker(const Binder* _binder);
+
     void
     checkUsingStatement(const ast::UsingStatement* usingStatement);
 
@@ -65,6 +71,9 @@ public:
 
     void
     checkCallExpression(const ast::CallExpression* callExpression);
+
+    void
+    checkDomainDeclaration(const ast::DomainDeclaration* domain);
 
     static
     Type
@@ -82,6 +91,9 @@ private:
 
     const ast::SourceFile*
     _sourceFile;
+
+    const Binder*
+    _binder;
 };
 
 

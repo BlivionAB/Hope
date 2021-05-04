@@ -57,23 +57,18 @@ public:
 
     using SymbolMap = std::map<Utf8StringView, ast::Declaration*>;
 
-private:
-
-    const ast::DomainDeclarationMap*
-    _domainDeclarationMap;
-
-    const std::map<Utf8StringView, ast::Declaration*>
-    _usages;
-
-//    static
-//    thread_local
-//    std::map<Utf8StringView, ast::UsingStatement*>*
-//    _importSymbols;
+    static
+    ast::DomainDeclaration*
+    startDomainDeclaration;
 
     static
-    thread_local
-    ast::FunctionDeclaration*
-    _currentFunctionDeclaration;
+    ast::InterfaceDeclaration*
+    startDomainInterfaceDeclaration;
+
+private:
+
+    void
+    bindDomainDeclaration(ast::DomainDeclaration* domain);
 
     static
     void
@@ -91,6 +86,22 @@ private:
 
     void
     bindCallExpression(ast::CallExpression* callExpression);
+
+    const ast::DomainDeclarationMap*
+    _domainDeclarationMap;
+
+    const std::map<Utf8StringView, ast::Declaration*>
+    _usages;
+
+//    static
+//    thread_local
+//    std::map<Utf8StringView, ast::UsingStatement*>*
+//    _importSymbols;
+
+    static
+    thread_local
+    ast::FunctionDeclaration*
+    _currentFunctionDeclaration;
 
     List<ast::Expression*>
     _forwardedReferences;

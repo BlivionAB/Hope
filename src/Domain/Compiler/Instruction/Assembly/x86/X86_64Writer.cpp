@@ -12,11 +12,11 @@ X86_64Writer::X86_64Writer():
 }
 
 
-void
-X86_64Writer::writeRoutine(Routine *routine)
-{
-    _currentRoutine = routine;
-    _routineOutput = new List<std::uint8_t>();
+//void
+//X86_64Writer::writeRoutine(FunctionRoutine *routine)
+//{
+//    _currentRoutine = routine;
+//    _routineOutput = new List<std::uint8_t>();
 //    routine->symbol->textOffset = _routineOutput->size();
 //    if (routine->kind == RoutineKind::Function)
 //    {
@@ -100,7 +100,7 @@ X86_64Writer::writeRoutine(Routine *routine)
 //    }
 //
 //    routine->machineInstructions = _routineOutput;
-}
+//}
 
 
 void

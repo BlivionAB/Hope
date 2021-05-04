@@ -50,9 +50,6 @@ public:
 
     X86_64Writer();
 
-    void
-    writeRoutine(Routine *routine);
-
 private:
     void
     writeMoveImmediateOpcode(unsigned int registerIndex);
@@ -74,9 +71,6 @@ private:
 
     List<Int64*>*
     _relocations;
-
-    Routine*
-    _currentRoutine;
 
     List<std::uint8_t>*
     _routineOutput;

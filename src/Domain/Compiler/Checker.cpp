@@ -5,15 +5,26 @@ namespace elet::domain::compiler
 {
 
 
+Checker::Checker(const Binder* _binder):
+    _binder(_binder)
+{
+
+}
+
+
 void
 Checker::checkTopLevelDeclaration(const ast::Declaration* declaration)
 {
     _sourceFile = declaration->sourceFile;
     switch (declaration->kind)
     {
+        case ast::SyntaxKind::DomainDeclaration:
+            checkDomainDeclaration(reinterpret_cast<const ast::DomainDeclaration*>(declaration));
+            break;
         case ast::SyntaxKind::FunctionDeclaration:
             checkFunctionDeclaration(reinterpret_cast<const ast::FunctionDeclaration*>(declaration));
             break;
+        default:;
     }
 }
 
@@ -28,6 +39,7 @@ Checker::checkFunctionDeclaration(const ast::FunctionDeclaration *functionDeclar
             case ast::SyntaxKind::CallExpression:
                 checkCallExpression(reinterpret_cast<const ast::CallExpression*>(statement));
                 break;
+            default:;
         }
     }
 }
@@ -106,6 +118,7 @@ Checker::getTypeFromTypeAssignment(ast::TypeAssignment* typeAssignment)
         case ast::TypeKind::Custom:
             result.kind = TYPE_CUSTOM;
             break;
+        default:;
     }
     return result;
 }
@@ -114,6 +127,12 @@ void
 Checker::checkUsingStatement(const ast::UsingStatement* usingStatement)
 {
 
+}
+
+void
+Checker::checkDomainDeclaration(const ast::DomainDeclaration* domain)
+{
+//    domain->implements->properties
 }
 
 

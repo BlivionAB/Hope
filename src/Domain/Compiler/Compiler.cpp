@@ -22,7 +22,7 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
     _assemblyWriter(new AssemblyWriter(assemblyTarget)),
     _objectFileWriter(new ObjectFileWriter(objectFileTarget)),
     _binder(new Binder()),
-    _checker(new Checker())
+    _checker(new Checker(_binder))
 {
     const auto callingConvention = new CallingConvention {
        { 7, 6, 3, 2, 8, 9 },
@@ -252,7 +252,7 @@ Compiler::pushBindingWork(const List<ast::Syntax*> statements)
             else if (declaration->kind == ast::SyntaxKind::DomainDeclaration)
             {
                 auto domain = reinterpret_cast<ast::DomainDeclaration*>(declaration);
-                pushBindingWork(domain->block->declarations);
+                _bindingWork.push(new BindingWork(domain));
             }
         }
         else if (statement->labels & LABEL__USING_STATEMENT)
@@ -314,7 +314,21 @@ Compiler::acceptCheckingWork()
         {
             auto declaration = reinterpret_cast<ast::Declaration*>(statement);
             _checker->checkTopLevelDeclaration(declaration);
-            _transformationWork.push(declaration);
+            if (declaration->kind == ast::SyntaxKind::DomainDeclaration)
+            {
+                auto domain = reinterpret_cast<ast::DomainDeclaration*>(declaration);
+                for (const auto& decl : domain->block->declarations)
+                {
+                    if (decl->kind == ast::SyntaxKind::FunctionDeclaration)
+                    {
+                        _transformationWork.push(reinterpret_cast<ast::FunctionDeclaration*>(decl));
+                    }
+                }
+            }
+            else if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
+            {
+                _transformationWork.push(reinterpret_cast<ast::FunctionDeclaration*>(declaration));
+            }
         }
         else if (statement->labels & LABEL__USING_STATEMENT)
         {
@@ -397,7 +411,7 @@ Compiler::acceptAssemblyWritingWork()
             }
             continue;
         }
-        output::Routine* routine = _routines.front();
+        output::FunctionRoutine* routine = _routines.front();
         _routines.pop();
         _writingWorkMutex.unlock();
 //        _display_mutex.lock();
@@ -405,7 +419,7 @@ Compiler::acceptAssemblyWritingWork()
 //        std::cout << "taking writing work"<< std::endl;
 //        _display_mutex.unlock();
         _pendingWritingTasks++;
-        _assemblyWriter->writeRoutine(routine);
+//        _assemblyWriter->writeRoutine(routine);
         _outputAdditionMutex.lock();
         _output.add(routine);
         _outputAdditionMutex.unlock();
@@ -471,7 +485,7 @@ Compiler::relocateSymbolically(FunctionReference* relocation)
 
 inline
 void
-Compiler::relocateRelatively(RelocationOperand* relocation, output::Routine* routine, List<RelativeRelocationTask>& relativeRelocationTasks)
+Compiler::relocateRelatively(RelocationOperand* relocation, output::FunctionRoutine* routine, List<RelativeRelocationTask>& relativeRelocationTasks)
 {
     relativeRelocationTasks.emplace(routine, relocation->textOffset, relocation);
     relocation->textOffset += _outputSize;

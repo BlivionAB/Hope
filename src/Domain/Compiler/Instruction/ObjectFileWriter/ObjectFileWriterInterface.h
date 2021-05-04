@@ -21,8 +21,6 @@ struct RelocationOperand;
 
 struct AssemblySegments
 {
-    List<Routine*>*
-    text;
 
     std::uint64_t
     textSize;

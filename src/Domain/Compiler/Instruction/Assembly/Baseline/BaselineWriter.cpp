@@ -29,7 +29,7 @@ BaselineWriter::~BaselineWriter()
 
 
 void
-BaselineWriter::writeRoutine(Routine* routine)
+BaselineWriter::writeRoutine(FunctionRoutine* routine)
 {
 //    _currentRoutine = routine;
 //    _tw = createTextWriter();

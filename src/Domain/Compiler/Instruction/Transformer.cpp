@@ -16,14 +16,15 @@ Transformer::Transformer(
 }
 
 
-output::Routine*
+output::FunctionRoutine*
 Transformer::transform(ast::Declaration* declaration)
 {
     if (declaration->kind == ast::SyntaxKind::FunctionDeclaration)
     {
         ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
-        output::Routine* routine = transformFunctionDeclaration(functionDeclaration);
+        output::FunctionRoutine* routine = transformFunctionDeclaration(functionDeclaration);
         functionDeclaration->routine = routine;
+        return routine;
     }
     else
     {
@@ -32,19 +33,22 @@ Transformer::transform(ast::Declaration* declaration)
 }
 
 
-output::Routine*
-Transformer::createRoutine(const Utf8StringView& name)
+output::FunctionRoutine*
+Transformer::createFunctionRoutine(const Utf8StringView& name)
 {
-    output::Routine* routine = new output::Routine();
-    routine->name = name;
-    return routine;
+    return new output::FunctionRoutine(name);
 }
 
 
-output::Routine*
-Transformer::transformFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration)
+output::FunctionRoutine*
+Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functionDeclaration)
 {
-    output::Routine* routine = _currentRoutine = createRoutine(functionDeclaration->name->name);
+    if (functionDeclaration->routine)
+    {
+        return functionDeclaration->routine;
+    }
+    output::FunctionRoutine* routine = createFunctionRoutine(functionDeclaration->name->name);
+    _currentRoutine = routine;
     transformLocalStatements(functionDeclaration->body->statements);
     return routine;
 }
@@ -82,7 +86,17 @@ Transformer::transformCallExpression(const ast::CallExpression* callExpression)
             default:;
         }
     }
-    _currentRoutine->instructions.add(new CallInstruction());
+    const ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(callExpression->referenceDeclaration);
+    if (functionDeclaration->body)
+    {
+        output::FunctionRoutine* routine = transformFunctionDeclaration(functionDeclaration);
+        _currentRoutine->instructions.add(new CallInstruction(routine));
+    }
+    else
+    {
+        output::ExternalRoutine* routine = new output::ExternalRoutine(callExpression->name->name);
+        _currentRoutine->instructions.add(new CallInstruction(routine));
+    }
 }
 
 

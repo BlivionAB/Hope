@@ -16,16 +16,6 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
-struct AssemblySymbol
-{
-    Utf8StringView
-    name;
-
-    Routine*
-    routine;
-};
-
-
 class AssemblyWriterInterface
 {
 

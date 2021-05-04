@@ -37,7 +37,8 @@ namespace output
     struct FunctionReference;
     struct ArgumentDeclaration;
     typedef std::variant<unsigned int, int, Utf8StringView*> ArgumentValue;
-    struct Routine;
+    struct InternalRoutine;
+    struct FunctionRoutine;
 }
 using namespace compiler;
 
@@ -93,19 +94,19 @@ public:
     Transformer(
         std::mutex& dataMutex);
 
-    output::Routine*
+    output::FunctionRoutine*
     transform(ast::Declaration* declaration);
 
 private:
 
-    output::Routine*
-    transformFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration);
+    output::FunctionRoutine*
+    transformFunctionDeclaration(const ast::FunctionDeclaration* functionDeclaration);
 
     void
     transformArgumentStringLiteral(ast::StringLiteral* stringLiteral);
 
-    output::Routine*
-    createRoutine(const Utf8StringView& name);
+    output::FunctionRoutine*
+    createFunctionRoutine(const Utf8StringView& name);
 
     output::ArgumentDeclaration*
     createArgumentDeclaration(output::ArgumentValue value);
@@ -137,7 +138,7 @@ private:
     std::mutex&
     _dataMutex;
 
-    output::Routine*
+    output::InternalRoutine*
     _currentRoutine;
 };
 
