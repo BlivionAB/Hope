@@ -1,19 +1,16 @@
 #include "BaselineWriter.h"
 #include <Foundation/Utf8String.h>
 #include <Foundation/Stack.h>
+#include <variant>
 
 
 namespace elet::domain::compiler::instruction::output
 {
 
 
-thread_local
-TextWriter*
-BaselineWriter::_tw = nullptr;
-
-
 BaselineWriter::BaselineWriter():
-    AssemblyWriterInterface()
+    AssemblyWriterInterface(),
+    _tw(createTextWriter())
 {
 
 }
@@ -27,77 +24,83 @@ BaselineWriter::~BaselineWriter()
     }
 }
 
+void
+BaselineWriter::writeStartRoutine(FunctionRoutine* routine)
+{
+    writeFunctionRoutine(routine);
+    std::cout << "Begin:" << std::endl;
+    std::cout << _tw->toString();
+    std::cout << "End:" << std::endl;
+}
 
 void
-BaselineWriter::writeRoutine(FunctionRoutine* routine)
+BaselineWriter::writeFunctionRoutine(FunctionRoutine* routine)
 {
-//    _currentRoutine = routine;
-//    _tw = createTextWriter();
-//    if (routine->kind == RoutineKind::Routine)
-//    {
-//        _tw->write(routine->name);
-//        _tw->writeCharacter(':');
-//        _tw->newline();
-//        _tw->indent();
-//        for (const auto& instruction : *routine->instructions)
-//        {
-//            writeInstruction(instruction);
-//        }
-//        _tw->unindent();
-//    }
-//    else if (routine->kind == RoutineKind::Function)
-//    {
-//        Function* _function = reinterpret_cast<Function*>(routine);
-//        _tw->write(_function->name);
-//        _tw->writeCharacter('(');
-//        bool firstParameter = true;
-//        for (const Parameter* parameter : _function->parameters)
-//        {
-//            if (!firstParameter)
-//            {
-//                _tw->write(", ");
-//            }
-//            _tw->write(parameter->typeLabel);
-//            firstParameter = false;
-//        }
-//        _tw->writeCharacter(')');
-//        _tw->writeCharacter(':');
-//        _tw->indent();
-//        _tw->newline();
-//        for (output::Instruction* instruction : *routine->instructions)
-//        {
-//            writeInstruction(instruction);
-//        }
-//        _tw->unindent();
-//    }
-//    else
-//    {
-//        throw UnknownRoutineError();
-//    }
-//    _tw->newline();
-//    auto result = new List<std::uint8_t>();
-//    auto string = _tw->toString();
-//    for (const auto& ch : string)
-//    {
-//        result->add(static_cast<std::uint8_t>(ch));
-//    }
+    _tw->clearIndent();
+    _tw->write(routine->name);
+    _tw->writeLine(":");
+    _tw->indent();
+    unsigned int parameterIndex = 0;
+    for (const auto& parameter : routine->parameters)
+    {
+        _tw->write("Par");
+        _tw->writeUnsignedInteger(parameter->size);
+        _tw->space();
+        _tw->write("P");
+        _tw->writeUnsignedInteger(parameterIndex);
+        _tw->writeLine(";");
+    }
+    for (const auto& instruction : routine->instructions)
+    {
+        switch (instruction->kind)
+        {
+            case InstructionKind::ArgumentDeclaration:
+                writeArgumentDeclaration(reinterpret_cast<ArgumentDeclaration*>(instruction));
+                break;
+            case InstructionKind::Call:
+                writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction));
+                break;
+        }
+    }
 }
 
 
+
 void
-BaselineWriter::writeInstruction(output::Instruction* instruction)
+BaselineWriter::writeArgumentDeclaration(ArgumentDeclaration* argumentDeclaration)
 {
-//    _tw->write(instructionTypeToString.get(instruction->type));
-//    if (instruction->operand1)
-//    {
-//        writeOperand(instruction->operand1);
-//    }
-//    if (instruction->operand2)
-//    {
-//        writeOperand(instruction->operand2);
-//    }
-//    _tw->writeCharacter(';');
-//    _tw->newline();
+    _tw->write("Arg");
+    _tw->writeUnsignedInteger(argumentDeclaration->index);
+    _tw->space();
+    if (auto string = std::get_if<Utf8StringView*>(&argumentDeclaration->value))
+    {
+        _tw->write("\"");
+        _tw->write(**string);
+        _tw->write("\"");
+    }
+    _tw->writeLine(";");
+}
+
+void
+BaselineWriter::writeCallInstruction(const CallInstruction* callInstruction)
+{
+    _tw->write("Call ");
+    if (callInstruction->routine->kind == RoutineKind::Function)
+    {
+        _tw->write(reinterpret_cast<FunctionRoutine*>(callInstruction->routine)->name);
+    }
+    else if (callInstruction->routine->kind == RoutineKind::External)
+    {
+        _tw->write(reinterpret_cast<ExternalRoutine*>(callInstruction->routine)->name);
+    }
+    _tw->write(";");
+    _tw->unindent();
+    _tw->newline();
+    auto routine = callInstruction->routine;
+    if (routine->kind == RoutineKind::Function)
+    {
+        writeFunctionRoutine(reinterpret_cast<FunctionRoutine*>(routine));
+    }
 }
 
 
