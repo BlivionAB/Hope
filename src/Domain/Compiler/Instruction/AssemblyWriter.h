@@ -4,6 +4,7 @@
 
 #include "Domain/Compiler/Instruction/Assembly/x86/X86_64Writer.h"
 #include "Domain/Compiler/Compiler.h"
+#include "Instruction.h"
 
 
 namespace elet::domain::compiler
@@ -15,7 +16,7 @@ namespace elet::domain::compiler
 namespace elet::domain::compiler::instruction::output
 {
 
-
+struct FunctionRoutine;
 struct AssemblyWriterInterface;
 
 
@@ -25,6 +26,9 @@ class AssemblyWriter
 public:
 
     AssemblyWriter(AssemblyTarget target);
+
+    void
+    writeStartRoutine(FunctionRoutine* routine);
 
 private:
 

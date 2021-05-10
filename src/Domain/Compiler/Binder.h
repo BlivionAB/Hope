@@ -6,7 +6,7 @@
 #include <Foundation/Utf8StringView.h>
 #include "Syntax/Syntax.h"
 #include "Parser.h"
-#include "Domain/Compiler/Syntax/Instruction.h"
+#include "Domain/Compiler/Instruction/Instruction.h"
 
 
 namespace elet::domain::compiler

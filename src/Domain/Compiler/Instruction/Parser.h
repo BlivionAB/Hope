@@ -5,7 +5,7 @@
 #include <Foundation/List.h>
 #include "Scanner.h"
 #include "Syntax.h"
-#include "Domain/Compiler/Syntax/Instruction.h"
+#include "Instruction.h"
 
 
 namespace elet::domain::compiler::instruction

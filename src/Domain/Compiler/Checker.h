@@ -2,9 +2,11 @@
 #define ELET_CHECKER_H
 
 #include <map>
+#include <fmt/format.h>
 #include <Foundation/Utf8StringView.h>
 #include "Binder.h"
 #include "Syntax/Syntax.h"
+#include "Syntax/Syntax.Type.h"
 
 using namespace elet::foundation;
 
@@ -20,6 +22,7 @@ namespace ast
     struct Declaration;
     struct FunctionDeclaration;
     struct CallExpression;
+    struct PropertyExpression;
 }
 
 #define TYPE_CHAR       (std::uint8_t)0x1
@@ -33,24 +36,21 @@ namespace ast
 #define TYPE_UINT64     (std::uint8_t)0x9
 #define TYPE_CUSTOM     (std::uint8_t)0xa
 
-struct Type
+
+struct Diagnostic
 {
-    std::uint8_t
-    kind: 4,
-    pointers: 2,
-    _mutable: 1;
+    Utf8String
+    message;
 
-    Type()
-    {
+    template<typename... Args>
+    explicit Diagnostic(const char* message):
+        message(message)
+    { }
 
-    }
-
-    Type(std::uint8_t kind, std::uint8_t pointers):
-        kind(kind),
-        pointers(pointers)
-    {
-        _mutable = 0;
-    }
+    template<typename... Args>
+    explicit Diagnostic(const char* message, Args... args):
+        message(fmt::format(message, args...).c_str())
+    { }
 };
 
 
@@ -64,10 +64,10 @@ public:
     checkUsingStatement(const ast::UsingStatement* usingStatement);
 
     void
-    checkTopLevelDeclaration(const ast::Declaration* declaration);
+    checkTopLevelDeclaration(ast::Declaration* declaration);
 
     void
-    checkFunctionDeclaration(const ast::FunctionDeclaration *functionDeclaration);
+    checkFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration);
 
     void
     checkCallExpression(const ast::CallExpression* callExpression);
@@ -75,25 +75,48 @@ public:
     void
     checkDomainDeclaration(const ast::DomainDeclaration* domain);
 
+private:
+
     static
-    Type
-    getTypeFromExpression(const ast::Expression* expression);
+    void
+    resolveTypeFromFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration);
 
     static
     bool
-    isTypeAssignableToPlaceholder(Type& assignment, Type& placeholder);
+    isTypeEqualToType(const ast::type::Type* target, const ast::type::Type* source);
 
-    static
-    Type
-    getTypeFromTypeAssignment(ast::TypeAssignment* typeAssignment);
+    void
+    addDiagnostic(Diagnostic* diagnostic);
 
-private:
+    List<Diagnostic*>
+    _diagnostics;
+
+    List<ast::FunctionDeclaration*>
+    _startFunctions;
 
     const ast::SourceFile*
     _sourceFile;
 
     const Binder*
     _binder;
+
+    ast::FunctionDeclaration*
+    getDeclarationFromSignature(ast::type::Signature* const& signature, const ast::DomainDeclaration* domain) const;
+
+    void
+    checkFunctionSignature(const ast::type::Signature* target, const ast::type::Signature* source);
+
+    void
+    checkExpression(ast::Expression* expression);
+
+    void
+    checkPropertyExpression(ast::PropertyExpression* propertyExpression);
+
+    ast::type::Type*
+    resolveTypeFromDeclaration(ast::Declaration* declaration);
+
+    ast::type::Type*
+    resolveTypeFromExpression(ast::Expression* expression);
 };
 
 

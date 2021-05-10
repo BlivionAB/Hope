@@ -53,19 +53,13 @@ Binder::bindDomainDeclaration(ast::DomainDeclaration* domain)
         if (domain->implementsClause->name == "IConsoleApplication")
         {
             startDomainDeclaration = domain;
-            static auto consoleAppInterface = new ast::InterfaceDeclaration();
-            ast::Name* name = consoleAppInterface->name = new ast::Name();
-            name->name = "IConsoleApplication";
-
-            ast::PropertyDeclaration* onProcessStartProperty = new ast::PropertyDeclaration();
-            onProcessStartProperty->name = new ast::Name();
-            onProcessStartProperty->name->name = "OnProgressStart";
-            onProcessStartProperty->parameters = new ast::ParameterDeclarationList();
-            onProcessStartProperty->type = new ast::TypeAssignment();
-            onProcessStartProperty->type->type = ast::TypeKind::Void;
-            consoleAppInterface->properties = {
-                onProcessStartProperty
-            };
+            static auto consoleAppInterface = new ast::type::Interface();
+            static auto onProcessStart = new ast::type::Signature();
+            onProcessStart->isStartFunction = true;
+            onProcessStart->name = "OnProcessStart";
+            onProcessStart->type = new ast::type::Type();
+            onProcessStart->type->kind = ast::type::TypeKind::Void;
+            consoleAppInterface->signatures.add(onProcessStart);
             domain->implements = consoleAppInterface;
         }
     }

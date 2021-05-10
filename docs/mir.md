@@ -36,24 +36,40 @@ Div
 SHL
 SHR
 ```
+
+
+##Function
+
+Functions are declared using following syntax:
+```
+function_name(param1: u64, param2: u64): 
+```
+
 ### Examples
 
 MIR1
+
 ```
-multiply:
-Par P1
-Par P2
+fn Multiply(p1: u32, p2: u32): u32
+{
+    return p1 * p2;
+}
+
+fn OnProcesStart(): void
+{
+    Multiply(1, 2)
+}
+```
+
+```
+multiply(P1: u32, P2: u32):
 Str L1, P1
 Str L2, P2
 Mul L3, L1, L2
 Str R, L3
 Ret 
 
-Str L1, 1
-Str L2, 2
-Arg P1, L1
-Arg P2, L2
-Call multiply
+Call multiply(p1: u32 = 1, p2: u32 = 2)
 ```
 
 2nd stage(without optimization).
@@ -309,9 +325,7 @@ Call _WriteLine
 ####Inlining
 
 ```
-multiply:
-Par P1
-Par P2
+multiply(P1: u64, P2: u64):
 Str L1, P1
 Str L2, P2
 Mul L3, L1, L2

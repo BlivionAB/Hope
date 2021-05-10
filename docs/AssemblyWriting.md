@@ -1,7 +1,7 @@
 ### Assembly Writing
 
-Since, Mach-O defines the code section before the constant section. We would have
-to relocate some of the code.
+Since, Mach-O/Elf defines the code section before the constant section. We would have
+to relocate some of the code after writing it.
 
 So the steps are:
 ```c++

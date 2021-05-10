@@ -3,8 +3,9 @@
 
 
 #include "Domain/Compiler/Syntax/Syntax.h"
-#include "Domain/Compiler/Syntax/Instruction.h"
+#include "Instruction.h"
 #include <queue>
+#include <stack>
 #include <Domain/Compiler/Compiler.h>
 
 #define TYPE_SIZE_64 64
@@ -23,6 +24,8 @@ namespace elet::domain::compiler
         struct Declaration;
         struct NamedExpression;
         struct StringLiteral;
+        struct PropertyExpression;
+        struct ArgumentDeclaration;
     }
 }
 
@@ -35,8 +38,11 @@ namespace output
     struct Parameter;
     struct Operand;
     struct FunctionReference;
+    struct ParameterDeclaration;
+    struct CString;
+    struct LocalVariableDeclaration;
     struct ArgumentDeclaration;
-    typedef std::variant<unsigned int, int, Utf8StringView*> ArgumentValue;
+    typedef std::variant<std::size_t, CString*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
     struct InternalRoutine;
     struct FunctionRoutine;
 }
@@ -99,23 +105,21 @@ public:
 
 private:
 
+    void
+    transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine);
+
     output::FunctionRoutine*
     transformFunctionDeclaration(const ast::FunctionDeclaration* functionDeclaration);
 
-    void
+    output::ArgumentDeclaration*
     transformArgumentStringLiteral(ast::StringLiteral* stringLiteral);
 
     output::FunctionRoutine*
     createFunctionRoutine(const Utf8StringView& name);
 
-    output::ArgumentDeclaration*
-    createArgumentDeclaration(output::ArgumentValue value);
-
     List<output::Instruction*>*
     transformLocalStatements(List<ast::Syntax*>& statements);
 
-
-    static
     std::size_t
     resolvePrimitiveTypeSize(ast::TypeAssignment* type) ;
 
@@ -126,20 +130,35 @@ private:
     void
     transformCallExpression(const ast::CallExpression* callExpression);
 
-    Utf8StringView*
+    output::CString*
     addStaticConstantString(ast::StringLiteral* stringLiteral);
 
-    List<Utf8StringView*>
+    std::size_t
+    _pointerSize = TYPE_SIZE_64;
+
+    List<output::CString*>
     _cstrings;
 
     unsigned int
     _currentArgumentIndex = 0;
 
+    unsigned int
+    _currentParameterIndex = 0;
+
     std::mutex&
     _dataMutex;
 
-    output::InternalRoutine*
-    _currentRoutine;
+    std::stack<output::InternalRoutine*>
+    _currentRoutineStack;
+
+    List<output::ParameterDeclaration*>
+    segmentParameterDeclaration(ast::ParameterDeclaration* parameter);
+
+    List<output::ArgumentDeclaration*>
+    segmentArgumentDeclarations(ast::ArgumentDeclaration* parameter);
+
+    output::ArgumentDeclaration*
+    transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression);
 };
 
 

@@ -14,7 +14,9 @@
 #define OP_PUSH_rSI 0x56
 #define OP_PUSH_rDI 0x57
 
+#define OP_POP_rBP  0x5d
 
+#define OP_RET      0xc3
 
 #define OP_TWO_BYTE_PREFIX  (std::uint8_t)0x0f
 #define OP_SYSCALL          (std::uint8_t)0x05

@@ -12,182 +12,173 @@ X86_64Writer::X86_64Writer():
 }
 
 
-//void
-//X86_64Writer::writeRoutine(FunctionRoutine *routine)
-//{
-//    _currentRoutine = routine;
-//    _routineOutput = new List<std::uint8_t>();
-//    routine->symbol->textOffset = _routineOutput->size();
-//    if (routine->kind == RoutineKind::Function)
-//    {
-//        _routineOutput->add(OP_PUSH_rBP);
-//        _routineOutput->add(REX_PREFIX_MAGIC | REX_PREFIX_W);
-//        _routineOutput->add(OP_MOV_Ev_Gv);
-//        _routineOutput->add(AF32__EBP__TO__ESP);
-//        auto _function = reinterpret_cast<Function*>(routine);
-//        std::size_t parameterOffset = 0;
-//        for (auto parameter : _function->parameters)
-//        {
-//            parameterOffset += parameter->size;
-//            _routineOutput->add(OP_MOV_Ev_Gv);
-//            switch (parameter->index)
-//            {
-//                case 0:
-//                    if (parameterOffset < DISP8_MAX_VALUE)
-//                    {
-//                        _routineOutput->add(AF32__EBP_PLUS_DISP8__TO__EDI);
-//                    }
-//                    else
-//                    {
-//                        _routineOutput->add(AF32__EBP_PLUS_DISP32__TO__EDI);
-//                    }
-//                    break;
-//            }
-//        }
-//        for (auto instruction : *_function->instructions)
-//        {
-//            switch (instruction->type)
-//            {
-//                case embedded::InstructionType::Call:
-//                {
-//                    _routineOutput->add(OP_CALL);
-//                    std::uint32_t offset = _routineOutput->size();
-//                    writeUint32(0);
-//                    auto functionReference = reinterpret_cast<FunctionReference*>(instruction->operand1);
-//                    functionReference->textOffset = offset;
-//                    _currentRoutine->symbolicRelocations->add(functionReference);
-//                    break;
-//                }
-//                case embedded::InstructionType::SysCall:
-//                    _routineOutput->add(OP_TWO_BYTE_PREFIX);
-//                    _routineOutput->add(OP_SYSCALL);
-//                    break;
-//                case embedded::InstructionType::StoreAddress64:
-//                {
-//                    auto _register = reinterpret_cast<Register *>(instruction->operand1);
-//                    if (instruction->operand2->kind == OperandKind::StringReference) {
-//                        // Put this here temporarily, until we have support for references.
-//                        _routineOutput->add(REX_PREFIX_MAGIC | REX_PREFIX_W);
-//
-//                        auto stringReference = reinterpret_cast<StringReference *>(instruction->operand2);
-//                        writeLoadEffectiveAddressFromStringReference(_register->index, stringReference);
-//                    }
-//                    break;
-//                }
-//                case embedded::InstructionType::Store64:
-////                    _routineOutput->add(REX_PREFIX_MAGIC | REX_PREFIX_W);
-//                case embedded::InstructionType::Store32:
-//                    if (instruction->operand1->kind == OperandKind::Register)
-//                    {
-//                        auto _register = reinterpret_cast<Register*>(instruction->operand1);
-//                        if (instruction->operand2->kind == OperandKind::Int32)
-//                        {
-//                            auto int32 = reinterpret_cast<Int32*>(instruction->operand2);
-//                            writeMoveInt32ToRegisterOpcode(_register->index, int32);
-//                        }
-//                        else if (instruction->operand2->kind == OperandKind::Int64)
-//                        {
-//                            // Put this here temporarily, until we have support for references.
-//                            _routineOutput->add(REX_PREFIX_MAGIC | REX_PREFIX_W);
-//
-//                            auto int64 = reinterpret_cast<Int64*>(instruction->operand2);
-//                            writeMoveInt64ToRegisterOpcode(_register->index, int64);
-//                        }
-//                    }
-//                    break;
-//            }
-//        }
-//    }
-//
-//    routine->machineInstructions = _routineOutput;
-//}
+void
+X86_64Writer::writeStartRoutine(FunctionRoutine* routine, std::size_t offset)
+{
+    _currentOffset = offset;
+    writeFunctionRoutine(routine);
+}
 
 
 void
-X86_64Writer::writeMoveImmediateOpcode(unsigned int registerIndex)
+X86_64Writer::writeFunctionRoutine(FunctionRoutine* routine)
 {
-    switch (registerIndex)
+    if (routine->hasWrittenOutput) {
+        return;
+    }
+    routine->offset = _currentOffset;
+    writeFunctionPrelude();
+    writeFunctionParameters(routine);
+    writeFunctionInstructions(routine);
+    writeFunctionPostlude();
+    routine->hasWrittenOutput = true;
+}
+
+
+void
+X86_64Writer::writeFunctionInstructions(const FunctionRoutine* routine)
+{
+    for (const auto& instruction : routine->instructions)
     {
-        case 0:
-            _routineOutput->add(OP_MOV_rAX_Iv);
-            break;
-        case 1:
-            _routineOutput->add(OP_MOV_rCX_Iv);
-            break;
-        case 2:
-            _routineOutput->add(OP_MOV_rBX_Iv);
-            break;
-        case 3:
-            _routineOutput->add(OP_MOV_rDX_Iv);
-            break;
-        case 4:
-            _routineOutput->add(OP_MOV_rSP_Iv);
-            break;
-        case 5:
-            _routineOutput->add(OP_MOV_rBP_Iv);
-            break;
-        case 6:
-            _routineOutput->add(OP_MOV_rSI_Iv);
-            break;
-        case 7:
-            _routineOutput->add(OP_MOV_rDI_Iv);
-            break;
-        default:
-            throw UnknownRegisterIndex();
+        switch (instruction->kind)
+        {
+            case InstructionKind::Call:
+                writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction));
+                break;
+        }
     }
 }
 
 
 void
-X86_64Writer::writeUint32(std::uint32_t integer)
+X86_64Writer::writeCallInstruction(CallInstruction* callInstruction)
 {
-    _routineOutput->add(integer & (std::uint8_t)0xff);
-    _routineOutput->add((integer >> (std::uint8_t)8) & (std::uint8_t)0xff);
-    _routineOutput->add((integer >> (std::uint8_t)16) & (std::uint8_t)0xff);
-    _routineOutput->add((integer >> (std::uint8_t)24) & (std::uint8_t)0xff);
+    writeCallInstructionArguments(callInstruction);
+    switch (callInstruction->routine->kind)
+    {
+        case RoutineKind::Function:
+            writeFunctionRoutine(reinterpret_cast<FunctionRoutine*>(callInstruction->routine));
+            break;
+        case RoutineKind::External:
+            callInstruction->offset = _currentOffset;
+            writePointer(0);
+            break;
+        default:
+            throw std::exception();
+    }
 }
 
 
 void
-X86_64Writer::writeUint64(std::uint64_t integer)
+X86_64Writer::writePointer(std::uint64_t address)
 {
-    _routineOutput->add((std::uint8_t)integer & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)8) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)16) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)24) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)32) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)40) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)48) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(integer >> (std::uint8_t)56) & (std::uint8_t)0xff);
+    writeQuadWord(address);
 }
 
 
 void
-X86_64Writer::writeLoadEffectiveAddressFromStringReference(unsigned char registerIndex, StringReference* stringReference)
+X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
 {
-//    _routineOutput->add(OP_LEA_Gv_M);
-//    ModRmByte mrRmByte { 5, registerIndex, 0 };
-//    _routineOutput->add(*(std::uint8_t*)&mrRmByte);
-//    _currentRoutine->relativeRelocations->add(stringReference);
-//    stringReference->textOffset = _routineOutput->size();
-//    writeUint32(0);
+    unsigned int i = 0;
+    for (const auto& argument : callInstruction->arguments)
+    {
+        if (auto parameter = std::get_if<ParameterDeclaration*>(&argument->value))
+        {
+            writeMoveFromOffset(_callingConvention.registers[i], (*parameter)->stackOffset);
+        }
+        else if (auto localVariable = std::get_if<LocalVariableDeclaration*>(&argument->value))
+        {
+            writeMoveFromOffset(_callingConvention.registers[i], (*localVariable)->stackOffset);
+        }
+        ++i;
+    }
 }
 
 
 void
-X86_64Writer::writeMoveInt64ToRegisterOpcode(unsigned int registerIndex, Int64* value)
+X86_64Writer::writeMoveFromOffset(uint8_t reg, size_t offset)
 {
-    writeMoveImmediateOpcode(registerIndex);
-    writeUint64(value->value);
+    writeByte(OP_MOV_Gv_Ev);
+    writeByte(MODRM_EBP_DISP8 | reg);
+    writeDoubleWord(-offset);
 }
 
 
 void
-X86_64Writer::writeMoveInt32ToRegisterOpcode(unsigned int registerIndex, Int32* value)
+X86_64Writer::writeFunctionParameters(const FunctionRoutine* routine)
 {
-    writeMoveImmediateOpcode(registerIndex);
-    writeUint32(value->value);
+    _localStackOffset = 0;
+    for (unsigned int i = 0; i < routine->parameters.size(); ++i)
+    {
+        auto parameter = routine->parameters[i];
+        if (i < _callingConvention.registers.size())
+        {
+            writeParameter(parameter->size, i);
+        }
+    }
 }
 
+
+void
+X86_64Writer::writeParameter(size_t size, unsigned int index)
+{
+    _localStackOffset += size;
+    writeByte(OP_MOV_Ev_Gv);
+    writeByte(MODRM_EBP_DISP8 | _callingConvention.registers[index]);
+    writeByte(-_localStackOffset);
+}
+
+
+void
+X86_64Writer::writeFunctionPrelude()
+{
+    writeByte(OP_PUSH_rBP);
+    writeByte(OP_PUSH_rBP);
+    writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+    writeByte(OP_MOV_Ev_Gv);
+    writeByte(MODRM_EBP | REG_ESP);
+}
+
+
+void
+X86_64Writer::writeFunctionPostlude()
+{
+    writeByte(OP_POP_rBP);
+    writeByte(OP_RET);
+}
+
+
+void
+X86_64Writer::writeQuadWord(std::uint64_t instruction)
+{
+    _currentOffset += 8;
+    _routineOutput->add((std::uint8_t)instruction & (std::uint8_t)0xff);
+    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
+    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
+    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
+    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)32) & (std::uint8_t)0xff);
+    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)40) & (std::uint8_t)0xff);
+    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)48) & (std::uint8_t)0xff);
+    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)56) & (std::uint8_t)0xff);
+}
+
+
+void
+X86_64Writer::writeDoubleWord(std::uint32_t instruction)
+{
+    _currentOffset += 4;
+    _routineOutput->add(instruction & (std::uint8_t)0xff);
+    _routineOutput->add((instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
+    _routineOutput->add((instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
+    _routineOutput->add((instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
+}
+
+
+void
+X86_64Writer::writeByte(std::uint8_t instruction)
+{
+    ++_currentOffset;
+    _routineOutput->add(instruction);
+}
 
 }

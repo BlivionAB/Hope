@@ -10,22 +10,14 @@ namespace elet::domain::compiler::instruction::output
 
 BaselineWriter::BaselineWriter():
     AssemblyWriterInterface(),
-    _tw(createTextWriter())
+    _tw(new TextWriter())
 {
 
 }
 
-
-BaselineWriter::~BaselineWriter()
-{
-    for (auto tw : _textWriters)
-    {
-        delete tw;
-    }
-}
 
 void
-BaselineWriter::writeStartRoutine(FunctionRoutine* routine)
+BaselineWriter::writeStartRoutine(FunctionRoutine* routine, std::size_t offset)
 {
     writeFunctionRoutine(routine);
     std::cout << "Begin:" << std::endl;
@@ -54,9 +46,6 @@ BaselineWriter::writeFunctionRoutine(FunctionRoutine* routine)
     {
         switch (instruction->kind)
         {
-            case InstructionKind::ArgumentDeclaration:
-                writeArgumentDeclaration(reinterpret_cast<ArgumentDeclaration*>(instruction));
-                break;
             case InstructionKind::Call:
                 writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction));
                 break;
@@ -67,23 +56,38 @@ BaselineWriter::writeFunctionRoutine(FunctionRoutine* routine)
 
 
 void
-BaselineWriter::writeArgumentDeclaration(ArgumentDeclaration* argumentDeclaration)
+BaselineWriter::writeArgumentDeclaration(ArgumentDeclaration* argumentDeclaration, unsigned int argumentIndex)
 {
     _tw->write("Arg");
-    _tw->writeUnsignedInteger(argumentDeclaration->index);
+    _tw->writeUnsignedInteger(argumentDeclaration->size);
     _tw->space();
-    if (auto string = std::get_if<Utf8StringView*>(&argumentDeclaration->value))
+    _tw->write("A");
+    _tw->writeUnsignedInteger(argumentIndex);
+    _tw->space();
+    if (auto string = std::get_if<output::CString*>(&argumentDeclaration->value))
     {
         _tw->write("\"");
-        _tw->write(**string);
+        _tw->write((*string)->value);
         _tw->write("\"");
+    }
+    else if (auto variable = std::get_if<output::ParameterDeclaration*>(&argumentDeclaration->value))
+    {
+        _tw->write("P");
+        _tw->writeUnsignedInteger((*variable)->index);
     }
     _tw->writeLine(";");
 }
 
+
 void
 BaselineWriter::writeCallInstruction(const CallInstruction* callInstruction)
 {
+    unsigned int i = 0;
+    for (const auto& arg : callInstruction->arguments)
+    {
+        writeArgumentDeclaration(arg, i);
+        ++i;
+    }
     _tw->write("Call ");
     if (callInstruction->routine->kind == RoutineKind::Function)
     {
@@ -202,14 +206,6 @@ BaselineWriter::writeVariableReference(output::VariableReference* variableRefere
         _tw->write("Var");
     }
     _tw->writeSize(variableReference->index);
-}
-
-TextWriter*
-BaselineWriter::createTextWriter()
-{
-    auto textWriter = new TextWriter();
-    _textWriters.add(textWriter);
-    return textWriter;
 }
 
 

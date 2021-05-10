@@ -23,6 +23,7 @@ Transformer::transform(ast::Declaration* declaration)
     {
         ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(declaration);
         output::FunctionRoutine* routine = transformFunctionDeclaration(functionDeclaration);
+        routine->isStartFunction = functionDeclaration->signature->isStartFunction;
         functionDeclaration->routine = routine;
         return routine;
     }
@@ -48,9 +49,28 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
         return functionDeclaration->routine;
     }
     output::FunctionRoutine* routine = createFunctionRoutine(functionDeclaration->name->name);
-    _currentRoutine = routine;
+    _currentRoutineStack.push(routine);
+    routine->name = functionDeclaration->name->name;
+    transformFunctionParameters(functionDeclaration, routine);
     transformLocalStatements(functionDeclaration->body->statements);
+    _currentRoutineStack.pop();
     return routine;
+}
+
+void
+Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine)
+{
+    unsigned int i = 0;
+    for (ast::ParameterDeclaration* parameterDeclaration : functionDeclaration->parameterList->parameters)
+    {
+        List<output::ParameterDeclaration*> parameterList = segmentParameterDeclaration(parameterDeclaration);
+        for (const auto& pa : parameterList)
+        {
+            auto param = new output::ParameterDeclaration(i, pa->size);
+            routine->parameters.add(param);
+            i++;
+        }
+    }
 }
 
 
@@ -76,12 +96,16 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
 void
 Transformer::transformCallExpression(const ast::CallExpression* callExpression)
 {
+    auto callInstruction = new CallInstruction();
     for (const auto& argument : callExpression->argumentList->arguments)
     {
         switch (argument->kind)
         {
             case ast::SyntaxKind::StringLiteral:
-                transformArgumentStringLiteral(reinterpret_cast<ast::StringLiteral*>(argument));
+                callInstruction->arguments.add(transformArgumentStringLiteral(reinterpret_cast<ast::StringLiteral*>(argument)));
+                break;
+            case ast::SyntaxKind::PropertyExpression:
+                callInstruction->arguments.add(transformArgumentPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(argument)));
                 break;
             default:;
         }
@@ -89,29 +113,36 @@ Transformer::transformCallExpression(const ast::CallExpression* callExpression)
     const ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(callExpression->referenceDeclaration);
     if (functionDeclaration->body)
     {
-        output::FunctionRoutine* routine = transformFunctionDeclaration(functionDeclaration);
-        _currentRoutine->instructions.add(new CallInstruction(routine));
+        callInstruction->routine = transformFunctionDeclaration(functionDeclaration);
     }
     else
     {
-        output::ExternalRoutine* routine = new output::ExternalRoutine(callExpression->name->name);
-        _currentRoutine->instructions.add(new CallInstruction(routine));
+        callInstruction->routine = new output::ExternalRoutine(callExpression->name->name);
+    }
+    _currentRoutineStack.top()->instructions.add(callInstruction);
+}
+
+
+ArgumentDeclaration*
+Transformer::transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression)
+{
+    auto referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
+    switch (referenceInstruction->kind)
+    {
+        case InstructionKind::ParameterDeclaration:
+            return new ArgumentDeclaration(_currentArgumentIndex++, referenceInstruction->size, reinterpret_cast<ParameterDeclaration*>(referenceInstruction));
+        case InstructionKind::LocalVariableDeclaration:
+            return new ArgumentDeclaration(_currentArgumentIndex++, referenceInstruction->size, reinterpret_cast<LocalVariableDeclaration*>(referenceInstruction));
+        default:;
     }
 }
 
 
 ArgumentDeclaration*
-Transformer::createArgumentDeclaration(ArgumentValue value)
-{
-    return new ArgumentDeclaration(_currentArgumentIndex++, value);
-}
-
-
-void
 Transformer::transformArgumentStringLiteral(ast::StringLiteral* stringLiteral)
 {
-    ArgumentDeclaration* arg = createArgumentDeclaration(addStaticConstantString(stringLiteral));
-    _currentRoutine->instructions.add(arg);
+    output::CString* cstring = addStaticConstantString(stringLiteral);
+    return new ArgumentDeclaration(_currentArgumentIndex++, _pointerSize, cstring);
 }
 
 
@@ -122,7 +153,7 @@ Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type)
     {
         if (!type->pointers.isEmpty())
         {
-            return TYPE_SIZE_64;
+            return _pointerSize;
         }
         switch (type->type)
         {
@@ -148,12 +179,34 @@ Transformer::getSymbolReference(ast::NamedExpression *expression)
 }
 
 
-Utf8StringView*
+output::CString*
 Transformer::addStaticConstantString(ast::StringLiteral* stringLiteral)
 {
-    auto string = new Utf8StringView(stringLiteral->stringStart, stringLiteral->stringEnd);
-    _cstrings.add(string);
-    return string;
+    auto cstring = new output::CString(Utf8StringView(stringLiteral->stringStart, stringLiteral->stringEnd));
+    _cstrings.add(cstring);
+    return cstring;
+}
+
+
+List<output::ParameterDeclaration*>
+Transformer::segmentParameterDeclaration(ast::ParameterDeclaration* parameter)
+{
+    List<output::ParameterDeclaration*> parameterList;
+    if (parameter->resolvedType->pointers > 0)
+    {
+        output::ParameterDeclaration* parameterDeclaration = new output::ParameterDeclaration(0, TYPE_SIZE_64);
+        parameter->referenceInstruction = parameterDeclaration;
+        parameterList.add(parameterDeclaration);
+    }
+    return parameterList;
+}
+
+
+List<output::ArgumentDeclaration*>
+Transformer::segmentArgumentDeclarations(ast::ArgumentDeclaration* argumentDeclaration)
+{
+    List<output::ArgumentDeclaration*> argumentList;
+    return argumentList;
 }
 
 

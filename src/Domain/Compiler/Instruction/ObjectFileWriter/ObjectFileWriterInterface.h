@@ -3,7 +3,7 @@
 
 #include <map>
 #include <Foundation/Path.h>
-#include <Domain/Compiler/Syntax/Instruction.h>
+#include <Domain/Compiler/Instruction/Instruction.h>
 #include <Domain/Compiler/Compiler.h>
 
 

@@ -1,7 +1,7 @@
 #ifndef ELET_ASSEMBLYWRITERINTERFACE_H
 #define ELET_ASSEMBLYWRITERINTERFACE_H
 
-#include <Domain/Compiler/Syntax/Instruction.h>
+#include <Domain/Compiler/Instruction/Instruction.h>
 
 namespace elet::domain::compiler
 {
@@ -9,7 +9,7 @@ namespace elet::domain::compiler
 }
 namespace elet::domain::compiler::instruction
 {
-    struct Routine;
+    struct FunctionRoutine;
 }
 
 namespace elet::domain::compiler::instruction::output
@@ -23,7 +23,7 @@ public:
 
     virtual
     void
-    writeRoutine(Routine *routine) = 0;
+    writeStartRoutine(FunctionRoutine* routine, std::size_t offset) = 0;
 };
 
 

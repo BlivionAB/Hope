@@ -24,12 +24,6 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
     _binder(new Binder()),
     _checker(new Checker(_binder))
 {
-    const auto callingConvention = new CallingConvention {
-       { 7, 6, 3, 2, 8, 9 },
-       6,
-       { 0 },
-       1,
-    };
     _transformer = new Transformer(_dataMutex);
 }
 
@@ -382,7 +376,11 @@ Compiler::acceptTransformationWork()
 //        std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
 //        std::cout << "Transform declaration->kind " << (int)declaration->kind << std::endl;
 //        _display_mutex.unlock();
-        _routines.push(_transformer->transform(declaration));
+        output::FunctionRoutine* routine = _transformer->transform(declaration);
+        if (routine->isStartFunction)
+        {
+            _routines.push(routine);
+        }
         _pendingTransformationTasks--;
     }
 }
@@ -419,7 +417,7 @@ Compiler::acceptAssemblyWritingWork()
 //        std::cout << "taking writing work"<< std::endl;
 //        _display_mutex.unlock();
         _pendingWritingTasks++;
-//        _assemblyWriter->writeRoutine(routine);
+        _assemblyWriter->writeStartRoutine(routine);
         _outputAdditionMutex.lock();
         _output.add(routine);
         _outputAdditionMutex.unlock();

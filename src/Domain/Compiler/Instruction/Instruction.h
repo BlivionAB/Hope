@@ -7,6 +7,7 @@
 #include <Domain/Compiler/Syntax/Syntax.h>
 #include <Domain/Compiler/Compiler.h>
 #include "Domain/Compiler/Instruction/Syntax.h"
+#include "Instruction.Constant.h"
 
 
 namespace elet::domain::compiler::ast
@@ -22,6 +23,8 @@ namespace elet::domain::compiler::instruction::output
 {
 
 struct Routine;
+struct ParameterDeclaration;
+struct ArgumentDeclaration;
 using namespace embedded;
 using namespace foundation;
 
@@ -41,19 +44,39 @@ enum class OperandKind : std::uint64_t
 };
 
 
+enum class InstructionKind
+{
+    Call,
+    ArgumentDeclaration,
+    ParameterDeclaration,
+    LocalVariableDeclaration,
+};
+
+
 struct Instruction
 {
+    InstructionKind
+    kind;
 
+    Instruction(InstructionKind kind):
+        kind(kind)
+    { }
 };
 
 
 struct CallInstruction : Instruction
 {
+    List<ArgumentDeclaration*>
+    arguments;
+
     Routine*
     routine;
 
-    CallInstruction(Routine* routine):
-        routine(routine)
+    std::uint64_t
+    offset;
+
+    CallInstruction():
+        Instruction(InstructionKind::Call)
     { }
 };
 
@@ -124,14 +147,27 @@ struct ExternalRoutine : Routine
 
 struct FunctionRoutine : InternalRoutine
 {
+    bool
+    isStartFunction;
+
     Utf8StringView
     name;
+
+    List<ParameterDeclaration*>
+    parameters;
+
+    std::size_t
+    offset;
+
+    bool
+    hasWrittenOutput = false;
 
     FunctionRoutine(const Utf8StringView& name):
         name(name),
         InternalRoutine(RoutineKind::Function)
     { }
 };
+
 
 static int blockRoutineIndex = 0;
 struct BlockRoutine : InternalRoutine
@@ -161,21 +197,59 @@ struct BlockRoutine : InternalRoutine
 //};
 
 
-typedef std::variant<unsigned int, int, Utf8StringView*> ArgumentValue;
 
-struct ArgumentDeclaration : Instruction
+struct VariableDeclaration : Instruction
 {
     unsigned int
     index;
 
+    std::size_t
+    size;
+
+    std::size_t
+    stackOffset;
+
+    VariableDeclaration(InstructionKind kind, unsigned int index, std::size_t size):
+        index(index),
+        size(size),
+        Instruction(kind)
+    { }
+};
+
+
+struct ParameterDeclaration : VariableDeclaration
+{
+    ParameterDeclaration(unsigned int index, std::size_t size):
+        VariableDeclaration(InstructionKind::ParameterDeclaration, index, size)
+    { }
+};
+
+struct LocalVariableDeclaration : VariableDeclaration
+{
+    unsigned int
+    index;
+
+    std::size_t
+    size;
+
+    LocalVariableDeclaration(unsigned int index, std::size_t size):
+        VariableDeclaration(InstructionKind::LocalVariableDeclaration, index, size)
+    { }
+};
+
+typedef std::variant<std::size_t, CString*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
+
+struct ArgumentDeclaration : VariableDeclaration
+{
     ArgumentValue
     value;
 
-    ArgumentDeclaration(unsigned int index, const ArgumentValue& value):
-        index(index),
-        value(value)
+    ArgumentDeclaration(unsigned int index, std::size_t size, const ArgumentValue& value):
+        value(value),
+        VariableDeclaration(InstructionKind::ArgumentDeclaration, index, size)
     { }
 };
+
 
 struct Operand
 {

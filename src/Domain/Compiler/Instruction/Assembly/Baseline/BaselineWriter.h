@@ -6,7 +6,7 @@
 #include <map>
 #include <Foundation/Utf8String.h>
 #include <Domain/Compiler/Instruction/AssemblyWriter.h>
-#include "Domain/Compiler/Syntax/Instruction.h"
+#include "Domain/Compiler/Instruction/Instruction.h"
 #include "Domain/Compiler/Instruction/TextWriter.h"
 
 
@@ -33,32 +33,13 @@ public:
 
     BaselineWriter();
 
-    ~BaselineWriter();
-
     void
-    writeRoutine(FunctionRoutine* routine);
+    writeStartRoutine(FunctionRoutine* routine, std::size_t offset);
 
 private:
 
-    static
-    thread_local
-    TextWriter*
-    _tw;
-
-    output::FunctionRoutine*
-    _currentRoutine;
-
-    List<TextWriter*>
-    _textWriters;
-
-    std::map<FunctionRoutine*, Utf8String>
-    _baselineOutput;
-
-    TextWriter*
-    createTextWriter();
-
     void
-    writeInstruction(output::Instruction* instruction);
+    writeFunctionRoutine(FunctionRoutine* routine);
 
     void
     writeOperand(output::Operand* operand);
@@ -74,6 +55,25 @@ private:
 
     void
     writeVariableReference(output::VariableReference* variableReference);
+
+    void
+    writeCallInstruction(const CallInstruction* callInstruction);
+
+    void
+    writeArgumentDeclaration(ArgumentDeclaration* argumentDeclaration, unsigned int argumentIndex);
+
+    TextWriter*
+    _tw;
+
+    output::FunctionRoutine*
+    _currentRoutine;
+
+    List<TextWriter*>
+    _textWriters;
+
+    std::map<FunctionRoutine*, Utf8String>
+    _baselineOutput;
+
 };
 
 

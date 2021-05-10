@@ -11,9 +11,9 @@ fn TestFunction<T>(): void
 
 
 fn OnProcessStart:
-    typeparams <
+    types (
         T
-    >,
+    ),
     params (
         argc: int,
         argv: char[],

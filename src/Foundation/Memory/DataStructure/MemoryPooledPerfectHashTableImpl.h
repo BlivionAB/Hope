@@ -32,12 +32,12 @@ MemoryPooledPerfectHashTable<T>::MemoryPooledPerfectHashTable(std::initializer_l
     {
         insert(item.first, item.second);
 
-        // Property handlers being deallocated
+        // Field handlers being deallocated
     }
 
     index();
 
-    // Property handlers being deallocated
+    // Field handlers being deallocated
 }
 
 
@@ -49,12 +49,12 @@ MemoryPooledPerfectHashTable<T>::MemoryPooledPerfectHashTable(std::initializer_l
     {
         insert(item.first, item.second);
 
-        // Property handlers being deallocated
+        // Field handlers being deallocated
     }
 
     index();
 
-    // Property handlers being deallocated
+    // Field handlers being deallocated
 }
 
 template<typename T>

@@ -47,6 +47,9 @@ public:
     void
     unindent();
 
+    void
+    clearIndent();
+
     Utf8String&
     toString();
 
@@ -66,6 +69,9 @@ private:
 
     const char*
     _startOfSlice;
+
+    void
+    writeIndent();
 };
 
 

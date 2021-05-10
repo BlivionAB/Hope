@@ -282,6 +282,7 @@ FunctionDeclaration*
 Parser::parseFunctionDeclaration()
 {
     auto functionDeclaration = createDeclaration<FunctionDeclaration>(SyntaxKind::FunctionDeclaration);
+    functionDeclaration->routine = nullptr;
     functionDeclaration->name = parseName();
     Token token = takeNextToken();
     if (token != Token::OpenParen)
@@ -623,8 +624,8 @@ Parser::parseType()
         }
         else if (peek == Token::Ampersand)
         {
-            typeAssignment->addressOf = true;
-            skipNextToken();
+//            typeAssignment->addressOf = true;
+//            skipNextToken();
         }
         else
         {
@@ -812,6 +813,7 @@ Parser::createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek)
         return parseCallExpressionOnName();
     }
     auto propertyExpression = createSyntax<PropertyExpression>(SyntaxKind::PropertyExpression);
+    propertyExpression->labels |= LABEL__NAMED_EXPRESSION;
     propertyExpression->name = createName();
     finishSyntax(propertyExpression);
     return propertyExpression;

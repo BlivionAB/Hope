@@ -44,7 +44,7 @@ add_executable(
     src/Domain/Compiler/Instruction/Parser.h
     src/Domain/Compiler/Instruction/Syntax.h
     src/Domain/Compiler/Instruction/Parser.Error.h
-        src/Domain/Compiler/Syntax/Instruction.h
+        src/Domain/Compiler/Instruction/Instruction.h
     src/Domain/Compiler/Instruction/Transformer.cpp
     src/Domain/Compiler/Instruction/Transformer.h
     src/Domain/Compiler/Instruction/Assembly/Baseline/BaselineWriter.cpp
@@ -71,7 +71,7 @@ add_executable(
     src/Domain/Compiler/Syntax/Syntax.Kind.h
     src/Domain/Compiler/Syntax/Syntax.Labels.h
     src/Domain/Compiler/Syntax/Syntax.Block.h
-)
+        src/Domain/Compiler/Syntax/Syntax.Type.h src/Domain/Compiler/Instruction/Instruction.Constant.h)
 
 add_executable(
     unittest

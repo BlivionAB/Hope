@@ -3,11 +3,13 @@
 
 #include "Syntax.h"
 #include "Syntax.Block.h"
-#include "Instruction.h"
+#include "Syntax.Type.h"
+#include "Domain/Compiler/Instruction/Instruction.h"
 
 namespace elet::domain::compiler::instruction::output
 {
     struct FunctionRoutine;
+    struct VariableDeclaration;
 }
 
 
@@ -37,6 +39,12 @@ namespace elet::domain::compiler::ast
 
         const DomainDeclaration*
         domain;
+
+        Type*
+        resolvedType;
+
+        output::VariableDeclaration*
+        referenceInstruction;
     };
 
 
@@ -57,7 +65,7 @@ namespace elet::domain::compiler::ast
         std::map<Utf8StringView, ast::Declaration*>
         usages;
 
-        InterfaceDeclaration*
+        type::Interface*
         implements;
     };
 
@@ -156,7 +164,6 @@ namespace elet::domain::compiler::ast
     };
 
 
-
     struct FunctionDeclaration : Declaration
     {
         ParameterDeclarationList*
@@ -170,6 +177,11 @@ namespace elet::domain::compiler::ast
 
         StatementBlock*
         body;
+
+
+        // Used for checker
+        type::Signature*
+        signature;
 
         // Used for deciding
         output::FunctionRoutine*

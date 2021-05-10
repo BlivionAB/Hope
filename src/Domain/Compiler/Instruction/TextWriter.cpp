@@ -44,19 +44,13 @@ TextWriter::writeLine(const Utf8StringView &text)
 {
     write(text);
     newline();
+    writeIndent();
 }
 
 
 void TextWriter::newline()
 {
     _output += "\n";
-    for (unsigned int i = 0; i < _indentation; i++)
-    {
-        for (unsigned int i = 0; i < _indentationStep; i++)
-        {
-            _output += " ";
-        }
-    }
 }
 
 
@@ -71,6 +65,20 @@ void
 TextWriter::indent()
 {
     _indentation++;
+    writeIndent();
+}
+
+
+void
+TextWriter::writeIndent()
+{
+    for (unsigned int i = 0; i < _indentation; i++)
+    {
+        for (unsigned int i = 0; i < _indentationStep; i++)
+        {
+            _output += " ";
+        }
+    }
 }
 
 
@@ -78,6 +86,12 @@ void
 TextWriter::unindent()
 {
     _indentation--;
+}
+
+void
+TextWriter::clearIndent()
+{
+    _indentation = 0;
 }
 
 

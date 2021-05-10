@@ -6,9 +6,10 @@
 #include <Foundation/Memory/Utf8Span.h>
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
-#include "Instruction.h"
+#include "Domain/Compiler/Instruction/Instruction.h"
 #include "Syntax.Labels.h"
 #include "Syntax.Kind.h"
+#include "Syntax.Type.h"
 
 namespace elet::domain::compiler
 {
@@ -27,6 +28,7 @@ namespace elet::domain::compiler::ast
 
 
 using namespace instruction;
+using namespace type;
 
 struct ParameterDeclaration;
 struct DomainDeclaration;
@@ -88,24 +90,6 @@ struct DeclarationMetadata : Syntax
 };
 
 
-enum class TypeKind
-{
-    Int,
-    Char,
-    UInt,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    USize,
-    Pointer,
-    F32,
-    F64,
-    Void,
-    Custom,
-    Length,
-};
-
 
 struct TypeAssignment : Syntax
 {
@@ -114,9 +98,6 @@ struct TypeAssignment : Syntax
 
     List<Punctuation*>
     pointers;
-
-    bool
-    addressOf;
 
     TypeKind
     type;
