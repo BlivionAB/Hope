@@ -101,5 +101,11 @@ TextWriter::space()
     _output += " ";
 }
 
+void
+TextWriter::writeDoubleWordHexInteger(std::uint32_t integer)
+{
+
+}
+
 
 }

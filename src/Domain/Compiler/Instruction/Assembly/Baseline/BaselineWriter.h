@@ -31,7 +31,7 @@ class BaselineWriter : public AssemblyWriterInterface
 
 public:
 
-    BaselineWriter();
+    BaselineWriter(List<std::uint8_t>* output);
 
     void
     writeStartRoutine(FunctionRoutine* routine, std::size_t offset);

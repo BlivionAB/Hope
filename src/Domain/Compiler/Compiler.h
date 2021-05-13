@@ -19,10 +19,8 @@
 namespace elet::domain::compiler::instruction::output
 {
     class AssemblyWriter;
-    class ObjectFileWriter;
-    struct StringReference;
+    class ObjectFileWriterInterface;
     struct RelocationOperand;
-    struct FunctionReference;
 }
 namespace elet::domain::compiler::instruction
 {
@@ -190,9 +188,6 @@ public:
     addFile(const Path& file);
 
     void
-    writeToOutputFile();
-
-    void
     parseStandardLibrary();
 
     std::map<Utf8String, ast::SourceFile*>
@@ -217,12 +212,6 @@ private:
 
     void
     acceptAssemblyWritingWork();
-
-    void
-    relocateRelatively(RelocationOperand* relocation, output::FunctionRoutine* routine, List<RelativeRelocationTask>& relativeRelocationTasks);
-
-    void
-    relocateSymbolically(FunctionReference* relocation);
 
     void
     pushBindingWork(const List<ast::Syntax*> statements);
@@ -377,7 +366,7 @@ private:
     std::map<Utf8StringView, ast::SourceFile*>
     _urlToSymbolMap;
 
-    ObjectFileWriter*
+    ObjectFileWriterInterface*
     _objectFileWriter;
 
     List<Utf8StringView*>

@@ -52,7 +52,7 @@ public:
 
     virtual
     void
-    writeToFile(const Path& file, const AssemblySegments& segments) = 0;
+    write(FunctionRoutine* startRoutine) = 0;
 
 };
 

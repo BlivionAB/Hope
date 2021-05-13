@@ -9,7 +9,9 @@
 #include <sys/stat.h>
 #include <Foundation/Path.h>
 #include <Foundation/File.h>
+#include "Instruction/ObjectFileWriter/BaselineObjectFileWriter.h"
 
+using namespace elet::domain::compiler::instruction::output;
 
 namespace elet::domain::compiler
 {
@@ -20,11 +22,11 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
     _objectFileTarget(objectFileTarget),
     _parser(new ast::Parser(this)),
     _assemblyWriter(new AssemblyWriter(assemblyTarget)),
-    _objectFileWriter(new ObjectFileWriter(objectFileTarget)),
     _binder(new Binder()),
     _checker(new Checker(_binder))
 {
     _transformer = new Transformer(_dataMutex);
+    _objectFileWriter = new BaselineObjectFileWriter();
 }
 
 
@@ -157,7 +159,6 @@ Compiler::endWorkers()
     {
         worker.join();
     }
-    writeToOutputFile();
 //    for (auto some : _output)
 //    {
 //        std::cout << *(std::uint8_t*)some.second << std::endl;
@@ -389,105 +390,16 @@ Compiler::acceptTransformationWork()
 void
 Compiler::acceptAssemblyWritingWork()
 {
-//    _display_mutex.lock();
-//    std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//    std::cout << "entered writing work"<< std::endl;
-//    _display_mutex.unlock();
     while (_compilationStage == CompilationStage::Writing)
     {
-        _writingWorkMutex.lock();
         if (_routines.empty())
         {
-            _writingWorkMutex.unlock();
-            if (_pendingWritingTasks == 0)
-            {
-//                _display_mutex.lock();
-//                std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//                std::cout << "finished writing work"<< std::endl;
-//                _display_mutex.unlock();
-                break;
-            }
-            continue;
+            break;
         }
         output::FunctionRoutine* routine = _routines.front();
+        _objectFileWriter->write(routine);
         _routines.pop();
-        _writingWorkMutex.unlock();
-//        _display_mutex.lock();
-//        std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-//        std::cout << "taking writing work"<< std::endl;
-//        _display_mutex.unlock();
-        _pendingWritingTasks++;
-        _assemblyWriter->writeStartRoutine(routine);
-        _outputAdditionMutex.lock();
-        _output.add(routine);
-        _outputAdditionMutex.unlock();
-        _pendingWritingTasks--;
     }
-}
-
-void
-Compiler::writeToOutputFile()
-{
-//    List<RelativeRelocationTask> relativeRelocationTasks;
-//    for (const auto routine : _output)
-//    {
-//        routine->symbol->textOffset = _outputSize;
-//        for (const auto relocation : *routine->symbolicRelocations)
-//        {
-//            relocateSymbolically(reinterpret_cast<FunctionReference*>(relocation));
-//        }
-//        for (const auto relocation : *routine->relativeRelocations)
-//        {
-//            relocateRelatively(relocation, routine, relativeRelocationTasks);
-//        }
-//        auto size = routine->machineInstructions->size();
-//        _outputSize += size;
-//    }
-//
-//    // Relocate relatively
-//    for (const RelativeRelocationTask& relocationTask : relativeRelocationTasks)
-//    {
-//        if (relocationTask.relocation->kind == OperandKind::StringReference)
-//        {
-//            auto address = reinterpret_cast<std::uint32_t*>(&(*relocationTask.routine->machineInstructions)[relocationTask.offset]);
-//            *address = (std::uint32_t)(_outputSize - relocationTask.relocation->textOffset + 4) + relocationTask.relocation->dataOffset;
-//        }
-//    }
-//    auto directory = Path::folderOf(*_outputFile);
-//    if (!Path::exists(directory))
-//    {
-//        foundation::File::createDirectory(directory);
-//    }
-//    const AssemblySegments segments = {
-//        &_output,
-//        _outputSize,
-//        &_cstrings,
-//        _cstringOffset,
-//        &_symbols,
-//        _symbolSectionOffset,
-//        &_symbolicRelocations,
-//        &_relativeRelocations,
-//    };
-//    _objectFileWriter->writeToFile(*_outputFile, segments);
-}
-
-
-inline
-void
-Compiler::relocateSymbolically(FunctionReference* relocation)
-{
-    relocation->textOffset += _outputSize;
-    _symbolicRelocations.add(relocation);
-}
-
-
-inline
-void
-Compiler::relocateRelatively(RelocationOperand* relocation, output::FunctionRoutine* routine, List<RelativeRelocationTask>& relativeRelocationTasks)
-{
-    relativeRelocationTasks.emplace(routine, relocation->textOffset, relocation);
-    relocation->textOffset += _outputSize;
-    _relativeRelocations.add(relocation);
 }
 
 

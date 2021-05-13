@@ -1,9 +1,17 @@
-//
-// Created by Tien Heng Ho on 2020-08-06.
-//
-
 #ifndef ELET_GENERALOPCODES_H
 #define ELET_GENERALOPCODES_H
+
+
+#include "Mov.h"
+#include "AddressForm32.h"
+
+#define REX_PREFIX_MASK     (std::uint8_t)0b01110000
+#define REX_PREFIX_MAGIC    (std::uint8_t)0b01000000
+#define REX_PREFIX_W        (std::uint8_t)0b00001000
+#define REX_PREFIX_R        (std::uint8_t)0b00000100
+#define REX_PREFIX_X        (std::uint8_t)0b00000010
+#define REX_PREFIX_B        (std::uint8_t)0b00000001
+
 
 #define OP_PUSH_rAX 0x50
 #define OP_PUSH_rCX 0x51
@@ -23,8 +31,8 @@
 
 #define OP_LEA_Gv_M (std::uint8_t)(0x8d)
 
-#define OP_CALL     (std::uint8_t)(0xe8)
-
+#define OP_CALL_NEAR    (std::uint8_t)(0xe8)
+#define OFFSET_SIZE     5
 
 
 #endif //ELET_GENERALOPCODES_H

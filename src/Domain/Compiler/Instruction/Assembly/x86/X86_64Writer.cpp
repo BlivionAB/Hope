@@ -5,8 +5,8 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
-X86_64Writer::X86_64Writer():
-    AssemblyWriterInterface()
+X86_64Writer::X86_64Writer(List<std::uint8_t>* output) :
+    AssemblyWriterInterface(output)
 {
 
 }
@@ -54,11 +54,23 @@ void
 X86_64Writer::writeCallInstruction(CallInstruction* callInstruction)
 {
     writeCallInstructionArguments(callInstruction);
+    writeByte(OP_CALL_NEAR);
     switch (callInstruction->routine->kind)
     {
         case RoutineKind::Function:
-            writeFunctionRoutine(reinterpret_cast<FunctionRoutine*>(callInstruction->routine));
+        {
+            auto routine = reinterpret_cast<FunctionRoutine*>(callInstruction->routine);
+            if (routine->offset)
+            {
+                writeDoubleWord(routine->offset - _currentOffset);
+            }
+            else
+            {
+                writeDoubleWord(OFFSET_SIZE);
+            }
+            writeFunctionRoutine(routine);
             break;
+        }
         case RoutineKind::External:
             callInstruction->offset = _currentOffset;
             writePointer(0);
@@ -133,7 +145,6 @@ void
 X86_64Writer::writeFunctionPrelude()
 {
     writeByte(OP_PUSH_rBP);
-    writeByte(OP_PUSH_rBP);
     writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
     writeByte(OP_MOV_Ev_Gv);
     writeByte(MODRM_EBP | REG_ESP);
@@ -152,14 +163,14 @@ void
 X86_64Writer::writeQuadWord(std::uint64_t instruction)
 {
     _currentOffset += 8;
-    _routineOutput->add((std::uint8_t)instruction & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)32) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)40) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)48) & (std::uint8_t)0xff);
-    _routineOutput->add((std::uint8_t)(instruction >> (std::uint8_t)56) & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)instruction & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)(instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)(instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)(instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)(instruction >> (std::uint8_t)32) & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)(instruction >> (std::uint8_t)40) & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)(instruction >> (std::uint8_t)48) & (std::uint8_t)0xff);
+    _output->add((std::uint8_t)(instruction >> (std::uint8_t)56) & (std::uint8_t)0xff);
 }
 
 
@@ -167,10 +178,10 @@ void
 X86_64Writer::writeDoubleWord(std::uint32_t instruction)
 {
     _currentOffset += 4;
-    _routineOutput->add(instruction & (std::uint8_t)0xff);
-    _routineOutput->add((instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
-    _routineOutput->add((instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
-    _routineOutput->add((instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
+    _output->add(instruction & (std::uint8_t)0xff);
+    _output->add((instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
+    _output->add((instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
+    _output->add((instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
 }
 
 
@@ -178,7 +189,7 @@ void
 X86_64Writer::writeByte(std::uint8_t instruction)
 {
     ++_currentOffset;
-    _routineOutput->add(instruction);
+    _output->add(instruction);
 }
 
 }

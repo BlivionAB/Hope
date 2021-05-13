@@ -16,34 +16,7 @@ namespace elet::domain::compiler::instruction::output
 
 
 struct Int32;
-struct Int64;
 struct CallInstruction;
-
-struct StringReference;
-
-#define DISP8_MAX_VALUE     0x100
-#define DISP16_MAX_VALUE    0x10000
-#define DISP32_MAX_VALUE    0x100000000
-
-#define REX_PREFIX_MAGIC    (std::uint8_t)0b01000000
-#define REX_PREFIX_W        (std::uint8_t)0b00001000
-#define REX_PREFIX_R        (std::uint8_t)0b00000100
-#define REX_PREFIX_X        (std::uint8_t)0b00000010
-#define REX_PREFIX_B        (std::uint8_t)0b00000001
-
-struct UnknownRegisterIndex
-{
-
-};
-
-struct ModRmByte
-{
-    std::uint8_t
-    rm: 3,
-    reg: 3,
-    mod: 2;
-};
-
 
 struct CallingConvention
 {
@@ -57,7 +30,7 @@ class X86_64Writer : public AssemblyWriterInterface
 
 public:
 
-    X86_64Writer();
+    X86_64Writer(List<std::uint8_t>* output);
 
     void
     writeStartRoutine(FunctionRoutine* routine, std::size_t offset);
@@ -69,12 +42,6 @@ private:
 
     std::size_t
     _localStackOffset;
-
-    List<Int64*>*
-    _relocations;
-
-    List<std::uint8_t>*
-    _routineOutput;
 
     CallingConvention
     _callingConvention = { { REG_EDI, REG_ESI, REG_EDX, REG_ECX } };

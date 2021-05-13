@@ -14,7 +14,7 @@ AssemblyWriter::_symbolOffset = 0;
 AssemblyWriter::AssemblyWriter(compiler::AssemblyTarget target) :
     _target(target)
 {
-    _assemblyWriter = new X86_64Writer();
+    _assemblyWriter = new X86_64Writer(nullptr);
 }
 
 

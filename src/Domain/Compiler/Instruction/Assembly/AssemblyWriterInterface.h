@@ -21,9 +21,24 @@ class AssemblyWriterInterface
 
 public:
 
+    AssemblyWriterInterface(List<std::uint8_t>* output):
+        _output(output)
+    { }
+
     virtual
     void
     writeStartRoutine(FunctionRoutine* routine, std::size_t offset) = 0;
+
+    List<std::uint8_t>*
+    getOutput()
+    {
+        return _output;
+    }
+
+protected:
+
+    List<std::uint8_t>*
+    _output;
 };
 
 

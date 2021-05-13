@@ -8,8 +8,8 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
-BaselineWriter::BaselineWriter():
-    AssemblyWriterInterface(),
+BaselineWriter::BaselineWriter(List<std::uint8_t>* output):
+    AssemblyWriterInterface(output),
     _tw(new TextWriter())
 {
 

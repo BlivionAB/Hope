@@ -36,6 +36,9 @@ public:
     writeLine(const Utf8StringView& text);
 
     void
+    writeDoubleWordHexInteger(std::uint32_t integer);
+
+    void
     space();
 
     void
