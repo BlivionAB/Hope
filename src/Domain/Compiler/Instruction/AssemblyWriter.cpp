@@ -21,7 +21,7 @@ AssemblyWriter::AssemblyWriter(compiler::AssemblyTarget target) :
 void
 AssemblyWriter::writeStartRoutine(FunctionRoutine* routine)
 {
-    _assemblyWriter->writeStartRoutine(routine, 0);
+    _assemblyWriter->writeTextSection(routine);
 }
 
 

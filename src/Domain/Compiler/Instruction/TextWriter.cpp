@@ -1,4 +1,7 @@
 #include "TextWriter.h"
+#include <array>
+#include <cmath>
+
 
 namespace elet::domain::compiler::instruction
 {
@@ -12,14 +15,40 @@ TextWriter::TextWriter(unsigned int indentationStep):
 
 
 void
-TextWriter::write(const Utf8StringView& text)
+TextWriter::addColumn(unsigned int spaces)
 {
-    _output += text;
+    _columns.add(spaces);
 }
 
 
 void
-TextWriter::writeUnsignedInteger(unsigned int digits)
+TextWriter::tab()
+{
+    for (const auto& column : _columns)
+    {
+        if (column >= _column)
+        {
+            unsigned int diff = column - _column;
+            for (unsigned int i = 0; i < diff; ++i)
+            {
+                space();
+            }
+            break;
+        }
+    }
+}
+
+
+void
+TextWriter::write(const Utf8StringView& text)
+{
+    _output += text;
+    _column += text.size();
+}
+
+
+void
+TextWriter::writeUint(unsigned int digits)
 {
     _output += std::to_string(digits).c_str();
 }
@@ -36,6 +65,7 @@ void
 TextWriter::writeCharacter(char character)
 {
     _output += character;
+    _column += 1;
 }
 
 
@@ -44,6 +74,7 @@ TextWriter::writeLine(const Utf8StringView &text)
 {
     write(text);
     newline();
+    _column += text.size() + 1;
     writeIndent();
 }
 
@@ -51,6 +82,7 @@ TextWriter::writeLine(const Utf8StringView &text)
 void TextWriter::newline()
 {
     _output += "\n";
+    _column = 0;
 }
 
 
@@ -77,6 +109,7 @@ TextWriter::writeIndent()
         for (unsigned int i = 0; i < _indentationStep; i++)
         {
             _output += " ";
+            _column += 1;
         }
     }
 }
@@ -99,12 +132,53 @@ void
 TextWriter::space()
 {
     _output += " ";
+    _column += 1;
 }
 
 void
-TextWriter::writeDoubleWordHexInteger(std::uint32_t integer)
+TextWriter::writeByteWithHexPrefix(uint8_t integer)
 {
+    write("0x");
+    writeByte(integer);
+}
 
+
+void
+TextWriter::writeByte(uint8_t integer)
+{
+    int exp = 1;
+    int rest = integer;
+    while (exp >= 0)
+    {
+        int base = pow(16, exp);
+        int result = rest / base;
+        switch (result)
+        {
+            case 10:
+                write("a");
+                break;
+            case 11:
+                write("b");
+                break;
+            case 12:
+                write("c");
+                break;
+            case 13:
+                write("d");
+                break;
+            case 14:
+                write("e");
+                break;
+            case 15:
+                write("f");
+                break;
+            default:
+                write(std::to_string(result).c_str());
+                break;
+        }
+        rest = rest % base;
+        --exp;
+    }
 }
 
 

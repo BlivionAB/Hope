@@ -25,13 +25,19 @@
 #define OP_POP_rBP  0x5d
 
 #define OP_RET      0xc3
+#define OP_NOP      0x90
+
+#define OP_LEA_Gv_M 0xd3
+
+#define OP_EXT_GROUP5 0xff
+#define OP_EXT_GROUP5_FAR_CALL_REG_BITS 0b00001100
 
 #define OP_TWO_BYTE_PREFIX  (std::uint8_t)0x0f
 #define OP_SYSCALL          (std::uint8_t)0x05
 
 #define OP_LEA_Gv_M (std::uint8_t)(0x8d)
 
-#define OP_CALL_NEAR    (std::uint8_t)(0xe8)
+#define OP_CALL_NEAR    0xe8
 #define OFFSET_SIZE     5
 
 

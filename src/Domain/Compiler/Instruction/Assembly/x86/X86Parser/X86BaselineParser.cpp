@@ -23,16 +23,41 @@ X86BaselineParser::parse(List<std::uint8_t>* output)
         {
             if (opcode & REX_PREFIX_W)
             {
-                instruction->is64BitOperandSize = true;
+                instruction->isQuadWord = true;
             }
+            instruction->bytes.add(opcode);
             opcode = getByte();
         }
+        instruction->bytes.add(opcode);
         switch (opcode)
         {
             case OP_CALL_NEAR:
+            {
                 instruction->kind = x86::InstructionKind::Call;
-                instruction->operand1 = x86::Jv(getDoubleWord());
+                auto doubleWord = getDoubleWord();
+                instruction->operand1 = x86::Jv(doubleWord);
+                for (int i = 0; i < 4; ++i)
+                {
+                    instruction->bytes.add(doubleWord[i]);
+                }
                 break;
+            }
+            case OP_LEA_Gv_M:
+            {
+                std::uint8_t modrmByte = getByte();
+                instruction->bytes.add(modrmByte);
+                instruction->kind = x86::InstructionKind::Lea;
+                instruction->operand1 = createEv(modrmByte, instruction);
+                if (instruction->isQuadWord)
+                {
+                    instruction->operand2 = createMemoryAddress32();
+                }
+                else
+                {
+                    instruction->operand2 = createMemoryAddress16();
+                }
+                break;
+            }
             case OP_PUSH_rBP:
                 instruction->kind = x86::InstructionKind::Push;
                 instruction->operand1 = x86::Register::RBP;
@@ -40,12 +65,21 @@ X86BaselineParser::parse(List<std::uint8_t>* output)
             case OP_MOV_Ev_Gv:
             {
                 std::uint8_t modrmByte = getByte();
+                instruction->bytes.add(modrmByte);
                 instruction->kind = x86::InstructionKind::Mov;
-                instruction->operand1 = createEv(modrmByte);
-                instruction->operand2 = createGv(modrmByte);
+                instruction->operand1 = createEv(modrmByte, instruction);
+                instruction->operand2 = createGv(modrmByte, instruction->isQuadWord);
                 break;
             }
-
+            case OP_MOV_Gv_Ev:
+            {
+                std::uint8_t modrmByte = getByte();
+                instruction->bytes.add(modrmByte);
+                instruction->kind = x86::InstructionKind::Mov;
+                instruction->operand1 = createGv(modrmByte, instruction->isQuadWord);
+                instruction->operand2 = createEv(modrmByte, instruction);
+                break;
+            }
         }
         instructions->add(instruction);
     }
@@ -54,7 +88,7 @@ X86BaselineParser::parse(List<std::uint8_t>* output)
 
 
 x86::Ev*
-X86BaselineParser::createEv(std::uint8_t modrmByte)
+X86BaselineParser::createEv(std::uint8_t modrmByte, Instruction* instruction)
 {
     auto ev = new x86::Ev();
     std::uint8_t mod = modrmByte & MOD_BITS;
@@ -62,14 +96,23 @@ X86BaselineParser::createEv(std::uint8_t modrmByte)
     switch (mod)
     {
         case MOD_DISP8:
-            ev->emplace<Register>(mapRegIndex(rm));
-            if (rm == RM5)
+            ev->emplace<Register>(mapDoubleWordRegisterIndex(rm));
+            if (rm == RM_EBP)
             {
-                ev->emplace<ByteDisplacement>(Register::ESP, getByte());
+                auto byte = getByte();
+                ev->emplace<ByteDisplacement>(Register::EBP, byte);
+                instruction->bytes.add(byte);
             }
             return ev;
         case MOD_REG:
-            ev->emplace<Register>(mapRegIndex(rm));
+            if (instruction->isQuadWord)
+            {
+                ev->emplace<Register>(mapQuadWordRegisterIndex(rm));
+            }
+            else
+            {
+                ev->emplace<Register>(mapDoubleWordRegisterIndex(rm));
+            }
             return ev;
         default:
             throw std::exception();
@@ -78,15 +121,15 @@ X86BaselineParser::createEv(std::uint8_t modrmByte)
 
 
 x86::Gv*
-X86BaselineParser::createGv(std::uint8_t opcode)
+X86BaselineParser::createGv(std::uint8_t opcode, bool isQuadWord)
 {
     std::uint8_t reg = (opcode & REG_BITS) >> 3;
-    return new x86::Gv(mapRegIndex(reg));
+    return isQuadWord ? new x86::Gv(mapQuadWordRegisterIndex(reg)) : new x86::Gv(mapDoubleWordRegisterIndex(reg));
 }
 
 
 Register
-X86BaselineParser::mapRegIndex(std::uint8_t reg)
+X86BaselineParser::mapDoubleWordRegisterIndex(std::uint8_t reg)
 {
     switch (reg)
     {
@@ -111,17 +154,40 @@ X86BaselineParser::mapRegIndex(std::uint8_t reg)
 }
 
 
+Register
+X86BaselineParser::mapQuadWordRegisterIndex(std::uint8_t reg)
+{
+    switch (reg)
+    {
+        case 0:
+            return Register::RAX;
+        case 1:
+            return Register::RCX;
+        case 2:
+            return Register::RDX;
+        case 3:
+            return Register::RBX;
+        case 4:
+            return Register::RSP;
+        case 5:
+            return Register::RBP;
+        case 6:
+            return Register::RSI;
+        case 7:
+            return Register::RDI;
+        default:;
+    }
+}
 
-std::uint32_t
+
+std::array<std::uint8_t, 4>
 X86BaselineParser::getDoubleWord()
 {
-    std::uint32_t result = 0;
-    unsigned int offset = 0;
+    std::array<std::uint8_t, 4> result = { 0, 0, 0, 0 };
     for (unsigned int i = 0; i < 4; ++i)
     {
         std::uint8_t opcode = getByte();
-        result |= (opcode << offset);
-        ++offset;
+        result[i] = opcode;
     }
     return result;
 }
@@ -135,6 +201,21 @@ X86BaselineParser::getByte()
         return 0;
     }
     return (*_output)[_cursor++];
+}
+
+
+MemoryAddress32*
+X86BaselineParser::createMemoryAddress32()
+{
+    std::array<std::uint8_t, 4> opcode = getDoubleWord();
+    return new x86::MemoryAddress32(opcode);
+}
+
+
+MemoryAddress32*
+X86BaselineParser::createMemoryAddress16()
+{
+    throw std::invalid_argument("Not implemented");
 }
 
 }

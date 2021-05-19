@@ -33,12 +33,16 @@ public:
     X86_64Writer(List<std::uint8_t>* output);
 
     void
-    writeStartRoutine(FunctionRoutine* routine, std::size_t offset);
+    writeTextSection(FunctionRoutine* routine);
+
+
+    void
+    writeStubs();
+
+    void
+    writeStubHelper();
 
 private:
-
-    std::size_t
-    _currentOffset;
 
     std::size_t
     _localStackOffset;
@@ -51,15 +55,6 @@ private:
 
     void
     writeFunctionPrelude();
-
-    void
-    writeByte(std::uint8_t instruction);
-
-    void
-    writeDoubleWord(std::uint32_t instruction);
-
-    void
-    writeQuadWord(std::uint64_t instruction);
 
     void
     writeFunctionPostlude();

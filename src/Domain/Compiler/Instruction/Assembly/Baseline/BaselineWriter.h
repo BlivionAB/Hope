@@ -34,7 +34,7 @@ public:
     BaselineWriter(List<std::uint8_t>* output);
 
     void
-    writeStartRoutine(FunctionRoutine* routine, std::size_t offset);
+    writeTextSection(FunctionRoutine* routine, std::size_t offset);
 
 private:
 

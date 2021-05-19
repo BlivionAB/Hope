@@ -12,18 +12,23 @@ using namespace elet::foundation;
 
 struct Constant
 {
-    List<std::size_t>
+    std::size_t
     relocationAddress;
+
+    Constant():
+        relocationAddress(0)
+    { }
 };
 
 
-struct CString : Constant
+struct String : Constant
 {
     Utf8StringView
     value;
 
-    CString(Utf8StringView value):
-        value(value)
+    String(Utf8StringView value):
+        value(value),
+        Constant()
     { }
 };
 

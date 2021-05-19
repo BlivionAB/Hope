@@ -159,7 +159,7 @@ Compiler::endWorkers()
     {
         worker.join();
     }
-//    for (auto some : _output)
+//    for (auto some : _text)
 //    {
 //        std::cout << *(std::uint8_t*)some.second << std::endl;
 //    }

@@ -33,17 +33,27 @@ private:
     std::uint8_t
     getByte();
 
-    std::uint32_t
+    std::array<std::uint8_t, 4>
     getDoubleWord();
 
     x86::Ev*
-    createEv(std::uint8_t modrmByte);
+    createEv(std::uint8_t modrmByte, Instruction* instruction);
 
     x86::Gv*
-    createGv(std::uint8_t opcode);
+    createGv(std::uint8_t opcode, bool isQuadWord);
 
     Register
-    mapRegIndex(std::uint8_t reg);
+    mapDoubleWordRegisterIndex(std::uint8_t reg);
+
+
+    Register
+    mapQuadWordRegisterIndex(std::uint8_t reg);
+
+    MemoryAddress32*
+    createMemoryAddress32();
+
+    MemoryAddress32*
+    createMemoryAddress16();
 };
 
 

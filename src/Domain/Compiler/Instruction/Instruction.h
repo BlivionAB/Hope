@@ -5,9 +5,9 @@
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
 #include <Domain/Compiler/Syntax/Syntax.h>
-#include <Domain/Compiler/Compiler.h>
 #include "Domain/Compiler/Instruction/Syntax.h"
 #include "Instruction.Constant.h"
+#include <variant>
 
 
 namespace elet::domain::compiler::ast
@@ -135,6 +135,12 @@ struct InternalRoutine : Routine
 
 struct ExternalRoutine : Routine
 {
+    std::size_t
+    relocationAddress;
+
+    std::size_t
+    stubRelocationAddress;
+
     Utf8StringView
     name;
 
@@ -181,22 +187,6 @@ struct BlockRoutine : InternalRoutine
     { }
 };
 
-//struct FunctionRoutine
-//{
-//    Utf8StringView
-//    name;
-//
-//    List<Instruction*>
-//    instructions;
-//
-//    List<Jump*>
-//    jumps;
-//
-//    Routine*
-//    next;
-//};
-
-
 
 struct VariableDeclaration : Instruction
 {
@@ -224,6 +214,7 @@ struct ParameterDeclaration : VariableDeclaration
     { }
 };
 
+
 struct LocalVariableDeclaration : VariableDeclaration
 {
     unsigned int
@@ -237,7 +228,8 @@ struct LocalVariableDeclaration : VariableDeclaration
     { }
 };
 
-typedef std::variant<std::size_t, CString*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
+
+typedef std::variant<std::size_t, String*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
 
 struct ArgumentDeclaration : VariableDeclaration
 {
@@ -386,28 +378,6 @@ struct RelocationOperand : Operand
 
     RelocationOperand(OperandKind kind):
         Operand(kind)
-    { }
-};
-
-
-struct StringReference : RelocationOperand
-{
-    StringReference(std::uint32_t dataOffset):
-        RelocationOperand(OperandKind::StringReference)
-    {
-        this->dataOffset = dataOffset;
-    }
-};
-
-
-struct FunctionReference : RelocationOperand
-{
-    const Utf8StringView
-    reference;
-
-    FunctionReference(const Utf8StringView reference):
-        reference(reference),
-        RelocationOperand(OperandKind::FunctionReference)
     { }
 };
 

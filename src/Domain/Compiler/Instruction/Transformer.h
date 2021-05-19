@@ -39,10 +39,10 @@ namespace output
     struct Operand;
     struct FunctionReference;
     struct ParameterDeclaration;
-    struct CString;
+    struct String;
     struct LocalVariableDeclaration;
     struct ArgumentDeclaration;
-    typedef std::variant<std::size_t, CString*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
+    typedef std::variant<std::size_t, String*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
     struct InternalRoutine;
     struct FunctionRoutine;
 }
@@ -130,13 +130,13 @@ private:
     void
     transformCallExpression(const ast::CallExpression* callExpression);
 
-    output::CString*
+    output::String*
     addStaticConstantString(ast::StringLiteral* stringLiteral);
 
     std::size_t
     _pointerSize = TYPE_SIZE_64;
 
-    List<output::CString*>
+    List<output::String*>
     _cstrings;
 
     unsigned int

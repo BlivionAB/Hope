@@ -4,6 +4,7 @@
 
 #include <Foundation/Utf8String.h>
 #include <Foundation/Utf8StringView.h>
+#include <Foundation/List.h>
 
 
 namespace elet::domain::compiler::instruction
@@ -21,7 +22,13 @@ public:
     TextWriter(unsigned int indentationStep = 4);
 
     void
-    writeUnsignedInteger(unsigned int integer);
+    addColumn(unsigned int spaces);
+
+    void
+    tab();
+
+    void
+    writeUint(unsigned int integer);
 
     void
     writeSize(std::size_t size);
@@ -36,7 +43,10 @@ public:
     writeLine(const Utf8StringView& text);
 
     void
-    writeDoubleWordHexInteger(std::uint32_t integer);
+    writeByte(uint8_t integer);
+
+    void
+    writeByteWithHexPrefix(uint8_t integer);
 
     void
     space();
@@ -65,6 +75,9 @@ private:
     _output;
 
     unsigned int
+    _column;
+
+    unsigned int
     _indentation = 0;
 
     unsigned int
@@ -72,6 +85,9 @@ private:
 
     const char*
     _startOfSlice;
+
+    List<unsigned int>
+    _columns;
 
     void
     writeIndent();

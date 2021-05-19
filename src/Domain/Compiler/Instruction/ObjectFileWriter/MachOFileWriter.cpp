@@ -45,7 +45,7 @@ MachOFileWriter::layoutCommands(const AssemblySegments& segments)
 {
     layoutSegmentCommand();
     layoutSymbolTableCommand(segments);
-//    layoutSection("__text", "__TEXT", SectionDataType::Assembly, segments.text, segments.textSize, 4, (S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS));
+//    writeSection("__text", "__TEXT", SectionDataType::Assembly, segments.text, segments.textSize, 4, (S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS));
     layoutSection("__cstring", "__TEXT", SectionDataType::CString, segments.cstrings, segments.cstringSize, 1, S_CSTRING_LITERALS);
     layoutDataOffsetInSections();
     layoutRelocations(segments.symbolicRelocations);
@@ -124,7 +124,7 @@ MachOFileWriter::writeSectionData()
 //                fillWithNullCharacter(sectionData->fillBytes);
 //                break;
 //            }
-//            case SectionDataType::CString:
+//            case SectionDataType::String:
 //            {
 //                auto strings = reinterpret_cast<const List<Utf8StringView*>*>(sectionData->data);
 //                for (const Utf8StringView* string : *strings)

@@ -24,7 +24,7 @@
 #define RM2        2
 #define RM3        3
 #define RM4        4
-#define RM5        5
+#define RM_EBP     5
 #define RM6        6
 #define RM7        7
 

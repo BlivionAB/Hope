@@ -17,7 +17,7 @@ BaselineWriter::BaselineWriter(List<std::uint8_t>* output):
 
 
 void
-BaselineWriter::writeStartRoutine(FunctionRoutine* routine, std::size_t offset)
+BaselineWriter::writeTextSection(FunctionRoutine* routine, std::size_t offset)
 {
     writeFunctionRoutine(routine);
     std::cout << "Begin:" << std::endl;
@@ -36,10 +36,10 @@ BaselineWriter::writeFunctionRoutine(FunctionRoutine* routine)
     for (const auto& parameter : routine->parameters)
     {
         _tw->write("Par");
-        _tw->writeUnsignedInteger(parameter->size);
+        _tw->writeUint(parameter->size);
         _tw->space();
         _tw->write("P");
-        _tw->writeUnsignedInteger(parameterIndex);
+        _tw->writeUint(parameterIndex);
         _tw->writeLine(";");
     }
     for (const auto& instruction : routine->instructions)
@@ -59,12 +59,12 @@ void
 BaselineWriter::writeArgumentDeclaration(ArgumentDeclaration* argumentDeclaration, unsigned int argumentIndex)
 {
     _tw->write("Arg");
-    _tw->writeUnsignedInteger(argumentDeclaration->size);
+    _tw->writeUint(argumentDeclaration->size);
     _tw->space();
     _tw->write("A");
-    _tw->writeUnsignedInteger(argumentIndex);
+    _tw->writeUint(argumentIndex);
     _tw->space();
-    if (auto string = std::get_if<output::CString*>(&argumentDeclaration->value))
+    if (auto string = std::get_if<output::String*>(&argumentDeclaration->value))
     {
         _tw->write("\"");
         _tw->write((*string)->value);
@@ -73,7 +73,7 @@ BaselineWriter::writeArgumentDeclaration(ArgumentDeclaration* argumentDeclaratio
     else if (auto variable = std::get_if<output::ParameterDeclaration*>(&argumentDeclaration->value))
     {
         _tw->write("P");
-        _tw->writeUnsignedInteger((*variable)->index);
+        _tw->writeUint((*variable)->index);
     }
     _tw->writeLine(";");
 }

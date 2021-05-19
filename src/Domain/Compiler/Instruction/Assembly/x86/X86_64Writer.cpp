@@ -12,10 +12,49 @@ X86_64Writer::X86_64Writer(List<std::uint8_t>* output) :
 }
 
 
+
 void
-X86_64Writer::writeStartRoutine(FunctionRoutine* routine, std::size_t offset)
+X86_64Writer::writeStubs()
 {
-    _currentOffset = offset;
+    for (const auto& routine : _externalRoutines)
+    {
+        writeByte(OP_EXT_GROUP5);
+        writeByte(OP_EXT_GROUP5_FAR_CALL_REG_BITS | MOD_DISP0 | RM_EBP);
+        routine->stubRelocationAddress = _currentOffset;
+        writeDoubleWord(0);
+    }
+}
+
+
+void
+X86_64Writer::writeStubHelper()
+{
+    auto top = _currentOffset;
+    // leaq dyld_private, r11
+    writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W | REX_PREFIX_R);
+    writeByte(OP_LEA_Gv_M);
+    writeByte(MOD_DISP0 | RM_EBP | REG_EBX);
+    __dataDataRelocationAddress = _currentOffset;
+    writeDoubleWord(0);
+
+    // push r11
+    writeByte(REX_PREFIX_MAGIC | REX_PREFIX_B);
+    writeByte(OP_PUSH_rBX);
+
+    // nop
+    writeByte(OP_NOP);
+
+    for (const auto& routine : _externalRoutines)
+    {
+
+
+    }
+}
+
+
+void
+X86_64Writer::writeTextSection(FunctionRoutine* routine)
+{
     writeFunctionRoutine(routine);
 }
 
@@ -66,15 +105,19 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction)
             }
             else
             {
-                writeDoubleWord(OFFSET_SIZE);
+                writeDoubleWord(_currentOffset + OFFSET_SIZE - 1 /* -1 is for OP_CALL_NEAR*/);
             }
             writeFunctionRoutine(routine);
             break;
         }
         case RoutineKind::External:
-            callInstruction->offset = _currentOffset;
+        {
+            auto routine = reinterpret_cast<ExternalRoutine*>(callInstruction->routine);
+            routine->relocationAddress = _currentOffset;
             writePointer(0);
+            _externalRoutines.add(routine);
             break;
+        }
         default:
             throw std::exception();
     }
@@ -94,13 +137,23 @@ X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
     unsigned int i = 0;
     for (const auto& argument : callInstruction->arguments)
     {
+        auto reg = _callingConvention.registers[i];
         if (auto parameter = std::get_if<ParameterDeclaration*>(&argument->value))
         {
-            writeMoveFromOffset(_callingConvention.registers[i], (*parameter)->stackOffset);
+            writeMoveFromOffset(reg, (*parameter)->stackOffset);
         }
         else if (auto localVariable = std::get_if<LocalVariableDeclaration*>(&argument->value))
         {
-            writeMoveFromOffset(_callingConvention.registers[i], (*localVariable)->stackOffset);
+            writeMoveFromOffset(reg, (*localVariable)->stackOffset);
+        }
+        else if (auto string = std::get_if<String*>(&argument->value))
+        {
+            writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+            writeByte(OP_LEA_Gv_M);
+            writeByte(reg | RM_EBP | MOD_DISP0);
+            (*string)->relocationAddress = _currentOffset;
+            writeDoubleWord(0);
+            _strings.add(*string);
         }
         ++i;
     }
@@ -158,38 +211,5 @@ X86_64Writer::writeFunctionPostlude()
     writeByte(OP_RET);
 }
 
-
-void
-X86_64Writer::writeQuadWord(std::uint64_t instruction)
-{
-    _currentOffset += 8;
-    _output->add((std::uint8_t)instruction & (std::uint8_t)0xff);
-    _output->add((std::uint8_t)(instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
-    _output->add((std::uint8_t)(instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
-    _output->add((std::uint8_t)(instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
-    _output->add((std::uint8_t)(instruction >> (std::uint8_t)32) & (std::uint8_t)0xff);
-    _output->add((std::uint8_t)(instruction >> (std::uint8_t)40) & (std::uint8_t)0xff);
-    _output->add((std::uint8_t)(instruction >> (std::uint8_t)48) & (std::uint8_t)0xff);
-    _output->add((std::uint8_t)(instruction >> (std::uint8_t)56) & (std::uint8_t)0xff);
-}
-
-
-void
-X86_64Writer::writeDoubleWord(std::uint32_t instruction)
-{
-    _currentOffset += 4;
-    _output->add(instruction & (std::uint8_t)0xff);
-    _output->add((instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
-    _output->add((instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
-    _output->add((instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
-}
-
-
-void
-X86_64Writer::writeByte(std::uint8_t instruction)
-{
-    ++_currentOffset;
-    _output->add(instruction);
-}
 
 }

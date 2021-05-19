@@ -21,6 +21,7 @@ using namespace elet::foundation;
 #define MACHO_CIGAM_64 0xcffaedfe /* NXSwapInt(MH_MAGIC_64) */
 
 #define	MACHO_OBJECT_FILE_TYPE	    0x1
+#define	MH_EXECUTE	                0x2
 /* Constants for the cmd field of all load commands, the type */
 #define	LC_SEGMENT	0x1	/* segment of this file to be mapped */
 #define	LC_SEGMENT_64	0x19
@@ -52,13 +53,13 @@ using namespace elet::foundation;
 struct MachHeader64
 {
     std::uint32_t
-    magic;
+    magic = MACHO_MAGIC_64;
 
     std::uint32_t
-    cpuType;
+    cpuType = CPU_TYPE_X86_64;
 
     std::uint32_t
-    cpuSubType;
+    cpuSubType = CPU_SUBTYPE_X86_64_ALL;
 
     std::uint32_t
     fileType;
@@ -114,6 +115,7 @@ struct SegmentCommand
 };
 
 
+#define VM_PROTECTION_NONE    0x1
 #define VM_PROTECTION_READ    0x1
 #define VM_PROTECTION_WRITE   0x2
 #define VM_PROTECTION_EXECUTE 0x4

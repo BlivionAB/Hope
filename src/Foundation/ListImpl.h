@@ -436,11 +436,12 @@ template<typename T>
 void
 List<T>::reserve(std::size_t capacity)
 {
+    auto tempCursor = _cursor - _items;
     T* items = reinterpret_cast<T*>(malloc(capacity * sizeof(T)));
     std::memcpy(items, _items, size() * sizeof(T));
     free(_items);
     _items = items;
-    _cursor = items;
+    _cursor = items + tempCursor;
     this->_capacity = capacity;
 }
 
@@ -449,6 +450,28 @@ std::size_t
 List<T>::lastIndex()
 {
     return size() - 1;
+}
+
+template<typename T>
+T*
+List<T>::cursor()
+{
+    return _cursor;
+}
+
+template<typename T>
+template<typename B>
+B*
+List<T>::write(B* batch)
+{
+    if (size() + sizeof(B) > _capacity)
+    {
+        reserve(size() + sizeof(B));
+    }
+    auto startCursor = reinterpret_cast<B*>(_cursor);
+    std::memcpy(_cursor, batch, sizeof(B));
+    _cursor += sizeof(B) / sizeof(T);
+    return startCursor;
 }
 
 }

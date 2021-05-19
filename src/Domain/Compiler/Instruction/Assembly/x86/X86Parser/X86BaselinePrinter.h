@@ -33,6 +33,9 @@ private:
     TextWriter
     _tw;
 
+    std::uint32_t
+    _address = 0;
+
     void
     writeInstruction(Instruction* instruction);
 
@@ -41,6 +44,18 @@ private:
 
     void
     writeOperand(Operand* operand);
+
+    void
+    writeByteDisplacement(ByteDisplacement* byteDisp);
+
+    void
+    writeByteInstruction(Instruction* instruction);
+
+    void
+    writeAddress();
+
+    void
+    writeColumnHeader();
 };
 
 }

@@ -141,7 +141,7 @@ Transformer::transformArgumentPropertyExpression(ast::PropertyExpression* proper
 ArgumentDeclaration*
 Transformer::transformArgumentStringLiteral(ast::StringLiteral* stringLiteral)
 {
-    output::CString* cstring = addStaticConstantString(stringLiteral);
+    output::String* cstring = addStaticConstantString(stringLiteral);
     return new ArgumentDeclaration(_currentArgumentIndex++, _pointerSize, cstring);
 }
 
@@ -179,10 +179,10 @@ Transformer::getSymbolReference(ast::NamedExpression *expression)
 }
 
 
-output::CString*
+output::String*
 Transformer::addStaticConstantString(ast::StringLiteral* stringLiteral)
 {
-    auto cstring = new output::CString(Utf8StringView(stringLiteral->stringStart, stringLiteral->stringEnd));
+    auto cstring = new output::String(Utf8StringView(stringLiteral->stringStart, stringLiteral->stringEnd));
     _cstrings.add(cstring);
     return cstring;
 }

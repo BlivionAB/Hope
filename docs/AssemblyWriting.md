@@ -11,7 +11,7 @@ struct Constant
     relocationAddress;
 };
 
-struct CString : Constant
+struct String : Constant
 {
     char*
     value;

@@ -79,6 +79,13 @@ public:
     void
     create(const List<T>& item);
 
+    T*
+    cursor();
+
+    template<typename B>
+    B*
+    write(B* batch);
+
     void
     add(const T& item);
 
