@@ -4,6 +4,7 @@
 #include "../AssemblyWriter.h"
 #include "../Assembly/x86/X86Parser/X86BaselinePrinter.h"
 #include "MachOFileWriter.h"
+#include "DyldInfoWriter.h"
 
 
 namespace elet::domain::compiler::instruction::output
@@ -32,6 +33,7 @@ namespace elet::domain::compiler::instruction::output
 #define S_ATTR_PURE_INSTRUCTIONS 0x80000000
 #define S_ATTR_SOME_INSTRUCTIONS 0x00000400
 #define S_CSTRING_LITERALS       0x00000002
+#define S_SYMBOL_STUBS           0x00000008
 
 #define RELOCATION_TYPE_X86_64_UNSIGNED     0x0
 #define RELOCATION_TYPE_X86_64_SIGNED       0x1
@@ -94,7 +96,7 @@ namespace elet::domain::compiler::instruction::output
 //    vmAddress;
 //
 //    std::uint64_t
-//    virtualMemorySize;
+//    vmSize;
 //
 //    std::uint64_t
 //    fileOffset;
@@ -177,8 +179,8 @@ private:
     List<std::uint8_t>
     _text;
 
-    std::size_t
-    _currentOffset = 0;
+    DyldInfoWriter*
+    _dyldInfoWriter;
 
     AssemblyWriterInterface*
     _assemblyWriter;
@@ -187,22 +189,55 @@ private:
     _baselinePrinter;
 
     MachHeader64*
-    _header = new MachHeader64 { MACHO_MAGIC_64, CPU_TYPE_X86_64, CPU_SUBTYPE_X86_64_ALL, MH_EXECUTE };
+    _header;
 
-    std::size_t
+    std::uint32_t
     _textOffset;
 
     std::uint32_t
     _textSize;
 
     std::uint32_t
+    _textSegmentSize;
+
+    std::uint32_t
     _numberOfTextSections;
 
-    std::size_t
+    SegmentCommand64*
+    _textSegment;
+
+    Section64*
+    _textSection;
+
+    Section64*
+    _stubsSection;
+
+    Section64*
+    _stubHelperSection;
+
+    Section64*
+    _cstringSection;
+
+    DyldInfoCommand*
+    _dyldInfoCommand;
+
+    std::uint32_t
     _stringOffset;
 
-    std::size_t
-    _stubOffset;
+    std::uint32_t
+    _stringSize;
+
+    std::uint32_t
+    _stubsOffset;
+
+    std::uint32_t
+    _stubsSize;
+
+    std::uint32_t
+    _stubHelperOffset;
+
+    std::uint32_t
+    _stubHelperSize;
 
     void
     writeHeader();
@@ -217,13 +252,19 @@ private:
     writePageZeroSegmentCommand();
 
     Section64*
-    writeSection(Section64 section);
+    writeSection(Section64 section, SegmentCommand64* segment);
 
     void
     writePadding(uint32_t pad);
 
     void
     writeTextSegmentCommand();
+
+    void
+    writeDyldInfoSegmentCommand();
+
+    void
+    layoutDyldInfo();
 };
 
 

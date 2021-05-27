@@ -217,7 +217,7 @@ MachOFileWriter::layoutSection(const char *sectionName, const char *segmentName,
     _commandEndOffset += sizeof(Section64);
     _segmentCommand.commandSize += sizeof(Section64);
     _segmentCommand.numberOfSections++;
-    _segmentCommand.virtualMemorySize += size;
+    _segmentCommand.vmSize += size;
     _segmentCommand.fileSize += size;
     _header.sizeOfCommands += sizeof(Section64);
     _layoutedSections.add(sectionData);

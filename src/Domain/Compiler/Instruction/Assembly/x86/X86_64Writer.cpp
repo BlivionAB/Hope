@@ -12,16 +12,19 @@ X86_64Writer::X86_64Writer(List<std::uint8_t>* output) :
 }
 
 
-
 void
 X86_64Writer::writeStubs()
 {
     for (const auto& routine : _externalRoutines)
     {
-        writeByte(OP_EXT_GROUP5);
-        writeByte(OP_EXT_GROUP5_FAR_CALL_REG_BITS | MOD_DISP0 | RM_EBP);
-        routine->stubRelocationAddress = _currentOffset;
-        writeDoubleWord(0);
+        auto stubAddress = _currentOffset;
+        _bw->writeByte(OP_EXT_GROUP5);
+        _bw->writeByte(OP_EXT_GROUP5_FAR_CALL_REG_BITS | MOD_DISP0 | RM_EBP);
+        for (const auto& relocationAddress: routine->relocationAddresses)
+        {
+            _bw->writeDoubleWordAtAddress(stubAddress - relocationAddress, relocationAddress);
+        }
+        _bw->writeDoubleWord(0);
     }
 }
 
@@ -31,23 +34,32 @@ X86_64Writer::writeStubHelper()
 {
     auto top = _currentOffset;
     // leaq dyld_private, r11
-    writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W | REX_PREFIX_R);
-    writeByte(OP_LEA_Gv_M);
-    writeByte(MOD_DISP0 | RM_EBP | REG_EBX);
-    __dataDataRelocationAddress = _currentOffset;
-    writeDoubleWord(0);
+    _bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W | REX_PREFIX_R);
+    _bw->writeByte(OP_LEA_Gv_M);
+    _bw->writeByte(MOD_DISP0 | RM_EBP | REG_EBX);
+    _dataDataRelocationAddress = _currentOffset;
+    _bw->writeDoubleWord(0);
 
     // push r11
-    writeByte(REX_PREFIX_MAGIC | REX_PREFIX_B);
-    writeByte(OP_PUSH_rBX);
+    _bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_B);
+    _bw->writeByte(OP_PUSH_rBX);
+
+    // jmpq dyld_stub_binder
+    _bw->writeByte(OP_EXT_GROUP5);
+    _bw->writeByte(OP_EXT_GROUP5_FAR_CALL_REG_BITS | MOD_DISP0 | RM_EBP);
+    _dyldStubBinderRelocationAddress = _currentOffset;
+    _bw->writeDoubleWord(0);
 
     // nop
-    writeByte(OP_NOP);
+    _bw->writeByte(OP_NOP);
 
     for (const auto& routine : _externalRoutines)
     {
-
-
+        _bw->writeByte(OP_PUSH_Iz);
+        _dyldStubOffsetRelocationAddress.add(_currentOffset);
+        _bw->writeDoubleWord(0);
+        _bw->writeByte(OP_NEAR_JMP_Jz);
+        _bw->writeDoubleWord(top - _currentOffset - 4);
     }
 }
 
@@ -62,27 +74,45 @@ X86_64Writer::writeTextSection(FunctionRoutine* routine)
 void
 X86_64Writer::writeFunctionRoutine(FunctionRoutine* routine)
 {
-    if (routine->hasWrittenOutput) {
+    if (routine->hasWrittenOutput)
+    {
+        writeFunctionRelocationAddresses(routine);
         return;
     }
     routine->offset = _currentOffset;
+    writeFunctionRelocationAddresses(routine);
     writeFunctionPrelude();
     writeFunctionParameters(routine);
     writeFunctionInstructions(routine);
     writeFunctionPostlude();
+    for (const auto& subRoutine : routine->subRoutines)
+    {
+        writeFunctionRoutine(subRoutine);
+    }
     routine->hasWrittenOutput = true;
 }
 
 
 void
-X86_64Writer::writeFunctionInstructions(const FunctionRoutine* routine)
+X86_64Writer::writeFunctionRelocationAddresses(FunctionRoutine* routine)
+{
+    for (const auto& reloactionAddress : routine->relocationAddresses)
+    {
+        _bw->writeDoubleWordAtAddress(routine->offset - reloactionAddress.second, reloactionAddress.first);
+    }
+    routine->relocationAddresses.clear();
+}
+
+
+void
+X86_64Writer::writeFunctionInstructions(FunctionRoutine* routine)
 {
     for (const auto& instruction : routine->instructions)
     {
         switch (instruction->kind)
         {
             case InstructionKind::Call:
-                writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction));
+                writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction), routine);
                 break;
         }
     }
@@ -90,10 +120,10 @@ X86_64Writer::writeFunctionInstructions(const FunctionRoutine* routine)
 
 
 void
-X86_64Writer::writeCallInstruction(CallInstruction* callInstruction)
+X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine)
 {
     writeCallInstructionArguments(callInstruction);
-    writeByte(OP_CALL_NEAR);
+    _bw->writeByte(OP_CALL_NEAR);
     switch (callInstruction->routine->kind)
     {
         case RoutineKind::Function:
@@ -101,19 +131,20 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction)
             auto routine = reinterpret_cast<FunctionRoutine*>(callInstruction->routine);
             if (routine->offset)
             {
-                writeDoubleWord(routine->offset - _currentOffset);
+                _bw->writeDoubleWord(routine->offset - _currentOffset);
             }
             else
             {
-                writeDoubleWord(_currentOffset + OFFSET_SIZE - 1 /* -1 is for OP_CALL_NEAR*/);
+                routine->relocationAddresses.add({ _currentOffset, _currentOffset + 4 });
+                _bw->writeDoubleWord(0);
+                parentRoutine->subRoutines.add(routine);
             }
-            writeFunctionRoutine(routine);
             break;
         }
         case RoutineKind::External:
         {
             auto routine = reinterpret_cast<ExternalRoutine*>(callInstruction->routine);
-            routine->relocationAddress = _currentOffset;
+            routine->relocationAddresses.add(_currentOffset);
             writePointer(0);
             _externalRoutines.add(routine);
             break;
@@ -127,7 +158,7 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction)
 void
 X86_64Writer::writePointer(std::uint64_t address)
 {
-    writeQuadWord(address);
+    _bw->writeDoubleWord(address);
 }
 
 
@@ -148,11 +179,11 @@ X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
         }
         else if (auto string = std::get_if<String*>(&argument->value))
         {
-            writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
-            writeByte(OP_LEA_Gv_M);
-            writeByte(reg | RM_EBP | MOD_DISP0);
+            _bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+            _bw->writeByte(OP_LEA_Gv_M);
+            _bw->writeByte(reg | RM_EBP | MOD_DISP0);
             (*string)->relocationAddress = _currentOffset;
-            writeDoubleWord(0);
+            _bw->writeDoubleWord(0);
             _strings.add(*string);
         }
         ++i;
@@ -163,9 +194,10 @@ X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
 void
 X86_64Writer::writeMoveFromOffset(uint8_t reg, size_t offset)
 {
-    writeByte(OP_MOV_Gv_Ev);
-    writeByte(MODRM_EBP_DISP8 | reg);
-    writeDoubleWord(-offset);
+    _bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+    _bw->writeByte(OP_MOV_Gv_Ev);
+    _bw->writeByte(MODRM_EBP_DISP8 | reg);
+    _bw->writeByte(-offset);
 }
 
 
@@ -188,27 +220,27 @@ void
 X86_64Writer::writeParameter(size_t size, unsigned int index)
 {
     _localStackOffset += size;
-    writeByte(OP_MOV_Ev_Gv);
-    writeByte(MODRM_EBP_DISP8 | _callingConvention.registers[index]);
-    writeByte(-_localStackOffset);
+    _bw->writeByte(OP_MOV_Ev_Gv);
+    _bw->writeByte(MODRM_EBP_DISP8 | _callingConvention.registers[index]);
+    _bw->writeByte(-_localStackOffset);
 }
 
 
 void
 X86_64Writer::writeFunctionPrelude()
 {
-    writeByte(OP_PUSH_rBP);
-    writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
-    writeByte(OP_MOV_Ev_Gv);
-    writeByte(MODRM_EBP | REG_ESP);
+    _bw->writeByte(OP_PUSH_rBP);
+    _bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+    _bw->writeByte(OP_MOV_Ev_Gv);
+    _bw->writeByte(MODRM_EBP | REG_ESP);
 }
 
 
 void
 X86_64Writer::writeFunctionPostlude()
 {
-    writeByte(OP_POP_rBP);
-    writeByte(OP_RET);
+    _bw->writeByte(OP_POP_rBP);
+    _bw->writeByte(OP_RET);
 }
 
 

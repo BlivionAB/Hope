@@ -24,6 +24,6 @@ public:
 
     fn OnProcessStart(): void
     {
-        WriteLine("Hello World!");
+        WriteLine("Hello Word!");
     }
 }

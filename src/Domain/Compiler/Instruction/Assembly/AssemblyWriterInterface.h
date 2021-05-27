@@ -2,6 +2,7 @@
 #define ELET_ASSEMBLYWRITERINTERFACE_H
 
 #include <Domain/Compiler/Instruction/Instruction.h>
+#include <Domain/Compiler/Instruction/ByteWriter.h>
 
 namespace elet::domain::compiler
 {
@@ -41,9 +42,6 @@ public:
     void
     writeStubHelper() = 0;
 
-    std::size_t
-    __dataDataRelocationAddress;
-
     bool
     hasStrings();
 
@@ -53,25 +51,13 @@ public:
     std::size_t
     getOffset();
 
-    void
-    writeByte(std::uint8_t instruction);
-
     bool
     hasExternalRoutines();
 
+    std::uint32_t
+    getExternRoutinesSize() const;
+
 protected:
-
-    void
-    writeQuadWord(std::uint64_t instruction);
-
-
-    void
-    writeDoubleWord(std::uint32_t instruction);
-
-
-    void
-    writeDoubleWordAtAddress(std::uint32_t instruction, std::size_t offset);
-
 
     List<std::uint8_t>*
     _output;
@@ -84,6 +70,18 @@ protected:
 
     std::size_t
     _currentOffset;
+
+    ByteWriter*
+    _bw;
+
+    std::size_t
+    _dataDataRelocationAddress;
+
+    std::size_t
+    _dyldStubBinderRelocationAddress;
+
+    List<std::size_t>
+    _dyldStubOffsetRelocationAddress;
 };
 
 }

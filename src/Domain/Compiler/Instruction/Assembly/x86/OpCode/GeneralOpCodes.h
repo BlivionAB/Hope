@@ -21,6 +21,7 @@
 #define OP_PUSH_rBP 0x55
 #define OP_PUSH_rSI 0x56
 #define OP_PUSH_rDI 0x57
+#define OP_PUSH_Iz  0x68
 
 #define OP_POP_rBP  0x5d
 
@@ -29,8 +30,9 @@
 
 #define OP_LEA_Gv_M 0xd3
 
-#define OP_EXT_GROUP5 0xff
-#define OP_EXT_GROUP5_FAR_CALL_REG_BITS 0b00001100
+#define OP_NEAR_JMP_Jz  0xe9
+#define OP_EXT_GROUP5   0xff
+#define OP_EXT_GROUP5_FAR_CALL_REG_BITS 0b00100000
 
 #define OP_TWO_BYTE_PREFIX  (std::uint8_t)0x0f
 #define OP_SYSCALL          (std::uint8_t)0x05

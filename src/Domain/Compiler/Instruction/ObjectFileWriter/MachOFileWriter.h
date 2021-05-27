@@ -22,6 +22,10 @@ using namespace elet::foundation;
 
 #define	MACHO_OBJECT_FILE_TYPE	    0x1
 #define	MH_EXECUTE	                0x2
+#define MH_NOUNDEFS                 0x00000001
+#define MH_DYLDLINK                 0x00000004
+#define MH_TWOLEVEL                 0x00000080
+#define MH_PIE                      0x00200000
 /* Constants for the cmd field of all load commands, the type */
 #define	LC_SEGMENT	0x1	/* segment of this file to be mapped */
 #define	LC_SEGMENT_64	0x19
@@ -53,13 +57,13 @@ using namespace elet::foundation;
 struct MachHeader64
 {
     std::uint32_t
-    magic = MACHO_MAGIC_64;
+    magic;
 
     std::uint32_t
-    cpuType = CPU_TYPE_X86_64;
+    cpuType;
 
     std::uint32_t
-    cpuSubType = CPU_SUBTYPE_X86_64_ALL;
+    cpuSubType;
 
     std::uint32_t
     fileType;
@@ -138,7 +142,7 @@ struct SegmentCommand64
     vmAddress;
 
     std::uint64_t
-    virtualMemorySize;
+    vmSize;
 
     std::uint64_t
     fileOffset;
@@ -200,6 +204,106 @@ struct Section64
     reserved3;
 };
 
+/*
+ * The following are used to encode rebasing information
+ */
+#define REBASE_TYPE_POINTER					1
+#define REBASE_TYPE_TEXT_ABSOLUTE32				2
+#define REBASE_TYPE_TEXT_PCREL32				3
+
+#define REBASE_OPCODE_MASK					0xF0
+#define REBASE_IMMEDIATE_MASK					0x0F
+#define REBASE_OPCODE_DONE					0x00
+#define REBASE_OPCODE_SET_TYPE_IMM				0x10
+#define REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB		0x20
+#define REBASE_OPCODE_ADD_ADDR_ULEB				0x30
+#define REBASE_OPCODE_ADD_ADDR_IMM_SCALED			0x40
+#define REBASE_OPCODE_DO_REBASE_IMM_TIMES			0x50
+#define REBASE_OPCODE_DO_REBASE_ULEB_TIMES			0x60
+#define REBASE_OPCODE_DO_REBASE_ADD_ADDR_ULEB			0x70
+#define REBASE_OPCODE_DO_REBASE_ULEB_TIMES_SKIPPING_ULEB	0x80
+
+
+/*
+ * The following are used to encode binding information
+ */
+#define BIND_TYPE_POINTER					1
+#define BIND_TYPE_TEXT_ABSOLUTE32				2
+#define BIND_TYPE_TEXT_PCREL32					3
+
+#define BIND_SPECIAL_DYLIB_SELF					 0
+#define BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE			-1
+#define BIND_SPECIAL_DYLIB_FLAT_LOOKUP				-2
+
+#define BIND_SYMBOL_FLAGS_WEAK_IMPORT				0x1
+#define BIND_SYMBOL_FLAGS_NON_WEAK_DEFINITION			0x8
+
+#define BIND_OPCODE_MASK					0xF0
+#define BIND_IMMEDIATE_MASK					0x0F
+#define BIND_OPCODE_DONE					0x00
+#define BIND_OPCODE_SET_DYLIB_ORDINAL_IMM			0x10
+#define BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB			0x20
+#define BIND_OPCODE_SET_DYLIB_SPECIAL_IMM			0x30
+#define BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM		0x40
+#define BIND_OPCODE_SET_TYPE_IMM				0x50
+#define BIND_OPCODE_SET_ADDEND_SLEB				0x60
+#define BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB			0x70
+#define BIND_OPCODE_ADD_ADDR_ULEB				0x80
+#define BIND_OPCODE_DO_BIND					0x90
+#define BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB			0xA0
+#define BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED			0xB0
+#define BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB		0xC0
+
+
+/*
+ * The following are used on the flags byte of a terminal node
+ * in the export information.
+ */
+#define EXPORT_SYMBOL_FLAGS_KIND_MASK				0x03
+#define EXPORT_SYMBOL_FLAGS_KIND_REGULAR			0x00
+#define EXPORT_SYMBOL_FLAGS_KIND_THREAD_LOCAL			0x01
+#define EXPORT_SYMBOL_FLAGS_WEAK_DEFINITION			0x04
+#define EXPORT_SYMBOL_FLAGS_REEXPORT				0x08
+#define EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER			0x10
+
+struct DyldInfoCommand
+{
+    uint32_t
+    cmd;
+
+    uint32_t
+    cmdSize;
+
+    uint32_t
+    rebaseOffset;
+
+    uint32_t
+    rebaseSize;
+
+    uint32_t
+    bindOffset;
+
+    uint32_t
+    bindSize;
+
+    uint32_t
+    weakBindOffset;
+
+    uint32_t
+    weakBindSize;
+
+    uint32_t
+    lazyBindOffset;
+
+    uint32_t
+    lazyBindSize;
+
+    uint32_t
+    exportOffset;
+
+    uint32_t
+    exportSize;
+};
 
 struct RelocationInfo
 {

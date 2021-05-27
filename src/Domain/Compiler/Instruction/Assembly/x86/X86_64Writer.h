@@ -66,10 +66,10 @@ private:
     writeFunctionParameters(const FunctionRoutine* routine);
 
     void
-    writeFunctionInstructions(const FunctionRoutine* routine);
+    writeFunctionInstructions(FunctionRoutine* routine);
 
     void
-    writeCallInstruction(CallInstruction* callInstruction);
+    writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
 
     void
     writeCallInstructionArguments(CallInstruction* callInstruction);
@@ -79,6 +79,9 @@ private:
 
     void
     writePointer(std::uint64_t address);
+
+    void
+    writeFunctionRelocationAddresses(FunctionRoutine* routine);
 };
 
 

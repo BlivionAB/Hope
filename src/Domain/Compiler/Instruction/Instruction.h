@@ -133,13 +133,20 @@ struct InternalRoutine : Routine
 };
 
 
+//struct Relocation
+//{
+//    std::size_t
+//    start;
+//
+//    std::size_t
+//    end;
+//};
+
+
 struct ExternalRoutine : Routine
 {
-    std::size_t
-    relocationAddress;
-
-    std::size_t
-    stubRelocationAddress;
+    List<std::size_t>
+    relocationAddresses;
 
     Utf8StringView
     name;
@@ -167,6 +174,12 @@ struct FunctionRoutine : InternalRoutine
 
     bool
     hasWrittenOutput = false;
+
+    List<FunctionRoutine*>
+    subRoutines;
+
+    List<std::pair<std::size_t, std::size_t>>
+    relocationAddresses;
 
     FunctionRoutine(const Utf8StringView& name):
         name(name),
