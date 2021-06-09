@@ -132,6 +132,9 @@ private:
     std::uint64_t
     _symbolOffset;
 
+    bool
+    _isInCBlock = false;
+
     Scanner*
     _scanner;
 
@@ -348,8 +351,6 @@ private:
     bool
     hasEqualIdentifier(Name* id1, Name* id2);
 
-
-    static
     void
     addSymbol(Declaration* definition);
 

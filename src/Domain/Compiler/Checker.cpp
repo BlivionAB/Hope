@@ -134,7 +134,7 @@ Checker::checkDomainDeclaration(const ast::DomainDeclaration* domain)
             if (signature->isStartFunction)
             {
                 functionDeclaration->signature->isStartFunction = true;
-                _startFunctions.add(functionDeclaration);
+                startFunctions.add(functionDeclaration);
             }
         }
         if (missingSignature)

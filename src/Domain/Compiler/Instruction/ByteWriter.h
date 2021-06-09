@@ -23,6 +23,9 @@ public:
     void
     writeQuadWord(std::uint64_t instruction);
 
+    void
+    writeQuadWordAtAddress(std::uint64_t instruction, std::uint64_t);
+
 
     void
     writeDoubleWord(std::uint32_t instruction);
@@ -35,16 +38,38 @@ public:
     writeByte(std::uint8_t instruction);
 
     void
+    writeByteAtAddress(std::uint8_t instruction, std::size_t offset);
+
+    void
+    writeWord(uint16_t instruction);
+
+    void
     writeString(const char* string);
 
-private:
+    void
+    writeString(const Utf8StringView& string);
+
+    void
+    writeUleb128(uint64_t integer);
+
+    static
+    size_t
+    getUleb128Size(size_t value);
+
+    size_t
+    writeReverseUleb128(uint64_t value);
+
+    void
+    writeSleb128(int64_t integer);
+
+    void
+    writeReverseSleb128(int64_t i);
 
     List<uint8_t>*
-    _output;
+    output;
 
     size_t*
-    _offset;
-
+    offset;
 };
 
 

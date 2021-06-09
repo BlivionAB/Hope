@@ -11,8 +11,9 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
+class DyldInfoWriter;
 // For reference: https://opensource.apple.com/source/xnu/xnu-4903.270.47/EXTERNAL_HEADERS/mach-o/loader.h.auto.html
-
+#define SEGMENT_SIZE 0x4000 // 8 byte alignemnt
 #define MACHO_MAGIC_64 0xfeedfacf /* the 64-bit mach magic number */
 #define MACHO_CIGAM_64 0xcffaedfe /* NXSwapInt(MH_MAGIC_64) */
 
@@ -35,6 +36,67 @@ namespace elet::domain::compiler::instruction::output
 #define S_CSTRING_LITERALS       0x00000002
 #define S_SYMBOL_STUBS           0x00000008
 
+
+enum SymbolType : uint8_t
+{
+    N_GSYM = 0x20u,
+    N_FNAME = 0x22u,
+    N_FUN = 0x24u,
+
+    N_STAB = 0xe0u,
+    N_PEXT = 0x10u,
+    N_TYPE = 0x0eu,
+    N_EXT = 0x01u,
+
+
+
+    N_UNDF = 0x0u,		/* undefined, n_sect == NO_SECT */
+    N_ABS =	0x2u,		    /* absolute, n_sect == NO_SECT */
+    N_SECT = 0xeu,		/* defined in section number n_sect */
+    N_PBUD = 0xcu,		/* prebound undefined (defined in a dylib) */
+    N_INDR = 0xau,		/* indirect */
+};
+
+
+/*
+ * For the two types of symbol pointers sections and the symbol stubs section
+ * they have indirect symbol table entries.  For each of the entries in the
+ * section the indirect symbol table entries, in corresponding order in the
+ * indirect symbol table, start at the index stored in the reserved1 field
+ * of the section structure.  Since the indirect symbol table entries
+ * correspond to the entries in the section the number of indirect symbol table
+ * entries is inferred from the size of the section divided by the size of the
+ * entries in the section.  For symbol pointers sections the size of the entries
+ * in the section is 4 bytes and for symbol stubs sections the byte size of the
+ * stubs is stored in the reserved2 field of the section structure.
+ */
+#define	S_NON_LAZY_SYMBOL_POINTERS	0x6	/* section with only non-lazy
+						   symbol pointers */
+#define	S_LAZY_SYMBOL_POINTERS		0x7	/* section with only lazy symbol
+						   pointers */
+#define	S_SYMBOL_STUBS			0x8	/* section with only symbol
+						   stubs, byte size of stub in
+						   the reserved2 field */
+#define	S_MOD_INIT_FUNC_POINTERS	0x9	/* section with only function
+						   pointers for initialization*/
+#define	S_MOD_TERM_FUNC_POINTERS	0xa	/* section with only function
+						   pointers for termination */
+#define	S_COALESCED			0xb	/* section contains symbols that
+						   are to be coalesced */
+#define	S_GB_ZEROFILL			0xc	/* zero fill on demand section
+						   (that can be larger than 4
+						   gigabytes) */
+#define	S_INTERPOSING			0xd	/* section with only pairs of
+						   function pointers for
+						   interposing */
+#define	S_16BYTE_LITERALS		0xe	/* section with only 16 byte
+						   literals */
+#define	S_DTRACE_DOF			0xf	/* section contains
+						   DTrace Object Format */
+#define	S_LAZY_DYLIB_SYMBOL_POINTERS	0x10	/* section with only lazy
+						   symbol pointers to lazy
+						   loaded dylibs */
+
 #define RELOCATION_TYPE_X86_64_UNSIGNED     0x0
 #define RELOCATION_TYPE_X86_64_SIGNED       0x1
 #define RELOCATION_TYPE_X86_64_BRANCH       0x2
@@ -50,6 +112,136 @@ namespace elet::domain::compiler::instruction::output
 #define VM_PROTECTION_WRITE   0x2
 #define VM_PROTECTION_EXECUTE 0x4
 #define VM_PROTECTION_ALL (VM_PROTECTION_READ | VM_PROTECTION_WRITE | VM_PROTECTION_EXECUTE)
+
+
+struct DyldInfoCommand
+{
+    uint32_t
+    cmd;
+
+    uint32_t
+    cmdSize;
+
+    uint32_t
+    rebaseOffset;
+
+    uint32_t
+    rebaseSize;
+
+    uint32_t
+    bindOffset;
+
+    uint32_t
+    bindSize;
+
+    uint32_t
+    weakBindOffset;
+
+    uint32_t
+    weakBindSize;
+
+    uint32_t
+    lazyBindOffset;
+
+    uint32_t
+    lazyBindSize;
+
+    uint32_t
+    exportOffset;
+
+    uint32_t
+    exportSize;
+};
+
+
+struct SymtabCommand
+{
+    uint32_t
+    cmd;
+
+    uint32_t
+    cmdSize;
+
+    uint32_t
+    symbolOffset;
+
+    uint32_t
+    symbolEntries;
+
+    uint32_t
+    stringOffset;
+
+    uint32_t
+    stringSize;
+};
+
+
+struct DysymTabCommand
+{
+    uint32_t
+    cmd;
+
+    uint32_t
+    cmdSize;
+
+    uint32_t
+    localSymbolIndex;
+
+    uint32_t
+    localSymbolEntries;
+
+    uint32_t
+    definedExternalSymbolIndex;
+
+    uint32_t
+    definedExternalSymbolEntries;
+
+    uint32_t
+    undefinedSymbolIndex;
+
+    uint32_t
+    undefinedSymbolNumber;
+
+    uint32_t
+    tableOfContentOffset;
+
+    uint32_t
+    tableOfContentEntries;
+
+    uint32_t
+    moduleTableOffset;
+
+    uint32_t
+    moduleTableEntries;
+
+    uint32_t
+    externalReferenceTableOffset;
+
+    uint32_t
+    externalReferenceTableEntries;
+
+    uint32_t
+    indirectSymbolTableOffset;
+
+    uint32_t
+    indirectSymbolTableEntries;
+};
+
+
+struct SymbolTableEntry
+{
+    uint32_t
+    stringTableIndex;
+
+    uint8_t
+    sectionIndex;
+
+    uint8_t
+    description; // Use for STAB info
+
+    uint64_t
+    value;
+};
 
 
 //struct MachHeader64
@@ -168,13 +360,34 @@ public:
     void
     write(FunctionRoutine* startRoutine) override;
 
-private:
-
     List<std::uint8_t>
-    _output;
+    output;
 
     std::size_t
-    _cursor;
+    vmAddress = 0x0000000100000000;
+
+    std::size_t
+    offset;
+
+    DyldInfoCommand*
+    dyldInfoCommand;
+
+    DysymTabCommand*
+    dysymTabCommand;
+
+    SymtabCommand*
+    symtabCommand;
+
+    AssemblyWriterInterface*
+    assemblyWriter;
+
+    SegmentCommand64*
+    linkEditSegment;
+
+private:
+
+    uint64_t
+    _undefinedExternalSymbolIndex = 0;
 
     List<std::uint8_t>
     _text;
@@ -182,8 +395,8 @@ private:
     DyldInfoWriter*
     _dyldInfoWriter;
 
-    AssemblyWriterInterface*
-    _assemblyWriter;
+    ByteWriter*
+    _bw;
 
     x86::X86BaselinePrinter*
     _baselinePrinter;
@@ -201,10 +414,31 @@ private:
     _textSegmentSize;
 
     std::uint32_t
+    _modTextSegmentSize;
+
+    std::uint32_t
     _numberOfTextSections;
+
+    uint64_t
+    _textSegmentStartOffset;
+
+    uint64_t
+    _textSegmentStartVmAddress;
 
     SegmentCommand64*
     _textSegment;
+
+    SegmentCommand64*
+    _dataConstSegment;
+
+    SegmentCommand64*
+    _dataSegment;
+
+    Section64*
+    _dataLaSymbolPtrSection;
+
+    Section64*
+    _dataConstSection;
 
     Section64*
     _textSection;
@@ -217,9 +451,6 @@ private:
 
     Section64*
     _cstringSection;
-
-    DyldInfoCommand*
-    _dyldInfoCommand;
 
     std::uint32_t
     _stringOffset;
@@ -264,7 +495,49 @@ private:
     writeDyldInfoSegmentCommand();
 
     void
-    layoutDyldInfo();
+    writeDyldInfo();
+
+    void
+    writeTextSegment();
+
+    void
+    writeLinkEditSegmentCommand();
+
+    void
+    writeDataConstSegmentCommand();
+
+    void
+    writeDataConstSegment();
+
+    void
+    writeStubHelperSection();
+
+    void
+    writeStubsSection();
+
+    void
+    writeTextSection(FunctionRoutine* startRoutine);
+
+    void
+    writeDataSegmentCommand();
+
+    void
+    writeDataSegment();
+
+    void
+    writeLaSymbolPtrSection();
+
+    void
+    writeDysymTabCommand();
+
+    void
+    writeSymtabCommand();
+
+    void
+    writeSymbolTable();
+
+    void
+    writeIndirectSymbolTable();
 };
 
 

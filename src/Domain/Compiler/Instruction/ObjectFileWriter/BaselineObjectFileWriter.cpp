@@ -11,8 +11,9 @@ namespace elet::domain::compiler::instruction::output
 
 BaselineObjectFileWriter::BaselineObjectFileWriter()
 {
-    _assemblyWriter = new X86_64Writer(&_text);
-    _dyldInfoWriter = new DyldInfoWriter();
+    _bw = new ByteWriter(&output, &offset);
+    assemblyWriter = new X86_64Writer(&_text);
+    _dyldInfoWriter = new DyldInfoWriter(this);
     _baselinePrinter = new x86::X86BaselinePrinter();
 }
 
@@ -21,67 +22,132 @@ void
 BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
 {
     layoutTextSegment(startRoutine);
-    layoutDyldInfo();
-    _output.reserve(100*4096);
+    output.reserve(100 * 4096);
 
     writeHeader();
     writePageZeroSegmentCommand();
     writeTextSegmentCommand();
+    writeDataConstSegmentCommand();
+    writeDataSegmentCommand();
+    writeLinkEditSegmentCommand();
     writeDyldInfoSegmentCommand();
-    _textSection->address += _cursor;
-    _textSection->offset += _cursor;
-    _stubsSection->address += _cursor;
-    _stubsSection->offset += _cursor;
-    _stubHelperSection->address += _cursor;
-    _stubHelperSection->offset += _cursor;
-    _cstringSection->address += _cursor;
-    _cstringSection->offset += _cursor;
-    _textSegment->fileSize = _textSegmentSize;
-    _textSegment->vmSize = _textSegmentSize;
+    writeSymtabCommand();
+    writeDysymTabCommand();
 
-    _output.add(_text);
+    writeTextSegment();
+    writeDataConstSegment();
+    writeDataSegment();
+    writeDyldInfo();
+    writeSymbolTable();
+    writeIndirectSymbolTable();
+
     std::ofstream file;
     const char* path = Path::resolve(Path::cwd(), "cmake-build-debug/test.o").toString().toString();
     file.open(path, std::ios_base::binary);
-    for (int i = 0; i < _output.size(); ++i)
+    for (int i = 0; i < output.size(); ++i)
     {
-        file.write(reinterpret_cast<char*>(&_output[i]), 1);
+        file.write(reinterpret_cast<char*>(&output[i]), 1);
     }
     std::cout << path << std::endl;
     file.close();
 
-    auto output = _assemblyWriter->getOutput();
+    auto output = assemblyWriter->getOutput();
     _baselinePrinter->print(output);
+}
+
+
+void
+BaselineObjectFileWriter::writeTextSegment()
+{
+    size_t rest = _textSegmentSize % 16;
+    size_t modSize = _textSegmentSize - rest;
+    if (rest != 0)
+    {
+        modSize += 16;
+    }
+    size_t padding = _modTextSegmentSize - modSize;
+    size_t newVmAddress = padding + vmAddress;
+
+    writePadding(padding - offset);
+    _textSegmentStartOffset = offset;
+    _textSegmentStartVmAddress = newVmAddress;
+    output.add(_text);
+    offset += _textSegmentSize;
+    writePadding(rest);
+
+    _textSection->address += newVmAddress;
+    _textSection->offset += padding;
+    _stubsSection->address += newVmAddress;
+    _stubsSection->offset += padding;
+    _stubHelperSection->address += newVmAddress;
+    _stubHelperSection->offset += padding;
+    _cstringSection->address += newVmAddress;
+    _cstringSection->offset += padding;
+
+    _textSegment->fileSize = _modTextSegmentSize;
+    _textSegment->vmSize = _modTextSegmentSize;
+
+    vmAddress += _modTextSegmentSize;
 }
 
 
 void
 BaselineObjectFileWriter::layoutTextSegment(FunctionRoutine* startRoutine)
 {
-    _textOffset = _assemblyWriter->getOffset();
-    _assemblyWriter->writeTextSection(startRoutine);
-    _textSize = _assemblyWriter->getOffset() - _textOffset;
+    writeTextSection(startRoutine);
+    writeStubsSection();
+    writeStubHelperSection();
 
-    if (_assemblyWriter->hasExternalRoutines())
+    // Note, each segment needs to be 8 byte aligned.
+    size_t currentOffset = assemblyWriter->getOffset();
+    _textSegmentSize = currentOffset - _textOffset;
+    _modTextSegmentSize = (_textSegmentSize / SEGMENT_SIZE);
+    if ((_textSegmentSize % SEGMENT_SIZE) != 0)
     {
-        {
-            _stubsOffset = _assemblyWriter->getOffset();
-            _assemblyWriter->writeStubs();
-            _stubsSize = _assemblyWriter->getOffset() - _stubsOffset;
-        }
-        {
-            _stubHelperOffset = _assemblyWriter->getOffset();
-            _assemblyWriter->writeStubHelper();
-            _stubHelperSize = _assemblyWriter->getOffset() - _stubHelperOffset;
-        }
+        _modTextSegmentSize += SEGMENT_SIZE;
     }
-    if (_assemblyWriter->hasStrings())
+}
+
+
+void
+BaselineObjectFileWriter::writeTextSection(FunctionRoutine* startRoutine)
+{
+    _textOffset = assemblyWriter->getOffset();
+    assemblyWriter->writeTextSection(startRoutine);
+    _textSize = assemblyWriter->getOffset() - _textOffset;
+}
+
+
+void
+BaselineObjectFileWriter::writeStubsSection()
+{
+    _stubsOffset = assemblyWriter->getOffset();
+    size_t rest = _stubsOffset % 2;
+    if (rest != 0)
     {
-        _stringOffset = _assemblyWriter->getOffset();
-        _assemblyWriter->writeCStringSection();
-        _stringSize = _assemblyWriter->getOffset() - _stringOffset;
+        assemblyWriter->writePadding(rest);
+        _stubsOffset = assemblyWriter->getOffset();
     }
-    _textSegmentSize = _assemblyWriter->getOffset() - _textOffset;
+    assemblyWriter->writeStubs();
+    _stubsSize = assemblyWriter->getOffset() - _stubsOffset;
+}
+
+
+void
+BaselineObjectFileWriter::writeStubHelperSection()
+{
+    _stubHelperOffset = assemblyWriter->getOffset();
+    size_t rest = _stubHelperOffset % 4;
+    if (rest != 0)
+    {
+        assemblyWriter->writePadding(rest);
+        _stubHelperOffset = assemblyWriter->getOffset();
+    }
+    assemblyWriter->writeStubHelper();
+    _stubHelperSize = assemblyWriter->getOffset() - _stubHelperOffset;
+    _stringOffset = assemblyWriter->getOffset();
+    assemblyWriter->writeCStringSection();
+    _stringSize = assemblyWriter->getOffset() - _stringOffset;
 }
 
 
@@ -92,10 +158,10 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
         LC_SEGMENT_64,
         sizeof(SegmentCommand64),
         "__TEXT",
-        0x0000000100000000,
-        _textSize,
+        vmAddress,
         0,
-        _textSize,
+        0,
+        0,
         VM_PROTECTION_READ | VM_PROTECTION_EXECUTE,
         VM_PROTECTION_READ | VM_PROTECTION_EXECUTE,
         0,
@@ -105,7 +171,7 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
     _textSection = writeSection({
         "__text",
         "__TEXT",
-        0x0000000100000000,
+        0,
         _textSize,
         0,
         4,
@@ -117,55 +183,50 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
         0
     }, _textSegment);
 
-    if (_assemblyWriter->hasExternalRoutines())
-    {
-        _stubsSection = writeSection({
-             "__stubs",
-             "__TEXT",
-             0x0000000100000000 + static_cast<uint64_t>(_stubsOffset),
-             _stubsSize,
-             _stubsOffset,
-             1,
-             0,
-             0,
-             S_SYMBOL_STUBS | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
-             0,
-             _assemblyWriter->getExternRoutinesSize(), /*number of stubs*/
-             0
-        }, _textSegment);
+    _stubsSection = writeSection({
+         "__stubs",
+         "__TEXT",
+         static_cast<uint64_t>(_stubsOffset),
+         _stubsSize,
+         _stubsOffset,
+         1,
+         0,
+         0,
+         S_SYMBOL_STUBS | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
+         0,
+         assemblyWriter->getExternRoutinesSize(), /*number of stubs*/
+         0
+    }, _textSegment);
 
-        _stubHelperSection = writeSection({
-            "__stub_helper",
-            "__TEXT",
-            0x0000000100000000 + static_cast<uint64_t>(_stubHelperOffset),
-            _stubHelperSize,
-            _stubHelperOffset,
-            2,
-            0,
-            0,
-            S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
-            0,
-            0, /*number of stubs*/
-            0
-        }, _textSegment);
-    }
-    if (_assemblyWriter->hasStrings())
-    {
-        _cstringSection = writeSection({
-            "__cstring",
-            "__TEXT",
-            0x0000000100000000 + static_cast<uint64_t>(_stringOffset),
-            _stringSize,
-            _stringOffset,
-            0,
-            0,
-            0,
-            S_CSTRING_LITERALS,
-            0,
-            0,
-            0
-        }, _textSegment);
-    }
+    _stubHelperSection = writeSection({
+        "__stub_helper",
+        "__TEXT",
+        static_cast<uint64_t>(_stubHelperOffset),
+        _stubHelperSize,
+        _stubHelperOffset,
+        2,
+        0,
+        0,
+        S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
+        0,
+        0, /*number of stubs*/
+        0
+    }, _textSegment);
+
+    _cstringSection = writeSection({
+        "__cstring",
+        "__TEXT",
+        static_cast<uint64_t>(_stringOffset),
+        _stringSize,
+        _stringOffset,
+        0,
+        0,
+        0,
+        S_CSTRING_LITERALS,
+        0,
+        0,
+        0
+    }, _textSegment);
 }
 
 
@@ -182,10 +243,10 @@ BaselineObjectFileWriter::writeHeader()
         .flags = MH_NOUNDEFS | MH_DYLDLINK | MH_TWOLEVEL | MH_PIE,
         .reserved = 0,
     };
-    _header = _output.write(&header);
-    _cursor += sizeof(*_header);
-//    std::cout << sizeof(_header) << std::endl;
+    _header = output.write(&header);
+    offset += sizeof(*_header);
 }
+
 
 void
 BaselineObjectFileWriter::writePageZeroSegmentCommand()
@@ -205,41 +266,45 @@ BaselineObjectFileWriter::writePageZeroSegmentCommand()
     });
 }
 
+
 SegmentCommand64*
 BaselineObjectFileWriter::writeSegment(SegmentCommand64 segmentCommand)
 {
-    _cursor += sizeof(SegmentCommand64);
+    offset += sizeof(SegmentCommand64);
     _header->sizeOfCommands += sizeof(SegmentCommand64);
     _header->numberOfCommands++;
-    return _output.write(&segmentCommand);
+    return output.write(&segmentCommand);
 }
+
 
 Section64*
 BaselineObjectFileWriter::writeSection(Section64 section, SegmentCommand64* segment)
 {
-    _cursor += sizeof(Section64);
+    offset += sizeof(Section64);
     _header->sizeOfCommands += sizeof(Section64);
     segment->commandSize += sizeof(Section64);
     segment->numberOfSections++;
-    return _output.write(&section);
+    return output.write(&section);
 }
 
+
 void
-BaselineObjectFileWriter::writePadding(unsigned int padding)
+BaselineObjectFileWriter::writePadding(uint32_t padding)
 {
     for (unsigned int i = 0; i < padding; ++i)
     {
-        _assemblyWriter->writeByte(0);
+        output.add(0);
     }
+    offset += padding;
 }
 
 
 void
 BaselineObjectFileWriter::writeDyldInfoSegmentCommand()
 {
-    DyldInfoCommand command {
-        .cmd = 0,
-        .cmdSize = 0,
+    DyldInfoCommand command = {
+        .cmd = LC_DYLD_INFO_ONLY,
+        .cmdSize = sizeof(DyldInfoCommand),
         .rebaseOffset = 0,
         .rebaseSize = 0,
         .bindOffset = 0,
@@ -251,16 +316,253 @@ BaselineObjectFileWriter::writeDyldInfoSegmentCommand()
         .exportOffset = 0,
         .exportSize = 0,
     };
-    _dyldInfoCommand = _output.write<DyldInfoCommand>(&command);
+    _header->numberOfCommands++;
+    _header->sizeOfCommands += sizeof(DyldInfoCommand);
+    dyldInfoCommand = output.write<DyldInfoCommand>(&command);
+    offset += sizeof(DyldInfoCommand);
 }
 
 
 void
-BaselineObjectFileWriter::layoutDyldInfo()
+BaselineObjectFileWriter::writeDyldInfo()
 {
-    _dyldInfoWriter
-    writeByte();
+    _dyldInfoWriter->write();
+}
 
+
+void
+BaselineObjectFileWriter::writeLinkEditSegmentCommand()
+{
+    linkEditSegment = writeSegment({
+        .command = LC_SEGMENT_64,
+        .commandSize = sizeof(SegmentCommand64),
+        .segmentName = "__LINKEDIT",
+        .vmAddress = vmAddress,
+        .vmSize = 0,
+        .fileOffset = 0,
+        .fileSize = 0,
+        .maximumProtection = VM_PROTECTION_NONE,
+        .initialProtection = VM_PROTECTION_NONE,
+        .numberOfSections = 0,
+        .flags = 0,
+    });
+}
+
+
+void
+BaselineObjectFileWriter::writeDataConstSegmentCommand()
+{
+    _dataConstSegment = writeSegment({
+        .command = LC_SEGMENT_64,
+        .commandSize = sizeof(SegmentCommand64),
+        .segmentName = "__DATA_CONST",
+        .vmAddress = 0,
+        .vmSize = 0,
+        .fileOffset = 0,
+        .fileSize = 0,
+        .maximumProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
+        .initialProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
+        .numberOfSections = 0,
+        .flags = 0b00000010, // Don't know what this flag does? But, its in most binaries.
+    });
+
+    _dataConstSection = writeSection({
+        .sectionName = "__got",
+        .segmentName = "__DATA_CONST",
+        .address = 0,
+        .size = 0,
+        .offset = 0,
+        .align = 3,
+        .relocationOffset = 0,
+        .flags = S_NON_LAZY_SYMBOL_POINTERS,
+        .reserved1 = 0, // Indirect symbol index, It's where all symbols begins
+        .reserved2 = 0,
+        .reserved3 = 0,
+    }, _dataConstSegment);
+}
+
+
+void
+BaselineObjectFileWriter::writeDataSegmentCommand()
+{
+    _dataSegment = writeSegment({
+        .command = LC_SEGMENT_64,
+        .commandSize = sizeof(SegmentCommand64),
+        .segmentName = "__DATA",
+        .vmAddress = 0,
+        .vmSize = 0,
+        .fileOffset = 0,
+        .fileSize = 0,
+        .maximumProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
+        .initialProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
+        .numberOfSections = 0,
+        .flags = 0b00000010, // Don't know what this flag does? But, its in most binaries.
+    });
+
+    _dataLaSymbolPtrSection = writeSection({
+        .sectionName = "__la_symbol_ptr",
+        .segmentName = "__DATA",
+        .address = 0,
+        .size = 0,
+        .offset = 0,
+        .align = 3,
+        .relocationOffset = 0,
+        .flags = S_LAZY_SYMBOL_POINTERS,
+        .reserved1 = 0, // Indirect symbol index, It's where all symbols begins
+        .reserved2 = 0,
+        .reserved3 = 0,
+    }, _dataSegment);
+}
+
+
+void
+BaselineObjectFileWriter::writeDataConstSegment()
+{
+    _dataConstSegment->vmAddress = vmAddress;
+    _dataConstSegment->vmSize = SEGMENT_SIZE;
+    _dataConstSegment->fileOffset = offset;
+    _dataConstSegment->fileSize = SEGMENT_SIZE;
+
+    _dataConstSection->address = vmAddress;
+    _dataConstSection->size += 8;
+    _dataConstSection->offset = offset;
+    _bw->writeDoubleWord(0); // It's only dyld_stub_binde
+    writePadding(SEGMENT_SIZE - 8);
+    vmAddress += SEGMENT_SIZE;
+}
+
+
+void
+BaselineObjectFileWriter::writeDataSegment()
+{
+    _dataSegment->vmAddress = vmAddress;
+    _dataSegment->vmSize = SEGMENT_SIZE;
+    _dataSegment->fileOffset = offset;
+    _dataSegment->fileSize = SEGMENT_SIZE;
+
+    writeLaSymbolPtrSection();
+}
+
+
+void
+BaselineObjectFileWriter::writeLaSymbolPtrSection()
+{
+    _dataLaSymbolPtrSection->address = vmAddress;
+    _dataLaSymbolPtrSection->offset = offset;
+    for (const auto& externalRoutine : assemblyWriter->externalRoutines)
+    {
+        // TODO: This is causing a crash right now, due to no dsymtab and symtab
+//        _bw->writeDoubleWordAtAddress(offset - (_textSegmentStartOffset + externalRoutine->stubAddress + 4) /* It should be based after the instruction*/, externalRoutine->stubAddress);
+        _bw->writeQuadWord(_textSegmentStartVmAddress + externalRoutine->stubHelperAddress);
+    }
+    _dataLaSymbolPtrSection->size = offset - _dataLaSymbolPtrSection->offset;
+    writePadding(SEGMENT_SIZE - _dataLaSymbolPtrSection->size);
+    vmAddress += SEGMENT_SIZE;
+}
+
+
+void
+BaselineObjectFileWriter::writeDysymTabCommand()
+{
+    DysymTabCommand command =
+    {
+        .cmd = LC_DYSYMTAB,
+        .cmdSize = sizeof(DysymTabCommand),
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+    };
+    _header->numberOfCommands++;
+    _header->sizeOfCommands += sizeof(DysymTabCommand);
+    dysymTabCommand = output.write<DysymTabCommand>(&command);
+    offset += sizeof(DysymTabCommand);
+}
+
+
+void
+BaselineObjectFileWriter::writeSymtabCommand()
+{
+    SymtabCommand command =
+    {
+        .cmd = LC_SYMTAB,
+        .cmdSize = sizeof(SymtabCommand),
+        0,
+        0,
+        0,
+        0,
+    };
+    _header->numberOfCommands++;
+    _header->sizeOfCommands += sizeof(SymtabCommand);
+    symtabCommand = output.write<SymtabCommand>(&command);
+    offset += sizeof(SymtabCommand);
+}
+
+
+void
+BaselineObjectFileWriter::writeSymbolTable()
+{
+    uint64_t symbolTableIndex = 0;
+    dysymTabCommand->undefinedSymbolIndex = symbolTableIndex;
+    symtabCommand->symbolOffset = offset;
+    for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+    {
+        externalRoutine->stringTableIndexAddress = offset;
+
+        // String table Index
+        _bw->writeDoubleWord(0);
+
+        // Type
+        _bw->writeByte(N_UNDF | N_EXT);
+
+        // Section Index
+        _bw->writeByte(0);
+
+        // Description
+        _bw->writeByte(0);
+
+        // Library Ordinal
+        _bw->writeByte(1);
+
+        // Value
+        _bw->writeQuadWord(0);
+
+        ++dysymTabCommand->undefinedSymbolNumber;
+        externalRoutine->symbolTableIndex = symbolTableIndex;
+    }
+    symtabCommand->symbolEntries = assemblyWriter->externalRoutines.size();
+    symtabCommand->stringOffset = offset;
+    _bw->writeString(" ");
+    uint64_t stringTableIndex = 2;
+    for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+    {
+        _bw->writeDoubleWordAtAddress(stringTableIndex, externalRoutine->stringTableIndexAddress);
+        _bw->writeString(externalRoutine->name);
+        stringTableIndex += externalRoutine->name.size() + 1;
+    }
+    symtabCommand->stringSize = offset - symtabCommand->stringOffset;
+}
+
+
+void
+BaselineObjectFileWriter::writeIndirectSymbolTable()
+{
+    dysymTabCommand->indirectSymbolTableOffset = offset;
+    for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+    {
+        _bw->writeDoubleWord(externalRoutine->symbolTableIndex);
+    }
+    dysymTabCommand->indirectSymbolTableEntries = assemblyWriter->externalRoutines.size();
 }
 
 

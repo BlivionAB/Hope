@@ -53,7 +53,7 @@ public:
     performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDeclarationMap);
 
     void
-    bindFunction(ast::FunctionDeclaration* declaration);
+    bindFunctionDeclaration(ast::FunctionDeclaration* declaration);
 
     using SymbolMap = std::map<Utf8StringView, ast::Declaration*>;
 

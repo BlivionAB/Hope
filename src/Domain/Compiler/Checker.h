@@ -75,6 +75,9 @@ public:
     void
     checkDomainDeclaration(const ast::DomainDeclaration* domain);
 
+    List<ast::FunctionDeclaration*>
+    startFunctions;
+
 private:
 
     static
@@ -90,9 +93,6 @@ private:
 
     List<Diagnostic*>
     _diagnostics;
-
-    List<ast::FunctionDeclaration*>
-    _startFunctions;
 
     const ast::SourceFile*
     _sourceFile;

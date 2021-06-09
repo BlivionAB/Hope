@@ -178,7 +178,6 @@ namespace elet::domain::compiler::ast
         StatementBlock*
         body;
 
-
         // Used for checker
         type::Signature*
         signature;

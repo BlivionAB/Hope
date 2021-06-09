@@ -37,7 +37,7 @@ Binder::performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDe
             bindUsingStatement(reinterpret_cast<ast::UsingStatement*>(work.declaration));
             break;
         case ast::SyntaxKind::FunctionDeclaration:
-            bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
+            bindFunctionDeclaration(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
             break;
         default:
             throw UnknownDeclaration();
@@ -71,7 +71,7 @@ Binder::bindDomainDeclaration(ast::DomainDeclaration* domain)
                 bindUsingStatement(reinterpret_cast<ast::UsingStatement*>(decl));
                 break;
             case ast::SyntaxKind::FunctionDeclaration:
-                bindFunction(reinterpret_cast<ast::FunctionDeclaration*>(decl));
+                bindFunctionDeclaration(reinterpret_cast<ast::FunctionDeclaration*>(decl));
                 break;
             default:;
         }
@@ -116,7 +116,7 @@ Binder::getDomainDeclarations(const List<ast::Name*>& domains, unsigned int doma
 
 
 void
-Binder::bindFunction(ast::FunctionDeclaration* declaration)
+Binder::bindFunctionDeclaration(ast::FunctionDeclaration* declaration)
 {
     _currentFunctionDeclaration = declaration;
     for (ast::ParameterDeclaration* parameterDeclaration : declaration->parameterList->parameters)

@@ -67,11 +67,11 @@ add_executable(
     src/Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h
     src/Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h
     src/Domain/Compiler/Checker.cpp src/Domain/Compiler/Checker.h
-        src/Domain/Compiler/Syntax/Syntax.Declarations.h
+    src/Domain/Compiler/Syntax/Syntax.Declarations.h
     src/Domain/Compiler/Syntax/Syntax.Kind.h
     src/Domain/Compiler/Syntax/Syntax.Labels.h
     src/Domain/Compiler/Syntax/Syntax.Block.h
-        src/Domain/Compiler/Syntax/Syntax.Type.h src/Domain/Compiler/Instruction/Instruction.Constant.h src/Domain/Compiler/Instruction/ObjectFileWriter/BaselineObjectFileWriter.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/BaselineObjectFileWriter.h src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselinePrinter.cpp src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselinePrinter.h src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86Types.h src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselineParser.cpp src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselineParser.h src/Domain/Compiler/Instruction/Assembly/AssemblyWriterInterface.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/DyldInfoWriter.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/DyldInfoWriter.h src/Domain/Compiler/Instruction/ByteWriter.cpp src/Domain/Compiler/Instruction/ByteWriter.h)
+    src/Domain/Compiler/Syntax/Syntax.Type.h src/Domain/Compiler/Instruction/Instruction.Constant.h src/Domain/Compiler/Instruction/ObjectFileWriter/BaselineObjectFileWriter.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/BaselineObjectFileWriter.h src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselinePrinter.cpp src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselinePrinter.h src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86Types.h src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselineParser.cpp src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/X86BaselineParser.h src/Domain/Compiler/Instruction/Assembly/AssemblyWriterInterface.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/DyldInfoWriter.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/DyldInfoWriter.h src/Domain/Compiler/Instruction/ByteWriter.cpp src/Domain/Compiler/Instruction/ByteWriter.h src/Domain/Compiler/Instruction/ObjectFileWriter/ExportInfoWriter.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/ExportInfoWriter.h src/Domain/Compiler/Instruction/ObjectFileWriter/ExportTrieTree.cpp src/Domain/Compiler/Instruction/ObjectFileWriter/ExportTrieTree.h)
 
 add_executable(
     unittest

@@ -118,6 +118,9 @@ struct Routine
 
 struct InternalRoutine : Routine
 {
+    size_t
+    address;
+
     List<Instruction*>
     instructions;
 
@@ -145,11 +148,26 @@ struct InternalRoutine : Routine
 
 struct ExternalRoutine : Routine
 {
-    List<std::size_t>
+    List<size_t>
     relocationAddresses;
 
     Utf8StringView
     name;
+
+    uint16_t
+    libraryOrdinal;
+
+    uint64_t
+    stubAddress;
+
+    uint64_t
+    stringTableIndexAddress;
+
+    uint64_t
+    stubHelperAddress;
+
+    uint32_t
+    symbolTableIndex;
 
     ExternalRoutine(Utf8StringView& name):
         name(name),
@@ -169,7 +187,7 @@ struct FunctionRoutine : InternalRoutine
     List<ParameterDeclaration*>
     parameters;
 
-    std::size_t
+    uint64_t
     offset;
 
     bool

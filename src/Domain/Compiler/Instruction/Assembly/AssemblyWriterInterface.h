@@ -42,20 +42,27 @@ public:
     void
     writeStubHelper() = 0;
 
-    bool
-    hasStrings();
-
     List<std::uint8_t>*
     getOutput();
 
     std::size_t
     getOffset();
 
-    bool
-    hasExternalRoutines();
-
     std::uint32_t
     getExternRoutinesSize() const;
+
+    ByteWriter*
+    bw;
+
+    List<ExternalRoutine*>
+    externalRoutines;
+
+
+    List<FunctionRoutine*>
+    exportedRoutines;
+
+    void
+    writePadding(size_t amount);
 
 protected:
 
@@ -65,23 +72,14 @@ protected:
     List<String*>
     _strings;
 
-    List<ExternalRoutine*>
-    _externalRoutines;
-
     std::size_t
-    _currentOffset;
-
-    ByteWriter*
-    _bw;
+    _offset;
 
     std::size_t
     _dataDataRelocationAddress;
 
     std::size_t
     _dyldStubBinderRelocationAddress;
-
-    List<std::size_t>
-    _dyldStubOffsetRelocationAddress;
 };
 
 }

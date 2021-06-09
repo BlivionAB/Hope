@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <Foundation/List.h>
 #include "BaselineObjectFileWriter.h"
+#include "ExportInfoWriter.h"
+
 
 namespace elet::domain::compiler::instruction::output
 {
@@ -12,6 +14,8 @@ namespace elet::domain::compiler::instruction::output
 
 using namespace elet::foundation;
 
+class BaselineObjectFileWriter;
+class ExportInfoWriter;
 
 class DyldInfoWriter
 {
@@ -24,17 +28,14 @@ public:
 
 private:
 
+    ByteWriter*
+    _bw;
+
     BaselineObjectFileWriter*
     _machoWriter;
 
-    List<uint8_t>
-    _data;
-
-    size_t
-    _offset;
-
-    ByteWriter*
-    _bw;
+    ExportInfoWriter*
+    _exportInfoWriter;
 
     void
     writeRebaseInfo();
@@ -44,6 +45,9 @@ private:
 
     void
     writeLazyBindingInfo();
+
+    void
+    writeExportInfo();
 };
 
 

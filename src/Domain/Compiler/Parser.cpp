@@ -1333,16 +1333,24 @@ Parser::getParameterDisplay(ParameterDeclaration* parameter)
 void
 Parser::addSymbol(Declaration* declaration)
 {
-    auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, declaration->name->name);
+    auto symbol = new Symbol(_symbolOffset, declaration->name->name);
     symbols->add(symbol);
     declaration->symbol = symbol;
+    if (_isInCBlock)
+    {
+        declaration->symbol->externalSymbol = Utf8String("_") + symbol->name.toString();
+    }
+    else
+    {
+        declaration->symbol->externalSymbol = symbol->name.toString();
+    }
 }
 
 
 void
 Parser::addTypeSymbol(Declaration* declaration)
 {
-    auto symbol = new Symbol(SymbolSectionIndex::Text, _symbolOffset, declaration->name->name);
+    auto symbol = new Symbol(_symbolOffset, declaration->name->name);
     symbols->add(symbol);
     declaration->symbol = symbol;
 }
@@ -1379,6 +1387,7 @@ Parser::parseAddressOfExpression()
 ExternCBlock*
 Parser::parseExternCBlock()
 {
+    _isInCBlock = true;
     ExternCBlock* block = createSyntax<ExternCBlock>(SyntaxKind::ExternCBlock);
     expectToken(Token::StringLiteral);
     if (getTokenValue() != "\"C\"")
@@ -1387,6 +1396,7 @@ Parser::parseExternCBlock()
     }
     expectToken(Token::OpenBrace);
     block->declarations = parseExternCBlockLevelDeclarations();
+    _isInCBlock = false;
     return block;
 }
 

@@ -60,6 +60,20 @@ Utf8StringView::toString() const
 
 
 Utf8StringView
+Utf8StringView::subString(size_t start, size_t end) const
+{
+    return Utf8StringView(&_value[start], &_end[end]);
+}
+
+
+Utf8StringView
+Utf8StringView::subString(size_t index) const
+{
+    return Utf8StringView(&_value[index], _end);
+}
+
+
+Utf8StringView
 Utf8StringView::slice(const char* start) const
 {
     return Utf8StringView(start, _end);
@@ -80,7 +94,7 @@ Utf8StringView::size() const
 }
 
 
-char
+unsigned char
 Utf8StringView::operator[](std::size_t memoryIndex) const
 {
     return _value[memoryIndex];
@@ -120,6 +134,13 @@ Utf8StringView::operator = (const Utf8StringView &other)
 {
     _value = other._value;
     _end = other._end;
+}
+
+
+bool
+Utf8StringView::startsWith(Utf8StringView string)
+{
+    return string.size() <= size() && std::memcmp(_value, string._value, string.size()) == 0;
 }
 
 

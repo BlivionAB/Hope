@@ -6,7 +6,8 @@ namespace elet::domain::compiler::instruction::output
 
 
 AssemblyWriterInterface::AssemblyWriterInterface(List<std::uint8_t>* output):
-    _output(output)
+    _output(output),
+    bw(new ByteWriter(output, &_offset))
 {
 
 }
@@ -22,7 +23,7 @@ AssemblyWriterInterface::getOutput()
 std::size_t
 AssemblyWriterInterface::getOffset()
 {
-    return _currentOffset;
+    return _offset;
 }
 
 
@@ -31,36 +32,31 @@ AssemblyWriterInterface::writeCStringSection()
 {
     for (const auto& string : _strings)
     {
-        _bw->writeDoubleWordAtAddress(_currentOffset, string->relocationAddress);
+        bw->writeDoubleWordAtAddress(_offset, string->relocationAddress);
 
         for (const auto s : string->value)
         {
-            _bw->writeByte(static_cast<std::uint8_t>(s));
+            bw->writeByte(static_cast<std::uint8_t>(s));
         }
-        _bw->writeByte(0);
+        bw->writeByte(0);
     }
-}
-
-
-
-bool
-AssemblyWriterInterface::hasExternalRoutines()
-{
-    return !_externalRoutines.isEmpty();
 }
 
 
 std::uint32_t
 AssemblyWriterInterface::getExternRoutinesSize() const
 {
-    return _externalRoutines.size();
+    return externalRoutines.size();
 }
 
 
-bool
-AssemblyWriterInterface::hasStrings()
+void
+AssemblyWriterInterface::writePadding(size_t amount)
 {
-    return !_strings.isEmpty();
+    for (size_t i = 0; i < amount; ++i)
+    {
+        bw->writeByte(0);
+    }
 }
 
 

@@ -60,6 +60,12 @@ public:
     slice(const char* start, const char* end) const;
 
     Utf8StringView
+    subString(size_t index) const;
+
+    Utf8StringView
+    subString(size_t start, size_t end) const;
+
+    Utf8StringView
     slice(const char* start) const;
 
     [[nodiscard]] Iterator
@@ -77,7 +83,7 @@ public:
     [[nodiscard]] std::size_t
     size() const;
 
-    char
+    unsigned char
     operator [] (std::size_t memoryIndex) const;
 
     bool
@@ -91,6 +97,9 @@ public:
 
     void
     operator = (const Utf8StringView& other);
+
+    bool
+    startsWith(Utf8StringView string);
 
 private:
 

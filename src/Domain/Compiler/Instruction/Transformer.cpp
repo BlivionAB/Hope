@@ -50,7 +50,7 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     }
     output::FunctionRoutine* routine = createFunctionRoutine(functionDeclaration->name->name);
     _currentRoutineStack.push(routine);
-    routine->name = functionDeclaration->name->name;
+    routine->name = functionDeclaration->symbol->externalSymbol;
     transformFunctionParameters(functionDeclaration, routine);
     transformLocalStatements(functionDeclaration->body->statements);
     _currentRoutineStack.pop();
@@ -117,7 +117,7 @@ Transformer::transformCallExpression(const ast::CallExpression* callExpression)
     }
     else
     {
-        callInstruction->routine = new output::ExternalRoutine(callExpression->name->name);
+        callInstruction->routine = new output::ExternalRoutine(callExpression->referenceDeclaration->symbol->externalSymbol);
     }
     _currentRoutineStack.top()->instructions.add(callInstruction);
 }
