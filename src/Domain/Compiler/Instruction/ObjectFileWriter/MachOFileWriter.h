@@ -29,7 +29,6 @@ using namespace elet::foundation;
 /* Constants for the cmd field of all load commands, the type */
 #define	LC_SEGMENT	0x1	/* segment of this file to be mapped */
 #define	LC_SEGMENT_64	0x19
-#define	LC_SYMTAB	    0x2
 
 #define CPU_ARCH_MASK           0xff000000      /* mask for architecture bits */
 #define CPU_ARCH_ABI64          0x01000000      /* 64 bit ABI */
@@ -68,7 +67,6 @@ using namespace elet::foundation;
 
 /* Constants for the cmd field of all load commands, the type */
 #define	LC_SEGMENT	0x1	/* segment of this file to be mapped */
-#define	LC_SYMTAB	0x2	/* link-edit stab symbol table info */
 #define	LC_SYMSEG	0x3	/* link-edit gdb symbol table info (obsolete) */
 #define	LC_THREAD	0x4	/* thread */
 #define	LC_UNIXTHREAD	0x5	/* unix thread (includes a stack) */
@@ -77,8 +75,6 @@ using namespace elet::foundation;
 #define	LC_IDENT	0x8	/* object identification info (obsolete) */
 #define LC_FVMFILE	0x9	/* fixed VM file inclusion (internal use) */
 #define LC_PREPAGE      0xa     /* prepage command (internal use) */
-#define	LC_DYSYMTAB	0xb	/* dynamic link-edit symbol table info */
-#define	LC_LOAD_DYLIB	0xc	/* load a dynamically linked shared library */
 #define	LC_ID_DYLIB	0xd	/* dynamically linked shared lib ident */
 #define LC_LOAD_DYLINKER 0xe	/* load a dynamic linker */
 #define LC_ID_DYLINKER	0xf	/* dynamic linker identification */

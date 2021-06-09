@@ -33,6 +33,7 @@ BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
     writeDyldInfoSegmentCommand();
     writeSymtabCommand();
     writeDysymTabCommand();
+    writeLoadDylibCommands();
 
     writeTextSegment();
     writeDataConstSegment();
@@ -40,6 +41,7 @@ BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
     writeDyldInfo();
     writeSymbolTable();
     writeIndirectSymbolTable();
+    writeStringTable();
 
     std::ofstream file;
     const char* path = Path::resolve(Path::cwd(), "cmake-build-debug/test.o").toString().toString();
@@ -73,7 +75,7 @@ BaselineObjectFileWriter::writeTextSegment()
     _textSegmentStartVmAddress = newVmAddress;
     output.add(_text);
     offset += _textSegmentSize;
-    writePadding(rest);
+    writePadding(modSize - _textSegmentSize);
 
     _textSection->address += newVmAddress;
     _textSection->offset += padding;
@@ -338,9 +340,9 @@ BaselineObjectFileWriter::writeLinkEditSegmentCommand()
         .commandSize = sizeof(SegmentCommand64),
         .segmentName = "__LINKEDIT",
         .vmAddress = vmAddress,
-        .vmSize = 0,
+        .vmSize = 0x4000,
         .fileOffset = 0,
-        .fileSize = 0,
+        .fileSize = 0x4000,
         .maximumProtection = VM_PROTECTION_NONE,
         .initialProtection = VM_PROTECTION_NONE,
         .numberOfSections = 0,
@@ -366,7 +368,7 @@ BaselineObjectFileWriter::writeDataConstSegmentCommand()
         .flags = 0b00000010, // Don't know what this flag does? But, its in most binaries.
     });
 
-    _dataConstSection = writeSection({
+    _dataConstGotSection = writeSection({
         .sectionName = "__got",
         .segmentName = "__DATA_CONST",
         .address = 0,
@@ -423,11 +425,26 @@ BaselineObjectFileWriter::writeDataConstSegment()
     _dataConstSegment->fileOffset = offset;
     _dataConstSegment->fileSize = SEGMENT_SIZE;
 
-    _dataConstSection->address = vmAddress;
-    _dataConstSection->size += 8;
-    _dataConstSection->offset = offset;
-    _bw->writeDoubleWord(0); // It's only dyld_stub_binde
-    writePadding(SEGMENT_SIZE - 8);
+    _dataConstGotSection->address = vmAddress;
+    _dataConstGotSection->size += 8;
+    _dataConstGotSection->offset = offset;
+
+    for (const auto& gotBoundRoutine : assemblyWriter->gotBoundRoutines)
+    {
+        for (const auto& relocationAddress : gotBoundRoutine->relocationAddresses)
+        {
+            _bw->writeDoubleWordAtAddress(offset - (relocationAddress + 4), relocationAddress);
+        }
+        _bw->writeQuadWord(0);
+    }
+
+    size_t rest = _dataConstGotSection->size % SEGMENT_SIZE;
+    size_t padding = 0;
+    if (rest != 0)
+    {
+        padding = SEGMENT_SIZE - rest;
+    }
+    writePadding(padding);
     vmAddress += SEGMENT_SIZE;
 }
 
@@ -452,7 +469,7 @@ BaselineObjectFileWriter::writeLaSymbolPtrSection()
     for (const auto& externalRoutine : assemblyWriter->externalRoutines)
     {
         // TODO: This is causing a crash right now, due to no dsymtab and symtab
-//        _bw->writeDoubleWordAtAddress(offset - (_textSegmentStartOffset + externalRoutine->stubAddress + 4) /* It should be based after the instruction*/, externalRoutine->stubAddress);
+        _bw->writeDoubleWordAtAddress(offset - (_textSegmentStartOffset + externalRoutine->stubAddress + 4) /* It should be based after the instruction*/, _textSegmentStartOffset + externalRoutine->stubAddress);
         _bw->writeQuadWord(_textSegmentStartVmAddress + externalRoutine->stubHelperAddress);
     }
     _dataLaSymbolPtrSection->size = offset - _dataLaSymbolPtrSection->offset;
@@ -468,6 +485,10 @@ BaselineObjectFileWriter::writeDysymTabCommand()
     {
         .cmd = LC_DYSYMTAB,
         .cmdSize = sizeof(DysymTabCommand),
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
@@ -510,12 +531,54 @@ BaselineObjectFileWriter::writeSymtabCommand()
 
 
 void
+BaselineObjectFileWriter::writeLoadDylibCommands()
+{
+    LoadDylibCommand* command = writeCommand<LoadDylibCommand>(LC_LOAD_DYLIB);
+    command->name = 24; // Offset to string
+    command->timestamp = 2; // unix timestamp clang compiles this to 2
+    command->currentVersion = 0x050c3c01; // 1292.60.1
+    command->compatabilityVersion = 0x00010000; // 1.0.0
+    _bw->writeString("/usr/lib/libSystem.B.dylib");
+    size_t stringLength = std::strlen("/usr/lib/libSystem.B.dylib") + 1;
+    command->cmdSize += stringLength;
+    _header->sizeOfCommands += stringLength;
+
+    // Command size must be 4-byte aligned
+    uint32_t rest = command->cmdSize % 4;
+    if (rest != 0)
+    {
+        uint32_t padding = 4 - rest;
+        writePadding(padding);
+        command->cmdSize += padding;
+        _header->sizeOfCommands += padding;
+    }
+}
+
+
+template<typename TCommand>
+TCommand*
+BaselineObjectFileWriter::writeCommand(CommandType commandType)
+{
+    TCommand command =
+    {
+        commandType,
+        sizeof(TCommand)
+    };
+    _header->numberOfCommands++;
+    _header->sizeOfCommands += sizeof(TCommand);
+    offset += sizeof(TCommand);
+    return output.write<TCommand>(&command);
+}
+
+
+void
 BaselineObjectFileWriter::writeSymbolTable()
 {
     uint64_t symbolTableIndex = 0;
     dysymTabCommand->undefinedSymbolIndex = symbolTableIndex;
     symtabCommand->symbolOffset = offset;
-    for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+    List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutines.concat(assemblyWriter->gotBoundRoutines);
+    for (ExternalRoutine* externalRoutine : allRoutines)
     {
         externalRoutine->stringTableIndexAddress = offset;
 
@@ -539,12 +602,19 @@ BaselineObjectFileWriter::writeSymbolTable()
 
         ++dysymTabCommand->undefinedSymbolNumber;
         externalRoutine->symbolTableIndex = symbolTableIndex;
+        ++symbolTableIndex;
     }
-    symtabCommand->symbolEntries = assemblyWriter->externalRoutines.size();
+    symtabCommand->symbolEntries = allRoutines.size();
+}
+
+void
+BaselineObjectFileWriter::writeStringTable()
+{
     symtabCommand->stringOffset = offset;
     _bw->writeString(" ");
     uint64_t stringTableIndex = 2;
-    for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+    List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutines.concat(assemblyWriter->gotBoundRoutines);
+    for (ExternalRoutine* externalRoutine : allRoutines)
     {
         _bw->writeDoubleWordAtAddress(stringTableIndex, externalRoutine->stringTableIndexAddress);
         _bw->writeString(externalRoutine->name);
@@ -558,11 +628,33 @@ void
 BaselineObjectFileWriter::writeIndirectSymbolTable()
 {
     dysymTabCommand->indirectSymbolTableOffset = offset;
+
+    // Write stubs
+    uint32_t index = 0;
+    _stubsSection->reserved1 = index;
     for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
     {
         _bw->writeDoubleWord(externalRoutine->symbolTableIndex);
     }
-    dysymTabCommand->indirectSymbolTableEntries = assemblyWriter->externalRoutines.size();
+    index += assemblyWriter->externalRoutines.size();
+
+    // Write got function
+    _dataConstGotSection->reserved1 = index;
+    for (ExternalRoutine* externalRoutine : assemblyWriter->gotBoundRoutines)
+    {
+        _bw->writeDoubleWord(externalRoutine->symbolTableIndex);
+    }
+    index += assemblyWriter->gotBoundRoutines.size();
+
+    // Write laze symbol pointers
+    _dataLaSymbolPtrSection->reserved1 = index;
+    for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+    {
+        _bw->writeDoubleWord(externalRoutine->symbolTableIndex);
+    }
+    index += assemblyWriter->externalRoutines.size();
+
+    dysymTabCommand->indirectSymbolTableEntries = index;
 }
 
 

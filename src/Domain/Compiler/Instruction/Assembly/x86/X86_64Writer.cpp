@@ -49,6 +49,11 @@ X86_64Writer::writeStubHelper()
     bw->writeByte(OP_EXT_GROUP5);
     bw->writeByte(OP_EXT_GROUP5_FAR_CALL_REG_BITS | MOD_DISP0 | RM_EBP);
     _dyldStubBinderRelocationAddress = _offset;
+    Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
+    Utf8StringView string = Utf8StringView(*dyldStubBinderString);
+    ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);
+    gotBoundRoutines.add(dyldStubBinderRoutine);
+    dyldStubBinderRoutine->relocationAddresses.add(_offset);
     bw->writeDoubleWord(0);
 
     // nop

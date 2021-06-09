@@ -57,6 +57,8 @@ public:
     List<ExternalRoutine*>
     externalRoutines;
 
+    List<ExternalRoutine*>
+    gotBoundRoutines;
 
     List<FunctionRoutine*>
     exportedRoutines;

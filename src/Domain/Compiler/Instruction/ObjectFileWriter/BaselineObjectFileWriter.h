@@ -21,7 +21,7 @@ class DyldInfoWriter;
 /* Constants for the cmd field of all load commands, the type */
 #define	LC_SEGMENT	0x1	/* segment of this file to be mapped */
 #define	LC_SEGMENT_64	0x19
-#define	LC_SYMTAB	    0x2
+
 
 #define CPU_ARCH_MASK           0xff000000      /* mask for architecture bits */
 #define CPU_ARCH_ABI64          0x01000000      /* 64 bit ABI */
@@ -35,6 +35,14 @@ class DyldInfoWriter;
 #define S_ATTR_SOME_INSTRUCTIONS 0x00000400
 #define S_CSTRING_LITERALS       0x00000002
 #define S_SYMBOL_STUBS           0x00000008
+
+
+enum CommandType : uint32_t
+{
+    LC_SYMTAB = 0x2u,
+    LC_DYSYMTAB = 0xbu,
+    LC_LOAD_DYLIB = 0xc,
+};
 
 
 enum SymbolType : uint8_t
@@ -225,6 +233,18 @@ struct DysymTabCommand
 
     uint32_t
     indirectSymbolTableEntries;
+
+    uint32_t
+    externalRelocationTableOffset;
+
+    uint32_t
+    externalRelocationTableEntries;
+
+    uint32_t
+    localRelocationTableOffset;
+
+    uint32_t
+    localRelocationTableEntries;
 };
 
 
@@ -241,6 +261,39 @@ struct SymbolTableEntry
 
     uint64_t
     value;
+};
+
+
+struct Command
+{
+    uint32_t
+    cmd;
+
+    // Note cmdSize most be 4-byte-aligned
+    uint32_t
+    cmdSize;
+};
+
+
+struct LoadDylibCommand : Command
+{
+    uint32_t
+    name;
+
+    uint32_t
+    timestamp;
+
+    // 1 byte: patch
+    // 2 byte: minor
+    // 3-4 byte: major
+    uint32_t
+    currentVersion;
+
+    // 1 byte: patch
+    // 2 byte: minor
+    // 3-4 byte: major
+    uint32_t
+    compatabilityVersion;
 };
 
 
@@ -438,7 +491,7 @@ private:
     _dataLaSymbolPtrSection;
 
     Section64*
-    _dataConstSection;
+    _dataConstGotSection;
 
     Section64*
     _textSection;
@@ -469,6 +522,9 @@ private:
 
     std::uint32_t
     _stubHelperSize;
+
+    ExternalRoutine*
+    _dyldStubBinderRoutine;
 
     void
     writeHeader();
@@ -538,6 +594,16 @@ private:
 
     void
     writeIndirectSymbolTable();
+
+    void
+    writeLoadDylibCommands();
+
+    template<typename TCommand>
+    TCommand*
+    writeCommand(CommandType commandType);
+
+    void
+    writeStringTable();
 };
 
 

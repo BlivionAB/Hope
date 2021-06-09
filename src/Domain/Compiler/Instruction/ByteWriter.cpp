@@ -79,6 +79,17 @@ ByteWriter::writeWord(uint16_t instruction)
     output->add((instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
 }
 
+void
+ByteWriter::writePadding(int64_t padding)
+{
+    for (unsigned int i = 0; i < padding; ++i)
+    {
+        output->add(0);
+    }
+    (*offset) += padding;
+}
+
+
 
 void
 ByteWriter::writeByteAtAddress(std::uint8_t instruction, std::size_t offset)

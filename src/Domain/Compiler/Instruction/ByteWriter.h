@@ -65,6 +65,9 @@ public:
     void
     writeReverseSleb128(int64_t i);
 
+    void
+    writePadding(int64_t padding);
+
     List<uint8_t>*
     output;
 

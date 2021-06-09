@@ -62,14 +62,7 @@ List<T>::emplace(const Args&... args)
     if (oldSize + 1 > _capacity)
     {
         _capacity = _capacity * 2;
-        T* oldItems = _items;
-        T* newItems = reinterpret_cast<T*>(calloc(_capacity, sizeOfType));
-        for (const T& item : *this)
-        {
-            *newItems = item;
-        }
-        free(oldItems);
-        _items = newItems;
+        _items = reinterpret_cast<T*>(realloc(_items, _capacity * sizeOfType));
         _cursor = _items + oldSize;
     }
     new (_cursor) T(args...);
