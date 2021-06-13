@@ -110,6 +110,15 @@ struct Routine
     RoutineKind
     kind;
 
+    uint64_t
+    offset;
+
+    uint32_t
+    symbolTableIndex;
+
+    uint64_t
+    stringTableIndexAddress;
+
     Routine(RoutineKind kind):
         kind(kind)
     { }
@@ -118,9 +127,6 @@ struct Routine
 
 struct InternalRoutine : Routine
 {
-    size_t
-    address;
-
     List<Instruction*>
     instructions;
 
@@ -134,16 +140,6 @@ struct InternalRoutine : Routine
         Routine(kind)
     { }
 };
-
-
-//struct Relocation
-//{
-//    std::size_t
-//    start;
-//
-//    std::size_t
-//    end;
-//};
 
 
 struct ExternalRoutine : Routine
@@ -161,13 +157,7 @@ struct ExternalRoutine : Routine
     stubAddress;
 
     uint64_t
-    stringTableIndexAddress;
-
-    uint64_t
     stubHelperAddress;
-
-    uint32_t
-    symbolTableIndex;
 
     ExternalRoutine(Utf8StringView& name):
         name(name),
@@ -186,9 +176,6 @@ struct FunctionRoutine : InternalRoutine
 
     List<ParameterDeclaration*>
     parameters;
-
-    uint64_t
-    offset;
 
     bool
     hasWrittenOutput = false;

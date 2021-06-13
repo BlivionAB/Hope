@@ -44,34 +44,37 @@ public:
 
 private:
 
-    std::size_t
-    _localStackOffset;
-
     CallingConvention
-    _callingConvention = { { REG_EDI, REG_ESI, REG_EDX, REG_ECX } };
+    _callingConvention = { { REG7, REG6, REG2, REG1 } };
+
+    size_t
+    _subtractStackAddress;
 
     void
-    writeFunctionRoutine(FunctionRoutine* pRoutine);
+    writeFunction(FunctionRoutine* routine);
+
+    uint64_t
+    writeFunctionPrologue(size_t stackSize);
 
     void
-    writeFunctionPrelude();
+    writeFunctionEpilogue(size_t stackSize, uint64_t routineSize);
 
-    void
-    writeFunctionPostlude();
+    uint64_t
+    writeParameter(uint64_t size, unsigned int index, uint64_t& stackOffset);
 
-    void
-    writeParameter(size_t size, unsigned int index);
+    uint64_t
+    writeFunctionParameters(const FunctionRoutine* routine, uint64_t& stackOffset);
 
-    void
-    writeFunctionParameters(const FunctionRoutine* routine);
+    uint64_t
+    getStackSizeFromFunctionParameters(const FunctionRoutine* routine);
 
-    void
+    uint64_t
     writeFunctionInstructions(FunctionRoutine* routine);
 
-    void
+    uint64_t
     writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
 
-    void
+    uint64_t
     writeCallInstructionArguments(CallInstruction* callInstruction);
 
     void
@@ -82,6 +85,9 @@ private:
 
     void
     writeFunctionRelocationAddresses(FunctionRoutine* routine);
+
+    void
+    writeInstructionsPadding(uint64_t length);
 };
 
 

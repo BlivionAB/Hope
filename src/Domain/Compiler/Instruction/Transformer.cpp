@@ -64,11 +64,11 @@ Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functio
     for (ast::ParameterDeclaration* parameterDeclaration : functionDeclaration->parameterList->parameters)
     {
         List<output::ParameterDeclaration*> parameterList = segmentParameterDeclaration(parameterDeclaration);
-        for (const auto& pa : parameterList)
+        for (const auto& param : parameterList)
         {
-            auto param = new output::ParameterDeclaration(i, pa->size);
+            param->index = i;
             routine->parameters.add(param);
-            i++;
+            ++i;
         }
     }
 }

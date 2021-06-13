@@ -63,7 +63,7 @@ using namespace elet::foundation;
  * image.  Other load commands without this bit that are not understood will
  * simply be ignored.
  */
-#define LC_REQ_DYLD 0x80000000
+//#define LC_REQ_DYLD 0x80000000
 
 /* Constants for the cmd field of all load commands, the type */
 #define	LC_SEGMENT	0x1	/* segment of this file to be mapped */
@@ -76,7 +76,6 @@ using namespace elet::foundation;
 #define LC_FVMFILE	0x9	/* fixed VM file inclusion (internal use) */
 #define LC_PREPAGE      0xa     /* prepage command (internal use) */
 #define	LC_ID_DYLIB	0xd	/* dynamically linked shared lib ident */
-#define LC_LOAD_DYLINKER 0xe	/* load a dynamic linker */
 #define LC_ID_DYLINKER	0xf	/* dynamic linker identification */
 #define	LC_PREBOUND_DYLIB 0x10	/* modules prebound for a dynamically */
 /*  linked shared library */
@@ -97,22 +96,20 @@ using namespace elet::foundation;
 #define	LC_SEGMENT_64	0x19	/* 64-bit segment of this file to be
 				   mapped */
 #define	LC_ROUTINES_64	0x1a	/* 64-bit image routines */
-#define LC_UUID		0x1b	/* the uuid */
 #define LC_RPATH       (0x1c | LC_REQ_DYLD)    /* runpath additions */
 #define LC_CODE_SIGNATURE 0x1d	/* local of code signature */
 #define LC_SEGMENT_SPLIT_INFO 0x1e /* local of info to split segments */
 #define LC_REEXPORT_DYLIB (0x1f | LC_REQ_DYLD) /* load and re-export dylib */
 #define	LC_LAZY_LOAD_DYLIB 0x20	/* delay load of dylib until first use */
 #define	LC_ENCRYPTION_INFO 0x21	/* encrypted segment information */
-#define	LC_DYLD_INFO 	0x22	/* compressed dyld information */
-#define	LC_DYLD_INFO_ONLY (0x22|LC_REQ_DYLD)	/* compressed dyld information only */
+//#define	LC_DYLD_INFO_ONLY (0x22|0x800000)	/* compressed dyld information only */
 #define	LC_LOAD_UPWARD_DYLIB (0x23 | LC_REQ_DYLD) /* load upward dylib */
 #define LC_VERSION_MIN_MACOSX 0x24   /* build for MacOSX min OS version */
 #define LC_VERSION_MIN_IPHONEOS 0x25 /* build for iPhoneOS min OS version */
 #define LC_FUNCTION_STARTS 0x26 /* compressed table of function start addresses */
 #define LC_DYLD_ENVIRONMENT 0x27 /* string for dyld to treat
 				    like environment variable */
-#define LC_MAIN (0x28|LC_REQ_DYLD) /* replacement for LC_UNIXTHREAD */
+//#define LC_MAIN (0x28|LC_REQ_DYLD) /* replacement for LC_UNIXTHREAD */
 #define LC_DATA_IN_CODE 0x29 /* table of non-instructions in __text */
 #define LC_SOURCE_VERSION 0x2A /* source version used to build binary */
 #define LC_DYLIB_CODE_SIGN_DRS 0x2B /* Code signing DRs copied from linked dylibs */

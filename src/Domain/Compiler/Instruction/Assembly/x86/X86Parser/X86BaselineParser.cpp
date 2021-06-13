@@ -42,7 +42,7 @@ X86BaselineParser::parse(List<std::uint8_t>* output)
                 }
                 break;
             }
-            case OP_LEA_Gv_M:
+            case Lea_Gv_M:
             {
                 std::uint8_t modrmByte = getByte();
                 instruction->bytes.add(modrmByte);
@@ -58,7 +58,7 @@ X86BaselineParser::parse(List<std::uint8_t>* output)
                 }
                 break;
             }
-            case OP_PUSH_rBP:
+            case Push_rBP:
                 instruction->kind = x86::InstructionKind::Push;
                 instruction->operand1 = x86::Register::RBP;
                 break;
@@ -97,7 +97,7 @@ X86BaselineParser::createEv(std::uint8_t modrmByte, Instruction* instruction)
     {
         case MOD_DISP8:
             ev->emplace<Register>(mapDoubleWordRegisterIndex(rm));
-            if (rm == RM_EBP)
+            if (rm == RM5)
             {
                 auto byte = getByte();
                 ev->emplace<ByteDisplacement>(Register::EBP, byte);

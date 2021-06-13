@@ -8,9 +8,9 @@
 #include <stack>
 #include <Domain/Compiler/Compiler.h>
 
-#define TYPE_SIZE_64 64
-#define TYPE_SIZE_32 32
-#define TYPE_SIZE_8 8
+#define TYPE_SIZE_64 8
+#define TYPE_SIZE_32 4
+#define TYPE_SIZE_8 1
 
 using namespace elet::domain::compiler::instruction;
 

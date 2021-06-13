@@ -54,6 +54,9 @@ public:
     ByteWriter*
     bw;
 
+    List<FunctionRoutine*>
+    internalRoutines;
+
     List<ExternalRoutine*>
     externalRoutines;
 

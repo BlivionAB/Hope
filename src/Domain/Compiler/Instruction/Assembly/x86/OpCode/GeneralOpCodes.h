@@ -5,39 +5,58 @@
 #include "Mov.h"
 #include "AddressForm32.h"
 
-#define REX_PREFIX_MASK     (std::uint8_t)0b01110000
-#define REX_PREFIX_MAGIC    (std::uint8_t)0b01000000
-#define REX_PREFIX_W        (std::uint8_t)0b00001000
-#define REX_PREFIX_R        (std::uint8_t)0b00000100
-#define REX_PREFIX_X        (std::uint8_t)0b00000010
-#define REX_PREFIX_B        (std::uint8_t)0b00000001
+enum RexPrefix : uint8_t
+{
+    REX_PREFIX_MASK = 0b01110000,
+    REX_PREFIX_MAGIC = 0b01000000,
+    REX_PREFIX_W = 0b00001000,
+    REX_PREFIX_R = 0b00000100,
+    REX_PREFIX_X = 0b00000010,
+    REX_PREFIX_B = 0b00000001,
+};
 
 
-#define OP_PUSH_rAX 0x50
-#define OP_PUSH_rCX 0x51
-#define OP_PUSH_rDX 0x52
-#define OP_PUSH_rBX 0x53
-#define OP_PUSH_rSP 0x54
-#define OP_PUSH_rBP 0x55
-#define OP_PUSH_rSI 0x56
-#define OP_PUSH_rDI 0x57
-#define OP_PUSH_Iz  0x68
+enum OpCodeExtensionGroup1 : uint8_t
+{
+    Eb_lb = 0x80,
+    Ev_lz = 0x81,
+    Eb_lb_i64 = 0x82,
+    Ev_lb = 0x83,
+};
 
-#define OP_POP_rBP  0x5d
 
-#define OP_RET      0xc3
-#define OP_NOP      0x90
+enum OpCodePrefix : uint8_t
+{
+    OperandSize = 0x66,
+    TwoByteOpCode = 0x0f,
+};
 
-#define OP_LEA_Gv_M 0xd3
+
+enum OpCode : uint8_t
+{
+    Push_rBX = 0x53,
+    Push_rBP = 0x55,
+    Push_Iz = 0x68,
+
+    Pop_rBP = 0x5d,
+
+    Lea_Gv_M = 0x8d,
+
+    Nop = 0x90,
+    TwoByteNop = 0x1f,
+    Ret = 0xc3,
+
+
+    ExtGroup5 = 0xff,
+    ExtGroup5_FarCallRegistryBits = 0b00100000,
+};
+
 
 #define OP_NEAR_JMP_Jz  0xe9
-#define OP_EXT_GROUP5   0xff
-#define OP_EXT_GROUP5_FAR_CALL_REG_BITS 0b00100000
 
 #define OP_TWO_BYTE_PREFIX  (std::uint8_t)0x0f
 #define OP_SYSCALL          (std::uint8_t)0x05
 
-#define OP_LEA_Gv_M (std::uint8_t)(0x8d)
 
 #define OP_CALL_NEAR    0xe8
 #define OFFSET_SIZE     5

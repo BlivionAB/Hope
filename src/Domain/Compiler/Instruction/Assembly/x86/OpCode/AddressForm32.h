@@ -8,7 +8,7 @@
 #define REG_BITS    0b00111000
 #define RM_BITS     0b00000111
 
-// Register Only
+// OpCodeRegister Only
 #define MODRM_EBP           0b11000101
 #define MOD0_BX_PLUS_SI     0b00000000
 #define MOD0_BX_PLUS_DI     0b00000001
@@ -19,22 +19,38 @@
 #define MOD_DISP16  0b10000000
 #define MOD_REG     0b11000000
 
-#define RM0        0
-#define RM1        1
-#define RM2        2
-#define RM3        3
-#define RM4        4
-#define RM_EBP     5
-#define RM6        6
-#define RM7        7
+enum Mod
+{
+    MOD0 = 0,
+    MOD1 = 1,
+    MOD2 = 2,
+    MOD3 = 3,
+};
 
-#define REG_EAX               0b00000000
-#define REG_ECX               0b00001000
-#define REG_EDX               0b00010000
-#define REG_EBX               0b00011000
-#define REG_ESP               0b00100000
-#define REG_EBP               0b00101000
-#define REG_ESI               0b00110000
-#define REG_EDI               0b00111000
+
+enum Rm : uint8_t
+{
+    RM0 = 0,
+    RM1 = 1,
+    RM2 = 2,
+    RM3 = 3,
+    RM4 = 4,
+    RM5 = 5,
+    RM6 = 6,
+    RM7 = 7,
+};
+
+
+enum OpCodeRegister : uint8_t
+{
+    Reg0 = 0b00000000,
+    REG1 = 0b00001000,
+    REG2 = 0b00010000,
+    REG3 = 0b00011000,
+    REG4 = 0b00100000,
+    REG5 = 0b00101000,
+    REG6 = 0b00110000,
+    REG7 = 0b00111000,
+};
 
 #endif //ELET_ADDRESSFORM32_H

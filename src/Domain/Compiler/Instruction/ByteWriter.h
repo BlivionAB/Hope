@@ -38,6 +38,9 @@ public:
     writeByte(std::uint8_t instruction);
 
     void
+    writeByte(std::uint8_t instruction, uint64_t& size);
+
+    void
     writeByteAtAddress(std::uint8_t instruction, std::size_t offset);
 
     void

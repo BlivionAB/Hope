@@ -33,8 +33,12 @@ BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
     writeDyldInfoSegmentCommand();
     writeSymtabCommand();
     writeDysymTabCommand();
+    writeLoadDylinkerCommand();
+    writeUuidCommand();
+    writeMainCommand(startRoutine);
     writeLoadDylibCommands();
 
+    _textSegment;
     writeTextSegment();
     writeDataConstSegment();
     writeDataSegment();
@@ -71,8 +75,9 @@ BaselineObjectFileWriter::writeTextSegment()
     size_t newVmAddress = padding + vmAddress;
 
     writePadding(padding - offset);
-    _textSegmentStartOffset = offset;
+    textSegmentStartOffset = offset;
     _textSegmentStartVmAddress = newVmAddress;
+    _mainCommand->offset = offset;
     output.add(_text);
     offset += _textSegmentSize;
     writePadding(modSize - _textSegmentSize);
@@ -196,7 +201,7 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
          0,
          S_SYMBOL_STUBS | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
          0,
-         assemblyWriter->getExternRoutinesSize(), /*number of stubs*/
+         6, /*byte size of each stub entry*/
          0
     }, _textSegment);
 
@@ -328,6 +333,7 @@ BaselineObjectFileWriter::writeDyldInfoSegmentCommand()
 void
 BaselineObjectFileWriter::writeDyldInfo()
 {
+    linkEditSegment->fileOffset = offset;
     _dyldInfoWriter->write();
 }
 
@@ -343,8 +349,8 @@ BaselineObjectFileWriter::writeLinkEditSegmentCommand()
         .vmSize = 0x4000,
         .fileOffset = 0,
         .fileSize = 0x4000,
-        .maximumProtection = VM_PROTECTION_NONE,
-        .initialProtection = VM_PROTECTION_NONE,
+        .maximumProtection = VM_PROTECTION_READ,
+        .initialProtection = VM_PROTECTION_READ,
         .numberOfSections = 0,
         .flags = 0,
     });
@@ -365,7 +371,7 @@ BaselineObjectFileWriter::writeDataConstSegmentCommand()
         .maximumProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
         .initialProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
         .numberOfSections = 0,
-        .flags = 0b00000010, // Don't know what this flag does? But, its in most binaries.
+        .flags = 0x00000010, // Don't know what this flag does? But, its in most binaries.
     });
 
     _dataConstGotSection = writeSection({
@@ -398,7 +404,7 @@ BaselineObjectFileWriter::writeDataSegmentCommand()
         .maximumProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
         .initialProtection = VM_PROTECTION_READ | VM_PROTECTION_WRITE,
         .numberOfSections = 0,
-        .flags = 0b00000010, // Don't know what this flag does? But, its in most binaries.
+        .flags = 0, // Don't know what this flag does? But, its in most binaries.
     });
 
     _dataLaSymbolPtrSection = writeSection({
@@ -433,7 +439,7 @@ BaselineObjectFileWriter::writeDataConstSegment()
     {
         for (const auto& relocationAddress : gotBoundRoutine->relocationAddresses)
         {
-            _bw->writeDoubleWordAtAddress(offset - (relocationAddress + 4), relocationAddress);
+            _bw->writeDoubleWordAtAddress(offset - (textSegmentStartOffset + relocationAddress + 4), textSegmentStartOffset + relocationAddress);
         }
         _bw->writeQuadWord(0);
     }
@@ -468,8 +474,8 @@ BaselineObjectFileWriter::writeLaSymbolPtrSection()
     _dataLaSymbolPtrSection->offset = offset;
     for (const auto& externalRoutine : assemblyWriter->externalRoutines)
     {
-        // TODO: This is causing a crash right now, due to no dsymtab and symtab
-        _bw->writeDoubleWordAtAddress(offset - (_textSegmentStartOffset + externalRoutine->stubAddress + 4) /* It should be based after the instruction*/, _textSegmentStartOffset + externalRoutine->stubAddress);
+        // Write the offset in the stub address
+        _bw->writeDoubleWordAtAddress(offset - (textSegmentStartOffset + externalRoutine->stubAddress + 4) /* It should be based after the instruction*/, textSegmentStartOffset + externalRoutine->stubAddress);
         _bw->writeQuadWord(_textSegmentStartVmAddress + externalRoutine->stubHelperAddress);
     }
     _dataLaSymbolPtrSection->size = offset - _dataLaSymbolPtrSection->offset;
@@ -542,16 +548,7 @@ BaselineObjectFileWriter::writeLoadDylibCommands()
     size_t stringLength = std::strlen("/usr/lib/libSystem.B.dylib") + 1;
     command->cmdSize += stringLength;
     _header->sizeOfCommands += stringLength;
-
-    // Command size must be 4-byte aligned
-    uint32_t rest = command->cmdSize % 4;
-    if (rest != 0)
-    {
-        uint32_t padding = 4 - rest;
-        writePadding(padding);
-        command->cmdSize += padding;
-        _header->sizeOfCommands += padding;
-    }
+    writeCommandPadding(command);
 }
 
 
@@ -575,8 +572,36 @@ void
 BaselineObjectFileWriter::writeSymbolTable()
 {
     uint64_t symbolTableIndex = 0;
-    dysymTabCommand->undefinedSymbolIndex = symbolTableIndex;
     symtabCommand->symbolOffset = offset;
+
+
+    for (FunctionRoutine* internalRoutine : assemblyWriter->internalRoutines)
+    {
+        internalRoutine->stringTableIndexAddress = offset;
+
+        // String table Index
+        _bw->writeDoubleWord(0);
+
+        // Type
+        _bw->writeByte(N_SECT);
+
+        // Section Index
+        _bw->writeByte(1);
+
+        // Description
+        _bw->writeByte(0);
+
+        // Library Ordinal
+        _bw->writeByte(0);
+
+        // Value
+        _bw->writeQuadWord(_textSegmentStartVmAddress + internalRoutine->offset);
+
+        internalRoutine->symbolTableIndex = symbolTableIndex;
+        ++symbolTableIndex;
+    }
+
+    dysymTabCommand->undefinedSymbolIndex = symbolTableIndex;
     List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutines.concat(assemblyWriter->gotBoundRoutines);
     for (ExternalRoutine* externalRoutine : allRoutines)
     {
@@ -604,15 +629,21 @@ BaselineObjectFileWriter::writeSymbolTable()
         externalRoutine->symbolTableIndex = symbolTableIndex;
         ++symbolTableIndex;
     }
-    symtabCommand->symbolEntries = allRoutines.size();
+    symtabCommand->symbolEntries = symbolTableIndex;
 }
 
 void
 BaselineObjectFileWriter::writeStringTable()
 {
     symtabCommand->stringOffset = offset;
-    _bw->writeString(" ");
+    _bw->writeString(" "); // This is used to mark empty string using 1 index
     uint64_t stringTableIndex = 2;
+    for (FunctionRoutine* functionRoutine : assemblyWriter->internalRoutines)
+    {
+        _bw->writeDoubleWordAtAddress(stringTableIndex, functionRoutine->stringTableIndexAddress);
+        _bw->writeString(functionRoutine->name);
+        stringTableIndex += functionRoutine->name.size() + 1;
+    }
     List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutines.concat(assemblyWriter->gotBoundRoutines);
     for (ExternalRoutine* externalRoutine : allRoutines)
     {
@@ -621,6 +652,7 @@ BaselineObjectFileWriter::writeStringTable()
         stringTableIndex += externalRoutine->name.size() + 1;
     }
     symtabCommand->stringSize = offset - symtabCommand->stringOffset;
+    linkEditSegment->fileSize = offset - linkEditSegment->fileOffset;
 }
 
 
@@ -655,6 +687,49 @@ BaselineObjectFileWriter::writeIndirectSymbolTable()
     index += assemblyWriter->externalRoutines.size();
 
     dysymTabCommand->indirectSymbolTableEntries = index;
+}
+
+
+void
+BaselineObjectFileWriter::writeLoadDylinkerCommand()
+{
+    auto command = writeCommand<LoadDylinkerCommand>(LC_LOAD_DYLINKER);
+    command->name = 12;
+    _bw->writeString("/usr/lib/dyld");
+    command->cmdSize += std::strlen("/usr/lib/dyld") + 1;
+    _header->sizeOfCommands += std::strlen("/usr/lib/dyld") + 1;
+    writeCommandPadding(command);
+}
+
+
+template<typename TCommand>
+void
+BaselineObjectFileWriter::writeCommandPadding(TCommand* command)
+{
+    uint32_t rest = command->cmdSize % 8;
+    if (rest != 0)
+    {
+        uint32_t padding = 8 - rest;
+        writePadding(padding);
+        command->cmdSize += padding;
+        _header->sizeOfCommands += padding;
+    }
+}
+
+
+void
+BaselineObjectFileWriter::writeUuidCommand()
+{
+    writeCommand<UuidCommand>(LC_UUID);
+}
+
+
+void
+BaselineObjectFileWriter::writeMainCommand(FunctionRoutine* startRoutine)
+{
+    _mainCommand = writeCommand<MainCommand>(LC_MAIN);
+    _mainCommand->offset = 0;
+    _mainCommand->stackSize = 0;
 }
 
 

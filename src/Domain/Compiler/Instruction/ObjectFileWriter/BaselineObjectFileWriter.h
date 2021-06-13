@@ -39,9 +39,15 @@ class DyldInfoWriter;
 
 enum CommandType : uint32_t
 {
+    LC_REQ_DYLD = 0x80000000,
     LC_SYMTAB = 0x2u,
     LC_DYSYMTAB = 0xbu,
+    LC_DYLD_INFO = 0x22,
+    LC_DYLD_INFO_ONLY = (LC_DYLD_INFO | LC_REQ_DYLD),
     LC_LOAD_DYLIB = 0xc,
+    LC_LOAD_DYLINKER = 0xe,
+    LC_UUID = 0x1b,
+    LC_MAIN = (0x28 | LC_REQ_DYLD),
 };
 
 
@@ -297,6 +303,34 @@ struct LoadDylibCommand : Command
 };
 
 
+struct LoadDylinkerCommand : Command
+{
+    uint32_t
+    name; // dynamic linker's path name
+};
+
+
+struct UuidCommand : Command
+{
+    uint8_t
+    uuid[16] = {
+        0u, 0u, 0u, 0u,
+        0u, 0u, 0u, 0u,
+        0u, 0u, 0u, 0u,
+        0u, 0u, 0u, 0u,
+    };
+};
+
+
+struct MainCommand : Command
+{
+    uint64_t
+    offset;
+
+    uint64_t
+    stackSize;
+};
+
 //struct MachHeader64
 //{
 //    std::uint32_t
@@ -437,6 +471,9 @@ public:
     SegmentCommand64*
     linkEditSegment;
 
+    uint64_t
+    textSegmentStartOffset;
+
 private:
 
     uint64_t
@@ -471,9 +508,6 @@ private:
 
     std::uint32_t
     _numberOfTextSections;
-
-    uint64_t
-    _textSegmentStartOffset;
 
     uint64_t
     _textSegmentStartVmAddress;
@@ -525,6 +559,9 @@ private:
 
     ExternalRoutine*
     _dyldStubBinderRoutine;
+
+    MainCommand*
+    _mainCommand;
 
     void
     writeHeader();
@@ -604,6 +641,19 @@ private:
 
     void
     writeStringTable();
+
+    void
+    writeLoadDylinkerCommand();
+
+    void
+    writeUuidCommand();
+
+    template<typename TCommand>
+    void
+    writeCommandPadding(TCommand* command);
+
+    void
+    writeMainCommand(FunctionRoutine* startRoutine);
 };
 
 

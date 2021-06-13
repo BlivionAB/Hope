@@ -72,6 +72,15 @@ ByteWriter::writeByte(uint8_t instruction)
 
 
 void
+ByteWriter::writeByte(uint8_t instruction, uint64_t& size)
+{
+    ++(*offset);
+    ++size;
+    output->add(instruction);
+}
+
+
+void
 ByteWriter::writeWord(uint16_t instruction)
 {
     (*offset) += 2;
