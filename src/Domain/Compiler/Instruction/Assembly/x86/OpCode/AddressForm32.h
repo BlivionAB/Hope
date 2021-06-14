@@ -21,36 +21,47 @@
 
 enum Mod
 {
-    MOD0 = 0,
-    MOD1 = 1,
-    MOD2 = 2,
-    MOD3 = 3,
+    Mod0 = 0b00000000,
+    Mod1 = 0b01000000,
+    Mod2 = 0b10000000,
+    Mod3 = 0b11000000,
 };
 
 
 enum Rm : uint8_t
 {
-    RM0 = 0,
-    RM1 = 1,
-    RM2 = 2,
-    RM3 = 3,
-    RM4 = 4,
-    RM5 = 5,
-    RM6 = 6,
-    RM7 = 7,
+    Rm0 = 0b00000000,
+    Rm1 = 0b00000001,
+    Rm2 = 0b00000010,
+    Rm3 = 0b00000011,
+    Rm4 = 0b00000100,
+    Rm5 = 0b00000101,
+    RM6 = 0b00000110,
+    RM7 = 0b00000111,
 };
 
 
 enum OpCodeRegister : uint8_t
 {
     Reg0 = 0b00000000,
-    REG1 = 0b00001000,
-    REG2 = 0b00010000,
-    REG3 = 0b00011000,
-    REG4 = 0b00100000,
-    REG5 = 0b00101000,
-    REG6 = 0b00110000,
-    REG7 = 0b00111000,
+    Reg1 = 0b00001000,
+    Reg2 = 0b00010000,
+    Reg3 = 0b00011000,
+    Reg4 = 0b00100000,
+    Reg5 = 0b00101000,
+    Reg6 = 0b00110000,
+    Reg7 = 0b00111000,
+
+
+    Reg_RAX = Reg0,
+    Reg_RCX = Reg1,
+    Reg_RDX = Reg2,
+    Reg_RBX = Reg3,
+    Reg_RSP = Reg4,
+    Reg_RBP = Reg5,
+    Reg_RSI = Reg6,
+    Reg_RDI = Reg7,
 };
+
 
 #endif //ELET_ADDRESSFORM32_H

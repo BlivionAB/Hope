@@ -444,16 +444,13 @@ public:
 
     BaselineObjectFileWriter();
 
-    void
+    List<uint8_t>*
     write(FunctionRoutine* startRoutine) override;
 
-    List<std::uint8_t>
-    output;
-
-    std::size_t
+    std::uint64_t
     vmAddress = 0x0000000100000000;
 
-    std::size_t
+    std::uint64_t
     offset;
 
     DyldInfoCommand*
@@ -525,6 +522,9 @@ private:
     _dataLaSymbolPtrSection;
 
     Section64*
+    _dataSection;
+
+    Section64*
     _dataConstGotSection;
 
     Section64*
@@ -539,22 +539,28 @@ private:
     Section64*
     _cstringSection;
 
-    std::uint32_t
+    uint32_t
     _stringOffset;
 
-    std::uint32_t
+    uint32_t
     _stringSize;
 
-    std::uint32_t
+    uint32_t
     _stubsOffset;
 
-    std::uint32_t
+    uint32_t
     _stubsSize;
 
-    std::uint32_t
+    uint32_t
     _stubHelperOffset;
 
-    std::uint32_t
+    uint64_t
+    _dyldPrivateVmAddress;
+
+    uint64_t
+    _dyldPrivateStringTableIndexOffset;
+
+    uint64_t
     _stubHelperSize;
 
     ExternalRoutine*
@@ -654,6 +660,15 @@ private:
 
     void
     writeMainCommand(FunctionRoutine* startRoutine);
+
+    void
+    writeDataSection();
+
+    void
+    writeDyldPrivateSymbol();
+
+    void
+    writeCStringSection();
 };
 
 

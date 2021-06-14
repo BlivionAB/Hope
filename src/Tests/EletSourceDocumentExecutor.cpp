@@ -1,3 +1,4 @@
+#include <fstream>
 #include "EletSourceDocumentExecutor.h"
 
 void
@@ -21,4 +22,15 @@ EletSourceDocumentExecutor::compileFileWithTarget(const Path& entryFile, const P
     compiler.startWorkers();
     compiler.compileFile(entryFile, outputFile);
     compiler.endWorkers();
+    auto output = compiler.getOutput();
+
+    std::ofstream file;
+    const char* path = Path::resolve(Path::cwd(), "cmake-build-debug/test.o").toString().toString();
+    file.open(path, std::ios_base::binary);
+    for (int i = 0; i < output.size(); ++i)
+    {
+        file.write(reinterpret_cast<char*>(&output[i]), 1);
+    }
+    std::cout << path << std::endl;
+    file.close();
 }

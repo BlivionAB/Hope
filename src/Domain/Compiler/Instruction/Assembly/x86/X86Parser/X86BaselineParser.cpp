@@ -97,7 +97,7 @@ X86BaselineParser::createEv(std::uint8_t modrmByte, Instruction* instruction)
     {
         case MOD_DISP8:
             ev->emplace<Register>(mapDoubleWordRegisterIndex(rm));
-            if (rm == RM5)
+            if (rm == Rm5)
             {
                 auto byte = getByte();
                 ev->emplace<ByteDisplacement>(Register::EBP, byte);

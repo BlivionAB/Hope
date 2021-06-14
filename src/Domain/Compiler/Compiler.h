@@ -192,6 +192,9 @@ public:
     std::map<Utf8String, ast::SourceFile*>
     files;
 
+    List<uint8_t>&
+    getOutput();
+
 private:
 
     void

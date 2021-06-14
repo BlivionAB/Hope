@@ -32,7 +32,7 @@ AssemblyWriterInterface::writeCStringSection()
 {
     for (const auto& string : _strings)
     {
-        bw->writeDoubleWordAtAddress(_offset, string->relocationAddress);
+        bw->writeDoubleWordAtAddress(_offset - (string->relocationAddress + 4), string->relocationAddress);
 
         for (const auto s : string->value)
         {

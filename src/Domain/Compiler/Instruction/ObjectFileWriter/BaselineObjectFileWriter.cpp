@@ -18,7 +18,7 @@ BaselineObjectFileWriter::BaselineObjectFileWriter()
 }
 
 
-void
+List<uint8_t>*
 BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
 {
     layoutTextSegment(startRoutine);
@@ -38,7 +38,6 @@ BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
     writeMainCommand(startRoutine);
     writeLoadDylibCommands();
 
-    _textSegment;
     writeTextSegment();
     writeDataConstSegment();
     writeDataSegment();
@@ -47,18 +46,7 @@ BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
     writeIndirectSymbolTable();
     writeStringTable();
 
-    std::ofstream file;
-    const char* path = Path::resolve(Path::cwd(), "cmake-build-debug/test.o").toString().toString();
-    file.open(path, std::ios_base::binary);
-    for (int i = 0; i < output.size(); ++i)
-    {
-        file.write(reinterpret_cast<char*>(&output[i]), 1);
-    }
-    std::cout << path << std::endl;
-    file.close();
-
-    auto output = assemblyWriter->getOutput();
-    _baselinePrinter->print(output);
+    return assemblyWriter->getOutput();
 }
 
 
@@ -104,6 +92,7 @@ BaselineObjectFileWriter::layoutTextSegment(FunctionRoutine* startRoutine)
     writeTextSection(startRoutine);
     writeStubsSection();
     writeStubHelperSection();
+    writeCStringSection();
 
     // Note, each segment needs to be 8 byte aligned.
     size_t currentOffset = assemblyWriter->getOffset();
@@ -144,14 +133,20 @@ void
 BaselineObjectFileWriter::writeStubHelperSection()
 {
     _stubHelperOffset = assemblyWriter->getOffset();
-    size_t rest = _stubHelperOffset % 4;
+    size_t rest = _stubHelperOffset % 16;
     if (rest != 0)
     {
-        assemblyWriter->writePadding(rest);
+        assemblyWriter->writePadding(16 - rest);
         _stubHelperOffset = assemblyWriter->getOffset();
     }
     assemblyWriter->writeStubHelper();
     _stubHelperSize = assemblyWriter->getOffset() - _stubHelperOffset;
+}
+
+
+void
+BaselineObjectFileWriter::writeCStringSection()
+{
     _stringOffset = assemblyWriter->getOffset();
     assemblyWriter->writeCStringSection();
     _stringSize = assemblyWriter->getOffset() - _stringOffset;
@@ -420,6 +415,20 @@ BaselineObjectFileWriter::writeDataSegmentCommand()
         .reserved2 = 0,
         .reserved3 = 0,
     }, _dataSegment);
+
+    _dataSection = writeSection({
+        .sectionName = "__data",
+        .segmentName = "__DATA",
+        .address = 0,
+        .size = 0,
+        .offset = 0,
+        .align = 3,
+        .relocationOffset = 0,
+        .flags = 0,
+        .reserved1 = 0,
+        .reserved2 = 0,
+        .reserved3 = 0,
+    }, _dataSegment);
 }
 
 
@@ -464,6 +473,15 @@ BaselineObjectFileWriter::writeDataSegment()
     _dataSegment->fileSize = SEGMENT_SIZE;
 
     writeLaSymbolPtrSection();
+    writeDataSection();
+
+    uint64_t rest = offset % SEGMENT_SIZE;
+    if (rest != 0)
+    {
+        uint64_t padding = SEGMENT_SIZE - rest;
+        writePadding(padding);
+        vmAddress += padding;
+    }
 }
 
 
@@ -479,8 +497,22 @@ BaselineObjectFileWriter::writeLaSymbolPtrSection()
         _bw->writeQuadWord(_textSegmentStartVmAddress + externalRoutine->stubHelperAddress);
     }
     _dataLaSymbolPtrSection->size = offset - _dataLaSymbolPtrSection->offset;
-    writePadding(SEGMENT_SIZE - _dataLaSymbolPtrSection->size);
-    vmAddress += SEGMENT_SIZE;
+    vmAddress += _dataLaSymbolPtrSection->size;
+}
+
+
+void
+BaselineObjectFileWriter::writeDataSection()
+{
+    _dataSection->address = vmAddress;
+    _dataSection->size = 8;
+    _dataSection->offset = offset;
+
+    _dyldPrivateVmAddress = vmAddress;
+    _bw->writeDoubleWordAtAddress(offset - (textSegmentStartOffset + assemblyWriter->dyldPrivateOffset + 4), textSegmentStartOffset + assemblyWriter->dyldPrivateOffset);
+    _bw->writeQuadWord(0);
+
+    vmAddress += 8;
 }
 
 
@@ -571,9 +603,9 @@ BaselineObjectFileWriter::writeCommand(CommandType commandType)
 void
 BaselineObjectFileWriter::writeSymbolTable()
 {
-    uint64_t symbolTableIndex = 0;
+    uint64_t symbolTableIndex = 1;
     symtabCommand->symbolOffset = offset;
-
+    writeDyldPrivateSymbol();
 
     for (FunctionRoutine* internalRoutine : assemblyWriter->internalRoutines)
     {
@@ -633,11 +665,39 @@ BaselineObjectFileWriter::writeSymbolTable()
 }
 
 void
+BaselineObjectFileWriter::writeDyldPrivateSymbol()
+{
+    _dyldPrivateStringTableIndexOffset = offset;
+
+    // String table Index
+    _bw->writeDoubleWord(0);
+
+    // Type
+    _bw->writeByte(N_SECT);
+
+    // Section Index
+    _bw->writeByte(7);
+
+    // Description
+    _bw->writeByte(0);
+
+    // Library Ordinal
+    _bw->writeByte(0);
+
+    // Value
+    _bw->writeQuadWord(_dyldPrivateVmAddress);
+}
+
+void
 BaselineObjectFileWriter::writeStringTable()
 {
     symtabCommand->stringOffset = offset;
     _bw->writeString(" "); // This is used to mark empty string using 1 index
     uint64_t stringTableIndex = 2;
+
+    _bw->writeDoubleWordAtAddress(stringTableIndex, _dyldPrivateStringTableIndexOffset);
+    stringTableIndex += _bw->writeString("__dyld_private");
+
     for (FunctionRoutine* functionRoutine : assemblyWriter->internalRoutines)
     {
         _bw->writeDoubleWordAtAddress(stringTableIndex, functionRoutine->stringTableIndexAddress);

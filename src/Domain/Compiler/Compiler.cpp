@@ -402,5 +402,11 @@ Compiler::acceptAssemblyWritingWork()
     }
 }
 
+List<uint8_t>&
+Compiler::getOutput()
+{
+    return _objectFileWriter->getOutput();
+}
+
 
 }

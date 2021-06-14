@@ -5,7 +5,7 @@ namespace elet::domain::compiler::instruction::output
 
 
 
-ByteWriter::ByteWriter(List<uint8_t>* output, size_t* offset):
+ByteWriter::ByteWriter(List<uint8_t>* output, uint64_t* offset):
     output(output),
     offset(offset)
 {
@@ -237,7 +237,7 @@ ByteWriter::writeReverseSleb128(int64_t value)
     }
 }
 
-void
+size_t
 ByteWriter::writeString(const char* string)
 {
     auto length = std::strlen(string);
@@ -247,6 +247,7 @@ ByteWriter::writeString(const char* string)
     }
     output->add('\0');
     *offset += length + 1;
+    return length + 1;
 }
 
 

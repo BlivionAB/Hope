@@ -55,7 +55,7 @@ ExportInfoWriter::createTrieTreeFromExports()
     ExportTrieNode* root = new ExportTrieNode();
     for (const auto& exportedRoutine : _machoFileWriter->assemblyWriter->exportedRoutines)
     {
-        root->insertRoutine(exportedRoutine);
+        root->insertRoutine(exportedRoutine, _machoFileWriter->textSegmentStartOffset);
     }
     return root;
 }

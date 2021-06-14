@@ -6,7 +6,7 @@ This documents specifies the intermediate representation of the assembly.
 
 # Registers
 
-| Register | Description |
+| OpCodeRegister | Description |
 | --- | ----------- |
 | R0-R8 | General purpose registers |
 | BP | Base pointer |

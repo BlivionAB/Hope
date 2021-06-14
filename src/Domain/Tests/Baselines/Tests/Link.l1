@@ -6,7 +6,6 @@ public:
     fn WriteLine(text: char*): void
     {
         puts(text);
-        scanf(text);
     }
 
 private:
@@ -26,6 +25,6 @@ public:
 
     fn OnProcessStart(): void
     {
-        WriteLine("Hello Word!");
+        WriteLine("Hello World!");
     }
 }

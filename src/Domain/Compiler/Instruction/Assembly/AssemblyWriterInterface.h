@@ -69,6 +69,9 @@ public:
     void
     writePadding(size_t amount);
 
+    std::uint64_t
+    dyldPrivateOffset;
+
 protected:
 
     List<std::uint8_t>*
@@ -77,13 +80,10 @@ protected:
     List<String*>
     _strings;
 
-    std::size_t
+    std::uint64_t
     _offset;
 
-    std::size_t
-    _dataDataRelocationAddress;
-
-    std::size_t
+    std::uint64_t
     _dyldStubBinderRelocationAddress;
 };
 

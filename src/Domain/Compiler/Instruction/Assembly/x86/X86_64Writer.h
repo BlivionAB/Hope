@@ -45,7 +45,7 @@ public:
 private:
 
     CallingConvention
-    _callingConvention = { { REG7, REG6, REG2, REG1 } };
+    _callingConvention = { { Reg7, Reg6, Reg2, Reg1 } };
 
     size_t
     _subtractStackAddress;

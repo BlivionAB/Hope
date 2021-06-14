@@ -61,7 +61,7 @@ namespace elet::domain::compiler::instruction::output
         addOrderedNodes(const FunctionRoutine* functionRoutine, List<ExportTrieNode*>& orderedNodes);
 
         void
-        insertRoutine(FunctionRoutine* routine);
+        insertRoutine(FunctionRoutine* routine, uint64_t textStartOffset);
 
         bool
         updateOffset(uint32_t& offset);

@@ -50,7 +50,7 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     }
     output::FunctionRoutine* routine = createFunctionRoutine(functionDeclaration->name->name);
     _currentRoutineStack.push(routine);
-    routine->name = functionDeclaration->symbol->externalSymbol;
+    routine->name = functionDeclaration->signature->isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
     transformFunctionParameters(functionDeclaration, routine);
     transformLocalStatements(functionDeclaration->body->statements);
     _currentRoutineStack.pop();

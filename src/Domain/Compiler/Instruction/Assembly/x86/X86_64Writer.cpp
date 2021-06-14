@@ -22,7 +22,7 @@ X86_64Writer::writeStubs()
             bw->writeDoubleWordAtAddress(_offset - (relocationAddress + 4), relocationAddress);
         }
         bw->writeByte(ExtGroup5);
-        bw->writeByte(ExtGroup5_FarCallRegistryBits | MOD_DISP0 | RM5);
+        bw->writeByte(ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
         routine->stubAddress = _offset;
         bw->writeDoubleWord(0);
     }
@@ -35,18 +35,18 @@ X86_64Writer::writeStubHelper()
     auto top = _offset;
     // leaq dyld_private, r11
     bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W | REX_PREFIX_R);
-    bw->writeByte(Lea_Gv_M);
-    bw->writeByte(MOD_DISP0 | RM5 | REG3);
-    _dataDataRelocationAddress = _offset;
+    bw->writeByte(OpCode::Lea_Gv_M);
+    bw->writeByte(MOD_DISP0 | Rm::Rm5 | OpCodeRegister::Reg3);
+    dyldPrivateOffset = _offset;
     bw->writeDoubleWord(0);
 
     // push r11
     bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_B);
-    bw->writeByte(Push_rBX);
+    bw->writeByte(OpCode::Push_rBX);
 
     // jmpq dyld_stub_binder
-    bw->writeByte(ExtGroup5);
-    bw->writeByte(ExtGroup5_FarCallRegistryBits | MOD_DISP0 | RM5);
+    bw->writeByte(OpCode::ExtGroup5);
+    bw->writeByte(OpCode::ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
     _dyldStubBinderRelocationAddress = _offset;
     Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
     Utf8StringView string = Utf8StringView(*dyldStubBinderString);
@@ -92,6 +92,12 @@ X86_64Writer::writeFunction(FunctionRoutine* routine)
     routineSize += writeFunctionPrologue(stackSize);
     routineSize += writeFunctionParameters(routine, stackOffset);
     routineSize += writeFunctionInstructions(routine);
+    if (routine->isStartFunction)
+    {
+        bw->writeByte(OpCode::Xor_Eb_Gb);
+        bw->writeByte(Mod::Mod3 | OpCodeRegister::Reg_RAX | Rm::Rm0);
+        routineSize += 2;
+    }
     writeFunctionEpilogue(stackSize, routineSize);
     for (const auto& subRoutine : routine->subRoutines)
     {
@@ -202,7 +208,7 @@ X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
         {
             bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
             bw->writeByte(Lea_Gv_M);
-            bw->writeByte(reg | RM5 | MOD_DISP0);
+            bw->writeByte(reg | Rm5 | MOD_DISP0);
             (*string)->relocationAddress = _offset;
             bw->writeDoubleWord(0);
             size += 7;
@@ -283,14 +289,14 @@ X86_64Writer::writeFunctionPrologue(size_t stackSize)
     bw->writeByte(Push_rBP);
     bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
     bw->writeByte(OP_MOV_Ev_Gv);
-    bw->writeByte(MODRM_EBP | REG4);
+    bw->writeByte(MODRM_EBP | Reg4);
 
     // Subtract RSP
     if (stackSize)
     {
         bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
         bw->writeByte(OpCodeExtensionGroup1::Ev_lb);
-        bw->writeByte(REG5 | MOD_BITS);
+        bw->writeByte(OpCodeRegister::Reg5 | Mod::Mod3 | Rm::Rm4);
         _subtractStackAddress = _offset;
         bw->writeByte(stackSize);
         size += 4;
@@ -305,9 +311,9 @@ X86_64Writer::writeFunctionEpilogue(size_t stackSize, uint64_t routineSize)
     // Add back RSP
     if (stackSize)
     {
-        bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+        bw->writeByte(RexPrefix::REX_PREFIX_MAGIC | RexPrefix::REX_PREFIX_W);
         bw->writeByte(OpCodeExtensionGroup1::Ev_lb);
-        bw->writeByte(Reg0 | MOD_BITS);
+        bw->writeByte(OpCodeRegister::Reg0 | Mod::Mod3 | Rm::Rm4);
         bw->writeByte(stackSize);
         routineSize += 4;
     }

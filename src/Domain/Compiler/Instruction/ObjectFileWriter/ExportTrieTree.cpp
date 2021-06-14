@@ -6,7 +6,7 @@ namespace elet::domain::compiler::instruction::output
 
 
 void
-ExportTrieNode::insertRoutine(FunctionRoutine* routine)
+ExportTrieNode::insertRoutine(FunctionRoutine* routine, uint64_t textStartOffset)
 {
     size_t cumulativeStringSize = _cumulativeString.size();
     Utf8StringView tailString = routine->name.subString(cumulativeStringSize);
@@ -14,7 +14,7 @@ ExportTrieNode::insertRoutine(FunctionRoutine* routine)
     {
         if (tailString.startsWith(edge->label))
         {
-            edge->node->insertRoutine(routine);
+            edge->node->insertRoutine(routine, textStartOffset);
             return;
         }
 
@@ -52,7 +52,7 @@ ExportTrieNode::insertRoutine(FunctionRoutine* routine)
     auto tailNode = new ExportTrieNode(routine->name);
     auto tailEdge = new ExportTrieEdge(routine->name, tailNode);
     tailNode->hasExportInfo = true;
-    tailNode->address = routine->offset;
+    tailNode->address = textStartOffset + routine->offset;
     edges.add(tailEdge);
 }
 

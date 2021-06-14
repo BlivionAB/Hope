@@ -34,13 +34,19 @@ enum OpCodePrefix : uint8_t
 
 enum OpCode : uint8_t
 {
+
     Push_rBX = 0x53,
     Push_rBP = 0x55,
     Push_Iz = 0x68,
 
     Pop_rBP = 0x5d,
 
+    Xor_Eb_Gb = 0x31,
+
     Lea_Gv_M = 0x8d,
+
+    Mov_Ev_Gv = 0x89,
+    Mov_Gv_Ev = 0x8b,
 
     Nop = 0x90,
     TwoByteNop = 0x1f,

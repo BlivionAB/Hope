@@ -18,7 +18,7 @@ class ByteWriter
 
 public:
 
-    ByteWriter(List<uint8_t>* output, size_t* offset);
+    ByteWriter(List<uint8_t>* output, uint64_t* offset);
 
     void
     writeQuadWord(std::uint64_t instruction);
@@ -46,7 +46,7 @@ public:
     void
     writeWord(uint16_t instruction);
 
-    void
+    size_t
     writeString(const char* string);
 
     void
@@ -74,7 +74,7 @@ public:
     List<uint8_t>*
     output;
 
-    size_t*
+    uint64_t*
     offset;
 };
 
