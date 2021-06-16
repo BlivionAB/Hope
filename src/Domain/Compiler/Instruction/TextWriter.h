@@ -43,10 +43,16 @@ public:
     writeLine(const Utf8StringView& text);
 
     void
-    writeByte(uint8_t integer);
+    writeByteHex(uint8_t integer);
+
+    void
+    write(char ch);
 
     void
     writeByteWithHexPrefix(uint8_t integer);
+
+    void
+    writeSignedHex(std::array<uint8_t, 4> integer);
 
     void
     space();

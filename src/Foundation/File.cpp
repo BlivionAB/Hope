@@ -10,7 +10,7 @@ File::FileRemoveException::FileRemoveException() noexcept
 { }
 
 Utf8String
-File::read(const Path& path)
+File::read(const FilePath& path)
 {
     std::ifstream inputFileStream;
     inputFileStream.open(path.toString().toString());
@@ -24,7 +24,7 @@ File::read(const Path& path)
 }
 
 void
-File::write(const Path& path, const Utf8String& content)
+File::write(const FilePath& path, const Utf8String& content)
 {
     std::ofstream outputFileStream;
     outputFileStream.open(path.toString().toString());
@@ -33,7 +33,7 @@ File::write(const Path& path, const Utf8String& content)
 }
 
 void
-File::remove(const Path& path)
+File::remove(const FilePath& path)
 {
     if (std::remove(path.toString().toString()) != 0)
     {
@@ -42,7 +42,7 @@ File::remove(const Path& path)
 }
 
 void
-File::createDirectory(const Path& path)
+File::createDirectory(const FilePath& path)
 {
     create_directories(boost::filesystem::path(path.toString().toString()));
 }

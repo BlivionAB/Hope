@@ -2,14 +2,14 @@
 #define ELET_FOUNDATIONFIXTURE_H
 
 #include <gtest/gtest.h>
-#include <Foundation/Path.h>
+#include <Foundation/FilePath.h>
 #include <Foundation/Tests/Mocks/PathMock.h>
 
 class FoundationFixture : public ::testing::Test
 {
 public:
-    Path
-    cwd = Path("cwd");
+    FilePath
+    cwd = FilePath("cwd");
 
     PathMock
     pathMock;

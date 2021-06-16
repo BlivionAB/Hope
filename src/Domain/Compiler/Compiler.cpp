@@ -7,7 +7,7 @@
 #include <vector>
 #include <mutex>
 #include <sys/stat.h>
-#include <Foundation/Path.h>
+#include <Foundation/FilePath.h>
 #include <Foundation/File.h>
 #include "Instruction/ObjectFileWriter/BaselineObjectFileWriter.h"
 
@@ -17,7 +17,8 @@ namespace elet::domain::compiler
 {
 
 
-Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
+Compiler::Compiler(FileReader& fileReader, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
+    _fileReader(fileReader),
     _assemblyTarget(assemblyTarget),
     _objectFileTarget(objectFileTarget),
     _parser(new ast::Parser(this)),
@@ -29,18 +30,8 @@ Compiler::Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTar
     _objectFileWriter = new BaselineObjectFileWriter();
 }
 
-
 void
-Compiler::parseStandardLibrary()
-{
-    _compilationStage = CompilationStage::Parsing;
-    Path iostreamPath = Path::resolve(Path::cwd(), "src/Domain/StandardLibrary/Module.l1");
-//    compileFile(iostreamPath);
-}
-
-
-void
-Compiler::compileFile(const Path& file, const Path& output)
+Compiler::compileFile(const FilePath& file, const FilePath& output)
 {
     _outputFile = &output;
     addFile(file);
@@ -48,7 +39,7 @@ Compiler::compileFile(const Path& file, const Path& output)
 
 
 void
-Compiler::addFile(const Path& file)
+Compiler::addFile(const FilePath& file)
 {
     Utf8String fileString = file.toString();
     auto result = files.find(fileString);
@@ -60,7 +51,7 @@ Compiler::addFile(const Path& file)
     files.insert(std::pair(fileString, compilerFile));
     _pendingParsingFiles++;
     static const std::size_t BUFFER_SIZE = 16*1024;
-    int fd = open(file.toString().asString(), O_RDONLY);
+    int fd = _fileReader.openFile(file);
     if (fd == -1)
     {
         throw FileReadError();
@@ -70,13 +61,12 @@ Compiler::addFile(const Path& file)
     posix_fadvise(fd, 0, 0, FDADVICE_SEQUENTIAL);
 #endif
 
-    struct stat sb;
-    fstat(fd, &sb);
-    _source = new char[sb.st_size];
+    size_t bufferSize = _fileReader.getFileSize(fd);
+    _source = new char[bufferSize];
     _readCursor = const_cast<char*>(_source);
-    Path cd = Path::folderOf(file);
-    Path* currentDirectory = new Path(cd);
-    while (size_t bytesRead = ::read(fd, _readCursor, BUFFER_SIZE))
+    FilePath cd(file);
+    FilePath* currentDirectory = new FilePath(cd);
+    while (size_t bytesRead = _fileReader.readChunk(fd, _readCursor, BUFFER_SIZE))
     {
         bool isEndOfFile = false;
         if (bytesRead < BUFFER_SIZE)

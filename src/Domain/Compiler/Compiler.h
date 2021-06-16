@@ -14,7 +14,8 @@
 #include "Domain/Compiler/Instruction/Transformer.h"
 #include "Domain/Compiler/Instruction/AssemblyWriter.h"
 #include "Domain/Compiler/Instruction/ObjectFileWriter.h"
-#include <Foundation/Path.h>
+#include <Foundation/FilePath.h>
+#include <Foundation/FileReader.h>
 
 namespace elet::domain::compiler::instruction::output
 {
@@ -67,7 +68,7 @@ struct ParsingTask
     const char*
     sourceEnd;
 
-    const Path*
+    const FilePath*
     sourceDirectory;
 
     ast::SourceFile*
@@ -83,7 +84,7 @@ struct ParsingTask
         const char*
         end,
 
-        const Path*
+        const FilePath*
         directory,
 
         ast::SourceFile*
@@ -172,7 +173,10 @@ class Compiler
 {
 public:
 
-    Compiler(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget);
+    Compiler(
+        FileReader& fileReader,
+        AssemblyTarget assemblyTarget,
+        ObjectFileTarget objectFileTarget);
 
     void
     startWorkers();
@@ -181,13 +185,10 @@ public:
     endWorkers();
 
     void
-    compileFile(const Path& file, const Path& output);
+    compileFile(const FilePath& file, const FilePath& output);
 
     void
-    addFile(const Path& file);
-
-    void
-    parseStandardLibrary();
+    addFile(const FilePath& file);
 
     std::map<Utf8String, ast::SourceFile*>
     files;
@@ -220,6 +221,9 @@ private:
 
     List<ast::Syntax*>
     _syntaxTree;
+
+    FileReader&
+    _fileReader;
 
     std::mutex
     _transformationWorkMutex;
@@ -356,7 +360,7 @@ private:
     List<RelocationOperand*>
     _symbolicRelocations;
 
-    const Path*
+    const FilePath*
     _outputFile;
 
     unsigned int

@@ -3,7 +3,7 @@
 
 #include "Utf8String.h"
 #include "List.h"
-#include "Path.h"
+#include "FilePath.h"
 
 namespace elet::foundation
 {
@@ -19,19 +19,19 @@ public:
 
     static
     Utf8String
-    read(const Path& path);
+    read(const FilePath& path);
 
     static
     void
-    write(const Path& path, const Utf8String& content);
+    write(const FilePath& path, const Utf8String& content);
 
     static
     void
-    remove(const Path& path);
+    remove(const FilePath& path);
 
     static
     void
-    createDirectory(const Path& path);
+    createDirectory(const FilePath& path);
 };
 
 struct FileReadError : std::exception

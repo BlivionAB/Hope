@@ -34,19 +34,19 @@ X86_64Writer::writeStubHelper()
 {
     auto top = _offset;
     // leaq dyld_private, r11
-    bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W | REX_PREFIX_R);
-    bw->writeByte(OpCode::Lea_Gv_M);
+    bw->writeByte(RexMagic | RexW | RexR);
+    bw->writeByte(OneByteOpCode::Lea_Gv_M);
     bw->writeByte(MOD_DISP0 | Rm::Rm5 | OpCodeRegister::Reg3);
     dyldPrivateOffset = _offset;
     bw->writeDoubleWord(0);
 
     // push r11
-    bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_B);
-    bw->writeByte(OpCode::Push_rBX);
+    bw->writeByte(RexMagic | RexB);
+    bw->writeByte(OneByteOpCode::Push_rBX);
 
     // jmpq dyld_stub_binder
-    bw->writeByte(OpCode::ExtGroup5);
-    bw->writeByte(OpCode::ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
+    bw->writeByte(OneByteOpCode::ExtGroup5);
+    bw->writeByte(OneByteOpCode::ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
     _dyldStubBinderRelocationAddress = _offset;
     Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
     Utf8StringView string = Utf8StringView(*dyldStubBinderString);
@@ -94,7 +94,7 @@ X86_64Writer::writeFunction(FunctionRoutine* routine)
     routineSize += writeFunctionInstructions(routine);
     if (routine->isStartFunction)
     {
-        bw->writeByte(OpCode::Xor_Eb_Gb);
+        bw->writeByte(OneByteOpCode::Xor_Ev_Gv);
         bw->writeByte(Mod::Mod3 | OpCodeRegister::Reg_RAX | Rm::Rm0);
         routineSize += 2;
     }
@@ -145,7 +145,7 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRou
 {
     uint64_t size = 0;
     size += writeCallInstructionArguments(callInstruction);
-    bw->writeByte(OP_CALL_NEAR);
+    bw->writeByte(CallNear);
     switch (callInstruction->routine->kind)
     {
         case RoutineKind::Function:
@@ -206,7 +206,7 @@ X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
         }
         else if (auto string = std::get_if<String*>(&argument->value))
         {
-            bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+            bw->writeByte(RexMagic | RexW);
             bw->writeByte(Lea_Gv_M);
             bw->writeByte(reg | Rm5 | MOD_DISP0);
             (*string)->relocationAddress = _offset;
@@ -224,8 +224,8 @@ void
 X86_64Writer::writeMoveFromOffset(uint8_t reg, size_t offset)
 {
     assert(("Offset must be smaller then INT8_MAX", offset < INT8_MAX));
-    bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
-    bw->writeByte(OP_MOV_Gv_Ev);
+    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
+    bw->writeByte(OneByteOpCode::Mov_Gv_Ev);
     bw->writeByte(MODRM_EBP_DISP8 | reg);
     bw->writeByte(-offset);
 }
@@ -274,8 +274,8 @@ X86_64Writer::writeParameter(uint64_t size, unsigned int index, uint64_t& stackO
 {
     stackOffset += size;
     assert(("_localStackOffset must be smaller then INT8_MAX", stackOffset < INT8_MAX));
-    bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
-    bw->writeByte(OP_MOV_Ev_Gv);
+    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
+    bw->writeByte(OneByteOpCode::Mov_Ev_Gv);
     bw->writeByte(MODRM_EBP_DISP8 | _callingConvention.registers[index]);
     bw->writeByte(-stackOffset);
     return 4;
@@ -286,15 +286,15 @@ uint64_t
 X86_64Writer::writeFunctionPrologue(size_t stackSize)
 {
     uint64_t size = 4;
-    bw->writeByte(Push_rBP);
-    bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
-    bw->writeByte(OP_MOV_Ev_Gv);
+    bw->writeByte(OneByteOpCode::Push_rBP);
+    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
+    bw->writeByte(OneByteOpCode::Mov_Ev_Gv);
     bw->writeByte(MODRM_EBP | Reg4);
 
-    // Subtract RSP
+    // Subtract rSP
     if (stackSize)
     {
-        bw->writeByte(REX_PREFIX_MAGIC | REX_PREFIX_W);
+        bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
         bw->writeByte(OpCodeExtensionGroup1::Ev_lb);
         bw->writeByte(OpCodeRegister::Reg5 | Mod::Mod3 | Rm::Rm4);
         _subtractStackAddress = _offset;
@@ -308,10 +308,10 @@ X86_64Writer::writeFunctionPrologue(size_t stackSize)
 void
 X86_64Writer::writeFunctionEpilogue(size_t stackSize, uint64_t routineSize)
 {
-    // Add back RSP
+    // Add back rSP
     if (stackSize)
     {
-        bw->writeByte(RexPrefix::REX_PREFIX_MAGIC | RexPrefix::REX_PREFIX_W);
+        bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
         bw->writeByte(OpCodeExtensionGroup1::Ev_lb);
         bw->writeByte(OpCodeRegister::Reg0 | Mod::Mod3 | Rm::Rm4);
         bw->writeByte(stackSize);
@@ -337,7 +337,7 @@ X86_64Writer::writeInstructionsPadding(uint64_t length)
     switch (length)
     {
         case 1:
-            bw->writeByte(OpCode::Nop);
+            bw->writeByte(OneByteOpCode::Nop);
             break;
         case 2:
             bw->writeByte(0x66);

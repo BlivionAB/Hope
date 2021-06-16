@@ -15,6 +15,7 @@ List<T>::List():
     _cursor = _items;
 }
 
+
 template<typename T>
 List<T>::List(const List& other)
 {
@@ -29,6 +30,7 @@ List<T>::List(const List& other)
     _capacity = other._capacity;
 }
 
+
 template<typename T>
 List<T>::List(const std::initializer_list<T>& items):
     _capacity(items.size())
@@ -42,6 +44,7 @@ List<T>::List(const std::initializer_list<T>& items):
     }
 }
 
+
 template<typename T>
 List<T>::~List()
 {
@@ -51,6 +54,7 @@ List<T>::~List()
     }
     free(_items);
 }
+
 
 template<typename T>
 template<typename ... Args>
@@ -68,6 +72,7 @@ List<T>::emplace(const Args&... args)
     new (_cursor) T(args...);
     _cursor++;
 }
+
 
 template<typename T>
 void
@@ -99,6 +104,7 @@ List<T>::create(const List<T>& items)
     }
 }
 
+
 template<typename T>
 void
 List<T>::add(const T& item)
@@ -118,6 +124,7 @@ List<T>::add(const T& item)
     _cursor++;
 }
 
+
 template<typename T>
 void
 List<T>::add(const List<T>& items)
@@ -127,6 +134,7 @@ List<T>::add(const List<T>& items)
         add(item);
     }
 }
+
 
 template<typename T>
 void
@@ -147,6 +155,7 @@ List<T>::add(const T&& item)
     _cursor++;
 }
 
+
 template<typename T>
 List<T>
 List<T>::concat(const List<T>& other) const
@@ -162,6 +171,7 @@ List<T>::concat(const List<T>& other) const
     }
     return result;
 }
+
 
 template<typename T>
 void
@@ -184,6 +194,7 @@ List<T>::remove(const T& item)
     _cursor--;
 }
 
+
 template<typename T>
 std::size_t
 List<T>::size() const
@@ -191,12 +202,14 @@ List<T>::size() const
     return _cursor - _items;
 }
 
+
 template<typename T>
 void
 List<T>::clear()
 {
     _cursor = _items;
 }
+
 
 template<typename T>
 T&
@@ -282,43 +295,6 @@ List<T>::has(T item) const
     return false;
 }
 
-template<typename T>
-struct MyContainer {
-    T item;
-
-    MyContainer(T item):
-        item(item) { }
-
-    template<typename R>
-    R
-    map(std::function< R (const T& item)> callback)
-    {
-        R some = callback(item);
-        return some;
-    }
-};
-
-struct MyItemBase
-{
-    const char*
-    text;
-
-    virtual
-    void
-    myVirtualFunction() = 0;
-};
-
-struct MyItem : public MyItemBase
-{
-    const char*
-    text = "hello";
-
-    void
-    myVirtualFunction() override {
-
-    }
-};
-
 
 template<typename T>
 template<typename TNew>
@@ -373,6 +349,7 @@ List<T>::operator = (const List<T>& other)
     return *this;
 }
 
+
 template<typename T>
 int
 List<T>::partition(int low, int high, std::function<int(T &, T &)> comparator)
@@ -392,12 +369,14 @@ List<T>::partition(int low, int high, std::function<int(T &, T &)> comparator)
     return (i + 1);
 }
 
+
 template<typename T>
 void
 List<T>::sort(std::function<int (T &, T &)> comparator)
 {
     quickSort(0, size() - 1, comparator);
 }
+
 
 template<typename T>
 void
@@ -438,6 +417,7 @@ List<T>::reserve(std::size_t capacity)
     this->_capacity = capacity;
 }
 
+
 template<typename T>
 std::size_t
 List<T>::lastIndex()
@@ -445,12 +425,14 @@ List<T>::lastIndex()
     return size() - 1;
 }
 
+
 template<typename T>
 T*
 List<T>::cursor()
 {
     return _cursor;
 }
+
 
 template<typename T>
 template<typename B>
@@ -465,6 +447,30 @@ List<T>::write(B* batch)
     std::memcpy(_cursor, batch, sizeof(B));
     _cursor += sizeof(B) / sizeof(T);
     return startCursor;
+}
+
+
+template<typename T>
+List<T>
+List<T>::slice(size_t index)
+{
+    assert("Index is larger than size" && size() > index);
+
+    List<T> list;
+    list._items = reinterpret_cast<T*>(calloc(_capacity - index, sizeof(T)));
+    list._cursor = list._items;
+    std::memcpy(list._items, _items + index, (size() - index) * sizeof(T));
+    list._cursor = list._items + size();
+    list._capacity = _capacity - index;
+    return list;
+}
+
+
+template<typename T>
+List <T>
+List<T>::copy()
+{
+    return List<T>(*this);
 }
 
 }

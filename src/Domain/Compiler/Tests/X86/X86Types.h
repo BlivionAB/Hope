@@ -6,7 +6,7 @@
 #include "Foundation/List.h"
 
 
-namespace elet::domain::compiler::instruction::x86
+namespace elet::domain::compiler::test
 {
 
 
@@ -17,33 +17,26 @@ enum class InstructionKind
 {
     Unknown,
     Push,
+    Pop,
     Lea,
     Mov,
     Call,
     Ret,
+    Xor,
+    Nop,
 };
 
 
-enum class Register
+enum Register : uint8_t
 {
-    None,
-    RAX,
-    RCX,
-    RDX,
-    RBX,
-    RSP,
-    RBP,
-    RSI,
-    RDI,
-
-    EAX,
-    ECX,
-    EDX,
-    EBX,
-    ESP,
-    EBP,
-    ESI,
-    EDI,
+    rAX,
+    rCX,
+    rDX,
+    rBX,
+    rSP,
+    rBP,
+    rSI,
+    rDI,
 };
 
 
@@ -54,11 +47,45 @@ struct ByteDisplacement
     Register
     base;
 
-    std::int8_t
+    int8_t
     displacement;
 
-    ByteDisplacement(Register aRegister, std::int8_t displacement):
+    ByteDisplacement(Register aRegister, int8_t displacement):
         base(aRegister),
+        displacement(displacement)
+    { }
+};
+
+
+struct SibDisplacement
+{
+    Register
+    base;
+
+    Register
+    index;
+
+    uint8_t
+    scale;
+
+    SibDisplacement(Register base, Register index, uint8_t scale):
+        base(base),
+        index(index),
+        scale(scale)
+    { }
+};
+
+
+struct LongDisplacement
+{
+    std::variant<Register, SibDisplacement*>
+    base;
+
+    std::array<uint8_t, 4>
+    displacement;
+
+    LongDisplacement(std::variant<Register, SibDisplacement*> base, std::array<uint8_t, 4> displacement):
+        base(base),
         displacement(displacement)
     { }
 };
@@ -92,10 +119,9 @@ struct Jv
     {}
 };
 
-
 typedef std::variant<Register> Gv;
 
-typedef std::variant<Register, ByteDisplacement> Ev;
+typedef std::variant<Register, ByteDisplacement, LongDisplacement> Ev;
 
 typedef std::variant<Register, Ev*, Gv*, Jv, MemoryAddress32*> Operand;
 
@@ -113,6 +139,15 @@ struct ModRMByte
 };
 
 
+enum class SizeKind
+{
+    Byte,
+    Word,
+    Long,
+    Quad,
+};
+
+
 struct Instruction
 {
     InstructionKind
@@ -121,9 +156,8 @@ struct Instruction
     List<std::uint8_t>
     bytes;
 
-
-    bool
-    isQuadWord;
+    SizeKind
+    size;
 
     Operand
     operand1;
@@ -132,7 +166,8 @@ struct Instruction
     operand2;
 
     Instruction():
-        kind(InstructionKind::Unknown)
+        kind(InstructionKind::Unknown),
+        size(SizeKind::Long)
     { }
 };
 

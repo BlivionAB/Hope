@@ -2,7 +2,7 @@
 #define ELET_BASELINETESTPROJECT_H
 
 #include <exception>
-#include "Path.h"
+#include "FilePath.h"
 #include "List.h"
 #include "DocumentExecutor.h"
 
@@ -38,7 +38,7 @@ struct BaselineDocument
 template<typename TTestSelection>
 struct ProjectSettings
 {
-    Path
+    FilePath
     rootFolder;
 
     std::vector<BaselineDocument<TTestSelection>>

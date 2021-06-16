@@ -64,4 +64,11 @@ enum OpCodeRegister : uint8_t
 };
 
 
+enum Sib : uint8_t
+{
+    ScaleMask = 0b11000000,
+    IndexMask = 0b00111000,
+    BaseMask = 0b00000111,
+};
+
 #endif //ELET_ADDRESSFORM32_H

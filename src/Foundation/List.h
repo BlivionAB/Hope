@@ -101,6 +101,12 @@ public:
     List<T>
     concat(const List<T>& other) const;
 
+    List<T>
+    slice(size_t index);
+
+    List<T>
+    copy();
+
     T&
     operator [] (std::size_t index) const;
 

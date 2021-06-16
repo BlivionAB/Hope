@@ -14,7 +14,6 @@ BaselineObjectFileWriter::BaselineObjectFileWriter()
     _bw = new ByteWriter(&output, &offset);
     assemblyWriter = new X86_64Writer(&_text);
     _dyldInfoWriter = new DyldInfoWriter(this);
-    _baselinePrinter = new x86::X86BaselinePrinter();
 }
 
 
@@ -157,7 +156,7 @@ void
 BaselineObjectFileWriter::writeTextSegmentCommand()
 {
     _textSegment = writeSegment({
-        LC_SEGMENT_64,
+        LcSegment64,
         sizeof(SegmentCommand64),
         "__TEXT",
         vmAddress,
@@ -254,7 +253,7 @@ void
 BaselineObjectFileWriter::writePageZeroSegmentCommand()
 {
     writeSegment({
-        LC_SEGMENT_64,
+        LcSegment64,
         sizeof(SegmentCommand64),
         "__PAGEZERO",
         0,
@@ -337,7 +336,7 @@ void
 BaselineObjectFileWriter::writeLinkEditSegmentCommand()
 {
     linkEditSegment = writeSegment({
-        .command = LC_SEGMENT_64,
+        .command = LcSegment64,
         .commandSize = sizeof(SegmentCommand64),
         .segmentName = "__LINKEDIT",
         .vmAddress = vmAddress,
@@ -356,7 +355,7 @@ void
 BaselineObjectFileWriter::writeDataConstSegmentCommand()
 {
     _dataConstSegment = writeSegment({
-        .command = LC_SEGMENT_64,
+        .command = LcSegment64,
         .commandSize = sizeof(SegmentCommand64),
         .segmentName = "__DATA_CONST",
         .vmAddress = 0,
@@ -389,7 +388,7 @@ void
 BaselineObjectFileWriter::writeDataSegmentCommand()
 {
     _dataSegment = writeSegment({
-        .command = LC_SEGMENT_64,
+        .command = LcSegment64,
         .commandSize = sizeof(SegmentCommand64),
         .segmentName = "__DATA",
         .vmAddress = 0,
@@ -554,7 +553,7 @@ BaselineObjectFileWriter::writeSymtabCommand()
 {
     SymtabCommand command =
     {
-        .cmd = LC_SYMTAB,
+        .cmd = LcSymbtab,
         .cmdSize = sizeof(SymtabCommand),
         0,
         0,

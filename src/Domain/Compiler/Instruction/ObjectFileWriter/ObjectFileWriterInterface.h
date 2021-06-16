@@ -2,7 +2,7 @@
 #define ELET_OBJECTFILEWRITERINTERFACE_H
 
 #include <map>
-#include <Foundation/Path.h>
+#include <Foundation/FilePath.h>
 #include <Domain/Compiler/Instruction/Instruction.h>
 #include <Domain/Compiler/Compiler.h>
 

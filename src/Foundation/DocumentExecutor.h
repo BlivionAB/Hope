@@ -2,7 +2,7 @@
 #define ELET_DOCUMENTEXECUTOR_H
 
 #include "Utf8String.h"
-#include "Path.h"
+#include "FilePath.h"
 
 template<typename TTestSelection>
 class DocumentExecutor
@@ -10,7 +10,7 @@ class DocumentExecutor
 
 public:
 
-    void virtual execute(const Path& entryFile, const Path& outputFile, const TTestSelection& selection) const = 0;
+    void virtual execute(const FilePath& entryFile, const FilePath& outputFile, const TTestSelection& selection) const = 0;
 };
 
 

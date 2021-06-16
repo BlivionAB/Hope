@@ -6,10 +6,10 @@
 #include "Foundation/List.h"
 #include "X86BaselinePrinter.h"
 #include "X86Types.h"
-#include "X86BaselineParser.h"
+#include "X86Parser.h"
 #include "Domain/Compiler/Instruction/TextWriter.h"
 
-namespace elet::domain::compiler::instruction::x86
+namespace elet::domain::compiler::test
 {
 
 using namespace elet::foundation;
@@ -23,14 +23,14 @@ public:
     X86BaselinePrinter();
 
     void
-    print(List<std::uint8_t>* output);
+    print(List<Instruction*>& instructions);
 
 private:
 
-    X86BaselineParser*
+    X86Parser*
     _parser;
 
-    TextWriter
+    instruction::TextWriter*
     _tw;
 
     std::uint32_t
@@ -46,7 +46,10 @@ private:
     writeOperand(Operand* operand);
 
     void
-    writeByteDisplacement(ByteDisplacement* byteDisp);
+    writeByteDisplacement(ByteDisplacement* displacement);
+
+    void
+    writeLongDisplacement(LongDisplacement* displacement);
 
     void
     writeByteInstruction(Instruction* instruction);
@@ -56,6 +59,9 @@ private:
 
     void
     writeColumnHeader();
+
+    void
+    writeSizeSuffix(Instruction* instruction);
 };
 
 }

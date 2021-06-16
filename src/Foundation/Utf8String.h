@@ -213,6 +213,11 @@ public:
         explicit
         Iterator(const char* _value);
 
+
+        Iterator(Iterator& copy):
+            Iterator(copy._value)
+        { }
+
         Character
         operator * () const;
 
@@ -228,14 +233,58 @@ public:
         void
         operator ++ ();
 
+    private:
+
         const char*
-        getPosition() const;
+        _value;
+    };
+
+
+    class CharIterator
+    {
+    public:
+
+        explicit
+        CharIterator(const char* _value);
+
+        CharIterator(CharIterator& copy):
+            CharIterator(copy._value)
+        {
+
+        }
+
+        char
+        operator * () const;
+
+        void
+        operator += (std::size_t offset);
+
+        bool
+        operator == (const CharIterator& other) const;
+
+        bool
+        operator != (const CharIterator& other) const;
+
+        void
+        operator ++ ();
+
+        const char*
+        getValue()
+        {
+            return _value;
+        }
 
     private:
 
         const char*
         _value;
     };
+
+    CharIterator
+    beginChar() const;
+
+    CharIterator
+    endChar() const;
 
     Iterator
     begin() const;

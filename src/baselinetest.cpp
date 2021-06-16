@@ -7,24 +7,24 @@
 int
 main(int argc, char *argv[])
 {
-    Printer printer;
-    Path path;
-    EletSourceDocumentExecutor executor;
-    BaselineDocument<BaselineTestSelection> eletDocument
-    {
-        ".l1",
-        executor
-    };
-    ProjectSettings<BaselineTestSelection> settings
-    {
-            Path::resolve(Path::cwd(), "src/Domain/Tests/Baselines"),
-        { eletDocument }
-    };
-    BaselineTestProject<Path, BaselineTestSelection> project(settings, path);
-    TestRunner<BaselineTestProject<Path, BaselineTestSelection>, BaselineTestSelection> testRunner(project);
-    BaselineTestCommand<
-        Printer,
-        TestRunner<BaselineTestProject<Path, BaselineTestSelection>, BaselineTestSelection>
-    > command(printer, testRunner);
-    return command.execute(argc, argv);
+//    Printer printer;
+//    FilePath path;
+//    EletSourceDocumentExecutor executor;
+//    BaselineDocument<BaselineTestSelection> eletDocument
+//    {
+//        ".l1",
+//        executor
+//    };
+//    ProjectSettings<BaselineTestSelection> settings
+//    {
+//            FilePath::resolve(FilePath::FilePath(), "src/Domain/Tests/Baselines"),
+//        { eletDocument }
+//    };
+//    BaselineTestProject<FilePath, BaselineTestSelection> project(settings, path);
+//    TestRunner<BaselineTestProject<FilePath, BaselineTestSelection>, BaselineTestSelection> testRunner(project);
+//    BaselineTestCommand<
+//        Printer,
+//        TestRunner<BaselineTestProject<FilePath, BaselineTestSelection>, BaselineTestSelection>
+//    > command(printer, testRunner);
+//    return command.execute(argc, argv);
 }

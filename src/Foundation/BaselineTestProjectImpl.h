@@ -1,5 +1,5 @@
 #include "BaselineTestProject.h"
-#include "Path.h"
+#include "FilePath.h"
 template<typename TPath, typename TTestSelection>
 BaselineTestProject<TPath, TTestSelection>::BaselineTestProject(ProjectSettings<TTestSelection>& settings, TPath& path):
     settings(settings),

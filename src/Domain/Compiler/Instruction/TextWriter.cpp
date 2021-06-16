@@ -40,6 +40,14 @@ TextWriter::tab()
 
 
 void
+TextWriter::write(char ch)
+{
+    _output += ch;
+    _column += 1;
+}
+
+
+void
 TextWriter::write(const Utf8StringView& text)
 {
     _output += text;
@@ -139,12 +147,53 @@ void
 TextWriter::writeByteWithHexPrefix(uint8_t integer)
 {
     write("0x");
-    writeByte(integer);
+    writeByteHex(integer);
+}
+
+
+
+void
+TextWriter::writeSignedHex(std::array<uint8_t, 4> integer)
+{
+    bool isSigned = (integer[3] & 0b10000000);
+    if (isSigned)
+    {
+        write("-");
+    }
+    write("0x");
+    uint32_t n = 0;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        if (isSigned)
+        {
+            n += ((~integer[i] + 1) << (i * 8));
+        }
+        else
+        {
+            n += (integer[i] << (i * 8));
+        }
+    }
+    static const char* digits = "0123456789abcdef";
+    bool hasWrittenDigit = false;
+    for (int i = 7; i >= 0; --i)
+    {
+        unsigned int r = n / std::pow(16, i);
+        if (r != 0 || hasWrittenDigit)
+        {
+            hasWrittenDigit = true;
+            write(digits[r]);
+        }
+    }
+    if (!hasWrittenDigit)
+    {
+        write("0");
+    }
 }
 
 
 void
-TextWriter::writeByte(uint8_t integer)
+TextWriter::writeByteHex(uint8_t integer)
 {
     int exp = 1;
     int rest = integer;

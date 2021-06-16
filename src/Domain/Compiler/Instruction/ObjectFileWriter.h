@@ -1,7 +1,7 @@
 #ifndef ELET_OBJECTFILEWRITER_H
 #define ELET_OBJECTFILEWRITER_H
 
-#include <Foundation/Path.h>
+#include <Foundation/FilePath.h>
 #include <Domain/Compiler/Instruction/ObjectFileWriter/ObjectFileWriterInterface.h>
 
 namespace elet::domain::compiler::instruction::output

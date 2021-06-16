@@ -13,76 +13,76 @@ struct PathSegment;
 struct WildcardPathSegment;
 struct NestedWildcardPathSegment;
 
-class Path
+class FilePath
 {
 public:
 
     static
     Utf8String
-    extension(const Path& path);
+    extension(const FilePath& path);
 
     static
-    Path
-    folderOf(const Path& file);
+    FilePath
+    folderOf(const FilePath& file);
 
     static
     const char*
-    filename(const Path& file);
+    filename(const FilePath& file);
 
 
     static
     Utf8String
-    stem(const Path& file);
+    stem(const FilePath& file);
 
     static
-    Path
+    FilePath
     cwd();
 
     static
-    List<Path>
-    find(const Path& path);
+    List<FilePath>
+    find(const FilePath& path);
 
     static
-    Path
-    absolutePathOf(const Path& path, const Path& base = cwd());
+    FilePath
+    absolutePathOf(const FilePath& path, const FilePath& base = cwd());
 
     static
-    Path
-    resolve(const Path& base, const Path& path);
+    FilePath
+    resolve(const FilePath& base, const FilePath& path);
 
     static
-    Path
-    relativeTo(const Path& base, const Path& target);
-
-    static
-    bool
-    isDescendentOf(const Path& parent, const Path& child);
+    FilePath
+    relativeTo(const FilePath& base, const FilePath& target);
 
     static
     bool
-    exists(const Path& path);
+    isDescendentOf(const FilePath& parent, const FilePath& child);
 
     static
-    Path
+    bool
+    exists(const FilePath& path);
+
+    static
+    FilePath
     getTemporaryFile();
 
     static
-    Path
+    FilePath
     getCurrentWorkingDirectory();
 
     static
-    Path
+    FilePath
     getTemporaryDirectory();
 
-    Path();
+    FilePath();
 
-    Path(const Path& other);
+    FilePath(const FilePath& other);
 
-    Path(const char*);
+    FilePath(const char*);
 
-    Path(Utf8String);
+    FilePath(Utf8String);
 
-    ~Path();
+    ~FilePath();
 
     void
     up();
@@ -107,11 +107,11 @@ public:
     add(const char* path, TChar... other);
 
     void
-    add(const Path& path);
+    add(const FilePath& path);
 
     template<typename ...TPath>
     void
-    add(const Path& path, TPath... other);
+    add(const FilePath& path, TPath... other);
 
     bool
     isFile() const;
@@ -122,23 +122,23 @@ public:
     unsigned int
     segmentLength() const;
 
-    Path
+    FilePath
     operator / (const char* path) const;
 
-    Path
+    FilePath
     operator / (const Utf8String& path) const;
 
-    Path&
-    operator = (const Path& other);
+    FilePath&
+    operator = (const FilePath& other);
 
-    Path&
-    operator = (const Path&& other) noexcept;
-
-    bool
-    operator == (const Path& path) const;
+    FilePath&
+    operator = (const FilePath&& other) noexcept;
 
     bool
-    operator != (const Path& path) const;
+    operator == (const FilePath& path) const;
+
+    bool
+    operator != (const FilePath& path) const;
 
     const char*
     operator [] (unsigned int index) const;
@@ -173,11 +173,11 @@ private:
 
     static
     WildcardPathSegmentStack
-    segmentPathIntoWildcardPathSegments(const Path& path);
+    segmentPathIntoWildcardPathSegments(const FilePath& path);
 
     static
-    List<Path>
-    findPathByPathSegmentList(WildcardPathSegmentStack pathSegmentList, const Path& currenPath);
+    List<FilePath>
+    findPathByPathSegmentList(WildcardPathSegmentStack pathSegmentList, const FilePath& currenPath);
 };
 
 
@@ -189,25 +189,25 @@ struct TargetPathIsNotDescendentOfBasePathError
 
 struct PathSegment
 {
-    Path path;
+    FilePath path;
 
-    PathSegment(Path path): path(path) { }
+    PathSegment(FilePath path): path(path) { }
 };
 
 
 struct WildcardPathSegment
 {
-    Path path;
+    FilePath path;
 
-    WildcardPathSegment(Path path): path(path) { }
+    WildcardPathSegment(FilePath path): path(path) { }
 };
 
 
 struct NestedWildcardPathSegment
 {
-    Path path;
+    FilePath path;
 
-    NestedWildcardPathSegment(Path path): path(path) { }
+    NestedWildcardPathSegment(FilePath path): path(path) { }
 };
 
 
@@ -219,7 +219,7 @@ using OneOfPathSegments = std::variant<
 
 template<typename ... TChar>
 void
-Path::add(const char* path, TChar ... other)
+FilePath::add(const char* path, TChar ... other)
 {
     add(path);
     add(other...);

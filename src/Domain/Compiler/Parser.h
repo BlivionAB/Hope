@@ -2,7 +2,7 @@
 #define ELET_PARSER_H
 
 #include <Foundation/HashTableMap.h>
-#include <Foundation/Path.h>
+#include <Foundation/FilePath.h>
 #include "Scanner.h"
 #include "Compiler.h"
 #include "Syntax/Syntax.h"
@@ -114,7 +114,7 @@ private:
 
     static
     thread_local
-    Path*
+    FilePath*
     _currentDirectory;
 
     static

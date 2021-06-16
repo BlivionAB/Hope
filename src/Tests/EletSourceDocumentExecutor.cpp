@@ -2,7 +2,7 @@
 #include "EletSourceDocumentExecutor.h"
 
 void
-EletSourceDocumentExecutor::execute(const Path &entryFile, const Path& outputFile, const BaselineTestSelection& selection) const
+EletSourceDocumentExecutor::execute(const FilePath &entryFile, const FilePath& outputFile, const BaselineTestSelection& selection) const
 {
     static const List<AssemblyTarget> targets = { AssemblyTarget::Baseline, AssemblyTarget::x86_64 };
     for (const auto& target : targets)
@@ -16,7 +16,7 @@ EletSourceDocumentExecutor::execute(const Path &entryFile, const Path& outputFil
 
 
 void
-EletSourceDocumentExecutor::compileFileWithTarget(const Path& entryFile, const Path& outputFile, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget) const
+EletSourceDocumentExecutor::compileFileWithTarget(const FilePath& entryFile, const FilePath& outputFile, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget) const
 {
     Compiler compiler(assemblyTarget, objectFileTarget);
     compiler.startWorkers();
@@ -25,7 +25,7 @@ EletSourceDocumentExecutor::compileFileWithTarget(const Path& entryFile, const P
     auto output = compiler.getOutput();
 
     std::ofstream file;
-    const char* path = Path::resolve(Path::cwd(), "cmake-build-debug/test.o").toString().toString();
+    const char* path = FilePath::resolve(FilePath::FilePath(), "cmake-build-debug/test.o").toString().toString();
     file.open(path, std::ios_base::binary);
     for (int i = 0; i < output.size(); ++i)
     {

@@ -2,7 +2,6 @@
 #define ELET_BASELINEOBJECTFILEWRITER_H
 
 #include "../AssemblyWriter.h"
-#include "../Assembly/x86/X86Parser/X86BaselinePrinter.h"
 #include "MachOFileWriter.h"
 #include "DyldInfoWriter.h"
 
@@ -19,13 +18,23 @@ class DyldInfoWriter;
 
 #define	MACHO_OBJECT_FILE_TYPE	    0x1
 /* Constants for the cmd field of all load commands, the type */
-#define	LC_SEGMENT	0x1	/* segment of this file to be mapped */
-#define	LC_SEGMENT_64	0x19
 
+enum LoadCommandType : uint8_t
+{
+    LcSegment64 = 0x19
+};
 
-#define CPU_ARCH_MASK           0xff000000      /* mask for architecture bits */
-#define CPU_ARCH_ABI64          0x01000000      /* 64 bit ABI */
-#define CPU_ARCH_ABI64_32       0x02000000      /* ABI for 64-bit hardware with 32-bit types; LP32 */
+enum CpuArch : uint32_t
+{
+    // mask for architecture bits
+    Mask = 0xff000000,
+
+    // 64 bit ABI
+    Abi64 = 0x01000000,
+
+    // ABI for 64-bit hardware with 32-bit types; LP32
+    Abi64_32 = 0x02000000,
+};
 
 #define CPU_TYPE_X86            0x7
 #define CPU_TYPE_X86_64 (CPU_TYPE_X86 | CPU_ARCH_ABI64)
@@ -37,10 +46,39 @@ class DyldInfoWriter;
 #define S_SYMBOL_STUBS           0x00000008
 
 
+
+struct MachHeader64
+{
+    std::uint32_t
+    magic;
+
+    std::uint32_t
+    cpuType;
+
+    std::uint32_t
+    cpuSubType;
+
+    std::uint32_t
+    fileType;
+
+    std::uint32_t
+    numberOfCommands;
+
+    std::uint32_t
+    sizeOfCommands;
+
+    std::uint32_t
+    flags;
+
+    std::uint32_t
+    reserved;
+};
+
+
 enum CommandType : uint32_t
 {
     LC_REQ_DYLD = 0x80000000,
-    LC_SYMTAB = 0x2u,
+    LcSymbtab = 0x2u,
     LC_DYSYMTAB = 0xbu,
     LC_DYLD_INFO = 0x22,
     LC_DYLD_INFO_ONLY = (LC_DYLD_INFO | LC_REQ_DYLD),
@@ -331,110 +369,91 @@ struct MainCommand : Command
     stackSize;
 };
 
-//struct MachHeader64
-//{
-//    std::uint32_t
-//    magic = MACHO_MAGIC_64;
-//
-//    std::uint32_t
-//    cpuType = CPU_TYPE_X86_64;
-//
-//    std::uint32_t
-//    cpuSubType = CPU_SUBTYPE_X86_64_ALL;
-//
-//    std::uint32_t
-//    fileType;
-//
-//    std::uint32_t
-//    numberOfCommands = 0;
-//
-//    std::uint32_t
-//    sizeOfCommands = 0;
-//
-//    std::uint32_t
-//    flags;
-//
-//    std::uint32_t
-//    reserved;
-//};
+
+#define VM_PROTECTION_NONE    0x1
+#define VM_PROTECTION_READ    0x1
+#define VM_PROTECTION_WRITE   0x2
+#define VM_PROTECTION_EXECUTE 0x4
+#define VM_PROTECTION_ALL (VM_PROTECTION_READ | VM_PROTECTION_WRITE | VM_PROTECTION_EXECUTE)
 
 
-//struct SegmentCommand64
-//{
-//    std::uint32_t
-//    command;
-//
-//    // includes sizeof section_64 structs
-//    std::uint32_t
-//    commandSize;
-//
-//    char
-//    segmentName[16];
-//
-//    std::uint64_t
-//    vmAddress;
-//
-//    std::uint64_t
-//    vmSize;
-//
-//    std::uint64_t
-//    fileOffset;
-//
-//    std::uint64_t
-//    fileSize;
-//
-//    int
-//    maximumProtection;
-//
-//    int
-//    initialProtection;
-//
-//    std::uint32_t
-//    numberOfSections;
-//
-//    std::uint32_t
-//    flags;
-//};
+struct SegmentCommand64
+{
+    uint32_t
+    command;
+
+    // includes sizeof section_64 structs
+    uint32_t
+    commandSize;
+
+    char
+    segmentName[16];
+
+    uint64_t
+    vmAddress;
+
+    uint64_t
+    vmSize;
+
+    uint64_t
+    fileOffset;
+
+    uint64_t
+    fileSize;
+
+    int
+    maximumProtection;
+
+    int
+    initialProtection;
+
+    uint32_t
+    numberOfSections;
+
+    uint32_t
+    flags;
+};
 
 
-//struct Section64
-//{
-//    std::array<char, 16>
-//    sectionName;
-//
-//    std::array<char, 16>
-//    segmentName;
-//
-//    std::uint64_t
-//    address;
-//
-//    std::uint64_t
-//    size;
-//
-//    std::uint32_t
-//    offset;
-//
-//    std::uint32_t
-//    align;
-//
-//    std::uint32_t
-//    relocationOffset;
-//
-//    std::uint32_t
-//    numberOfRelocations;
-//
-//    std::uint32_t
-//    flags;
-//
-//    std::uint32_t
-//    reserved1;
-//
-//    std::uint32_t
-//    reserved2;
-//
-//    std::uint32_t
-//    reserved3;
-//};
+
+struct Section64
+{
+    char
+    sectionName[16];
+
+    char
+    segmentName[16];
+
+    uint64_t
+    address;
+
+    uint64_t
+    size;
+
+    uint32_t
+    offset;
+
+    uint32_t
+    align;
+
+    uint32_t
+    relocationOffset;
+
+    uint32_t
+    numberOfRelocations;
+
+    uint32_t
+    flags;
+
+    uint32_t
+    reserved1;
+
+    uint32_t
+    reserved2;
+
+    uint32_t
+    reserved3;
+};
 
 
 class BaselineObjectFileWriter : public ObjectFileWriterInterface
@@ -484,9 +503,6 @@ private:
 
     ByteWriter*
     _bw;
-
-    x86::X86BaselinePrinter*
-    _baselinePrinter;
 
     MachHeader64*
     _header;

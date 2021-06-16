@@ -1,4 +1,4 @@
-#include <Foundation/Path.h>
+#include <Foundation/FilePath.h>
 #include "Parser.h"
 #include "Exceptions.h"
 
@@ -7,7 +7,7 @@ namespace elet::domain::compiler::ast
 
 
 thread_local
-Path*
+FilePath*
 Parser::_currentDirectory = nullptr;
 
 
@@ -46,7 +46,7 @@ Parser::performWork(const ParsingTask& task)
     _lastStatementLocationStart = const_cast<char*>(task.sourceStart);
     Utf8StringView sourceContent(task.sourceStart, task.sourceEnd);
     Scanner scanner(sourceContent);
-    _currentDirectory = const_cast<Path*>(task.sourceDirectory);
+    _currentDirectory = const_cast<FilePath*>(task.sourceDirectory);
     _scanner = &scanner;
     List<Syntax*> statements;
     ParsingTask* pendingParsingTask = nullptr;
@@ -835,7 +835,7 @@ Parser::skipNextToken()
 //    auto stringLiteral = createSyntax<StringLiteral>(SyntaxKind::StringLiteral);
 //    finishSyntax(stringLiteral);
 //    Utf8StringView source(stringLiteral->start + 1, stringLiteral->end - 1);
-//    Path* newCurrenctDirectory = new Path(_currentDirectory->toString().toString());
+//    FilePath* newCurrenctDirectory = new FilePath(_currentDirectory->toString().toString());
 //    newCurrenctDirectory->add(source.toString());
 //    _compiler->addFile(newCurrenctDirectory->toString().asString());
 //    importStatement->path = stringLiteral;

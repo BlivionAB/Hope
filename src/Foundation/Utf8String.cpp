@@ -225,11 +225,28 @@ Utf8String::begin() const
     return Iterator(_value);
 }
 
+
+Utf8String::CharIterator
+Utf8String::beginChar() const
+{
+    return CharIterator(_value);
+}
+
+
 Utf8String::Iterator
 Utf8String::end() const
 {
     return Iterator(_end);
 }
+
+
+
+Utf8String::CharIterator
+Utf8String::endChar() const
+{
+    return CharIterator(_end);
+}
+
 
 Utf8String
 operator + (const char* string1, const Utf8String& string2)
@@ -244,6 +261,7 @@ Utf8String::size() const
     return _end - _value;
 }
 
+
 const unsigned char kFirstBitMask = 128; // 1000000
 const unsigned char kSecondBitMask = 64; // 0100000
 const unsigned char kThirdBitMask = 32;  // 0010000
@@ -256,11 +274,6 @@ Utf8String::Iterator::Iterator(const char* value):
 
 }
 
-const char*
-Utf8String::Iterator::getPosition() const
-{
-    return _value;
-}
 
 void
 Utf8String::Iterator::operator++ ()
@@ -288,6 +301,7 @@ Utf8String::Iterator::operator++ ()
     _value += offset;
 }
 
+
 void
 Utf8String::Iterator::operator += (std::size_t offset)
 {
@@ -297,6 +311,7 @@ Utf8String::Iterator::operator += (std::size_t offset)
         offset--;
     }
 }
+
 
 bool
 Utf8String::Iterator::operator == (const Utf8String::Iterator& other) const
@@ -352,4 +367,49 @@ Utf8String::Iterator::operator * () const
         codePoint = firstByte;
     }
     return static_cast<Character>(codePoint);
+}
+
+
+Utf8String::CharIterator::CharIterator(const char* value):
+    _value(value)
+{
+
+}
+
+
+void
+Utf8String::CharIterator::operator++ ()
+{
+    _value += 1;
+}
+
+
+void
+Utf8String::CharIterator::operator += (std::size_t offset)
+{
+    while (offset != 0)
+    {
+        ++(*this);
+        offset--;
+    }
+}
+
+
+bool
+Utf8String::CharIterator::operator == (const Utf8String::CharIterator& other) const
+{
+    return _value == other._value;
+}
+
+
+bool
+Utf8String::CharIterator::operator != (const Utf8String::CharIterator& other) const
+{
+    return _value != other._value;
+}
+
+char
+Utf8String::CharIterator::operator * () const
+{
+    return *_value;
 }
