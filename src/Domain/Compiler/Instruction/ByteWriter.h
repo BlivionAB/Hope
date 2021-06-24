@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <Foundation/List.h>
+#include <Foundation/Utf8StringView.h>
 
 
 namespace elet::domain::compiler::instruction::output

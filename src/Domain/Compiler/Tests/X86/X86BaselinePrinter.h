@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <variant>
+#include <map>
 #include "Foundation/List.h"
 #include "X86BaselinePrinter.h"
 #include "X86Types.h"
@@ -22,8 +23,29 @@ public:
 
     X86BaselinePrinter();
 
-    void
-    print(List<Instruction*>& instructions);
+    Utf8String
+    print();
+
+    uint64_t
+    address = 0;
+
+    uint64_t
+    vmOffset = 0x0000000100000000;
+
+    List<uint8_t>*
+    list;
+
+    List<Instruction*>
+    instructions;
+
+    uint64_t
+    cstringSectionOffset;
+
+    uint64_t
+    cstringSectionSize;
+
+    std::map<uint64_t, const char*>*
+    symbols;
 
 private:
 
@@ -33,23 +55,26 @@ private:
     instruction::TextWriter*
     _tw;
 
-    std::uint32_t
-    _address = 0;
-
     void
     writeInstruction(Instruction* instruction);
 
     void
-    writeGeneralPurposeRegister(const Register _register);
+    writeGeneralPurposeRegister(const Register _register, const Instruction* instruction);
 
     void
-    writeOperand(Operand* operand);
+    writeOperand(const Operand* operand, const Instruction* instruction);
 
     void
-    writeByteDisplacement(ByteDisplacement* displacement);
+    writeByteDisplacement(ByteDisplacement* byteDisp, const Instruction* instruction);
 
     void
-    writeLongDisplacement(LongDisplacement* displacement);
+    writeLongDisplacement(LongDisplacement* displacement, const Instruction* instruction);
+
+    void
+    writeRegisterDisplacement(RegisterDisplacement* displacement, const Instruction* instruction);
+
+    void
+    writeInstructionWithName(const char* name, const Instruction* instruction);
 
     void
     writeByteInstruction(Instruction* instruction);
@@ -61,7 +86,10 @@ private:
     writeColumnHeader();
 
     void
-    writeSizeSuffix(Instruction* instruction);
+    writeSizeSuffix(const Instruction* instruction);
+
+    void
+    writeMemoryAddress(const std::array<uint8_t, 4> mem);
 };
 
 }

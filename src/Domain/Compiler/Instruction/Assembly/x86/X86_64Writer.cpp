@@ -36,7 +36,7 @@ X86_64Writer::writeStubHelper()
     // leaq dyld_private, r11
     bw->writeByte(RexMagic | RexW | RexR);
     bw->writeByte(OneByteOpCode::Lea_Gv_M);
-    bw->writeByte(MOD_DISP0 | Rm::Rm5 | OpCodeRegister::Reg3);
+    bw->writeByte(MOD_DISP0 | RmBits::Rm5 | OpCodeRegister::Reg3);
     dyldPrivateOffset = _offset;
     bw->writeDoubleWord(0);
 
@@ -61,7 +61,7 @@ X86_64Writer::writeStubHelper()
     for (const auto& routine : externalRoutines)
     {
         routine->stubHelperAddress = _offset;
-        bw->writeByte(Push_Iz);
+        bw->writeByte(OneByteOpCode::Push_Iz);
         bw->writeDoubleWord(0);
         bw->writeByte(OP_NEAR_JMP_Jz);
         bw->writeDoubleWord(top - _offset - 4);
@@ -95,7 +95,7 @@ X86_64Writer::writeFunction(FunctionRoutine* routine)
     if (routine->isStartFunction)
     {
         bw->writeByte(OneByteOpCode::Xor_Ev_Gv);
-        bw->writeByte(Mod::Mod3 | OpCodeRegister::Reg_RAX | Rm::Rm0);
+        bw->writeByte(ModBits::Mod3 | OpCodeRegister::Reg_RAX | RmBits::Rm0);
         routineSize += 2;
     }
     writeFunctionEpilogue(stackSize, routineSize);
@@ -295,8 +295,8 @@ X86_64Writer::writeFunctionPrologue(size_t stackSize)
     if (stackSize)
     {
         bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-        bw->writeByte(OpCodeExtensionGroup1::Ev_lb);
-        bw->writeByte(OpCodeRegister::Reg5 | Mod::Mod3 | Rm::Rm4);
+        bw->writeByte(OneByteOpCode::Ev_Ib);
+        bw->writeByte(OpCodeRegister::Reg5 | ModBits::Mod3 | RmBits::Rm4);
         _subtractStackAddress = _offset;
         bw->writeByte(stackSize);
         size += 4;
@@ -312,8 +312,8 @@ X86_64Writer::writeFunctionEpilogue(size_t stackSize, uint64_t routineSize)
     if (stackSize)
     {
         bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-        bw->writeByte(OpCodeExtensionGroup1::Ev_lb);
-        bw->writeByte(OpCodeRegister::Reg0 | Mod::Mod3 | Rm::Rm4);
+        bw->writeByte(OneByteOpCode::Ev_Ib);
+        bw->writeByte(OpCodeRegister::Reg0 | ModBits::Mod3 | RmBits::Rm4);
         bw->writeByte(stackSize);
         routineSize += 4;
     }

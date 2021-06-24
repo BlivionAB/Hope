@@ -78,8 +78,8 @@ struct MachHeader64
 enum CommandType : uint32_t
 {
     LC_REQ_DYLD = 0x80000000,
-    LcSymbtab = 0x2u,
-    LC_DYSYMTAB = 0xbu,
+    LcSymbtab = 0x2,
+    LC_DYSYMTAB = 0xb,
     LC_DYLD_INFO = 0x22,
     LC_DYLD_INFO_ONLY = (LC_DYLD_INFO | LC_REQ_DYLD),
     LC_LOAD_DYLIB = 0xc,

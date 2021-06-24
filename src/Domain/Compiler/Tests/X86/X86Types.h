@@ -24,6 +24,8 @@ enum class InstructionKind
     Ret,
     Xor,
     Nop,
+    Add,
+    Sub,
 };
 
 
@@ -39,20 +41,13 @@ enum Register : uint8_t
     rDI,
 };
 
-
-
-
-struct ByteDisplacement
+struct RegisterDisplacement
 {
     Register
     base;
 
-    int8_t
-    displacement;
-
-    ByteDisplacement(Register aRegister, int8_t displacement):
-        base(aRegister),
-        displacement(displacement)
+    RegisterDisplacement(Register base):
+        base(base)
     { }
 };
 
@@ -72,6 +67,21 @@ struct SibDisplacement
         base(base),
         index(index),
         scale(scale)
+    { }
+};
+
+
+struct ByteDisplacement
+{
+    std::variant<Register, SibDisplacement*>
+    base;
+
+    int8_t
+    displacement;
+
+    ByteDisplacement(std::variant<Register, SibDisplacement*> base, int8_t displacement):
+        base(base),
+        displacement(displacement)
     { }
 };
 
@@ -102,10 +112,14 @@ struct MemoryAddress32
 };
 
 
-struct Immediate
+struct Ib
 {
-    std::uint64_t
-    value;
+    std::uint8_t
+    offset;
+
+    Ib(uint8_t offset):
+        offset(offset)
+    { }
 };
 
 
@@ -121,9 +135,9 @@ struct Jv
 
 typedef std::variant<Register> Gv;
 
-typedef std::variant<Register, ByteDisplacement, LongDisplacement> Ev;
+typedef std::variant<Register, ByteDisplacement, LongDisplacement, RegisterDisplacement> Ev;
 
-typedef std::variant<Register, Ev*, Gv*, Jv, MemoryAddress32*> Operand;
+typedef std::variant<std::monostate, Register, Ev*, Gv*, Jv, Ib*, MemoryAddress32*> Operand;
 
 
 struct ModRMByte

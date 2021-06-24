@@ -43,8 +43,14 @@ private:
     X86BaselinePrinter*
     _x86BaselinePrinter;
 
+    std::map<uint64_t, const char*>
+    _symbols;
+
     void
     parseTextSection(const Section64* section64);
+
+    void
+    parseSymbolTable(const SymtabCommand* command);
 };
 
 

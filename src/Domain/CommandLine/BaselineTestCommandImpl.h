@@ -1,7 +1,6 @@
 #include "BaselineTestCommand.h"
 #include <iostream>
 #include <Foundation/CommandLine.h>
-#include <Foundation/Tests/Mocks/TestRunnerMock.h>
 #include <Domain/Compiler/Compiler.h>
 
 

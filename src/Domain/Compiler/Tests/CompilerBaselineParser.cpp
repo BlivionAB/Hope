@@ -18,6 +18,7 @@ CompilerBaselineParser::CompilerBaselineParser(List<uint8_t>& list):
 Utf8String
 CompilerBaselineParser::write()
 {
+    _x86BaselinePrinter->list = &_list;
     MachHeader64* machHeader = reinterpret_cast<MachHeader64*>(&_list[0]);
     if (machHeader->magic != MACHO_MAGIC_64)
     {
@@ -41,10 +42,13 @@ CompilerBaselineParser::write()
                 parseSegment();
                 break;
             case LcSymbtab:
+                parseSymbolTable(reinterpret_cast<SymtabCommand*>(cmd));
                 break;
+            default:
+                _offset += cmd->cmdSize;
         }
     }
-    return "";
+    return _x86BaselinePrinter->print();
 }
 
 
@@ -53,26 +57,46 @@ CompilerBaselineParser::parseSegment()
 {
     SegmentCommand64* segment = reinterpret_cast<SegmentCommand64*>(&_list[_offset]);
     _offset += sizeof(SegmentCommand64);
-    if (std::strcmp(segment->segmentName, "__TEXT") == 0)
+    for (size_t n = 0; n < segment->numberOfSections; ++n)
     {
-        for (size_t n = 0; n < segment->numberOfSections; ++n)
+        Section64* section = reinterpret_cast<Section64*>(&_list[_offset]);
+        if (std::strcmp(section->sectionName, "__text") == 0)
         {
-            Section64* section = reinterpret_cast<Section64*>(&_list[_offset]);
-            if (std::strcmp(section->sectionName, "__text") == 0)
-            {
-                parseTextSection(section);
-            }
-            _offset += sizeof(Section64);
+            parseTextSection(section);
         }
+        else if (std::strcmp(section->sectionName, "__cstring") == 0)
+        {
+            _x86BaselinePrinter->cstringSectionOffset = section->offset;
+            _x86BaselinePrinter->cstringSectionSize = section->size;
+        }
+        _offset += sizeof(Section64);
     }
 }
+
 
 void
 CompilerBaselineParser::parseTextSection(const Section64* textSection)
 {
-    auto list = _list.slice(textSection->offset);
-    auto instructions = _x86Parser->parse(list);
-    _x86BaselinePrinter->print(instructions);
+    _x86BaselinePrinter->instructions = _x86Parser->parse(_list, textSection->offset, textSection->size);
+    _x86BaselinePrinter->address = textSection->offset;
+}
+
+
+void
+CompilerBaselineParser::parseSymbolTable(const SymtabCommand* command)
+{
+    _offset += sizeof(SymtabCommand);
+    SymbolTableEntry* entry = reinterpret_cast<SymbolTableEntry*>(&_list[command->symbolOffset]);
+    const char* stringTable = reinterpret_cast<const char*>(&_list[command->stringOffset]);
+    for (int i = 0; i < command->symbolEntries; ++i)
+    {
+        SymbolTableEntry* e = entry + i;
+        if (e->sectionIndex != 0)
+        {
+            _symbols[e->value] = &stringTable[e->stringTableIndex];
+        }
+    }
+    _x86BaselinePrinter->symbols = &_symbols;
 }
 
 }

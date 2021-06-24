@@ -8,6 +8,13 @@
 #define REG_BITS    0b00111000
 #define RM_BITS     0b00000111
 
+enum ModRmMask : uint8_t
+{
+    Mod = 0b11000000,
+    Reg = 0b00111000,
+    Rm = 0b00000111
+};
+
 // OpCodeRegister Only
 #define MODRM_EBP           0b11000101
 #define MOD0_BX_PLUS_SI     0b00000000
@@ -19,7 +26,7 @@
 #define MOD_DISP16  0b10000000
 #define MOD_REG     0b11000000
 
-enum Mod
+enum ModBits
 {
     Mod0 = 0b00000000,
     Mod1 = 0b01000000,
@@ -28,7 +35,7 @@ enum Mod
 };
 
 
-enum Rm : uint8_t
+enum RmBits : uint8_t
 {
     Rm0 = 0b00000000,
     Rm1 = 0b00000001,

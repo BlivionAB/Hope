@@ -26,7 +26,11 @@ TextWriter::tab()
 {
     for (const auto& column : _columns)
     {
-        if (column >= _column)
+        if (column == _column)
+        {
+            continue;
+        }
+        else if (column >= _column)
         {
             unsigned int diff = column - _column;
             for (unsigned int i = 0; i < diff; ++i)
@@ -48,6 +52,13 @@ TextWriter::write(char ch)
 
 
 void
+TextWriter::writeZeroLength(const Utf8StringView& text)
+{
+    _output += text;
+}
+
+
+void
 TextWriter::write(const Utf8StringView& text)
 {
     _output += text;
@@ -58,7 +69,9 @@ TextWriter::write(const Utf8StringView& text)
 void
 TextWriter::writeUint(unsigned int digits)
 {
+    auto old = _output.size();
     _output += std::to_string(digits).c_str();
+    _column += _output.size() - old;
 }
 
 
@@ -151,6 +164,45 @@ TextWriter::writeByteWithHexPrefix(uint8_t integer)
 }
 
 
+void
+TextWriter::writeDisplacement(int32_t n)
+{
+    if (n & 0x80)
+    {
+        write("-");
+        n = ~n + 1;
+    }
+    write("0x");
+    static const char* digits = "0123456789abcdef";
+    bool hasWrittenDigit = false;
+    for (int i = 7; i >= 0; --i)
+    {
+        unsigned int s = std::pow(16, i);
+        unsigned int r = n / s;
+        if (r != 0 || hasWrittenDigit)
+        {
+            hasWrittenDigit = true;
+            write(digits[r]);
+            if (r != 0)
+            {
+                n -= s;
+            }
+        }
+    }
+    if (!hasWrittenDigit)
+    {
+        write("0");
+    }
+}
+
+
+void
+TextWriter::writeImmediateValue(uint64_t integer)
+{
+    write("$");
+    writeDisplacement(integer);
+}
+
 
 void
 TextWriter::writeSignedHex(std::array<uint8_t, 4> integer)
@@ -160,7 +212,6 @@ TextWriter::writeSignedHex(std::array<uint8_t, 4> integer)
     {
         write("-");
     }
-    write("0x");
     uint32_t n = 0;
 
     for (int i = 0; i < 4; ++i)
@@ -174,21 +225,7 @@ TextWriter::writeSignedHex(std::array<uint8_t, 4> integer)
             n += (integer[i] << (i * 8));
         }
     }
-    static const char* digits = "0123456789abcdef";
-    bool hasWrittenDigit = false;
-    for (int i = 7; i >= 0; --i)
-    {
-        unsigned int r = n / std::pow(16, i);
-        if (r != 0 || hasWrittenDigit)
-        {
-            hasWrittenDigit = true;
-            write(digits[r]);
-        }
-    }
-    if (!hasWrittenDigit)
-    {
-        write("0");
-    }
+    writeDisplacement(n);
 }
 
 
@@ -230,5 +267,25 @@ TextWriter::writeByteHex(uint8_t integer)
     }
 }
 
+void
+TextWriter::writeAddress64(uint64_t address)
+{
+    write("0x");
+    writeByteHex((address >> 56) & 0xff);
+    writeByteHex((address >> 48) & 0xff);
+    writeByteHex((address >> 40) & 0xff);
+    writeByteHex((address >> 32) & 0xff);
+    writeByteHex((address >> 24) & 0xff);
+    writeByteHex((address >> 16) & 0xff);
+    writeByteHex((address >> 8) & 0xff);
+    writeByteHex(address & 0xff);
+}
+
+void
+TextWriter::writeCString(const char* text)
+{
+    _output += text;
+    _column += std::strlen(text);
+}
 
 }

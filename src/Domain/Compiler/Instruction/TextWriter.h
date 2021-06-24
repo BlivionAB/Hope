@@ -37,16 +37,31 @@ public:
     writeCharacter(char character);
 
     void
+    writeCString(const char* text);
+
+    void
+    writeZeroLength(const Utf8StringView& text);
+
+    void
     write(const Utf8StringView& text);
 
     void
     writeLine(const Utf8StringView& text);
 
     void
+    writeImmediateValue(uint64_t integer);
+
+    void
+    writeDisplacement(int32_t n);
+
+    void
     writeByteHex(uint8_t integer);
 
     void
     write(char ch);
+
+    void
+    writeAddress64(uint64_t address);
 
     void
     writeByteWithHexPrefix(uint8_t integer);
@@ -81,7 +96,7 @@ private:
     _output;
 
     unsigned int
-    _column;
+    _column = 0;
 
     unsigned int
     _indentation = 0;

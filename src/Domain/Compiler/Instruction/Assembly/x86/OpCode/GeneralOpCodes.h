@@ -17,15 +17,6 @@ enum OpCodePrefix : uint8_t
 };
 
 
-enum OpCodeExtensionGroup1 : uint8_t
-{
-    Eb_lb = 0x80,
-    Ev_lz = 0x81,
-    Eb_lb_i64 = 0x82,
-    Ev_lb = 0x83,
-};
-
-
 enum OneByteOpCode : uint8_t
 {
     Push_rBX = 0x53,
@@ -47,6 +38,14 @@ enum OneByteOpCode : uint8_t
     TwoByteNop = 0x1f,
     Ret = 0xc3,
 
+    Sub = 0xec,
+    Add = 0xc4,
+
+    // Immediate Group 1
+    Eb_lb = 0x80,
+    Ev_lz = 0x81,
+    Eb_lb_i64 = 0x82,
+    Ev_Ib = 0x83,
 
     ExtGroup5 = 0xff,
     ExtGroup5_FarCallRegistryBits = 0b00100000,

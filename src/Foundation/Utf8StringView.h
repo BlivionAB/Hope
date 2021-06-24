@@ -6,6 +6,7 @@
 namespace elet::foundation
 {
 
+
 class Utf8StringView
 {
 public:

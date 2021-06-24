@@ -4,6 +4,9 @@
 #include <string>
 
 
+namespace elet::foundation
+{
+
 Utf8String::Utf8String():
     _capacity(0)
 {
@@ -261,6 +264,35 @@ Utf8String::size() const
     return _end - _value;
 }
 
+List<Utf8String>
+Utf8String::toLines() const
+{
+    List<Utf8String> result;
+    Utf8String::Iterator iter = begin();
+    Utf8String* current = result.emplace("");
+    while (iter != end())
+    {
+        auto ch = *iter;
+        ++iter;
+        if (ch == Character::Newline || ch == Character::CarriageReturn)
+        {
+            if (ch == Character::CarriageReturn)
+            {
+                ++iter;
+                ch = *iter;
+                if (ch != Character::Newline)
+                {
+                    throw std::runtime_error("Should new newline after carriage return.");
+                }
+            }
+            current = result.emplace("");
+            continue;
+        }
+        *current += static_cast<char>(ch);
+    }
+    return result;
+}
+
 
 const unsigned char kFirstBitMask = 128; // 1000000
 const unsigned char kSecondBitMask = 64; // 0100000
@@ -412,4 +444,7 @@ char
 Utf8String::CharIterator::operator * () const
 {
     return *_value;
+}
+
+
 }

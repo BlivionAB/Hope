@@ -5,6 +5,14 @@
 
 #define UTF8_EOF 0x04
 
+
+namespace elet::foundation
+{
+
+template<typename T>
+class List;
+
+
 class Utf8String
 {
 public:
@@ -301,6 +309,9 @@ public:
     const char*
     asString() const;
 
+    List<Utf8String>
+    toLines() const;
+
     void
     set(const char*, std::size_t);
 
@@ -318,5 +329,11 @@ private:
     std::size_t
     _capacity;
 };
+
+
+}
+
+
+#include "./List.h"
 
 #endif

@@ -2,8 +2,13 @@
 #define ELET_TEST_H
 
 
-#include "CompilerBaselineParser.h"
 #include <gmock/gmock.h>
+#include "CompilerBaselineParser.h"
+#include <Foundation/FilePath.h>
+#include <Foundation/File.h>
+#include "./TextDiff/MyersDiff.h"
+#include "./TextDiff/DiffPrinter.h"
+#include "../../../unittest.h"
 
 
 namespace elet::domain::compiler::test
@@ -148,11 +153,14 @@ protected:
         project = new TestProject();
     }
 
+    Utf8String
+    currentPath = "src/Domain/Compiler/Tests/__Baselines__";
+
     TestProject*
     project;
 
-    Utf8String
-    testProject(const TestProject* project)
+    testing::AssertionResult
+    testProject(const TestProject* project, const Utf8String baselineName)
     {
         Compiler compiler(*project->fileReader, AssemblyTarget::x86_64, ObjectFileTarget::MachO);
         compiler.startWorkers();
@@ -160,7 +168,36 @@ protected:
         compiler.endWorkers();
         auto output = compiler.getOutput();
         CompilerBaselineParser baselineParser(output);
-        return baselineParser.write();
+        Utf8String result = baselineParser.write();
+        DiffPrinter printer;
+        MyersDiff differ;
+        bool isDiffing = false;
+        FilePath basm = FilePath::cwd() / ".." / currentPath / (baselineName + ".basm");
+        FilePath baselineFolder = FilePath::folderOf(basm);
+        if (!FilePath::exists(baselineFolder))
+        {
+            File::createDirectory(baselineFolder);
+        }
+        if (FilePath::exists(basm))
+        {
+            auto baseline = File::read(basm);
+            auto diffs = differ.diffText(result, baseline, isDiffing);
+            if (isDiffing)
+            {
+                if (std::getenv("UPDATE_BASELINES") != nullptr || std::getenv("U") != nullptr)
+                {
+                    File::write(basm, result);
+                    return testing::AssertionSuccess();
+                }
+                else
+                {
+                    return testing::AssertionFailure() << printer.print(diffs);
+                }
+            }
+            return testing::AssertionSuccess();
+        }
+        File::write(basm, result);
+        return testing::AssertionSuccess();
     }
 };
 

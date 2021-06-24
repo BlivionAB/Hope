@@ -1,0 +1,25 @@
+Address           Bytes                 Instruction
+============================================================
+
+_main:
+0000000100003f80  55                    pushq %rbp
+0000000100003f81  4889e5                movq %rsp, %rbp
+0000000100003f84  488d3d5f000000        leaq "0x0000000100003fea:"Hello World!"", %rdi
+0000000100003f8b  e810000000            callq "0x0000000100003fa0 (WriteLine)"
+0000000100003f90  31c0                  xorl %eax, %eax
+0000000100003f92  5d                    popq %rbp
+0000000100003f93  c3                    ret
+0000000100003f94  660f1f840000000000    nopw (%ax,%ax)
+0000000100003f9d  0f1f00                nopl (%eax)
+
+WriteLine:
+0000000100003fa0  55                    pushq %rbp
+0000000100003fa1  4889e5                movq %rsp, %rbp
+0000000100003fa4  4883ec10              subq $0x10, %rsp
+0000000100003fa8  48897df8              movq %rdi, -0x8(%rbp)
+0000000100003fac  488b7df8              movq -0x8(%rbp), %rdi
+0000000100003fb0  e80b000000            callq 0x0000000100003fc0
+0000000100003fb5  4883c410              addq $0x10, %rsp
+0000000100003fb9  5d                    popq %rbp
+0000000100003fba  c3                    ret
+0000000100003fbb  0f1f440000            nopl (%eax,%eax)

@@ -41,7 +41,7 @@ TEST_F(CompileFixture, DynamicLinkingWithCCode)
         "   }"
         "}");
 
-    testProject(project);
+    EXPECT_TRUE(testProject(project, "some"));
 }
 
 

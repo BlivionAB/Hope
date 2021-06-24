@@ -13,14 +13,18 @@ X86Parser::X86Parser()
 
 
 List<Instruction*>
-X86Parser::parse(List<std::uint8_t>& output)
+X86Parser::parse(List<std::uint8_t>& output, size_t offset, size_t size)
 {
     List<Instruction*> instructions;
     _output = &output;
-    while (true)
+    _offset = offset;
+    _cursor = offset;
+    _size = size;
+
+    while (_cursor - _offset < _size)
     {
         auto instruction = new Instruction();
-        uint8_t opcode = getByte();
+        uint8_t opcode = getByte(instruction);
         if (opcode == 0)
         {
             break;
@@ -31,30 +35,27 @@ X86Parser::parse(List<std::uint8_t>& output)
             {
                 instruction->size = SizeKind::Quad;
             }
-            instruction->bytes.add(opcode);
-            opcode = getByte();
+            opcode = getByte(instruction);
         }
         bool hasOperandSizePrefix = false;
         if (opcode == OpCodePrefix::OperandSizePrefix)
         {
-            instruction->bytes.add(opcode);
             instruction->size = SizeKind::Word;
-            opcode = getByte();
+            opcode = getByte(instruction);
             hasOperandSizePrefix = true;
         }
         if (opcode == OpCodePrefix::TwoByteEscape)
         {
-            instruction->bytes.add(opcode);
-            opcode = getByte();
+            opcode = getByte(instruction);
             if (hasOperandSizePrefix)
             {
                 parseThreeByteOpCode(opcode, instruction, instructions);
             }
             else
             {
-
+                parseTwoByteOpCode(opcode, instruction, instructions);
             }
-            return instructions;
+            continue;
         }
         parseOneByteOpCode(instructions, instruction, opcode);
     }
@@ -65,9 +66,28 @@ X86Parser::parse(List<std::uint8_t>& output)
 void
 X86Parser::parseOneByteOpCode(List<Instruction*>& instructions, Instruction* instruction, uint8_t opcode)
 {
-    instruction->bytes.add(opcode);
     switch (opcode)
     {
+        case Ev_Ib:
+        {
+            uint8_t modrmByte = getByte(instruction);
+            uint8_t offset = getByte(instruction); // Note only one byte offset from "Ib".
+            uint8_t op = (modrmByte & ModRmMask::Reg) >> 3;
+            switch (op)
+            {
+                case 0:
+                    instruction->kind = InstructionKind::Add;
+                    break;
+                case 5:
+                    instruction->kind = InstructionKind::Sub;
+                    break;
+                default:
+                    throw std::runtime_error("Unknown operand code from modrmByte.");
+            }
+            instruction->operand1 = createEv(modrmByte, instruction, true);
+            instruction->operand2 = new Ib(offset);
+            break;
+        }
         case Ret:
             instruction->kind = InstructionKind::Ret;
             break;
@@ -78,29 +98,23 @@ X86Parser::parseOneByteOpCode(List<Instruction*>& instructions, Instruction* ins
             break;
         case Xor_Ev_Gv:
         {
-            uint8_t modrmByte = getByte();
+            uint8_t modrmByte = getByte(instruction);
             instruction->kind = InstructionKind::Xor;
-            instruction->bytes.add(modrmByte);
-            instruction->operand1 = createEvLhs(modrmByte, instruction);
+            instruction->operand1 = createEv(modrmByte, instruction, true);
             instruction->operand2 = createGv(modrmByte, instruction->size == SizeKind::Quad);
             break;
         }
         case CallNear:
         {
             instruction->kind = InstructionKind::Call;
-            auto doubleWord = getDoubleWord();
+            auto doubleWord = getDoubleWord(instruction);
             instruction->operand1 = Jv(doubleWord);
             instruction->size = SizeKind::Quad;
-            for (int i = 0; i < 4; ++i)
-            {
-                instruction->bytes.add(doubleWord[i]);
-            }
             break;
         }
         case Lea_Gv_M:
         {
-            uint8_t modrmByte = getByte();
-            instruction->bytes.add(modrmByte);
+            uint8_t modrmByte = getByte(instruction);
             instruction->kind = InstructionKind::Lea;
             instruction->operand1 = createGv(modrmByte, instruction);
             if (instruction->size == SizeKind::Quad)
@@ -120,20 +134,18 @@ X86Parser::parseOneByteOpCode(List<Instruction*>& instructions, Instruction* ins
             break;
         case Mov_Ev_Gv:
         {
-            uint8_t modrmByte = getByte();
-            instruction->bytes.add(modrmByte);
+            uint8_t modrmByte = getByte(instruction);
             instruction->kind = InstructionKind::Mov;
-            instruction->operand1 = createEvLhs(modrmByte, instruction);
+            instruction->operand1 = createEv(modrmByte, instruction, true);
             instruction->operand2 = createGv(modrmByte, instruction->size == SizeKind::Quad);
             break;
         }
         case Mov_Gv_Ev:
         {
-            uint8_t modrmByte = getByte();
-            instruction->bytes.add(modrmByte);
+            uint8_t modrmByte = getByte(instruction);
             instruction->kind = InstructionKind::Mov;
             instruction->operand1 = createGv(modrmByte, instruction->size == SizeKind::Quad);
-            instruction->operand2 = createEvRhs(modrmByte, nullptr);
+            instruction->operand2 = createEv(modrmByte, instruction, true);
             break;
         }
         default:;
@@ -143,18 +155,31 @@ X86Parser::parseOneByteOpCode(List<Instruction*>& instructions, Instruction* ins
 }
 
 
+
 void
-X86Parser::parseThreeByteOpCode(uint8_t opcode, Instruction* instruction, List<Instruction*>& instructions)
+X86Parser::parseTwoByteOpCode(uint8_t opcode, Instruction* instruction, List<Instruction*>& instructions)
 {
-    instruction->bytes.add(opcode);
     switch (opcode)
     {
         case ThreeByteOpCode::Nop_0_Ev:
-            uint8_t modrmByte = getByte();
-            instruction->bytes.add(modrmByte);
+            uint8_t modrmByte = getByte(instruction);
             instruction->kind = InstructionKind::Nop;
-            instruction->operand1 = Register::rAX;
-            instruction->operand2 = createEvRhs(modrmByte, instruction);
+            instruction->operand1 = createEv(modrmByte, instruction, true);
+            break;
+    }
+    instructions.add(instruction);
+}
+
+
+void
+X86Parser::parseThreeByteOpCode(uint8_t opcode, Instruction* instruction, List<Instruction*>& instructions)
+{
+    switch (opcode)
+    {
+        case ThreeByteOpCode::Nop_0_Ev:
+            uint8_t modrmByte = getByte(instruction);
+            instruction->kind = InstructionKind::Nop;
+            instruction->operand1 = createEv(modrmByte, instruction, true);
             break;
     }
     instructions.add(instruction);
@@ -162,84 +187,65 @@ X86Parser::parseThreeByteOpCode(uint8_t opcode, Instruction* instruction, List<I
 
 
 Ev*
-X86Parser::createEvLhs(std::uint8_t modrmByte, Instruction* instruction)
+X86Parser::createEv(uint8_t modrmByte, Instruction* instruction, bool useOnlyRmField)
 {
     auto ev = new Ev();
-    std::uint8_t mod = modrmByte & MOD_BITS;
-    std::uint8_t rm = modrmByte & RM_BITS;
-    switch (mod)
+    if (useOnlyRmField)
     {
-        case Mod::Mod1:
-            ev->emplace<Register>(mapDoubleWordRegisterIndex(rm));
-            if (rm == Rm5)
-            {
-                auto byte = getByte();
-                ev->emplace<ByteDisplacement>(Register::rBP, byte);
-                instruction->bytes.add(byte);
-            }
-            return ev;
-        case Mod::Mod2:
-            if (rm == Rm::Rm4)
-            {
-                uint8_t sib = getByte();
-                instruction->bytes.add(sib);
-                std::array<uint8_t, 4> dw = getDoubleWord();
-                uint8_t base = sib & Sib::BaseMask;
-                uint8_t index = sib & Sib::IndexMask >> 3;
-                uint8_t scale = std::pow(2, sib & Sib::ScaleMask >> 5);
-                auto sibDisplacement = new SibDisplacement(static_cast<Register>(base), static_cast<Register>(index), scale);
-                ev->emplace<LongDisplacement>(sibDisplacement, dw);
-                for (int i = 0; i < 4; ++i)
+        uint8_t mod = modrmByte & MOD_BITS;
+        uint8_t rm = modrmByte & RM_BITS;
+        switch (mod)
+        {
+            case ModBits::Mod0:
+                ev->emplace<RegisterDisplacement>(mapDoubleWordRegisterIndex(rm));
+                return ev;
+            case ModBits::Mod1:
+                if (rm == RmBits::Rm4)
                 {
-                    instruction->bytes.add(dw[i]);
+                    uint8_t sib = getByte(instruction);
+                    uint8_t offset = getByte(instruction);
+                    uint8_t base = sib & Sib::BaseMask;
+                    uint8_t index = sib & Sib::IndexMask >> 3;
+                    uint8_t scale = std::pow(2, sib & Sib::ScaleMask >> 5);
+                    auto sibDisplacement = new SibDisplacement(static_cast<Register>(base), static_cast<Register>(index), scale);
+                    ev->emplace<ByteDisplacement>(sibDisplacement, offset);
                 }
-            }
-            else
-            {
-                throw std::runtime_error("Unimplemented Ev register");
-            }
-            return ev;
-        case Mod::Mod3:
-            if (instruction->size == SizeKind::Quad)
-            {
-                ev->emplace<Register>(mapQuadWordRegisterIndex(rm));
-            }
-            else
-            {
-                ev->emplace<Register>(mapDoubleWordRegisterIndex(rm));
-            }
-            return ev;
-        default:
-            throw std::runtime_error("Unknown mod byte / address form.");
-    }
-}
-
-Ev*
-X86Parser::createEvRhs(std::uint8_t modrmByte, Instruction* instruction)
-{
-    auto ev = new Ev();
-    uint8_t reg = (modrmByte & REG_BITS) >> 3;
-    std::uint8_t mod = modrmByte & MOD_BITS;
-    std::uint8_t rm = modrmByte & RM_BITS;
-    switch (mod)
-    {
-        case Mod::Mod2:
-            if (rm == Rm::Rm4)
-            {
-                uint8_t sib = getByte();
-                instruction->bytes.add(sib);
-                std::array<uint8_t, 4> dw = getDoubleWord();
-                for (int i = 0; i < 4; ++i)
+                else
                 {
-                    instruction->bytes.add(dw[i]);
+                    auto byte = getByte(instruction);
+                    ev->emplace<ByteDisplacement>(mapDoubleWordRegisterIndex(rm), byte);
                 }
-            }
-            break;
-        default:
-            throw std::runtime_error("Not implemented");
+                return ev;
+            case ModBits::Mod2:
+                if (rm == RmBits::Rm4)
+                {
+                    uint8_t sib = getByte(instruction);
+                    std::array<uint8_t, 4> dw = getDoubleWord(instruction);
+                    uint8_t base = sib & Sib::BaseMask;
+                    uint8_t index = sib & Sib::IndexMask >> 3;
+                    uint8_t scale = std::pow(2, sib & Sib::ScaleMask >> 5);
+                    auto sibDisplacement = new SibDisplacement(static_cast<Register>(base), static_cast<Register>(index), scale);
+                    ev->emplace<LongDisplacement>(sibDisplacement, dw);
+                }
+                else
+                {
+                    throw std::runtime_error("Unimplemented Ev register");
+                }
+                return ev;
+            case ModBits::Mod3:
+                if (instruction->size == SizeKind::Quad)
+                {
+                    ev->emplace<Register>(mapQuadWordRegisterIndex(rm));
+                }
+                else
+                {
+                    ev->emplace<Register>(mapDoubleWordRegisterIndex(rm));
+                }
+                return ev;
+            default:
+                throw std::runtime_error("Unknown mod byte / address form.");
+        }
     }
-    ev->emplace<Register>(mapDoubleWordRegisterIndex(reg));
-    return ev;
 }
 
 
@@ -304,37 +310,31 @@ X86Parser::mapQuadWordRegisterIndex(std::uint8_t reg)
 
 
 std::array<std::uint8_t, 4>
-X86Parser::getDoubleWord()
+X86Parser::getDoubleWord(Instruction* instruction)
 {
     std::array<std::uint8_t, 4> result = { 0, 0, 0, 0 };
     for (unsigned int i = 0; i < 4; ++i)
     {
-        std::uint8_t opcode = getByte();
+        std::uint8_t opcode = getByte(instruction);
         result[i] = opcode;
     }
     return result;
 }
 
 
-std::uint8_t
-X86Parser::getByte()
+uint8_t
+X86Parser::getByte(Instruction* instruction)
 {
-    if (_cursor == _output->size())
-    {
-        return 0;
-    }
-    return (*_output)[_cursor++];
+    uint8_t result = (*_output)[_cursor++];
+    instruction->bytes.add(result);
+    return result;
 }
 
 
 MemoryAddress32*
 X86Parser::createMemoryAddress32(Instruction* instruction)
 {
-    std::array<uint8_t, 4> opcode = getDoubleWord();
-    for (int i = 0; i < 4; ++i)
-    {
-        instruction->bytes.add(opcode[i]);
-    }
+    std::array<uint8_t, 4> opcode = getDoubleWord(instruction);
     return new MemoryAddress32(opcode);
 }
 

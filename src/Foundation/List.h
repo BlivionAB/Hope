@@ -2,12 +2,15 @@
 #define FLASHPOINT_LIST_H
 
 #include "Foundation/Memory/MemoryPool.h"
-#include "Utf8StringView.h"
+#include "Utf8String.h"
 #include <functional>
 #include <optional>
-//#include <valgrind/memcheck.h>
 
 namespace elet::foundation {
+
+
+class Utf8String;
+
 
 template<typename T>
 class List
@@ -70,8 +73,12 @@ public:
     ~List();
 
     template<typename ... Args>
-    void
+    T*
     emplace(const Args& ... args);
+
+    template<typename ... Args>
+    void
+    unshiftEmplace(const Args& ... args);
 
     void
     create(const T& item);
@@ -102,7 +109,7 @@ public:
     concat(const List<T>& other) const;
 
     List<T>
-    slice(size_t index);
+    slice(size_t index, size_t size);
 
     List<T>
     copy();
@@ -123,7 +130,7 @@ public:
     last();
 
     Utf8String
-    join(const Utf8StringView& delimiter) const;
+    join(Utf8String delimiter) const;
 
     bool
     isEmpty() const;

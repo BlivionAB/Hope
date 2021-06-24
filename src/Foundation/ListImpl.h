@@ -2,10 +2,13 @@
 #define FLASHPOINT_VECTOR_IMPL_H
 
 #include "List.h"
+#include "./Utf8String.h"
 #include <iostream>
-//#include <valgrind/memcheck.h>
 
-namespace elet::foundation {
+
+namespace elet::foundation
+{
+
 
 template<typename T>
 List<T>::List():
@@ -58,7 +61,7 @@ List<T>::~List()
 
 template<typename T>
 template<typename ... Args>
-void
+T*
 List<T>::emplace(const Args&... args)
 {
     static constexpr std::size_t sizeOfType = sizeof(T);
@@ -69,8 +72,9 @@ List<T>::emplace(const Args&... args)
         _items = reinterpret_cast<T*>(realloc(_items, _capacity * sizeOfType));
         _cursor = _items + oldSize;
     }
-    new (_cursor) T(args...);
+    auto obj = new (_cursor) T(args...);
     _cursor++;
+    return obj;
 }
 
 
@@ -220,7 +224,7 @@ List<T>::last()
 
 template<typename T>
 Utf8String
-List<T>::join(const Utf8StringView& delimiter) const
+List<T>::join(Utf8String delimiter) const
 {
     Utf8String result;
     std::size_t lastIndex = size() - 1;
@@ -452,16 +456,16 @@ List<T>::write(B* batch)
 
 template<typename T>
 List<T>
-List<T>::slice(size_t index)
+List<T>::slice(size_t index, size_t size)
 {
-    assert("Index is larger than size" && size() > index);
+    assert("size + index cannot be larger than size" && size + index <= this->size());
 
     List<T> list;
-    list._items = reinterpret_cast<T*>(calloc(_capacity - index, sizeof(T)));
+    list._items = reinterpret_cast<T*>(calloc(size, sizeof(T)));
     list._cursor = list._items;
-    std::memcpy(list._items, _items + index, (size() - index) * sizeof(T));
-    list._cursor = list._items + size();
-    list._capacity = _capacity - index;
+    std::memcpy(list._items, _items + index, size * sizeof(T));
+    list._cursor = list._items + size;
+    list._capacity = size;
     return list;
 }
 
@@ -473,6 +477,27 @@ List<T>::copy()
     return List<T>(*this);
 }
 
+template<typename T>
+template<typename... Args>
+void
+List<T>::unshiftEmplace(const Args& ... args)
+{
+    std::size_t oldSize = size();
+    if (oldSize + 1 > _capacity)
+    {
+        _capacity = _capacity * 2;
+        _items = reinterpret_cast<T*>(realloc(_items, _capacity * sizeof(T)));
+        _cursor = _items + oldSize;
+    }
+    new (_cursor) T(args...);
+    _cursor++;
 }
+
+
+
+}
+
+
+#include "Utf8String.h"
 
 #endif // FLASHPOINT_VECTOR_IMPL_H

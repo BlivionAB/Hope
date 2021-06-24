@@ -22,27 +22,30 @@ public:
     X86Parser();
 
     List<Instruction*>
-    parse(List<std::uint8_t>& output);
+    parse(List<std::uint8_t>& output, size_t offset, size_t size);
 
 private:
 
     List<std::uint8_t>*
     _output;
 
-    std::size_t
+    size_t
+    _offset;
+
+    size_t
+    _size;
+
+    size_t
     _cursor = 0;
 
-    std::uint8_t
-    getByte();
+    uint8_t
+    getByte(Instruction* instruction);
 
     std::array<std::uint8_t, 4>
-    getDoubleWord();
+    getDoubleWord(Instruction* instruction);
 
     Ev*
-    createEvRhs(std::uint8_t modrmByte, Instruction* instruction);
-
-    Ev*
-    createEvLhs(std::uint8_t modrmByte, Instruction* instruction);
+    createEv(std::uint8_t modrmByte, Instruction* instruction, bool useOnlyRmField);
 
     Gv*
     createGv(std::uint8_t opcode, bool isQuadWord);
@@ -61,6 +64,9 @@ private:
 
     void
     parseOneByteOpCode(List<Instruction*>& instructions, Instruction* instruction, uint8_t opcode);
+
+    void
+    parseTwoByteOpCode(uint8_t opcode, Instruction* instruction, List<Instruction*>& instructions);
 
     void
     parseThreeByteOpCode(uint8_t opcode, Instruction* instruction, List<Instruction*>& instructions);
