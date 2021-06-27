@@ -12,7 +12,7 @@ namespace elet::domain::compiler::instruction::output
 
 
 class DyldInfoWriter;
-class BaselineObjectFileWriter;
+class MachoFileWriter;
 
 
 
@@ -22,14 +22,14 @@ class ExportInfoWriter
 
 public:
 
-    ExportInfoWriter(BaselineObjectFileWriter* machoWriter);
+    ExportInfoWriter(MachoFileWriter* machoWriter);
 
     void
     write();
 
 private:
 
-    BaselineObjectFileWriter*
+    MachoFileWriter*
     _machoFileWriter;
 
     ByteWriter*

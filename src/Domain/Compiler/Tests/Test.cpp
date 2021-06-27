@@ -41,7 +41,8 @@ TEST_F(CompileFixture, DynamicLinkingWithCCode)
         "   }"
         "}");
 
-    EXPECT_TRUE(testProject(project, "some"));
+//    EXPECT_TRUE(testProject(project, AssemblyTarget::x86_64, ObjectFileTarget::MachO, "macho-x86_64"));
+    EXPECT_TRUE(testProject(project, AssemblyTarget::AArch64, ObjectFileTarget::MachO, "macho-aarch64"));
 }
 
 

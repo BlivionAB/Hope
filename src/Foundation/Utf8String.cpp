@@ -269,9 +269,13 @@ Utf8String::toLines() const
 {
     List<Utf8String> result;
     Utf8String::Iterator iter = begin();
-    Utf8String* current = result.emplace("");
+    Utf8String* current = nullptr;
     while (iter != end())
     {
+        if (current == nullptr)
+        {
+            current = result.emplace("");
+        }
         auto ch = *iter;
         ++iter;
         if (ch == Character::Newline || ch == Character::CarriageReturn)

@@ -1,24 +1,34 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cppcoreguidelines-avoid-magic-numbers"
 #pragma ide diagnostic ignored "cppcoreguidelines-pro-bounds-pointer-arithmetic"
-#include "BaselineObjectFileWriter.h"
+#include "MachoFileWriter.h"
 #include "DyldInfoWriter.h"
+#include "../Assembly/Aarch/AArch64Writer.h"
 
 
 namespace elet::domain::compiler::instruction::output
 {
 
 
-BaselineObjectFileWriter::BaselineObjectFileWriter()
+MachoFileWriter::MachoFileWriter(AssemblyTarget assemblyTarget):
+    _assemblyTarget(assemblyTarget)
 {
     _bw = new ByteWriter(&output, &offset);
-    assemblyWriter = new X86_64Writer(&_text);
+    switch (assemblyTarget)
+    {
+        case AssemblyTarget::x86_64:
+            assemblyWriter = new X86_64Writer(&_text);
+            break;
+        case AssemblyTarget::AArch64:
+            assemblyWriter = new AArch64Writer(&_text);
+            break;
+    }
     _dyldInfoWriter = new DyldInfoWriter(this);
 }
 
 
 List<uint8_t>*
-BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
+MachoFileWriter::write(FunctionRoutine* startRoutine)
 {
     layoutTextSegment(startRoutine);
     output.reserve(100 * 4096);
@@ -50,7 +60,7 @@ BaselineObjectFileWriter::write(FunctionRoutine* startRoutine)
 
 
 void
-BaselineObjectFileWriter::writeTextSegment()
+MachoFileWriter::writeTextSegment()
 {
     size_t rest = _textSegmentSize % 16;
     size_t modSize = _textSegmentSize - rest;
@@ -86,7 +96,7 @@ BaselineObjectFileWriter::writeTextSegment()
 
 
 void
-BaselineObjectFileWriter::layoutTextSegment(FunctionRoutine* startRoutine)
+MachoFileWriter::layoutTextSegment(FunctionRoutine* startRoutine)
 {
     writeTextSection(startRoutine);
     writeStubsSection();
@@ -105,7 +115,7 @@ BaselineObjectFileWriter::layoutTextSegment(FunctionRoutine* startRoutine)
 
 
 void
-BaselineObjectFileWriter::writeTextSection(FunctionRoutine* startRoutine)
+MachoFileWriter::writeTextSection(FunctionRoutine* startRoutine)
 {
     _textOffset = assemblyWriter->getOffset();
     assemblyWriter->writeTextSection(startRoutine);
@@ -114,7 +124,7 @@ BaselineObjectFileWriter::writeTextSection(FunctionRoutine* startRoutine)
 
 
 void
-BaselineObjectFileWriter::writeStubsSection()
+MachoFileWriter::writeStubsSection()
 {
     _stubsOffset = assemblyWriter->getOffset();
     size_t rest = _stubsOffset % 2;
@@ -129,7 +139,7 @@ BaselineObjectFileWriter::writeStubsSection()
 
 
 void
-BaselineObjectFileWriter::writeStubHelperSection()
+MachoFileWriter::writeStubHelperSection()
 {
     _stubHelperOffset = assemblyWriter->getOffset();
     size_t rest = _stubHelperOffset % 16;
@@ -144,7 +154,7 @@ BaselineObjectFileWriter::writeStubHelperSection()
 
 
 void
-BaselineObjectFileWriter::writeCStringSection()
+MachoFileWriter::writeCStringSection()
 {
     _stringOffset = assemblyWriter->getOffset();
     assemblyWriter->writeCStringSection();
@@ -153,7 +163,7 @@ BaselineObjectFileWriter::writeCStringSection()
 
 
 void
-BaselineObjectFileWriter::writeTextSegmentCommand()
+MachoFileWriter::writeTextSegmentCommand()
 {
     _textSegment = writeSegment({
         LcSegment64,
@@ -178,7 +188,7 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
         4,
         0,
         0,
-        S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
+        MachoSectionFlags::S_ATTR_PURE_INSTRUCTIONS | MachoSectionFlags::S_ATTR_SOME_INSTRUCTIONS,
         0,
         0,
         0
@@ -193,7 +203,7 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
          1,
          0,
          0,
-         S_SYMBOL_STUBS | S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
+         MachoSectionFlags::S_SYMBOL_STUBS | MachoSectionFlags::S_ATTR_PURE_INSTRUCTIONS | MachoSectionFlags::S_ATTR_SOME_INSTRUCTIONS,
          0,
          6, /*byte size of each stub entry*/
          0
@@ -208,7 +218,7 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
         2,
         0,
         0,
-        S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS,
+        MachoSectionFlags::S_ATTR_PURE_INSTRUCTIONS | MachoSectionFlags::S_ATTR_SOME_INSTRUCTIONS,
         0,
         0, /*number of stubs*/
         0
@@ -223,7 +233,7 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
         0,
         0,
         0,
-        S_CSTRING_LITERALS,
+        MachoSectionFlags::S_CSTRING_LITERALS,
         0,
         0,
         0
@@ -232,16 +242,31 @@ BaselineObjectFileWriter::writeTextSegmentCommand()
 
 
 void
-BaselineObjectFileWriter::writeHeader()
+MachoFileWriter::writeHeader()
 {
+    MachoCpuType cpuType;
+    MachoCpuType cpuSubType;
+    switch (_assemblyTarget)
+    {
+        case AssemblyTarget::x86_64:
+            cpuType = MachoCpuType::CPU_TYPE_X86_64;
+            cpuSubType = MachoCpuType::CPU_SUBTYPE_X86_64_ALL;
+            break;
+        case AssemblyTarget::AArch64:
+            cpuType = MachoCpuType::CPU_TYPE_ARM64;
+            cpuSubType = MachoCpuType::CPU_SUBTYPE_ARM64_ALL;
+            break;
+        default:
+            throw std::runtime_error("Unknown assembly target.");
+    }
     MachHeader64 header {
-        .magic = MACHO_MAGIC_64,
-        .cpuType = CPU_TYPE_X86_64,
-        .cpuSubType = CPU_SUBTYPE_X86_64_ALL,
+        .magic = MachoMagicValue::MACHO_MAGIC_64,
+        .cpuType = cpuType,
+        .cpuSubType = cpuSubType,
         .fileType = MH_EXECUTE,
         .numberOfCommands = 0,
         .sizeOfCommands = 0,
-        .flags = MH_NOUNDEFS | MH_DYLDLINK | MH_TWOLEVEL | MH_PIE,
+        .flags = MachoFlags::MH_NOUNDEFS | MachoFlags::MH_DYLDLINK | MachoFlags::MH_TWOLEVEL | MachoFlags::MH_PIE,
         .reserved = 0,
     };
     _header = output.write(&header);
@@ -250,7 +275,7 @@ BaselineObjectFileWriter::writeHeader()
 
 
 void
-BaselineObjectFileWriter::writePageZeroSegmentCommand()
+MachoFileWriter::writePageZeroSegmentCommand()
 {
     writeSegment({
         LcSegment64,
@@ -260,8 +285,8 @@ BaselineObjectFileWriter::writePageZeroSegmentCommand()
         0x0000000100000000,
         0,
         0,
-        VM_PROTECTION_NONE,
-        VM_PROTECTION_NONE,
+        VmProtection::VM_PROTECTION_NONE,
+        VmProtection::VM_PROTECTION_NONE,
         0,
         0
     });
@@ -269,7 +294,7 @@ BaselineObjectFileWriter::writePageZeroSegmentCommand()
 
 
 SegmentCommand64*
-BaselineObjectFileWriter::writeSegment(SegmentCommand64 segmentCommand)
+MachoFileWriter::writeSegment(SegmentCommand64 segmentCommand)
 {
     offset += sizeof(SegmentCommand64);
     _header->sizeOfCommands += sizeof(SegmentCommand64);
@@ -279,7 +304,7 @@ BaselineObjectFileWriter::writeSegment(SegmentCommand64 segmentCommand)
 
 
 Section64*
-BaselineObjectFileWriter::writeSection(Section64 section, SegmentCommand64* segment)
+MachoFileWriter::writeSection(Section64 section, SegmentCommand64* segment)
 {
     offset += sizeof(Section64);
     _header->sizeOfCommands += sizeof(Section64);
@@ -290,7 +315,7 @@ BaselineObjectFileWriter::writeSection(Section64 section, SegmentCommand64* segm
 
 
 void
-BaselineObjectFileWriter::writePadding(uint32_t padding)
+MachoFileWriter::writePadding(uint32_t padding)
 {
     for (unsigned int i = 0; i < padding; ++i)
     {
@@ -301,7 +326,7 @@ BaselineObjectFileWriter::writePadding(uint32_t padding)
 
 
 void
-BaselineObjectFileWriter::writeDyldInfoSegmentCommand()
+MachoFileWriter::writeDyldInfoSegmentCommand()
 {
     DyldInfoCommand command = {
         .cmd = LC_DYLD_INFO_ONLY,
@@ -325,7 +350,7 @@ BaselineObjectFileWriter::writeDyldInfoSegmentCommand()
 
 
 void
-BaselineObjectFileWriter::writeDyldInfo()
+MachoFileWriter::writeDyldInfo()
 {
     linkEditSegment->fileOffset = offset;
     _dyldInfoWriter->write();
@@ -333,7 +358,7 @@ BaselineObjectFileWriter::writeDyldInfo()
 
 
 void
-BaselineObjectFileWriter::writeLinkEditSegmentCommand()
+MachoFileWriter::writeLinkEditSegmentCommand()
 {
     linkEditSegment = writeSegment({
         .command = LcSegment64,
@@ -352,7 +377,7 @@ BaselineObjectFileWriter::writeLinkEditSegmentCommand()
 
 
 void
-BaselineObjectFileWriter::writeDataConstSegmentCommand()
+MachoFileWriter::writeDataConstSegmentCommand()
 {
     _dataConstSegment = writeSegment({
         .command = LcSegment64,
@@ -385,7 +410,7 @@ BaselineObjectFileWriter::writeDataConstSegmentCommand()
 
 
 void
-BaselineObjectFileWriter::writeDataSegmentCommand()
+MachoFileWriter::writeDataSegmentCommand()
 {
     _dataSegment = writeSegment({
         .command = LcSegment64,
@@ -432,7 +457,7 @@ BaselineObjectFileWriter::writeDataSegmentCommand()
 
 
 void
-BaselineObjectFileWriter::writeDataConstSegment()
+MachoFileWriter::writeDataConstSegment()
 {
     _dataConstSegment->vmAddress = vmAddress;
     _dataConstSegment->vmSize = SEGMENT_SIZE;
@@ -464,7 +489,7 @@ BaselineObjectFileWriter::writeDataConstSegment()
 
 
 void
-BaselineObjectFileWriter::writeDataSegment()
+MachoFileWriter::writeDataSegment()
 {
     _dataSegment->vmAddress = vmAddress;
     _dataSegment->vmSize = SEGMENT_SIZE;
@@ -485,7 +510,7 @@ BaselineObjectFileWriter::writeDataSegment()
 
 
 void
-BaselineObjectFileWriter::writeLaSymbolPtrSection()
+MachoFileWriter::writeLaSymbolPtrSection()
 {
     _dataLaSymbolPtrSection->address = vmAddress;
     _dataLaSymbolPtrSection->offset = offset;
@@ -501,7 +526,7 @@ BaselineObjectFileWriter::writeLaSymbolPtrSection()
 
 
 void
-BaselineObjectFileWriter::writeDataSection()
+MachoFileWriter::writeDataSection()
 {
     _dataSection->address = vmAddress;
     _dataSection->size = 8;
@@ -516,7 +541,7 @@ BaselineObjectFileWriter::writeDataSection()
 
 
 void
-BaselineObjectFileWriter::writeDysymTabCommand()
+MachoFileWriter::writeDysymTabCommand()
 {
     DysymTabCommand command =
     {
@@ -549,7 +574,7 @@ BaselineObjectFileWriter::writeDysymTabCommand()
 
 
 void
-BaselineObjectFileWriter::writeSymtabCommand()
+MachoFileWriter::writeSymtabCommand()
 {
     SymtabCommand command =
     {
@@ -568,7 +593,7 @@ BaselineObjectFileWriter::writeSymtabCommand()
 
 
 void
-BaselineObjectFileWriter::writeLoadDylibCommands()
+MachoFileWriter::writeLoadDylibCommands()
 {
     LoadDylibCommand* command = writeCommand<LoadDylibCommand>(LC_LOAD_DYLIB);
     command->name = 24; // Offset to string
@@ -585,7 +610,7 @@ BaselineObjectFileWriter::writeLoadDylibCommands()
 
 template<typename TCommand>
 TCommand*
-BaselineObjectFileWriter::writeCommand(CommandType commandType)
+MachoFileWriter::writeCommand(CommandType commandType)
 {
     TCommand command =
     {
@@ -600,7 +625,7 @@ BaselineObjectFileWriter::writeCommand(CommandType commandType)
 
 
 void
-BaselineObjectFileWriter::writeSymbolTable()
+MachoFileWriter::writeSymbolTable()
 {
     uint64_t symbolTableIndex = 1;
     symtabCommand->symbolOffset = offset;
@@ -664,7 +689,7 @@ BaselineObjectFileWriter::writeSymbolTable()
 }
 
 void
-BaselineObjectFileWriter::writeDyldPrivateSymbol()
+MachoFileWriter::writeDyldPrivateSymbol()
 {
     _dyldPrivateStringTableIndexOffset = offset;
 
@@ -688,7 +713,7 @@ BaselineObjectFileWriter::writeDyldPrivateSymbol()
 }
 
 void
-BaselineObjectFileWriter::writeStringTable()
+MachoFileWriter::writeStringTable()
 {
     symtabCommand->stringOffset = offset;
     _bw->writeString(" "); // This is used to mark empty string using 1 index
@@ -716,7 +741,7 @@ BaselineObjectFileWriter::writeStringTable()
 
 
 void
-BaselineObjectFileWriter::writeIndirectSymbolTable()
+MachoFileWriter::writeIndirectSymbolTable()
 {
     dysymTabCommand->indirectSymbolTableOffset = offset;
 
@@ -750,7 +775,7 @@ BaselineObjectFileWriter::writeIndirectSymbolTable()
 
 
 void
-BaselineObjectFileWriter::writeLoadDylinkerCommand()
+MachoFileWriter::writeLoadDylinkerCommand()
 {
     auto command = writeCommand<LoadDylinkerCommand>(LC_LOAD_DYLINKER);
     command->name = 12;
@@ -763,7 +788,7 @@ BaselineObjectFileWriter::writeLoadDylinkerCommand()
 
 template<typename TCommand>
 void
-BaselineObjectFileWriter::writeCommandPadding(TCommand* command)
+MachoFileWriter::writeCommandPadding(TCommand* command)
 {
     uint32_t rest = command->cmdSize % 8;
     if (rest != 0)
@@ -777,14 +802,14 @@ BaselineObjectFileWriter::writeCommandPadding(TCommand* command)
 
 
 void
-BaselineObjectFileWriter::writeUuidCommand()
+MachoFileWriter::writeUuidCommand()
 {
     writeCommand<UuidCommand>(LC_UUID);
 }
 
 
 void
-BaselineObjectFileWriter::writeMainCommand(FunctionRoutine* startRoutine)
+MachoFileWriter::writeMainCommand(FunctionRoutine* startRoutine)
 {
     _mainCommand = writeCommand<MainCommand>(LC_MAIN);
     _mainCommand->offset = 0;

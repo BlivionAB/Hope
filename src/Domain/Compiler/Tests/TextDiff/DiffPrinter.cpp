@@ -15,8 +15,18 @@ DiffPrinter::DiffPrinter()
 std::string
 DiffPrinter::print(const List<Edit>& diffs)
 {
-    _tw.newline();
-    _tw.newline();
+    return print(diffs, false);
+}
+
+std::string
+DiffPrinter::print(const List<Edit>& diffs, bool printTerminalColors)
+{
+    _writeTerminalColors = printTerminalColors;
+    if (printTerminalColors)
+    {
+        _tw.newline();
+        _tw.newline();
+    }
     for (const Edit& edit : diffs)
     {
         switch (edit.type)
@@ -31,25 +41,25 @@ DiffPrinter::print(const List<Edit>& diffs)
                 _tw.newline();
                 break;
             case EditType::Delete:
-                _tw.writeZeroLength("\u001b[31m");
+                writeTerminalColor(TerminalColor::Red);
                 _tw.write("-");
                 _tw.tab();
                 _tw.writeUint(edit.oldLine->number);
                 _tw.tab();
                 _tw.tab();
                 _tw.write(edit.oldLine->content);
-                _tw.writeZeroLength("\u001b[0m");
+                writeTerminalColorReset();
                 _tw.newline();
                 break;
             case EditType::Insert:
-                _tw.writeZeroLength("\u001b[32m");
+                writeTerminalColor(TerminalColor::Green);
                 _tw.write("+");
                 _tw.tab();
                 _tw.tab();
                 _tw.writeUint(edit.newLine->number);
                 _tw.tab();
                 _tw.write(edit.newLine->content);
-                _tw.writeZeroLength("\u001b[0m");
+                writeTerminalColorReset();
                 _tw.newline();
                 break;
             default:
@@ -59,6 +69,37 @@ DiffPrinter::print(const List<Edit>& diffs)
 
     return _tw.toString().toString();
 }
+
+
+void
+DiffPrinter::writeTerminalColor(TerminalColor color)
+{
+    if (_writeTerminalColors)
+    {
+        switch (color)
+        {
+            case TerminalColor::Red:
+                _tw.writeZeroLength("\u001b[31m");
+                break;
+            case TerminalColor::Green:
+                _tw.writeZeroLength("\u001b[32m");
+                break;
+            default:
+                throw std::runtime_error("Unknown terminal color.");
+        }
+    }
+}
+
+
+void
+DiffPrinter::writeTerminalColorReset()
+{
+    if (_writeTerminalColors)
+    {
+        _tw.writeZeroLength("\u001b[0m");
+    }
+}
+
 
 
 }

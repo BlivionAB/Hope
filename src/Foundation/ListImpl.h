@@ -14,6 +14,7 @@ template<typename T>
 List<T>::List():
     _capacity(1)
 {
+        auto s = sizeof(T);
     _items = reinterpret_cast<T*>(calloc(_capacity, sizeof(T)));
     _cursor = _items;
 }
@@ -412,12 +413,14 @@ template<typename T>
 void
 List<T>::reserve(std::size_t capacity)
 {
-    auto tempCursor = _cursor - _items;
-    T* items = reinterpret_cast<T*>(malloc(capacity * sizeof(T)));
-    std::memcpy(items, _items, size() * sizeof(T));
-    free(_items);
-    _items = items;
-    _cursor = items + tempCursor;
+    auto s = size();
+    _items = reinterpret_cast<T*>(realloc(_items, capacity * sizeof(T)));
+    if (!_items)
+    {
+        throw std::runtime_error("Reservation failed.");
+    }
+    _cursor = _items + s;
+    std::memset(_cursor, 0, capacity - size());
     this->_capacity = capacity;
 }
 

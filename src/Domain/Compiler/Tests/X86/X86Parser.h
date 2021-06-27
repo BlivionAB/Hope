@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include "X86Types.h"
+#include "../AssemblyParser.h"
 #include "Foundation/List.h"
 
 
@@ -14,7 +15,7 @@ namespace elet::domain::compiler::test
 using namespace elet::foundation;
 
 
-class X86Parser
+class X86Parser : public AssemblyParser
 {
 
 public:
@@ -25,18 +26,6 @@ public:
     parse(List<std::uint8_t>& output, size_t offset, size_t size);
 
 private:
-
-    List<std::uint8_t>*
-    _output;
-
-    size_t
-    _offset;
-
-    size_t
-    _size;
-
-    size_t
-    _cursor = 0;
 
     uint8_t
     getByte(Instruction* instruction);

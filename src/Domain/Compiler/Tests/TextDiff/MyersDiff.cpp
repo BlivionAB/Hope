@@ -90,20 +90,20 @@ MyersDiff::midpoint(const Box& box)
     size_t rest = box.size() % 2;
     size_t max_d = box.size() / 2 + rest;
     List<int64_t> vf;
-    vf.reserve(max_d * 2 + 1);
-    vf[max_d + 1] = box.left;
+    vf.reserve(box.size() * 2 + 1);
+    vf[box.size() + 1] = box.left;
     List<int64_t> vb;
-    vb.reserve(max_d * 2 + 1);
-    vb[max_d + 1] = box.bottom;
+    vb.reserve(box.size() * 2 + 1);
+    vb[box.size() + 1] = box.bottom;
 
     for (int64_t d = 0; d <= max_d; ++d)
     {
-        auto forwardSnake = forwards(box, vf, vb, d, max_d);
+        auto forwardSnake = forwards(box, vf, vb, d, box.size());
         if (forwardSnake)
         {
             return forwardSnake;
         }
-        auto backwardsSnake = backwards(box, vf, vb, d, max_d);
+        auto backwardsSnake = backwards(box, vf, vb, d, box.size());
         if (backwardsSnake)
         {
             return backwardsSnake;
@@ -226,7 +226,7 @@ MyersDiff::backwards(const Box& box, List<int64_t>& vf, List<int64_t>& vb, int64
 
         vb[max_d + c] = y;
 
-        if (box.delta() % 2 == 0 && c >= -d && c <= d && x <= vf[max_d + k])
+        if (box.delta() % 2 == 0 && k >= -d && k <= d && x <= vf[max_d + k])
         {
             return LineMove({ static_cast<unsigned int>(x), static_cast<unsigned int>(y) }, { static_cast<unsigned int>(px), static_cast<unsigned int>(py) });
         }

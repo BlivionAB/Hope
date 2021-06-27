@@ -8,6 +8,7 @@ template<typename T>
 Stack<T>::Stack():
     _capacity(1)
 {
+        auto s = sizeof(T);
     _items = reinterpret_cast<T*>(calloc(_capacity, sizeof(T)));
     _cursor = _items;
 }

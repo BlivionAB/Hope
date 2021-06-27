@@ -1,36 +1,42 @@
 #include "CompilerBaselineParser.h"
-#include "../Instruction/ObjectFileWriter/BaselineObjectFileWriter.h"
+#include "../Instruction/ObjectFileWriter/MachoFileWriter.h"
 #include "./X86/X86Parser.h"
+#include "./Aarch/Aarch64Parser.h"
 
 namespace elet::domain::compiler::test
 {
 
 
 
-CompilerBaselineParser::CompilerBaselineParser(List<uint8_t>& list):
+CompilerBaselineParser::CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget) :
     _list(list),
-    _x86Parser(new X86Parser()),
-    _x86BaselinePrinter(new X86BaselinePrinter())
+    _x86Parser(nullptr),
+    _x86BaselinePrinter(nullptr),
+    _assemblyTarget(assemblyTarget)
 {
-
+    switch (assemblyTarget)
+    {
+        case AssemblyTarget::x86_64:
+            _assemblyParser = _x86Parser = new X86Parser();
+            _baselinePrinter = _x86BaselinePrinter = new X86BaselinePrinter();
+            break;
+        case AssemblyTarget::AArch64:
+            _assemblyParser = _aarch64Parser = new Aarch64Parser();
+            _baselinePrinter = _aarch64BaselinePrinter = new Aarch64BaselinePrinter();
+            break;
+        default:
+            throw std::runtime_error("Unknown assembly target");
+    }
 }
 
 Utf8String
 CompilerBaselineParser::write()
 {
-    _x86BaselinePrinter->list = &_list;
+    _baselinePrinter->list = &_list;
     MachHeader64* machHeader = reinterpret_cast<MachHeader64*>(&_list[0]);
     if (machHeader->magic != MACHO_MAGIC_64)
     {
         throw std::runtime_error("machHeader magic is wrong.");
-    }
-    if (machHeader->cpuType != CPU_TYPE_X86_64)
-    {
-        throw std::runtime_error("cpuType does not correspond to CPU_TYPE_X86_64.");
-    }
-    if (machHeader->cpuSubType != CPU_SUBTYPE_X86_64_ALL)
-    {
-        throw std::runtime_error("cpuSubType does not correspond to CPU_SUBTYPE_X86_64_ALL.");
     }
     _offset = sizeof(MachHeader64);
     for (size_t i = 0; i < machHeader->numberOfCommands; ++i)
@@ -48,7 +54,7 @@ CompilerBaselineParser::write()
                 _offset += cmd->cmdSize;
         }
     }
-    return _x86BaselinePrinter->print();
+    return _baselinePrinter->print();
 }
 
 
@@ -66,8 +72,8 @@ CompilerBaselineParser::parseSegment()
         }
         else if (std::strcmp(section->sectionName, "__cstring") == 0)
         {
-            _x86BaselinePrinter->cstringSectionOffset = section->offset;
-            _x86BaselinePrinter->cstringSectionSize = section->size;
+            _baselinePrinter->cstringSectionOffset = section->offset;
+            _baselinePrinter->cstringSectionSize = section->size;
         }
         _offset += sizeof(Section64);
     }
@@ -77,8 +83,18 @@ CompilerBaselineParser::parseSegment()
 void
 CompilerBaselineParser::parseTextSection(const Section64* textSection)
 {
-    _x86BaselinePrinter->instructions = _x86Parser->parse(_list, textSection->offset, textSection->size);
-    _x86BaselinePrinter->address = textSection->offset;
+    switch (_assemblyTarget)
+    {
+        case AssemblyTarget::AArch64:
+            _aarch64BaselinePrinter->instructions = _aarch64Parser->parse(_list, textSection->offset, textSection->size);
+            break;
+        case AssemblyTarget::x86_64:
+            _x86BaselinePrinter->instructions = _x86Parser->parse(_list, textSection->offset, textSection->size);
+            break;
+        default:
+            throw std::runtime_error("Unknwon assembly target");
+    }
+    _baselinePrinter->address = textSection->offset;
 }
 
 
@@ -96,7 +112,7 @@ CompilerBaselineParser::parseSymbolTable(const SymtabCommand* command)
             _symbols[e->value] = &stringTable[e->stringTableIndex];
         }
     }
-    _x86BaselinePrinter->symbols = &_symbols;
+    _baselinePrinter->symbols = &_symbols;
 }
 
 }

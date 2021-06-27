@@ -20,7 +20,7 @@ AssemblyWriterInterface::getOutput()
 }
 
 
-std::size_t
+uint64_t
 AssemblyWriterInterface::getOffset()
 {
     return _offset;

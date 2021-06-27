@@ -2,7 +2,7 @@
 #define ELET_BASELINEOBJECTFILEWRITER_H
 
 #include "../AssemblyWriter.h"
-#include "MachOFileWriter.h"
+#include "MachoFileWriter.h"
 #include "DyldInfoWriter.h"
 
 
@@ -13,11 +13,83 @@ namespace elet::domain::compiler::instruction::output
 class DyldInfoWriter;
 // For reference: https://opensource.apple.com/source/xnu/xnu-4903.270.47/EXTERNAL_HEADERS/mach-o/loader.h.auto.html
 #define SEGMENT_SIZE 0x4000 // 8 byte alignemnt
-#define MACHO_MAGIC_64 0xfeedfacf /* the 64-bit mach magic number */
-#define MACHO_CIGAM_64 0xcffaedfe /* NXSwapInt(MH_MAGIC_64) */
 
-#define	MACHO_OBJECT_FILE_TYPE	    0x1
-/* Constants for the cmd field of all load commands, the type */
+enum MachoMagicValue : uint64_t
+{
+    MACHO_MAGIC_64 = 0xfeedfacf,
+};
+
+
+enum MachoCpuType
+{
+    CPU_ARCH_ABI64 = 0x01000000,
+    CPU_TYPE_X86 = 0x7,
+    CPU_TYPE_X86_64 = (CPU_TYPE_X86 | CPU_ARCH_ABI64),
+    CPU_SUBTYPE_X86_64_ALL = 0x3,
+    CPU_TYPE_ARM = 0xc,
+    CPU_TYPE_ARM64 = (CPU_TYPE_ARM | CPU_ARCH_ABI64),
+    CPU_SUBTYPE_ARM64_ALL = 0x0,
+};
+
+
+enum VmProtection
+{
+    VM_PROTECTION_NONE = 0x0,
+    VM_PROTECTION_READ = 0x1,
+    VM_PROTECTION_WRITE = 0x2,
+    VM_PROTECTION_EXECUTE = 0x4,
+    VM_PROTECTION_ALL = (VM_PROTECTION_READ | VM_PROTECTION_WRITE | VM_PROTECTION_EXECUTE),
+};
+
+
+enum MachoFileType
+{
+    MH_EXECUTE = 0x2,
+};
+
+
+enum MachoFlags
+{
+    MH_NOUNDEFS = 0x00000001,
+    MH_DYLDLINK = 0x00000004,
+    MH_TWOLEVEL = 0x00000080,
+    MH_PIE = 0x00200000,
+};
+
+
+enum MachoSectionFlags
+{
+    S_ATTR_PURE_INSTRUCTIONS = 0x80000000,
+    S_ATTR_SOME_INSTRUCTIONS = 0x00000400,
+
+    S_CSTRING_LITERALS = 0x2,
+    S_SYMBOL_STUBS = 0x8,
+    S_NON_LAZY_SYMBOL_POINTERS = 0x6,
+    S_LAZY_SYMBOL_POINTERS = 0x7,
+};
+
+
+enum RebaseOpcode
+{
+    REBASE_TYPE_POINTER = 0x1,
+    REBASE_OPCODE_DONE = 0x00,
+    REBASE_OPCODE_SET_TYPE_IMM = 0x10,
+    REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB = 0x20,
+    REBASE_OPCODE_DO_REBASE_IMM_TIMES = 0x50,
+};
+
+
+enum BindOpcode
+{
+    BIND_TOP_POINTER = 0x1,
+    BIND_OPCODE_DONE = 0x00,
+    BIND_OPCODE_SET_DYLIB_ORDINAL_IMM = 0x10,
+    BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM = 0x40,
+    BIND_OPCODE_SET_TYPE_IMM = 0x50,
+    BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB = 0x70,
+    BIND_OPCODE_DO_BIND = 0x90,
+};
+
 
 enum LoadCommandType : uint8_t
 {
@@ -36,41 +108,31 @@ enum CpuArch : uint32_t
     Abi64_32 = 0x02000000,
 };
 
-#define CPU_TYPE_X86            0x7
-#define CPU_TYPE_X86_64 (CPU_TYPE_X86 | CPU_ARCH_ABI64)
-#define CPU_SUBTYPE_X86_64_ALL 0x3
-
-#define S_ATTR_PURE_INSTRUCTIONS 0x80000000
-#define S_ATTR_SOME_INSTRUCTIONS 0x00000400
-#define S_CSTRING_LITERALS       0x00000002
-#define S_SYMBOL_STUBS           0x00000008
-
-
 
 struct MachHeader64
 {
-    std::uint32_t
+    uint32_t
     magic;
 
-    std::uint32_t
+    uint32_t
     cpuType;
 
-    std::uint32_t
+    uint32_t
     cpuSubType;
 
-    std::uint32_t
+    uint32_t
     fileType;
 
-    std::uint32_t
+    uint32_t
     numberOfCommands;
 
-    std::uint32_t
+    uint32_t
     sizeOfCommands;
 
-    std::uint32_t
+    uint32_t
     flags;
 
-    std::uint32_t
+    uint32_t
     reserved;
 };
 
@@ -108,62 +170,6 @@ enum SymbolType : uint8_t
     N_PBUD = 0xcu,		/* prebound undefined (defined in a dylib) */
     N_INDR = 0xau,		/* indirect */
 };
-
-
-/*
- * For the two types of symbol pointers sections and the symbol stubs section
- * they have indirect symbol table entries.  For each of the entries in the
- * section the indirect symbol table entries, in corresponding order in the
- * indirect symbol table, start at the index stored in the reserved1 field
- * of the section structure.  Since the indirect symbol table entries
- * correspond to the entries in the section the number of indirect symbol table
- * entries is inferred from the size of the section divided by the size of the
- * entries in the section.  For symbol pointers sections the size of the entries
- * in the section is 4 bytes and for symbol stubs sections the byte size of the
- * stubs is stored in the reserved2 field of the section structure.
- */
-#define	S_NON_LAZY_SYMBOL_POINTERS	0x6	/* section with only non-lazy
-						   symbol pointers */
-#define	S_LAZY_SYMBOL_POINTERS		0x7	/* section with only lazy symbol
-						   pointers */
-#define	S_SYMBOL_STUBS			0x8	/* section with only symbol
-						   stubs, byte size of stub in
-						   the reserved2 field */
-#define	S_MOD_INIT_FUNC_POINTERS	0x9	/* section with only function
-						   pointers for initialization*/
-#define	S_MOD_TERM_FUNC_POINTERS	0xa	/* section with only function
-						   pointers for termination */
-#define	S_COALESCED			0xb	/* section contains symbols that
-						   are to be coalesced */
-#define	S_GB_ZEROFILL			0xc	/* zero fill on demand section
-						   (that can be larger than 4
-						   gigabytes) */
-#define	S_INTERPOSING			0xd	/* section with only pairs of
-						   function pointers for
-						   interposing */
-#define	S_16BYTE_LITERALS		0xe	/* section with only 16 byte
-						   literals */
-#define	S_DTRACE_DOF			0xf	/* section contains
-						   DTrace Object Format */
-#define	S_LAZY_DYLIB_SYMBOL_POINTERS	0x10	/* section with only lazy
-						   symbol pointers to lazy
-						   loaded dylibs */
-
-#define RELOCATION_TYPE_X86_64_UNSIGNED     0x0
-#define RELOCATION_TYPE_X86_64_SIGNED       0x1
-#define RELOCATION_TYPE_X86_64_BRANCH       0x2
-#define RELOCATION_TYPE_X86_64_GOT_LOAD     0x3
-#define RELOCATION_TYPE_X86_64_GOT          0x4
-#define RELOCATION_TYPE_X86_64_SUBTRACTOR   0x5
-#define RELOCATION_TYPE_X86_64_SIGNED1      0x6
-#define RELOCATION_TYPE_X86_64_SIGNED2      0x7
-#define RELOCATION_TYPE_X86_64_SIGNED4      0x8
-
-#define VM_PROTECTION_NONE    0x0
-#define VM_PROTECTION_READ    0x1
-#define VM_PROTECTION_WRITE   0x2
-#define VM_PROTECTION_EXECUTE 0x4
-#define VM_PROTECTION_ALL (VM_PROTECTION_READ | VM_PROTECTION_WRITE | VM_PROTECTION_EXECUTE)
 
 
 struct DyldInfoCommand
@@ -369,14 +375,6 @@ struct MainCommand : Command
     stackSize;
 };
 
-
-#define VM_PROTECTION_NONE    0x1
-#define VM_PROTECTION_READ    0x1
-#define VM_PROTECTION_WRITE   0x2
-#define VM_PROTECTION_EXECUTE 0x4
-#define VM_PROTECTION_ALL (VM_PROTECTION_READ | VM_PROTECTION_WRITE | VM_PROTECTION_EXECUTE)
-
-
 struct SegmentCommand64
 {
     uint32_t
@@ -456,20 +454,20 @@ struct Section64
 };
 
 
-class BaselineObjectFileWriter : public ObjectFileWriterInterface
+class MachoFileWriter : public ObjectFileWriterInterface
 {
 
 public:
 
-    BaselineObjectFileWriter();
+    MachoFileWriter(AssemblyTarget assemblyTarget);
 
     List<uint8_t>*
     write(FunctionRoutine* startRoutine) override;
 
-    std::uint64_t
+    uint64_t
     vmAddress = 0x0000000100000000;
 
-    std::uint64_t
+    uint64_t
     offset;
 
     DyldInfoCommand*
@@ -495,7 +493,7 @@ private:
     uint64_t
     _undefinedExternalSymbolIndex = 0;
 
-    List<std::uint8_t>
+    List<uint8_t>
     _text;
 
     DyldInfoWriter*
@@ -507,19 +505,22 @@ private:
     MachHeader64*
     _header;
 
-    std::uint32_t
+    AssemblyTarget
+    _assemblyTarget;
+
+    uint32_t
     _textOffset;
 
-    std::uint32_t
+    uint32_t
     _textSize;
 
-    std::uint32_t
+    uint32_t
     _textSegmentSize;
 
-    std::uint32_t
+    uint32_t
     _modTextSegmentSize;
 
-    std::uint32_t
+    uint32_t
     _numberOfTextSections;
 
     uint64_t

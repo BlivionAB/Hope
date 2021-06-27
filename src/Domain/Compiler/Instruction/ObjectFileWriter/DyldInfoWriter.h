@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <Foundation/List.h>
-#include "BaselineObjectFileWriter.h"
+#include "MachoFileWriter.h"
 #include "ExportInfoWriter.h"
 
 
@@ -14,14 +14,14 @@ namespace elet::domain::compiler::instruction::output
 
 using namespace elet::foundation;
 
-class BaselineObjectFileWriter;
+class MachoFileWriter;
 class ExportInfoWriter;
 
 class DyldInfoWriter
 {
 public:
 
-    DyldInfoWriter(BaselineObjectFileWriter* _machoWriter);
+    DyldInfoWriter(MachoFileWriter* _machoWriter);
 
     void
     write();
@@ -31,7 +31,7 @@ private:
     ByteWriter*
     _bw;
 
-    BaselineObjectFileWriter*
+    MachoFileWriter*
     _machoWriter;
 
     ExportInfoWriter*

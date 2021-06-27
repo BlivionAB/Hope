@@ -7,7 +7,7 @@ namespace elet::domain::compiler::instruction::output
 
 
 ExportInfoWriter::ExportInfoWriter(
-    BaselineObjectFileWriter* machoWriter):
+    MachoFileWriter* machoWriter):
 
     _machoFileWriter(machoWriter),
     _bw(new ByteWriter(&machoWriter->output, &machoWriter->offset))

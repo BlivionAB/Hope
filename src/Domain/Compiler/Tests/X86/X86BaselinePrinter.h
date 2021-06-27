@@ -8,6 +8,7 @@
 #include "X86BaselinePrinter.h"
 #include "X86Types.h"
 #include "X86Parser.h"
+#include "../BaselinePrinter.h"
 #include "Domain/Compiler/Instruction/TextWriter.h"
 
 namespace elet::domain::compiler::test
@@ -16,7 +17,7 @@ namespace elet::domain::compiler::test
 using namespace elet::foundation;
 
 
-class X86BaselinePrinter
+class X86BaselinePrinter : public BaselinePrinter
 {
 
 public:
@@ -24,36 +25,18 @@ public:
     X86BaselinePrinter();
 
     Utf8String
-    print();
-
-    uint64_t
-    address = 0;
+    print() override;
 
     uint64_t
     vmOffset = 0x0000000100000000;
 
-    List<uint8_t>*
-    list;
-
     List<Instruction*>
     instructions;
-
-    uint64_t
-    cstringSectionOffset;
-
-    uint64_t
-    cstringSectionSize;
-
-    std::map<uint64_t, const char*>*
-    symbols;
 
 private:
 
     X86Parser*
     _parser;
-
-    instruction::TextWriter*
-    _tw;
 
     void
     writeInstruction(Instruction* instruction);

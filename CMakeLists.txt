@@ -30,6 +30,7 @@ file(GLOB DOMAIN_SRC
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/ObjectFileWriter/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/Aarch/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/x86/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/x86/OpCode/*)
@@ -39,6 +40,7 @@ file(GLOB DOMAIN_TEST
     ${CMAKE_SOURCE_DIR}/src/Domain/Tests/**/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/X86/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Aarch/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/TextDiff/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/TextDiff/Tests/*)
 
@@ -50,8 +52,7 @@ add_executable(
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
-    ${DOMAIN_TEST}
-        src/Domain/Compiler/Tests/TextDiff/DiffPrinter.cpp src/Domain/Compiler/Tests/TextDiff/DiffPrinter.h src/unittest.h)
+    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Aarch/Aarch64BaselinePrinter.cpp src/Domain/Compiler/Tests/Aarch/Aarch64BaselinePrinter.h)
 
 set(LIBS fmt ${Boost_LIBRARIES})
 set(TEST_LIBS gtest gmock)

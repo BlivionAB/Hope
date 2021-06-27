@@ -11,7 +11,7 @@ TEST(MyersDiff, Deletion)
     MyersDiff myersDiff;
     DiffPrinter diffPrinter;
     auto result = myersDiff.diffText("D\nB\nA", "D\nB");
-    diffPrinter.print(result);
+    EXPECT_EQ(diffPrinter.print(result), "  1    1    D\n  2    2    B\n- 3         A\n");
 }
 
 
@@ -20,7 +20,7 @@ TEST(MyersDiff, Insertion)
     MyersDiff myersDiff;
     DiffPrinter diffPrinter;
     auto result = myersDiff.diffText("D", "D\nB");
-    diffPrinter.print(result);
+    EXPECT_EQ(diffPrinter.print(result), "  1    1    D\n+      2    B\n  1    1    D\n+      2    B\n");
 }
 
 
@@ -29,7 +29,7 @@ TEST(MyersDiff, Equal)
     MyersDiff myersDiff;
     DiffPrinter diffPrinter;
     auto result = myersDiff.diffText("D", "D");
-    diffPrinter.print(result);
+    EXPECT_EQ(diffPrinter.print(result), "  1    1    D\n");
 }
 
 
@@ -38,8 +38,26 @@ TEST(MyersDiff, Mixed)
     MyersDiff myersDiff;
     DiffPrinter diffPrinter;
     auto result = myersDiff.diffText("D\nC\nR", "D\nB\nE");
-    diffPrinter.print(result);
+    EXPECT_EQ(diffPrinter.print(result), "  1    1    D\n- 2         C\n- 3         R\n+      2    B\n+      3    E\n");
 }
 
+
+TEST(MyersDiff, ToEmpty)
+{
+    MyersDiff myersDiff;
+    DiffPrinter diffPrinter;
+    auto result = myersDiff.diffText("D\nB\nA", "");
+    EXPECT_EQ(diffPrinter.print(result), "- 1         D\n- 2         B\n- 3         A\n");
+}
+
+
+
+TEST(MyersDiff, FromEmpty)
+{
+    MyersDiff myersDiff;
+    DiffPrinter diffPrinter;
+    auto result = myersDiff.diffText("", "D\nB\nA\nC");
+    EXPECT_EQ(diffPrinter.print(result), "+      1    D\n+      2    B\n+      3    A\n+      4    C\n");
+}
 
 }

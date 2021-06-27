@@ -6,7 +6,7 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
-DyldInfoWriter::DyldInfoWriter(BaselineObjectFileWriter* machoWriter):
+DyldInfoWriter::DyldInfoWriter(MachoFileWriter* machoWriter):
     _machoWriter(machoWriter),
     _exportInfoWriter(new ExportInfoWriter(machoWriter)),
     _bw(new ByteWriter(&machoWriter->output, &machoWriter->offset))

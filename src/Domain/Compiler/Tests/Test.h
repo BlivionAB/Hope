@@ -3,12 +3,14 @@
 
 
 #include <gmock/gmock.h>
+#include <fstream>
 #include "CompilerBaselineParser.h"
 #include <Foundation/FilePath.h>
 #include <Foundation/File.h>
 #include "./TextDiff/MyersDiff.h"
 #include "./TextDiff/DiffPrinter.h"
 #include "../../../unittest.h"
+
 
 
 namespace elet::domain::compiler::test
@@ -160,44 +162,61 @@ protected:
     project;
 
     testing::AssertionResult
-    testProject(const TestProject* project, const Utf8String baselineName)
+    testProject(const TestProject* project, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget, const Utf8String baselineName)
     {
-        Compiler compiler(*project->fileReader, AssemblyTarget::x86_64, ObjectFileTarget::MachO);
+        Compiler compiler(*project->fileReader, assemblyTarget, objectFileTarget);
         compiler.startWorkers();
         compiler.addFile(project->getEntryFile());
         compiler.endWorkers();
         auto output = compiler.getOutput();
-        CompilerBaselineParser baselineParser(output);
+        CompilerBaselineParser baselineParser(output, AssemblyTarget::AArch64);
         Utf8String result = baselineParser.write();
         DiffPrinter printer;
         MyersDiff differ;
         bool isDiffing = false;
         FilePath basm = FilePath::cwd() / ".." / currentPath / (baselineName + ".basm");
         FilePath baselineFolder = FilePath::folderOf(basm);
+
+        writeOutput(output);
+
         if (!FilePath::exists(baselineFolder))
         {
             File::createDirectory(baselineFolder);
         }
+        Utf8String baseline("");
         if (FilePath::exists(basm))
         {
-            auto baseline = File::read(basm);
-            auto diffs = differ.diffText(result, baseline, isDiffing);
-            if (isDiffing)
+            baseline = File::read(basm);
+        }
+        auto diffs = differ.diffText(baseline, result, isDiffing);
+        if (isDiffing)
+        {
+            if (std::getenv("UPDATE_BASELINES") != nullptr || std::getenv("U") != nullptr)
             {
-                if (std::getenv("UPDATE_BASELINES") != nullptr || std::getenv("U") != nullptr)
-                {
-                    File::write(basm, result);
-                    return testing::AssertionSuccess();
-                }
-                else
-                {
-                    return testing::AssertionFailure() << printer.print(diffs);
-                }
+                File::write(basm, result);
+                return testing::AssertionSuccess();
             }
-            return testing::AssertionSuccess();
+            else
+            {
+                return testing::AssertionFailure() << printer.print(diffs, true);
+            }
         }
         File::write(basm, result);
         return testing::AssertionSuccess();
+    }
+
+    void
+    writeOutput(const List<uint8_t>& output) const
+    {
+        std::ofstream file;
+        const char* path = FilePath::resolve(FilePath::cwd(), "test.o").toString().toString();
+        file.open(path, std::ios_base::binary);
+        for (int i = 0; i < output.size(); ++i)
+        {
+            file.write(reinterpret_cast<char*>(&output[i]), 1);
+        }
+        std::cout << path << std::endl;
+        file.close();
     }
 };
 

@@ -42,13 +42,13 @@ public:
     void
     writeStubHelper() = 0;
 
-    List<std::uint8_t>*
+    List<uint8_t>*
     getOutput();
 
-    std::size_t
+    uint64_t
     getOffset();
 
-    std::uint32_t
+    uint32_t
     getExternRoutinesSize() const;
 
     ByteWriter*
@@ -69,21 +69,21 @@ public:
     void
     writePadding(size_t amount);
 
-    std::uint64_t
+    uint64_t
     dyldPrivateOffset;
 
 protected:
 
-    List<std::uint8_t>*
+    List<uint8_t>*
     _output;
 
     List<String*>
     _strings;
 
-    std::uint64_t
-    _offset;
+    uint64_t
+    _offset = 0;
 
-    std::uint64_t
+    uint64_t
     _dyldStubBinderRelocationAddress;
 };
 

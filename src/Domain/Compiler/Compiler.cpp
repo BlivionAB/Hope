@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <Foundation/FilePath.h>
 #include <Foundation/File.h>
-#include "Instruction/ObjectFileWriter/BaselineObjectFileWriter.h"
+#include "Instruction/ObjectFileWriter/MachoFileWriter.h"
 
 using namespace elet::domain::compiler::instruction::output;
 
@@ -27,7 +27,7 @@ Compiler::Compiler(FileReader& fileReader, AssemblyTarget assemblyTarget, Object
     _checker(new Checker(_binder))
 {
     _transformer = new Transformer(_dataMutex);
-    _objectFileWriter = new BaselineObjectFileWriter();
+    _objectFileWriter = new MachoFileWriter(assemblyTarget);
 }
 
 void
