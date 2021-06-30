@@ -8,7 +8,7 @@ namespace elet::domain::compiler::instruction::output
 X86_64Writer::X86_64Writer(List<std::uint8_t>* output) :
     AssemblyWriterInterface(output)
 {
-
+    _callingConvention = { { Reg7, Reg6, Reg2, Reg1 } };
 }
 
 
@@ -115,9 +115,9 @@ X86_64Writer::writeFunction(FunctionRoutine* routine)
 void
 X86_64Writer::writeFunctionRelocationAddresses(FunctionRoutine* routine)
 {
-    for (const auto& reloactionAddress : routine->relocationAddresses)
+    for (const auto& relocationAddress : routine->relocationAddresses)
     {
-        bw->writeDoubleWordAtAddress(routine->offset - reloactionAddress.second, reloactionAddress.first);
+        bw->writeDoubleWordAtAddress(routine->offset - relocationAddress.value, relocationAddress.offset);
     }
     routine->relocationAddresses.clear();
 }
@@ -157,7 +157,7 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRou
             }
             else
             {
-                routine->relocationAddresses.add({ _offset, _offset + 4 });
+                routine->relocationAddresses.emplace(_offset, _offset + 4);
                 bw->writeDoubleWord(0);
                 parentRoutine->subRoutines.add(routine);
             }
@@ -245,27 +245,6 @@ X86_64Writer::writeFunctionParameters(const FunctionRoutine* routine, uint64_t& 
         }
     }
     return size;
-}
-
-
-uint64_t
-X86_64Writer::getStackSizeFromFunctionParameters(const FunctionRoutine* routine)
-{
-    uint64_t stackOffset = 0;
-    for (unsigned int i = 0; i < routine->parameters.size(); ++i)
-    {
-        auto parameter = routine->parameters[i];
-        if (i < _callingConvention.registers.size())
-        {
-            stackOffset += parameter->size;
-        }
-    }
-    uint64_t rest = stackOffset % 16;
-    if (rest != 0)
-    {
-        stackOffset += 16 - rest;
-    }
-    return stackOffset;
 }
 
 

@@ -27,9 +27,6 @@ public:
     Utf8String
     print() override;
 
-    uint64_t
-    vmOffset = 0x0000000100000000;
-
     List<Instruction*>
     instructions;
 
@@ -61,12 +58,6 @@ private:
 
     void
     writeByteInstruction(Instruction* instruction);
-
-    void
-    writeAddress();
-
-    void
-    writeColumnHeader();
 
     void
     writeSizeSuffix(const Instruction* instruction);

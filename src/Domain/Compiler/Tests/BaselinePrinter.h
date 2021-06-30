@@ -37,11 +37,21 @@ public:
     std::map<uint64_t, const char*>*
     symbols;
 
-    TextWriter*
+    TextWriter
     _tw;
 
     List<uint8_t>*
     list;
+
+    uint64_t
+    vmOffset = 0x0000000100000000;
+
+protected:
+    void
+    writeColumnHeader();
+
+    void
+    writeAddress();
 };
 
 }

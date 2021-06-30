@@ -262,5 +262,16 @@ ByteWriter::writeString(const Utf8StringView& string)
     *offset += string.size() + 1;
 }
 
+uint32_t
+ByteWriter::getDoubleWord(uint64_t offset)
+{
+    uint32_t result = 0;
+    result += ((*output)[offset + 0] << 24);
+    result += ((*output)[offset + 1] << 16);
+    result += ((*output)[offset + 2] << 8);
+    result += ((*output)[offset + 3] << 0);
+    return result;
+}
+
 
 }

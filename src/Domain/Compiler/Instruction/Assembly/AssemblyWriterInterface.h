@@ -20,12 +20,20 @@ namespace elet::domain::compiler::instruction::output
 struct String;
 
 
+
+struct CallingConvention
+{
+    List<uint8_t>
+    registers;
+};
+
+
 class AssemblyWriterInterface
 {
 
 public:
 
-    AssemblyWriterInterface(List<std::uint8_t>* output);
+    AssemblyWriterInterface(List<uint8_t>* output);
 
     virtual
     void
@@ -74,6 +82,9 @@ public:
 
 protected:
 
+    CallingConvention
+    _callingConvention;
+
     List<uint8_t>*
     _output;
 
@@ -85,6 +96,9 @@ protected:
 
     uint64_t
     _dyldStubBinderRelocationAddress;
+
+    uint64_t
+    getStackSizeFromFunctionParameters(const FunctionRoutine* routine);
 };
 
 }

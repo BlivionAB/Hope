@@ -13,11 +13,41 @@ class Aarch64BaselinePrinter : public BaselinePrinter
 {
 public:
 
-    List<Instruction*>
+    List<OneOfInstruction>
     instructions;
 
     Utf8String
     print() override;
+
+    void
+    writeLoadStoreInstruction(const LoadStoreInstruction* instruction);
+
+    void
+    writeDataProcessImmediateInstruction(const DataProcessImmediateInstruction* instruction);
+
+    void
+    writeGeneralPurposeRegister32(Register reg);
+
+    void
+    writeGeneralPurposeRegister64(Register reg);
+
+    void
+    writeByteInstruction(const Instruction* instruction);
+
+    void
+    writeBranchExceptionSyscallInstruction(const BranchExceptionSyscallInstruction* pInstruction);
+
+    void
+    writeLdpPostIndex(const LoadStoreInstruction* instruction);
+
+    void
+    writeBl(const UnconditionalBranchImmediateInstruction* pInstruction);
+
+    void
+    writeMovImmediate(const MovWideImmediateInstruction* instruction);
+
+    void
+    writeMov(const MovInstruction* pInstruction);
 };
 
 }

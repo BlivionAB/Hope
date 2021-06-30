@@ -109,7 +109,7 @@ Utf8String::operator += (const char ch)
     std::size_t newSize = oldSize + 1;
     if (newSize > _capacity)
     {
-        _value = reinterpret_cast<char*>(realloc(_value, newSize + 1));
+        _value = reinterpret_cast<char*>(realloc(_value, newSize));
         _value[oldSize] = ch;
         _capacity = newSize;
     }

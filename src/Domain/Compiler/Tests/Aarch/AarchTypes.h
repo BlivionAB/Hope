@@ -3,28 +3,13 @@
 
 
 #include <variant>
+#include <Domain/Compiler/Instruction/Assembly/Aarch/AArch64Encodings.h>
 
 namespace elet::domain::compiler::test::aarch
 {
 
 
-enum class InstructionKind
-{
-    Unknown,
-    Push,
-    Pop,
-    Lea,
-    Mov,
-    Call,
-    Ret,
-    Xor,
-    Nop,
-    Add,
-    Sub,
-};
-
-
-
+using namespace elet::domain::compiler::instruction::output;
 
 enum Register : uint8_t
 {
@@ -36,7 +21,7 @@ enum Register : uint8_t
     r5 = 5,
     r6 = 6,
     r7 = 7,
-
+    r8 = 8,
     fp = 29,
     lr = 30,
     sp = 31,
@@ -55,34 +40,126 @@ typedef std::variant<std::monostate, imm7, imm12, Rn, Rt, Rt2> Operand;
 
 struct Instruction
 {
-    InstructionKind
+    Aarch64Instruction
     kind;
 
-    std::optional<Register>
+    List<uint8_t>
+    bytes;
+};
+
+
+struct DataProcessImmediateInstruction : Instruction
+{
+    Register
     rd;
 
-    std::optional<Register>
-    rt;
-
-    std::optional<Register>
-    rt2;
-
-    std::optional<Register>
+    Register
     rn;
 
-    std::optional<int8_t>
+    uint16_t
+    imm12;
+};
+
+
+enum class AddressMode
+{
+    PreIndex,
+    BaseOffset,
+    PostIndex,
+};
+
+
+struct LoadStoreInstruction : Instruction
+{
+    Register
+    rt;
+
+    Register
+    rt2;
+
+    Register
+    rn;
+
+    int8_t
     imm7;
 
-    std::optional<int16_t>
-    imm12;
+    AddressMode
+    addressMode;
+};
 
-    List<std::uint8_t>
-    bytes;
 
-    Instruction()
+struct BranchExceptionSyscallInstruction : Instruction
+{
+    Register
+    rn;
+};
+
+
+struct UnconditionalBranchImmediateInstruction : Instruction
+{
+    bool
+    withLink;
+
+    int32_t
+    imm26;
+
+    UnconditionalBranchImmediateInstruction(int32_t imm26):
+        withLink(true),
+        imm26(imm26)
     { }
 };
 
+
+struct MovWideImmediateInstruction : Instruction
+{
+    Register
+    rd;
+
+    uint32_t
+    imm16;
+
+    MovWideImmediateInstruction(Register rd, uint32_t imm16):
+        rd(rd),
+        imm16(imm16)
+    { }
+};
+
+
+struct MovInstruction : Instruction
+{
+    Register
+    rd;
+
+    Register
+    rm;
+
+    MovInstruction(Register rd, Register rm):
+        rd(rd),
+        rm(rm)
+    { }
+};
+
+
+union OneOfInstruction
+{
+    DataProcessImmediateInstruction dp;
+    LoadStoreInstruction lst;
+    BranchExceptionSyscallInstruction brexcpsysc;
+    UnconditionalBranchImmediateInstruction unbrimm;
+    MovInstruction mov;
+
+    OneOfInstruction()
+    {
+        memset(this, 0, sizeof(OneOfInstruction));
+        auto self = reinterpret_cast<Instruction*>(this);
+        new (&self->bytes) List<uint8_t>();
+    }
+
+    ~OneOfInstruction()
+    {
+
+    }
+};
 
 #define INSTRUCTION_MASK 0b
 

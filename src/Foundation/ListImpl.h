@@ -14,7 +14,6 @@ template<typename T>
 List<T>::List():
     _capacity(1)
 {
-        auto s = sizeof(T);
     _items = reinterpret_cast<T*>(calloc(_capacity, sizeof(T)));
     _cursor = _items;
 }
@@ -119,7 +118,7 @@ List<T>::add(const T& item)
     if (oldSize + 1 > _capacity)
     {
         _capacity = _capacity * 2;
-        T* oldItems =_items;
+        T* oldItems = _items;
         _items = reinterpret_cast<T*>(calloc(_capacity, sizeOfType));
         std::memcpy(_items, oldItems, oldSize * sizeOfType);
         free(oldItems);

@@ -86,13 +86,13 @@ CompilerBaselineParser::parseTextSection(const Section64* textSection)
     switch (_assemblyTarget)
     {
         case AssemblyTarget::AArch64:
-            _aarch64BaselinePrinter->instructions = _aarch64Parser->parse(_list, textSection->offset, textSection->size);
+            _aarch64Parser->parse(_aarch64BaselinePrinter->instructions, _list, textSection->offset, textSection->size);
             break;
         case AssemblyTarget::x86_64:
             _x86BaselinePrinter->instructions = _x86Parser->parse(_list, textSection->offset, textSection->size);
             break;
         default:
-            throw std::runtime_error("Unknwon assembly target");
+            throw std::runtime_error("Unknown assembly target");
     }
     _baselinePrinter->address = textSection->offset;
 }

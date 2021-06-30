@@ -29,31 +29,49 @@ private:
     writeFunction(FunctionRoutine* routine);
 
     void
-    writeFunctionPrologue(FunctionRoutine* routine);
+    writeFunctionPrologue(FunctionRoutine* routine, uint64_t& stackSize);
 
-    constexpr
     uint32_t
     Rd(uint32_t reg) const;
 
-    constexpr
     uint32_t
     Rt(uint32_t reg) const;
 
-    constexpr
     uint32_t
     Rn(uint32_t reg) const;
 
-    constexpr
     uint32_t
     Rt2(uint32_t reg) const;
 
-    constexpr
     uint32_t
-    imm12(int16_t value) const;
+    Rm(uint8_t reg) const;
 
-    constexpr
     uint32_t
-    imm7(int8_t value) const;
+    uimm6(uint8_t value) const;
+
+    uint32_t
+    uimm12(uint16_t value) const;
+
+    uint32_t
+    uimm16(uint16_t value) const;
+
+    uint32_t
+    simm7(int8_t value) const;
+
+    uint32_t
+    simm26(int32_t value) const;
+
+    void
+    writeFunctionEpilogue(FunctionRoutine* routine, uint64_t& stackSize, uint64_t& stackOffset);
+
+    uint64_t
+    writeFunctionInstructions(FunctionRoutine* routine);
+
+    uint64_t
+    writeCallInstruction(CallInstruction* instruction, FunctionRoutine* routine);
+
+    void
+    writeFunctionRelocationAddresses(FunctionRoutine* routine);
 };
 
 }

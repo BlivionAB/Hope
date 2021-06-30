@@ -17,12 +17,6 @@ namespace elet::domain::compiler::instruction::output
 struct Int32;
 struct CallInstruction;
 
-struct CallingConvention
-{
-    std::vector<std::uint8_t>
-    registers;
-};
-
 
 class X86_64Writer : public AssemblyWriterInterface
 {
@@ -43,9 +37,6 @@ public:
 
 private:
 
-    CallingConvention
-    _callingConvention = { { Reg7, Reg6, Reg2, Reg1 } };
-
     size_t
     _subtractStackAddress;
 
@@ -63,9 +54,6 @@ private:
 
     uint64_t
     writeFunctionParameters(const FunctionRoutine* routine, uint64_t& stackOffset);
-
-    uint64_t
-    getStackSizeFromFunctionParameters(const FunctionRoutine* routine);
 
     uint64_t
     writeFunctionInstructions(FunctionRoutine* routine);

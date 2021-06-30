@@ -47,6 +47,9 @@ public:
     void
     writeWord(uint16_t instruction);
 
+    uint32_t
+    getDoubleWord(uint64_t offset);
+
     size_t
     writeString(const char* string);
 

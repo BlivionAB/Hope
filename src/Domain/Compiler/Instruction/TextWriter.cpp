@@ -185,7 +185,7 @@ TextWriter::writeDisplacement(int32_t n)
             write(digits[r]);
             if (r != 0)
             {
-                n -= s;
+                n -= r * s;
             }
         }
     }

@@ -60,4 +60,25 @@ AssemblyWriterInterface::writePadding(size_t amount)
 }
 
 
+uint64_t
+AssemblyWriterInterface::getStackSizeFromFunctionParameters(const FunctionRoutine* routine)
+{
+    uint64_t stackOffset = 0;
+    for (unsigned int i = 0; i < routine->parameters.size(); ++i)
+    {
+        auto parameter = routine->parameters[i];
+        if (i < _callingConvention.registers.size())
+        {
+            stackOffset += parameter->size;
+        }
+    }
+    uint64_t rest = stackOffset % 16;
+    if (rest != 0)
+    {
+        stackOffset += 16 - rest;
+    }
+    return stackOffset;
+}
+
+
 }

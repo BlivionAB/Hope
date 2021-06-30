@@ -165,12 +165,24 @@ struct ExternalRoutine : Routine
     { }
 };
 
+struct RelocationPlaceholder
+{
+    uint32_t
+    offset;
+
+    uint32_t
+    value;
+
+    RelocationPlaceholder(uint32_t offset, uint32_t value):
+        offset(offset),
+        value(value)
+    { }
+};
+
+
 
 struct FunctionRoutine : InternalRoutine
 {
-    bool
-    isStartFunction;
-
     Utf8StringView
     name;
 
@@ -183,8 +195,11 @@ struct FunctionRoutine : InternalRoutine
     List<FunctionRoutine*>
     subRoutines;
 
-    List<std::pair<std::size_t, std::size_t>>
+    List<RelocationPlaceholder>
     relocationAddresses;
+
+    bool
+    isStartFunction;
 
     FunctionRoutine(const Utf8StringView& name):
         name(name),
