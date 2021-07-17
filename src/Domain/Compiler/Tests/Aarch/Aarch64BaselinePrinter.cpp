@@ -20,10 +20,18 @@ Aarch64BaselinePrinter::print()
         _tw.tab();
         switch (instruction->kind)
         {
+            case Aarch64Instruction::AdrpImmediate64:
+                writeAdrpInstruction(reinterpret_cast<const AdrpInstruction*>(instruction));
+                break;
+            case Aarch64Instruction::StrImmediateBaseOffset64:
+            case Aarch64Instruction::LdrImmediateBaseOffset64:
+                writeLoadStoreInstruction(reinterpret_cast<const LoadStoreInstruction*>(instruction));
+                break;
             case Aarch64Instruction::StpPreIndex64:
             case Aarch64Instruction::StpBaseOffset64:
             case Aarch64Instruction::LdpPostIndex64:
-                writeLoadStoreInstruction(reinterpret_cast<const LoadStoreInstruction*>(instruction));
+            case Aarch64Instruction::LdpBaseOffset64:
+                writeLoadStorePairInstruction(reinterpret_cast<const LoadStorePairInstruction*>(instruction));
                 break;
             case Aarch64Instruction::AddImmediate64:
             case Aarch64Instruction::SubImmediate64:
@@ -41,10 +49,21 @@ Aarch64BaselinePrinter::print()
             case Aarch64Instruction::Ret:
                 writeBranchExceptionSyscallInstruction(reinterpret_cast<const BranchExceptionSyscallInstruction*>(instruction));
                 break;
+            default:
+                throw std::runtime_error("Unknown instruction.");
         }
         _tw.newline();
     }
     return _tw.toString();
+}
+
+
+void
+Aarch64BaselinePrinter::writeAdrpInstruction(const AdrpInstruction* instruction)
+{
+    _tw.write("adrp ");
+    writeGeneralPurposeRegister64(instruction->rd);
+    _tw.writeDisplacement(instruction->immhilo);
 }
 
 
@@ -71,30 +90,74 @@ Aarch64BaselinePrinter::writeMovImmediate(const MovWideImmediateInstruction* ins
 void
 Aarch64BaselinePrinter::writeLoadStoreInstruction(const LoadStoreInstruction* instruction)
 {
-    _tw.write("stp ");
+    switch (instruction->kind)
+    {
+        case Aarch64Instruction::StrImmediateBaseOffset64:
+            _tw.write("str ");
+            break;
+        case Aarch64Instruction::LdrImmediateBaseOffset64:
+            _tw.write("ldr ");
+            break;
+        default:
+            throw std::runtime_error("Unknown load store instruction.");
+    }
+    writeGeneralPurposeRegister64(instruction->rt);
+    _tw.write(", [");
+    writeGeneralPurposeRegister64(instruction->rn);
+    writeIndexedAddressSuffix(instruction->addressMode, instruction->imm12);
+}
+
+void
+Aarch64BaselinePrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset)
+{
+    switch (addressMode)
+    {
+        case AddressMode::PreIndex:
+            _tw.write(", #");
+            _tw.writeDisplacement(offset);
+            _tw.write("]!");
+            break;
+        case AddressMode::BaseOffset:
+            _tw.write(", #");
+            _tw.writeDisplacement(offset);
+            _tw.write("]");
+            break;
+        case AddressMode::PostIndex:
+            _tw.write("], #");
+            _tw.writeDisplacement(offset);
+            break;
+        default:
+            throw std::runtime_error("Unknown address mode.");
+    }
+}
+
+
+void
+Aarch64BaselinePrinter::writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction)
+{
+    switch (instruction->kind)
+    {
+        case Aarch64Instruction::StrImmediateBaseOffset64:
+            _tw.write("str ");
+            break;
+        case Aarch64Instruction::LdpBaseOffset64:
+        case Aarch64Instruction::LdpPostIndex64:
+            _tw.write("ldp ");
+            break;
+        case Aarch64Instruction::StpPreIndex64:
+        case Aarch64Instruction::StpBaseOffset64:
+            _tw.write("stp ");
+            break;
+        default:
+            throw std::runtime_error("Unknown load store instruction.");
+    }
     writeGeneralPurposeRegister64(instruction->rt);
     _tw.write(", ");
     writeGeneralPurposeRegister64(instruction->rt2);
     _tw.write(", ");
     _tw.write("[");
     writeGeneralPurposeRegister64(instruction->rn);
-    switch (instruction->addressMode)
-    {
-        case AddressMode::PreIndex:
-            _tw.write(", #");
-            _tw.writeDisplacement(instruction->imm7);
-            _tw.write("]!");
-            break;
-        case AddressMode::BaseOffset:
-            _tw.write(", #");
-            _tw.writeDisplacement(instruction->imm7);
-            _tw.write("]");
-            break;
-        case AddressMode::PostIndex:
-            _tw.write("], #");
-            _tw.writeDisplacement(instruction->imm7);
-            break;
-    }
+    writeIndexedAddressSuffix(instruction->addressMode, instruction->imm7);
 }
 
 
@@ -210,21 +273,6 @@ Aarch64BaselinePrinter::writeBranchExceptionSyscallInstruction(const BranchExcep
         _tw.write("ret ");
         writeGeneralPurposeRegister64(instruction->rn);
     }
-}
-
-
-void
-Aarch64BaselinePrinter::writeLdpPostIndex(const LoadStoreInstruction* instruction)
-{
-    _tw.write("ldp ");
-    writeGeneralPurposeRegister64(instruction->rt);
-    _tw.write(", ");
-    writeGeneralPurposeRegister64(instruction->rt2);
-    _tw.write(", ");
-    _tw.write("[");
-    writeGeneralPurposeRegister64(instruction->rn);
-    _tw.write("], #");
-    _tw.writeDisplacement(instruction->imm7);
 }
 
 

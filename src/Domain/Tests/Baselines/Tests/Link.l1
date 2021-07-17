@@ -19,7 +19,7 @@ private:
 
 domain Common::MyApplication implements IConsoleApplication
 {
-        using Common::Console::{ WriteLine };
+    using Common::Console::{ WriteLine };
 
 public:
 

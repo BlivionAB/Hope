@@ -6,7 +6,6 @@
 #include <Foundation/List.h>
 #include <Domain/Compiler/Syntax/Syntax.h>
 #include "Domain/Compiler/Instruction/Syntax.h"
-#include "Instruction.Constant.h"
 #include <variant>
 
 
@@ -25,6 +24,7 @@ namespace elet::domain::compiler::instruction::output
 struct Routine;
 struct ParameterDeclaration;
 struct ArgumentDeclaration;
+struct String;
 using namespace embedded;
 using namespace foundation;
 
@@ -165,20 +165,32 @@ struct ExternalRoutine : Routine
     { }
 };
 
+
 struct RelocationPlaceholder
 {
     uint32_t
     offset;
 
+    // aarch64: adrp instruction offset. It's used to calculate mod 4k page size.
     uint32_t
-    value;
+    value1;
 
-    RelocationPlaceholder(uint32_t offset, uint32_t value):
+    // aarch64: string offset. Since, relocation is required after the text segment is placed in the object file.
+    uint32_t
+    value2;
+
+    RelocationPlaceholder(uint32_t offset, uint32_t value1):
         offset(offset),
-        value(value)
+        value1(value1),
+        value2(0)
+    { }
+
+    RelocationPlaceholder(uint32_t offset, uint32_t value1, uint32_t value2):
+        offset(offset),
+        value1(value1),
+        value2(value2)
     { }
 };
-
 
 
 struct FunctionRoutine : InternalRoutine
@@ -200,6 +212,9 @@ struct FunctionRoutine : InternalRoutine
 
     bool
     isStartFunction;
+
+    uint64_t
+    stackSize;
 
     FunctionRoutine(const Utf8StringView& name):
         name(name),
@@ -263,6 +278,7 @@ struct LocalVariableDeclaration : VariableDeclaration
 
 
 typedef std::variant<std::size_t, String*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
+
 
 struct ArgumentDeclaration : VariableDeclaration
 {
@@ -466,5 +482,6 @@ struct Function : FunctionRoutine
 
 }
 
+#include "Instruction.Constant.h"
 
 #endif //ELET_INSTRUCTION_H

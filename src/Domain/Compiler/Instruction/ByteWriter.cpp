@@ -46,10 +46,10 @@ void
 ByteWriter::writeDoubleWord(std::uint32_t instruction)
 {
     (*offset) += 4;
-    output->add(instruction & (std::uint8_t)0xff);
-    output->add((instruction >> (std::uint8_t)8) & (std::uint8_t)0xff);
-    output->add((instruction >> (std::uint8_t)16) & (std::uint8_t)0xff);
-    output->add((instruction >> (std::uint8_t)24) & (std::uint8_t)0xff);
+    output->add(instruction & 0xff);
+    output->add((instruction >> 8) & 0xff);
+    output->add((instruction >> 16) & 0xff);
+    output->add((instruction >> 24) & 0xff);
 }
 
 
@@ -60,6 +60,17 @@ ByteWriter::writeDoubleWordAtAddress(uint32_t instruction, size_t offset)
     (*output)[offset + 1] = (instruction >> 8) & 0xff;
     (*output)[offset + 2] = (instruction >> 16) & 0xff;
     (*output)[offset + 3] = (instruction >> 24) & 0xff;
+}
+
+
+
+void
+ByteWriter::writeDoubleWordAtAddress(std::uint32_t instruction, std::size_t offset, List<uint8_t>& output)
+{
+    output[offset] = instruction & 0xff;
+    output[offset + 1] = (instruction >> 8) & 0xff;
+    output[offset + 2] = (instruction >> 16) & 0xff;
+    output[offset + 3] = (instruction >> 24) & 0xff;
 }
 
 
@@ -266,10 +277,10 @@ uint32_t
 ByteWriter::getDoubleWord(uint64_t offset)
 {
     uint32_t result = 0;
-    result += ((*output)[offset + 0] << 24);
-    result += ((*output)[offset + 1] << 16);
-    result += ((*output)[offset + 2] << 8);
-    result += ((*output)[offset + 3] << 0);
+    result += ((*output)[offset + 0] << 0);
+    result += ((*output)[offset + 1] << 8);
+    result += ((*output)[offset + 2] << 16);
+    result += ((*output)[offset + 3] << 24);
     return result;
 }
 

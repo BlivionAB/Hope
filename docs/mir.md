@@ -78,7 +78,7 @@ multiply:
 
 # Function pre
 Push BP
-Str SP, BP
+Str sp, BP
 
 # Parameter assignments
 Str [BP - 8], P1 // Param P1

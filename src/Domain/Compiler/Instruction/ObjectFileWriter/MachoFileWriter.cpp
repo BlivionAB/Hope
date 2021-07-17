@@ -3,7 +3,7 @@
 #pragma ide diagnostic ignored "cppcoreguidelines-pro-bounds-pointer-arithmetic"
 #include "MachoFileWriter.h"
 #include "DyldInfoWriter.h"
-#include "../Assembly/Aarch/AArch64Writer.h"
+#include "../Assembly/Aarch/Aarch64Writer.h"
 
 
 namespace elet::domain::compiler::instruction::output
@@ -20,7 +20,7 @@ MachoFileWriter::MachoFileWriter(AssemblyTarget assemblyTarget):
             assemblyWriter = new X86_64Writer(&_text);
             break;
         case AssemblyTarget::AArch64:
-            assemblyWriter = new AArch64Writer(&_text);
+            assemblyWriter = new Aarch64Writer(&_text);
             break;
     }
     _dyldInfoWriter = new DyldInfoWriter(this);
@@ -76,6 +76,8 @@ MachoFileWriter::writeTextSegment()
     _textSegmentStartVmAddress = newVmAddress;
     _mainCommand->offset = offset;
     output.add(_text);
+    assemblyWriter->bw = _bw;
+    relocateCStrings(textSegmentStartOffset);
     offset += _textSegmentSize;
     writePadding(modSize - _textSegmentSize);
 
@@ -517,7 +519,7 @@ MachoFileWriter::writeLaSymbolPtrSection()
     for (const auto& externalRoutine : assemblyWriter->externalRoutines)
     {
         // Write the offset in the stub address
-        _bw->writeDoubleWordAtAddress(offset - (textSegmentStartOffset + externalRoutine->stubAddress + 4) /* It should be based after the instruction*/, textSegmentStartOffset + externalRoutine->stubAddress);
+        assemblyWriter->relocateStub(offset, textSegmentStartOffset, externalRoutine);
         _bw->writeQuadWord(_textSegmentStartVmAddress + externalRoutine->stubHelperAddress);
     }
     _dataLaSymbolPtrSection->size = offset - _dataLaSymbolPtrSection->offset;
@@ -533,7 +535,7 @@ MachoFileWriter::writeDataSection()
     _dataSection->offset = offset;
 
     _dyldPrivateVmAddress = vmAddress;
-    _bw->writeDoubleWordAtAddress(offset - (textSegmentStartOffset + assemblyWriter->dyldPrivateOffset + 4), textSegmentStartOffset + assemblyWriter->dyldPrivateOffset);
+    assemblyWriter->relocateDyldPrivate(offset, textSegmentStartOffset);
     _bw->writeQuadWord(0);
 
     vmAddress += 8;
@@ -814,6 +816,13 @@ MachoFileWriter::writeMainCommand(FunctionRoutine* startRoutine)
     _mainCommand = writeCommand<MainCommand>(LC_MAIN);
     _mainCommand->offset = 0;
     _mainCommand->stackSize = 0;
+}
+
+
+void
+MachoFileWriter::relocateCStrings(uint64_t textSegmentStartOffset)
+{
+    assemblyWriter->relocateCStrings(textSegmentStartOffset);
 }
 
 

@@ -26,14 +26,16 @@ public:
     X86_64Writer(List<std::uint8_t>* output);
 
     void
-    writeTextSection(FunctionRoutine* routine);
-
-
-    void
-    writeStubs();
+    writeTextSection(FunctionRoutine* routine) override;
 
     void
-    writeStubHelper();
+    writeStubs() override;
+
+    void
+    writeStubHelper() override;
+
+    void
+    writeCStringSection() override;
 
 private:
 
@@ -75,6 +77,12 @@ private:
 
     void
     writeInstructionsPadding(uint64_t length);
+
+    void
+    relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine) override;
+
+    void
+    relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) override;
 };
 
 

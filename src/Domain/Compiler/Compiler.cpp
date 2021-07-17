@@ -392,6 +392,7 @@ Compiler::acceptAssemblyWritingWork()
     }
 }
 
+
 List<uint8_t>&
 Compiler::getOutput()
 {

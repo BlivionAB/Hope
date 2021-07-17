@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include "Foundation/List.h"
+#include "Instruction.h"
 
 namespace elet::domain::compiler::instruction::output
 {
@@ -12,11 +13,11 @@ using namespace elet::foundation;
 
 struct Constant
 {
-    std::size_t
+    RelocationPlaceholder
     relocationAddress;
 
     Constant():
-        relocationAddress(0)
+        relocationAddress(0, 0, 0)
     { }
 };
 
@@ -32,5 +33,9 @@ struct String : Constant
     { }
 };
 
+
 }
+
+#include "Instruction.h"
+
 #endif //ELET_INSTRUCTION_CONSTANT_H

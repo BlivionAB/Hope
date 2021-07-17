@@ -39,8 +39,21 @@ public:
     void
     writeTextSection(FunctionRoutine* routine) = 0;
 
+    virtual
     void
-    writeCStringSection();
+    writeCStringSection() = 0;
+
+    virtual
+    void
+    relocateCStrings(uint64_t textSegmentStartOffset);
+
+    virtual
+    void
+    relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine) = 0;
+
+    virtual
+    void
+    relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) = 0;
 
     virtual
     void
@@ -95,7 +108,7 @@ protected:
     _offset = 0;
 
     uint64_t
-    _dyldStubBinderRelocationAddress;
+    _dyldStubBinderOffset;
 
     uint64_t
     getStackSizeFromFunctionParameters(const FunctionRoutine* routine);

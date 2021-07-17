@@ -144,16 +144,15 @@ template<typename T>
 void
 List<T>::add(const T&& item)
 {
-    std::size_t sizeOfType = sizeof(T);
-    std::size_t oldSize = size();
-    if (oldSize + 1 > _capacity)
+    if (size() + 1 > _capacity)
     {
-        _capacity = _capacity * 2;
-        T* oldItems =_items;
-        _items = reinterpret_cast<T*>(calloc(_capacity, sizeOfType));
-        std::memcpy(_items, oldItems, oldSize * sizeOfType);
-        free(oldItems);
-        _cursor = _items + oldSize;
+        reserve(_capacity * 2);
+//        _capacity = _capacity * 2;
+//        T* oldItems =_items;
+//        _items = reinterpret_cast<T*>(calloc(_capacity, sizeOfType));
+//        std::memcpy(_items, oldItems, oldSize * sizeOfType);
+//        free(oldItems);
+//        _cursor = _items + oldSize;
     }
     *_cursor = item;
     _cursor++;
@@ -419,7 +418,7 @@ List<T>::reserve(std::size_t capacity)
         throw std::runtime_error("Reservation failed.");
     }
     _cursor = _items + s;
-    std::memset(_cursor, 0, capacity - size());
+    std::memset(_cursor, 0, (capacity - s) * sizeof(T));
     this->_capacity = capacity;
 }
 

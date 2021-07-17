@@ -63,6 +63,7 @@ struct DataProcessImmediateInstruction : Instruction
 
 enum class AddressMode
 {
+    Unknown,
     PreIndex,
     BaseOffset,
     PostIndex,
@@ -70,6 +71,22 @@ enum class AddressMode
 
 
 struct LoadStoreInstruction : Instruction
+{
+    Register
+    rt;
+
+    Register
+    rn;
+
+    int16_t
+    imm12;
+
+    AddressMode
+    addressMode;
+};
+
+
+struct LoadStorePairInstruction : Instruction
 {
     Register
     rt;
@@ -140,10 +157,26 @@ struct MovInstruction : Instruction
 };
 
 
+struct AdrpInstruction : Instruction
+{
+    Register
+    rd;
+
+    uint32_t
+    immhilo;
+
+    AdrpInstruction(Register rd, uint32_t immhilo):
+        rd(rd),
+        immhilo(immhilo)
+    { }
+};
+
+
 union OneOfInstruction
 {
     DataProcessImmediateInstruction dp;
-    LoadStoreInstruction lst;
+    LoadStoreInstruction ldstpr;
+    LoadStorePairInstruction lst;
     BranchExceptionSyscallInstruction brexcpsysc;
     UnconditionalBranchImmediateInstruction unbrimm;
     MovInstruction mov;

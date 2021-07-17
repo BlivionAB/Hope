@@ -62,7 +62,7 @@ private:
     tryParse21Instructions(Instruction* instruction, uint32_t dw);
 
     void
-    parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
+    parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
 
     void
     parseDataProcessImmediateInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
@@ -75,6 +75,18 @@ private:
 
     bool
     tryParse26Instructions(Instruction* instruction, uint32_t dw);
+
+    void
+    parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
+
+    bool
+    tryParse24Instructions(Instruction* instruction, uint32_t dw);
+
+    void
+    parseAdrpInstruction(Instruction* instruction, uint32_t dw);
+
+    uint32_t
+    immhilo(uint32_t dw);
 };
 
 

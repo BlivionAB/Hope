@@ -468,7 +468,7 @@ public:
     vmAddress = 0x0000000100000000;
 
     uint64_t
-    offset;
+    offset = 0;
 
     DyldInfoCommand*
     dyldInfoCommand;
@@ -686,6 +686,9 @@ private:
 
     void
     writeCStringSection();
+
+    void
+    relocateCStrings(uint64_t offset);
 };
 
 

@@ -169,7 +169,7 @@ protected:
         compiler.addFile(project->getEntryFile());
         compiler.endWorkers();
         auto output = compiler.getOutput();
-        CompilerBaselineParser baselineParser(output, AssemblyTarget::AArch64);
+        CompilerBaselineParser baselineParser(output, assemblyTarget);
         Utf8String result = baselineParser.write();
         DiffPrinter printer;
         MyersDiff differ;

@@ -47,7 +47,7 @@ X86_64Writer::writeStubHelper()
     // jmpq dyld_stub_binder
     bw->writeByte(OneByteOpCode::ExtGroup5);
     bw->writeByte(OneByteOpCode::ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
-    _dyldStubBinderRelocationAddress = _offset;
+    _dyldStubBinderOffset = _offset;
     Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
     Utf8StringView string = Utf8StringView(*dyldStubBinderString);
     ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);
@@ -117,7 +117,7 @@ X86_64Writer::writeFunctionRelocationAddresses(FunctionRoutine* routine)
 {
     for (const auto& relocationAddress : routine->relocationAddresses)
     {
-        bw->writeDoubleWordAtAddress(routine->offset - relocationAddress.value, relocationAddress.offset);
+        bw->writeDoubleWordAtAddress(routine->offset - relocationAddress.value1, relocationAddress.offset);
     }
     routine->relocationAddresses.clear();
 }
@@ -174,7 +174,7 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRou
             return size;
         }
         default:
-            throw std::exception();
+            throw std::runtime_error("Unknown routine kind.");
     }
 }
 
@@ -183,6 +183,22 @@ void
 X86_64Writer::writePointer(std::uint64_t address)
 {
     bw->writeDoubleWord(address);
+}
+
+
+void
+X86_64Writer::writeCStringSection()
+{
+    for (const auto& string : _strings)
+    {
+        bw->writeDoubleWordAtAddress(_offset - (string->relocationAddress.offset + 4), string->relocationAddress.offset);
+
+        for (const auto s : string->value)
+        {
+            bw->writeByte(static_cast<std::uint8_t>(s));
+        }
+        bw->writeByte(0);
+    }
 }
 
 
@@ -209,7 +225,7 @@ X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
             bw->writeByte(RexMagic | RexW);
             bw->writeByte(Lea_Gv_M);
             bw->writeByte(reg | Rm5 | MOD_DISP0);
-            (*string)->relocationAddress = _offset;
+            (*string)->relocationAddress.offset = _offset;
             bw->writeDoubleWord(0);
             size += 7;
             _strings.add(*string);
@@ -385,6 +401,20 @@ X86_64Writer::writeInstructionsPadding(uint64_t length)
             break;
     }
 
+}
+
+
+void
+X86_64Writer::relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine)
+{
+    bw->writeDoubleWordAtAddress(offset - (textSegmentStartOffset + externalRoutine->stubAddress + 4) /* It should be based after the instruction*/, textSegmentStartOffset + externalRoutine->stubAddress);
+}
+
+
+void
+X86_64Writer::relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset)
+{
+    bw->writeDoubleWordAtAddress(dataSectionOffset - (textSegmentStartOffset + dyldPrivateOffset + 4), textSegmentStartOffset + dyldPrivateOffset);
 }
 
 

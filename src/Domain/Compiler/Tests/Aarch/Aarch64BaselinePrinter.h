@@ -20,7 +20,7 @@ public:
     print() override;
 
     void
-    writeLoadStoreInstruction(const LoadStoreInstruction* instruction);
+    writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction);
 
     void
     writeDataProcessImmediateInstruction(const DataProcessImmediateInstruction* instruction);
@@ -38,9 +38,6 @@ public:
     writeBranchExceptionSyscallInstruction(const BranchExceptionSyscallInstruction* pInstruction);
 
     void
-    writeLdpPostIndex(const LoadStoreInstruction* instruction);
-
-    void
     writeBl(const UnconditionalBranchImmediateInstruction* pInstruction);
 
     void
@@ -48,6 +45,15 @@ public:
 
     void
     writeMov(const MovInstruction* pInstruction);
+
+    void
+    writeLoadStoreInstruction(const LoadStoreInstruction* instruction);
+
+    void
+    writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset);
+
+    void
+    writeAdrpInstruction(const AdrpInstruction* pInstruction);
 };
 
 }

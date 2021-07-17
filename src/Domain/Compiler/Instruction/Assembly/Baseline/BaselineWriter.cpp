@@ -67,7 +67,7 @@ BaselineWriter::writeArgumentDeclaration(ArgumentDeclaration* argumentDeclaratio
     if (auto string = std::get_if<output::String*>(&argumentDeclaration->value))
     {
         _tw->write("\"");
-        _tw->write((*string)->value);
+        _tw->write((*string)->value1);
         _tw->write("\"");
     }
     else if (auto variable = std::get_if<output::ParameterDeclaration*>(&argumentDeclaration->value))

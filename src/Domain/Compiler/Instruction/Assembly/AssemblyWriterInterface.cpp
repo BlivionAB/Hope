@@ -27,22 +27,6 @@ AssemblyWriterInterface::getOffset()
 }
 
 
-void
-AssemblyWriterInterface::writeCStringSection()
-{
-    for (const auto& string : _strings)
-    {
-        bw->writeDoubleWordAtAddress(_offset - (string->relocationAddress + 4), string->relocationAddress);
-
-        for (const auto s : string->value)
-        {
-            bw->writeByte(static_cast<std::uint8_t>(s));
-        }
-        bw->writeByte(0);
-    }
-}
-
-
 std::uint32_t
 AssemblyWriterInterface::getExternRoutinesSize() const
 {
@@ -78,6 +62,13 @@ AssemblyWriterInterface::getStackSizeFromFunctionParameters(const FunctionRoutin
         stackOffset += 16 - rest;
     }
     return stackOffset;
+}
+
+
+void
+AssemblyWriterInterface::relocateCStrings(uint64_t textSegmentStartOffset)
+{
+    // Optional, Implement this function if the object file requires relocation of C Strings.
 }
 
 

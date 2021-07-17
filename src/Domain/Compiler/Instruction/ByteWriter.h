@@ -35,6 +35,10 @@ public:
     void
     writeDoubleWordAtAddress(std::uint32_t instruction, std::size_t offset);
 
+    static
+    void
+    writeDoubleWordAtAddress(std::uint32_t instruction, std::size_t offset, List<uint8_t>& output);
+
     void
     writeByte(std::uint8_t instruction);
 

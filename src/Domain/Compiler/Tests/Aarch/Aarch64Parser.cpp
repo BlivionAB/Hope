@@ -37,8 +37,12 @@ Aarch64Parser::parse(List<OneOfInstruction>& instructions, List<uint8_t>& output
         {
             continue;
         }
-
-        throw std::runtime_error("Unknown instruction");
+        if (Aarch64Instruction::AdrpImmediate64 == (dw & Aarch64Instruction::AdrpMask))
+        {
+            parseAdrpInstruction(instruction, dw);
+            continue;
+        }
+        throw std::runtime_error("Could not find instruction when parsing.");
     }
 }
 
@@ -50,7 +54,7 @@ Aarch64Parser::tryParse26Instructions(Instruction* instruction, uint32_t dw)
     if (Bl == kind26)
     {
         UnconditionalBranchImmediateInstruction* unbrimm = reinterpret_cast<UnconditionalBranchImmediateInstruction*>(instruction);
-        unbrimm->kind = Bl;
+        unbrimm->kind = Aarch64Instruction::Bl;
         unbrimm->imm26 = imm26(dw);
         return true;
     }
@@ -62,10 +66,10 @@ Aarch64Parser::tryParse25Instructions(Instruction* instruction, uint32_t dw)
 {
     uint32_t kind25 = dw & Mask25;
 
-    if (UnconditionalBranchRegister == (dw & Mask25))
+    if (Aarch64Instruction::UnconditionalBranchRegister == kind25)
     {
         BranchExceptionSyscallInstruction* brexsysc = reinterpret_cast<BranchExceptionSyscallInstruction*>(instruction);
-        brexsysc->kind = Ret;
+        brexsysc->kind = Aarch64Instruction::Ret;
         brexsysc->rn = Rn(dw);
         return true;
     }
@@ -80,18 +84,24 @@ Aarch64Parser::tryParse22Instructions(Instruction* instruction, uint32_t dw)
 
     switch (kind22)
     {
-        case StpPreIndex64:
-        case StpBaseOffset64:
-        case LdpPostIndex64:
+        case Aarch64Instruction::StrImmediateBaseOffset64:
+        case Aarch64Instruction::LdrImmediateBaseOffset64:
             parseLoadStoreInstruction(instruction, dw, kind22);
             return true;
-        case AddImmediate64:
-        case SubImmediate64:
+        case Aarch64Instruction::StpPreIndex64:
+        case Aarch64Instruction::StpBaseOffset64:
+        case Aarch64Instruction::LdpPostIndex64:
+        case Aarch64Instruction::LdpBaseOffset64:
+            parseLoadStorePairInstruction(instruction, dw, kind22);
+            return true;
+        case Aarch64Instruction::AddImmediate64:
+        case Aarch64Instruction::SubImmediate64:
             parseDataProcessImmediateInstruction(instruction, dw, kind22);
             return true;
     }
     return false;
 }
+
 
 void
 Aarch64Parser::parseDataProcessImmediateInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22)
@@ -103,10 +113,33 @@ Aarch64Parser::parseDataProcessImmediateInstruction(Instruction* instruction, ui
     dataProcessImmediateInstruction->imm12 = imm12(dw);
 }
 
+
+
 void
 Aarch64Parser::parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22)
 {
     LoadStoreInstruction* loadStoreInstruction = reinterpret_cast<LoadStoreInstruction*>(instruction);
+    loadStoreInstruction->kind = static_cast<Aarch64Instruction>(kind22);
+    loadStoreInstruction->rt = Rt(dw);
+    loadStoreInstruction->rn = Rn(dw);
+    loadStoreInstruction->imm12 = imm12(dw) * 8;
+
+    switch (loadStoreInstruction->kind)
+    {
+        case Aarch64Instruction::StrImmediateBaseOffset64:
+        case Aarch64Instruction::LdrImmediateBaseOffset64:
+            loadStoreInstruction->addressMode = AddressMode::BaseOffset;
+            break;
+        default:
+            throw std::runtime_error("Unknown load store instruction.");
+    }
+}
+
+
+void
+Aarch64Parser::parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22)
+{
+    LoadStorePairInstruction* loadStoreInstruction = reinterpret_cast<LoadStorePairInstruction*>(instruction);
     loadStoreInstruction->kind = static_cast<Aarch64Instruction>(kind22);
     loadStoreInstruction->rt = Rt(dw);
     loadStoreInstruction->rn = Rn(dw);
@@ -118,14 +151,19 @@ Aarch64Parser::parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, 
         case Aarch64Instruction::StpPreIndex64:
             loadStoreInstruction->addressMode = AddressMode::PreIndex;
             break;
+        case Aarch64Instruction::StrImmediateBaseOffset64:
         case Aarch64Instruction::StpBaseOffset64:
+        case Aarch64Instruction::LdpBaseOffset64:
             loadStoreInstruction->addressMode = AddressMode::BaseOffset;
             break;
         case Aarch64Instruction::LdpPostIndex64:
             loadStoreInstruction->addressMode = AddressMode::PostIndex;
             break;
+        default:
+            throw std::runtime_error("Unknown load store pair instruction.");
     }
 }
+
 
 bool
 Aarch64Parser::tryParse21Instructions(Instruction* instruction, uint32_t dw)
@@ -245,6 +283,27 @@ uint16_t
 Aarch64Parser::uimm16(uint32_t dw)
 {
     return (dw & Aarch64Instruction::Imm16Mask) >> 5;
+}
+
+
+void
+Aarch64Parser::parseAdrpInstruction(Instruction* instruction, uint32_t dw)
+{
+    AdrpInstruction* adrp = reinterpret_cast<AdrpInstruction*>(instruction);
+    adrp->kind = Aarch64Instruction::AdrpImmediate64;
+    adrp->rd = Rd(dw);
+    adrp->immhilo = immhilo(dw);
+}
+
+
+uint32_t
+Aarch64Parser::immhilo(uint32_t dw)
+{
+    uint32_t result = 0;
+    result |= (dw & MASK(12, 5)) >> 3;
+    result |= (dw & (0b11 << 29)) >> 29;
+    return result;
+
 }
 
 
