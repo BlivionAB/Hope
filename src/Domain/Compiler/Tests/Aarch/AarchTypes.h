@@ -48,6 +48,19 @@ struct Instruction
 };
 
 
+struct UdfInstruction : Instruction
+{
+    int16_t
+    imm16;
+};
+
+
+struct NopInstruction : Instruction
+{
+
+};
+
+
 struct DataProcessImmediateInstruction : Instruction
 {
     Register
@@ -67,6 +80,16 @@ enum class AddressMode
     PreIndex,
     BaseOffset,
     PostIndex,
+};
+
+
+struct LdrInstruction : Instruction
+{
+    Register
+    rt;
+
+    int32_t
+    imm19;
 };
 
 
@@ -105,6 +128,12 @@ struct LoadStorePairInstruction : Instruction
 };
 
 
+struct BInstruction : Instruction
+{
+    int32_t
+    imm26;
+};
+
 struct BranchExceptionSyscallInstruction : Instruction
 {
     Register
@@ -112,7 +141,7 @@ struct BranchExceptionSyscallInstruction : Instruction
 };
 
 
-struct UnconditionalBranchImmediateInstruction : Instruction
+struct BlInstruction : Instruction
 {
     bool
     withLink;
@@ -120,7 +149,7 @@ struct UnconditionalBranchImmediateInstruction : Instruction
     int32_t
     imm26;
 
-    UnconditionalBranchImmediateInstruction(int32_t imm26):
+    BlInstruction(int32_t imm26):
         withLink(true),
         imm26(imm26)
     { }
@@ -171,6 +200,20 @@ struct AdrpInstruction : Instruction
     { }
 };
 
+struct AdrInstruction : Instruction
+{
+    Register
+    rd;
+
+    uint32_t
+    immhilo;
+
+    AdrInstruction(Register rd, uint32_t immhilo):
+        rd(rd),
+        immhilo(immhilo)
+    { }
+};
+
 
 union OneOfInstruction
 {
@@ -178,7 +221,7 @@ union OneOfInstruction
     LoadStoreInstruction ldstpr;
     LoadStorePairInstruction lst;
     BranchExceptionSyscallInstruction brexcpsysc;
-    UnconditionalBranchImmediateInstruction unbrimm;
+    BlInstruction unbrimm;
     MovInstruction mov;
 
     OneOfInstruction()

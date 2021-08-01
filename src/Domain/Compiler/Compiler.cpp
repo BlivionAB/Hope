@@ -102,13 +102,13 @@ Compiler::startWorker()
 //    std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
 //    std::cout << "cleanup phase"<< std::endl;
     _display_mutex.unlock();
-    _finishedWork = true;
 
     // We have to notify all conditions due to some awaiting while one thread can finish all work.
     // Note also, parsing work is the only stage where the thread is awaiting for work from the file
     // read.
     _parsingWorkCondition.notify_all();
 
+    _finishedWork = true;
     // Notify main thread that the work is done. The main thread is awaiting for all work to be done
     // before joining all children threads.
     _finishWorkCondition.notify_one();

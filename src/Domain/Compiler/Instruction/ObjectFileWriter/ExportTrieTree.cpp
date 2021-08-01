@@ -8,12 +8,15 @@ namespace elet::domain::compiler::instruction::output
 void
 ExportTrieNode::insertRoutine(FunctionRoutine* routine, uint64_t textStartOffset)
 {
+//    std::cout << "insertRoutine: " << routine->name.toString() << std::endl;
     size_t cumulativeStringSize = _cumulativeString.size();
+//    std::cout << "cumulativeStringSize: " << cumulativeStringSize << std::endl;
     Utf8StringView tailString = routine->name.subString(cumulativeStringSize);
     for (ExportTrieEdge* edge : edges)
     {
         if (tailString.startsWith(edge->label))
         {
+//            std::cout << "tailString.startsWith(edge->label): " << edge->label.toString() << std::endl;
             edge->node->insertRoutine(routine, textStartOffset);
             return;
         }

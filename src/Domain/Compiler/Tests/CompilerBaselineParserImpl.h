@@ -1,36 +1,27 @@
 #include "CompilerBaselineParser.h"
 #include "../Instruction/ObjectFileWriter/MachoFileWriter.h"
-#include "./X86/X86Parser.h"
-#include "./Aarch/Aarch64Parser.h"
+#include "./X86/X86AssemblyParser.h"
+#include "./Aarch/Aarch64AssemblyParser.h"
 
 namespace elet::domain::compiler::test
 {
 
 
 
-CompilerBaselineParser::CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget) :
+template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
+CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget) :
     _list(list),
-    _x86Parser(nullptr),
-    _x86BaselinePrinter(nullptr),
+    _parser(new TAssemblyParser()),
+    _baselinePrinter(new TAssemblyPrinter()),
     _assemblyTarget(assemblyTarget)
 {
-    switch (assemblyTarget)
-    {
-        case AssemblyTarget::x86_64:
-            _assemblyParser = _x86Parser = new X86Parser();
-            _baselinePrinter = _x86BaselinePrinter = new X86BaselinePrinter();
-            break;
-        case AssemblyTarget::AArch64:
-            _assemblyParser = _aarch64Parser = new Aarch64Parser();
-            _baselinePrinter = _aarch64BaselinePrinter = new Aarch64BaselinePrinter();
-            break;
-        default:
-            throw std::runtime_error("Unknown assembly target");
-    }
+    _baselinePrinter->textSectionInstructions = &textSectionInstructions;
 }
 
+
+template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
 Utf8String
-CompilerBaselineParser::write()
+CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::serializeTextSection()
 {
     _baselinePrinter->list = &_list;
     MachHeader64* machHeader = reinterpret_cast<MachHeader64*>(&_list[0]);
@@ -45,7 +36,7 @@ CompilerBaselineParser::write()
         switch (cmd->cmd)
         {
             case LcSegment64:
-                parseSegment();
+                parseSegment64();
                 break;
             case LcSymbtab:
                 parseSymbolTable(reinterpret_cast<SymtabCommand*>(cmd));
@@ -54,12 +45,13 @@ CompilerBaselineParser::write()
                 _offset += cmd->cmdSize;
         }
     }
-    return _baselinePrinter->print();
+    return _baselinePrinter->print(textSectionInstructions);
 }
 
 
+template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
 void
-CompilerBaselineParser::parseSegment()
+CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::parseSegment64()
 {
     SegmentCommand64* segment = reinterpret_cast<SegmentCommand64*>(&_list[_offset]);
     _offset += sizeof(SegmentCommand64);
@@ -68,7 +60,16 @@ CompilerBaselineParser::parseSegment()
         Section64* section = reinterpret_cast<Section64*>(&_list[_offset]);
         if (std::strcmp(section->sectionName, "__text") == 0)
         {
-            parseTextSection(section);
+            parseTextSection(section, textSectionInstructions);
+            _baselinePrinter->textSectionStartAddress = section->offset;
+        }
+        else if (std::strcmp(section->sectionName, "__stubs") == 0)
+        {
+            parseTextSection(section, stubsSectionInstructions);
+        }
+        else if (std::strcmp(section->sectionName, "__stub_helper") == 0)
+        {
+            parseTextSection(section, stubHelperSectionInstructions);
         }
         else if (std::strcmp(section->sectionName, "__cstring") == 0)
         {
@@ -79,27 +80,18 @@ CompilerBaselineParser::parseSegment()
     }
 }
 
-
+template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
+template<typename T>
 void
-CompilerBaselineParser::parseTextSection(const Section64* textSection)
+CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::parseTextSection(const Section64* section, List<T>& instructions)
 {
-    switch (_assemblyTarget)
-    {
-        case AssemblyTarget::AArch64:
-            _aarch64Parser->parse(_aarch64BaselinePrinter->instructions, _list, textSection->offset, textSection->size);
-            break;
-        case AssemblyTarget::x86_64:
-            _x86BaselinePrinter->instructions = _x86Parser->parse(_list, textSection->offset, textSection->size);
-            break;
-        default:
-            throw std::runtime_error("Unknown assembly target");
-    }
-    _baselinePrinter->address = textSection->offset;
+    _parser->parse(instructions, _list, section->offset, section->size);
 }
 
 
+template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
 void
-CompilerBaselineParser::parseSymbolTable(const SymtabCommand* command)
+CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::parseSymbolTable(const SymtabCommand* command)
 {
     _offset += sizeof(SymtabCommand);
     SymbolTableEntry* entry = reinterpret_cast<SymbolTableEntry*>(&_list[command->symbolOffset]);

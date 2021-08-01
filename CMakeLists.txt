@@ -52,7 +52,7 @@ add_executable(
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
-    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Aarch/Aarch64BaselinePrinter.cpp src/Domain/Compiler/Tests/Aarch/Aarch64BaselinePrinter.h)
+    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.cpp src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.h)
 
 set(LIBS fmt ${Boost_LIBRARIES})
 set(TEST_LIBS gtest gmock)

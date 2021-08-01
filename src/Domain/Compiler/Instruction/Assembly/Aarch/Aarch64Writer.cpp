@@ -26,10 +26,13 @@ Aarch64Writer::writeStubs()
     {
         for (const auto& relocationAddress : routine->relocationAddresses)
         {
+            uint64_t start = _offset;
             bw->writeDoubleWord(Aarch64Instruction::Nop);
             uint32_t dw = bw->getDoubleWord(relocationAddress);
-            bw->writeDoubleWordAtAddress(dw | simm26(_offset - relocationAddress + 4), relocationAddress);
-            bw->writeDoubleWord(Aarch64Instruction::Ldr64 | simm19(0) | Rt(16));
+            bw->writeDoubleWordAtAddress(dw | simm26((start - relocationAddress) / 4), relocationAddress);
+            routine->stubAddress = _offset;
+            bw->writeDoubleWord(Aarch64Instruction::Ldr64 | simm19(0) | Rt(Aarch64Register::r16));
+            writeBr(Aarch64Register::r16);
         }
     }
 }
@@ -39,21 +42,29 @@ void
 Aarch64Writer::writeStubHelper()
 {
     dyldPrivateOffset = _offset;
-    bw->writeDoubleWord(Aarch64Instruction::AdrImmediate32 | Rd(17) | immhilo(0));
+    uint64_t start = _offset;
+    bw->writeDoubleWord(Aarch64Instruction::Adr | Rd(17) | immhilo(0));
     bw->writeDoubleWord(Aarch64Instruction::Nop);
-    bw->writeDoubleWord(Aarch64Instruction::StpPreIndex64 | Rt(16) | Rt2(17) | Rt(Aarch64Register::sp) | simm7((-16)));
+    bw->writeDoubleWord(Aarch64Instruction::StpPreIndex64 | simm7(-16) | Rt2(17) | Rn(Aarch64Register::sp) | Rt(16));
     bw->writeDoubleWord(Aarch64Instruction::Nop);
-    _dyldStubBinderOffset = _offset;
+
+    Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
+    Utf8StringView string = Utf8StringView(*dyldStubBinderString);
+    ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);
+    gotBoundRoutines.add(dyldStubBinderRoutine);
+    dyldStubBinderRoutine->relocationAddresses.add(_offset);
+
     bw->writeDoubleWord(Aarch64Instruction::Ldr64 | simm19(0) | Rt(16));
     bw->writeDoubleWord(Aarch64Instruction::Br | Rn(16));
 
+    uint32_t i = 0;
     for (const auto& routine : externalRoutines)
     {
+        bw->writeDoubleWord(Aarch64Instruction::Ldr32 | simm19(8) | Rt(16));
+        writeB(start - _offset);
         routine->stubHelperAddress = _offset;
-        bw->writeByte(OneByteOpCode::Push_Iz);
         bw->writeDoubleWord(0);
-        bw->writeByte(OP_NEAR_JMP_Jz);
-        bw->writeDoubleWord(top - _offset - 4);
+        i++;
     }
 }
 
@@ -83,6 +94,11 @@ Aarch64Writer::writeFunction(FunctionRoutine* routine)
         exportedRoutines.add(routine);
     }
     writeFunctionEpilogue(routine, stackSize, routineSize);
+    uint64_t rest = routineSize % 8;
+    if (rest != 0)
+    {
+//        bw->writeDoubleWord(Aarch64Instruction::Nop);
+    }
     for (const auto& subRoutine : routine->subRoutines)
     {
         writeFunction(subRoutine);
@@ -185,7 +201,7 @@ Aarch64Writer::writeCallInstructionArguments(CallInstruction* callInstruction, F
         else if (auto string = std::get_if<String*>(&argument->value))
         {
             (*string)->relocationAddress.value1 = _offset;
-            bw->writeDoubleWord(Aarch64Instruction::AdrpImmediate64 | immhilo(0) | Rd(Aarch64Register::r0));
+            bw->writeDoubleWord(Aarch64Instruction::Adrp | immhilo(0) | Rd(Aarch64Register::r0));
             (*string)->relocationAddress.offset = _offset;
             writeAddImmediate64(Aarch64Register::r0, Aarch64Register::r0, 0);
             size += 4;
@@ -398,14 +414,43 @@ Aarch64Writer::relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, Ex
 {
     uint64_t stubAddress = textSegmentStartOffset + externalRoutine->stubAddress;
     uint32_t dw = bw->getDoubleWord(stubAddress);
-    bw->writeDoubleWordAtAddress(dw | simm26(offset - stubAddress), offset);
+    bw->writeDoubleWordAtAddress(dw | simm19(offset - stubAddress), stubAddress);
 }
 
 
 void
 Aarch64Writer::relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset)
 {
-    throw std::runtime_error("Not implemented relocateDyldPrivate");
+    uint32_t adrInstruction = bw->getDoubleWord(textSegmentStartOffset + dyldPrivateOffset);
+    bw->writeDoubleWordAtAddress(adrInstruction | immhilo(dataSectionOffset - (textSegmentStartOffset + dyldPrivateOffset)), textSegmentStartOffset + dyldPrivateOffset);
+}
+
+
+void
+Aarch64Writer::relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset)
+{
+    bw->writeDoubleWordAtAddress(offset, textSegmentStartOffset + stubHelperAddress);
+}
+
+void
+
+Aarch64Writer::writeBr(Aarch64Register rn)
+{
+    bw->writeDoubleWord(Aarch64Instruction::Br | Rn(rn));
+}
+
+
+void
+Aarch64Writer::relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset)
+{
+    uint32_t dw = bw->getDoubleWord(offset);
+    bw->writeDoubleWordAtAddress(dw | simm19(gotOffset), offset);
+}
+
+void
+Aarch64Writer::writeB(int32_t offset)
+{
+    bw->writeDoubleWord(Aarch64Instruction::B | simm26(offset / 4));
 }
 
 

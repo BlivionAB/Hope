@@ -111,7 +111,7 @@ struct Routine
     kind;
 
     uint64_t
-    offset;
+    offset = 0;
 
     uint32_t
     symbolTableIndex;

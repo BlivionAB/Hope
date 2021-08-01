@@ -76,7 +76,7 @@ namespace elet::domain::compiler::instruction::output
         edges;
 
         bool
-        hasExportInfo;
+        hasExportInfo = false;
 
         ExportSymbolKind
         flags;

@@ -5,10 +5,10 @@
 #include <Foundation/Utf8String.h>
 #include <Foundation/List.h>
 #include <Domain/Compiler/Instruction/ObjectFileWriter/MachoFileWriter.h>
-#include "./X86/X86Parser.h"
-#include "./X86/X86BaselinePrinter.h"
-#include "./Aarch/Aarch64Parser.h"
-#include "./Aarch/Aarch64BaselinePrinter.h"
+#include "./X86/X86AssemblyParser.h"
+#include "./X86/X86AssemblyPrinter.h"
+#include "./Aarch/Aarch64AssemblyParser.h"
+#include "./Aarch/Aarch64AssemblyPrinter.h"
 #include "./BaselinePrinter.h"
 
 
@@ -21,7 +21,11 @@ namespace elet::domain::compiler::test
 
 using namespace elet::domain::compiler::test::aarch;
 
-
+template<
+    typename TAssemblyParser,
+    typename TAssemblyPrinter,
+    typename TOneOfInstructions
+>
 class CompilerBaselineParser
 {
 
@@ -30,12 +34,21 @@ public:
     CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget);
 
     Utf8String
-    write();
+    serializeTextSection();
+
+    List<TOneOfInstructions>
+    textSectionInstructions;
+
+    List<TOneOfInstructions>
+    stubsSectionInstructions;
+
+    List<TOneOfInstructions>
+    stubHelperSectionInstructions;
 
 private:
 
     void
-    parseSegment();
+    parseSegment64();
 
     List<uint8_t>&
     _list;
@@ -43,39 +56,37 @@ private:
     uint64_t
     _offset;
 
-    X86Parser*
-    _x86Parser;
+    TAssemblyParser*
+    _parser;
+
+    TAssemblyPrinter*
+    _baselinePrinter;
 
     AssemblyTarget
     _assemblyTarget;
 
-    AssemblyParser*
-    _assemblyParser;
-
-    Aarch64Parser*
-    _aarch64Parser;
-
-    Aarch64BaselinePrinter*
+    Aarch64AssemblyPrinter*
     _aarch64BaselinePrinter;
 
-    X86BaselinePrinter*
+    x86::X86AssemblyPrinter*
     _x86BaselinePrinter;
 
-    BaselinePrinter*
-    _baselinePrinter;
 
     std::map<uint64_t, const char*>
     _symbols;
 
+    template<typename T = TOneOfInstructions>
     void
-    parseTextSection(const Section64* section64);
+    parseTextSection(const Section64* section, List<T>& instructions);
 
     void
     parseSymbolTable(const SymtabCommand* command);
 };
 
 
+
 }
 
+#include "CompilerBaselineParserImpl.h"
 
 #endif //ELET_COMPILERBASELINEPARSER_H

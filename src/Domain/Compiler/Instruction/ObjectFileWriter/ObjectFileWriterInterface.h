@@ -55,12 +55,13 @@ public:
     write(FunctionRoutine* startRoutine) = 0;
 
 
-    List<std::uint8_t>&
-    getOutput() {
+    List<uint8_t>&
+    getOutput()
+    {
         return output;
     }
 
-    List<std::uint8_t>
+    List<uint8_t>
     output;
 };
 

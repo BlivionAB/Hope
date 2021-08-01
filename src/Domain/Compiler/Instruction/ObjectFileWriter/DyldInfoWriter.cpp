@@ -86,20 +86,20 @@ void
 DyldInfoWriter::writeLazyBindingInfo()
 {
     _machoWriter->dyldInfoCommand->lazyBindOffset = _machoWriter->offset;
-    std::size_t offset = 0;
+    uint64_t offset = 0;
     for (const auto& externalRoutine : _machoWriter->assemblyWriter->externalRoutines)
     {
         // Replace the pushed offset for lazy binding
-        _bw->writeDoubleWordAtAddress(offset, _machoWriter->textSegmentStartOffset + externalRoutine->stubHelperAddress + 1);
+        _machoWriter->assemblyWriter->relocateStubHelperOffset(offset, _machoWriter->textSegmentStartOffset, externalRoutine->stubHelperAddress);
 
         _bw->writeByte(BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 3);
-        _bw->writeByte(offset);
+        offset += _bw->writeUleb128(offset);
         _bw->writeByte(BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 1);
         _bw->writeByte(BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM | 0);
-        _bw->writeString(externalRoutine->name);
+        offset += _bw->writeString(externalRoutine->name);
         _bw->writeByte(BIND_OPCODE_DO_BIND);
         _bw->writeByte(BIND_OPCODE_DONE);
-        offset += 8;
+        offset += 5;
     }
     uint32_t size = _machoWriter->offset - _machoWriter->dyldInfoCommand->lazyBindOffset;
     uint32_t rest = size % 8;

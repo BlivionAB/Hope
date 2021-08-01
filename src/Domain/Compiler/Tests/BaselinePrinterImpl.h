@@ -3,8 +3,9 @@
 namespace elet::domain::compiler::test
 {
 
+template<typename TOneOfInstructions>
 void
-BaselinePrinter::writeColumnHeader()
+BaselinePrinter<TOneOfInstructions>::writeColumnHeader()
 {
     _tw.write("Address");
     _tw.tab();
@@ -18,10 +19,11 @@ BaselinePrinter::writeColumnHeader()
 
 
 
+template<typename TOneOfInstructions>
 void
-BaselinePrinter::writeAddress()
+BaselinePrinter<TOneOfInstructions>::writeAddress()
 {
-    auto vmAddress = address + vmOffset;
+    auto vmAddress = textSectionStartAddress + vmOffset;
     auto result = symbols->find(vmAddress);
     if (result != symbols->end())
     {

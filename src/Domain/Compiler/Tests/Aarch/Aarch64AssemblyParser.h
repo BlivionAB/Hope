@@ -1,5 +1,5 @@
-#ifndef ELET_AARCH64PARSER_H
-#define ELET_AARCH64PARSER_H
+#ifndef ELET_AARCH64ASSEMBLYPARSER_H
+#define ELET_AARCH64ASSEMBLYPARSER_H
 
 
 #include "../AssemblyParser.h"
@@ -9,7 +9,7 @@ namespace elet::domain::compiler::test::aarch
 {
 
 
-class Aarch64Parser : public AssemblyParser
+class Aarch64AssemblyParser : public AssemblyParser
 {
 
 public:
@@ -83,13 +83,19 @@ private:
     tryParse24Instructions(Instruction* instruction, uint32_t dw);
 
     void
+    parseAdrInstruction(Instruction* instruction, uint32_t dw);
+
+    void
     parseAdrpInstruction(Instruction* instruction, uint32_t dw);
 
     uint32_t
     immhilo(uint32_t dw);
+
+    void
+    parseUdfInstruction(Instruction* instruction, uint32_t dw);
 };
 
 
 }
 
-#endif //ELET_AARCH64PARSER_H
+#endif //ELET_AARCH64ASSEMBLYPARSER_H

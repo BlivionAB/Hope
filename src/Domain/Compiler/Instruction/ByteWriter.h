@@ -22,31 +22,31 @@ public:
     ByteWriter(List<uint8_t>* output, uint64_t* offset);
 
     void
-    writeQuadWord(std::uint64_t instruction);
+    writeQuadWord(uint64_t instruction);
 
     void
-    writeQuadWordAtAddress(std::uint64_t instruction, std::uint64_t);
-
-
-    void
-    writeDoubleWord(std::uint32_t instruction);
+    writeQuadWordAtAddress(uint64_t instruction, uint64_t);
 
 
     void
-    writeDoubleWordAtAddress(std::uint32_t instruction, std::size_t offset);
+    writeDoubleWord(uint32_t instruction);
+
+
+    void
+    writeDoubleWordAtAddress(uint32_t instruction, size_t offset);
 
     static
     void
-    writeDoubleWordAtAddress(std::uint32_t instruction, std::size_t offset, List<uint8_t>& output);
+    writeDoubleWordAtAddress(uint32_t instruction, uint64_t offset, List<uint8_t>& output);
 
     void
-    writeByte(std::uint8_t instruction);
+    writeByte(uint8_t instruction);
 
     void
-    writeByte(std::uint8_t instruction, uint64_t& size);
+    writeByte(uint8_t instruction, uint64_t& size);
 
     void
-    writeByteAtAddress(std::uint8_t instruction, std::size_t offset);
+    writeByteAtAddress(uint8_t instruction, size_t offset);
 
     void
     writeWord(uint16_t instruction);
@@ -57,11 +57,11 @@ public:
     size_t
     writeString(const char* string);
 
-    void
+    uint64_t
     writeString(const Utf8StringView& string);
 
-    void
-    writeUleb128(uint64_t integer);
+    uint64_t
+    writeUleb128(uint64_t value);
 
     static
     size_t

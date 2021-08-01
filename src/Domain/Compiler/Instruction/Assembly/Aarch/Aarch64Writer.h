@@ -36,7 +36,14 @@ public:
     void
     relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) override;
 
+    void
+    relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) override;
+
+    void
+    relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
+
 private:
+
 
     void
     writeFunction(FunctionRoutine* routine);
@@ -70,6 +77,9 @@ private:
 
     void
     writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value);
+
+    void
+    writeBr(Aarch64Register rn);
 
     uint32_t
     Rd(uint32_t reg) const;
@@ -109,6 +119,12 @@ private:
 
     uint64_t
     writeCallInstructionArguments(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
+
+    void
+    writeB(int32_t offset);
+
+    void
+    writeInstructionsPadding(uint64_t i);
 };
 
 }

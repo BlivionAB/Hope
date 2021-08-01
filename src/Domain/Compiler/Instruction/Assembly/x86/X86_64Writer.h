@@ -83,6 +83,12 @@ private:
 
     void
     relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) override;
+
+    void
+    relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) override;
+
+    void
+    relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
 };
 
 

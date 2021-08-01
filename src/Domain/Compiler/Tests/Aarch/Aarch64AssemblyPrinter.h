@@ -1,5 +1,5 @@
-#ifndef ELET_AARCH64BASELINEPRINTER_H
-#define ELET_AARCH64BASELINEPRINTER_H
+#ifndef ELET_AARCH64ASSEMBLYPRINTER_H
+#define ELET_AARCH64ASSEMBLYPRINTER_H
 
 
 #include "../BaselinePrinter.h"
@@ -9,15 +9,12 @@
 namespace elet::domain::compiler::test::aarch
 {
 
-class Aarch64BaselinePrinter : public BaselinePrinter
+class Aarch64AssemblyPrinter : public BaselinePrinter<OneOfInstruction>
 {
 public:
 
-    List<OneOfInstruction>
-    instructions;
-
     Utf8String
-    print() override;
+    print(List<OneOfInstruction>& instructions) override;
 
     void
     writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction);
@@ -38,7 +35,7 @@ public:
     writeBranchExceptionSyscallInstruction(const BranchExceptionSyscallInstruction* pInstruction);
 
     void
-    writeBl(const UnconditionalBranchImmediateInstruction* pInstruction);
+    writeBl(const BlInstruction* pInstruction);
 
     void
     writeMovImmediate(const MovWideImmediateInstruction* instruction);
@@ -53,9 +50,12 @@ public:
     writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset);
 
     void
-    writeAdrpInstruction(const AdrpInstruction* pInstruction);
+    writeAdrpInstruction(const AdrInstruction* pInstruction);
+
+    void
+    writeNopInstruction();
 };
 
 }
 
-#endif //ELET_AARCH64BASELINEPRINTER_H
+#endif //ELET_AARCH64ASSEMBLYPRINTER_H

@@ -9,7 +9,7 @@ namespace elet::domain::compiler::test
 
 TEST_F(CompileFixture, DynamicLinkingWithCCode)
 {
-    project->setEntrySourceFile("main.l1",
+    project.setEntrySourceFile("main.l1",
         "domain Common::Console\n"
         "{\n"
         "\n"
@@ -41,8 +41,17 @@ TEST_F(CompileFixture, DynamicLinkingWithCCode)
         "   }\n"
         "}");
 
-//    EXPECT_TRUE(testProject(project, AssemblyTarget::x86_64, ObjectFileTarget::MachO, "macho-x86_64"));
-    EXPECT_TRUE(testProject(project, AssemblyTarget::AArch64, ObjectFileTarget::MachO, "macho-aarch64"));
+    EXPECT_TRUE(testProject({
+        .baselineName = "macho-x86_64",
+        .assemblyTarget = AssemblyTarget::x86_64,
+        .objectFileTarget = ObjectFileTarget::MachO,
+    }));
+
+    EXPECT_TRUE(testProject({
+        .baselineName = "macho-aarch64",
+        .assemblyTarget = AssemblyTarget::Aarch64,
+        .objectFileTarget = ObjectFileTarget::MachO,
+    }));
 }
 
 

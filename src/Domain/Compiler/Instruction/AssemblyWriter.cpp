@@ -20,7 +20,7 @@ AssemblyWriter::AssemblyWriter(compiler::AssemblyTarget target) :
         case AssemblyTarget::x86_64:
             _assemblyWriter = new X86_64Writer(nullptr);
             break;
-        case AssemblyTarget::AArch64:
+        case AssemblyTarget::Aarch64:
             _assemblyWriter = new Aarch64Writer(nullptr);
             break;
         default:

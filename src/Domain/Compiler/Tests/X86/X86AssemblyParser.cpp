@@ -1,21 +1,20 @@
-#include "X86Parser.h"
+#include "X86AssemblyParser.h"
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h"
 #include <cmath>
 
-namespace elet::domain::compiler::test
+namespace elet::domain::compiler::test::x86
 {
 
 
-X86Parser::X86Parser()
+X86AssemblyParser::X86AssemblyParser()
 {
 
 }
 
 
-List<Instruction*>
-X86Parser::parse(List<std::uint8_t>& output, size_t offset, size_t size)
+void
+X86AssemblyParser::parse(List<Instruction>& instructions, List<uint8_t>& output, size_t offset, size_t size)
 {
-    List<Instruction*> instructions;
     _output = &output;
     _offset = offset;
     _cursor = offset;
@@ -23,7 +22,7 @@ X86Parser::parse(List<std::uint8_t>& output, size_t offset, size_t size)
 
     while (_cursor - _offset < _size)
     {
-        auto instruction = new Instruction();
+        Instruction& instruction = *reinterpret_cast<Instruction*>(instructions.emplace());
         uint8_t opcode = getByte(instruction);
         if (opcode == 0)
         {
@@ -33,14 +32,14 @@ X86Parser::parse(List<std::uint8_t>& output, size_t offset, size_t size)
         {
             if (opcode & RexW)
             {
-                instruction->size = SizeKind::Quad;
+                instruction.size = SizeKind::Quad;
             }
             opcode = getByte(instruction);
         }
         bool hasOperandSizePrefix = false;
         if (opcode == OpCodePrefix::OperandSizePrefix)
         {
-            instruction->size = SizeKind::Word;
+            instruction.size = SizeKind::Word;
             opcode = getByte(instruction);
             hasOperandSizePrefix = true;
         }
@@ -53,18 +52,17 @@ X86Parser::parse(List<std::uint8_t>& output, size_t offset, size_t size)
             }
             else
             {
-                parseTwoByteOpCode(opcode, instruction, instructions);
+                parseTwoByteOpCode(opcode, instruction);
             }
             continue;
         }
         parseOneByteOpCode(instructions, instruction, opcode);
     }
-    return instructions;
 }
 
 
 void
-X86Parser::parseOneByteOpCode(List<Instruction*>& instructions, Instruction* instruction, uint8_t opcode)
+X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instruction& instruction, uint8_t opcode)
 {
     switch (opcode)
     {
@@ -76,118 +74,115 @@ X86Parser::parseOneByteOpCode(List<Instruction*>& instructions, Instruction* ins
             switch (op)
             {
                 case 0:
-                    instruction->kind = InstructionKind::Add;
+                    instruction.kind = InstructionKind::Add;
                     break;
                 case 5:
-                    instruction->kind = InstructionKind::Sub;
+                    instruction.kind = InstructionKind::Sub;
                     break;
                 default:
                     throw std::runtime_error("Unknown operand code from modrmByte.");
             }
-            instruction->operand1 = createEv(modrmByte, instruction, true);
-            instruction->operand2 = new Ib(offset);
+            instruction.operand1 = createEv(modrmByte, instruction, true);
+            instruction.operand2 = new Ib(offset);
             break;
         }
         case Ret:
-            instruction->kind = InstructionKind::Ret;
+            instruction.kind = InstructionKind::Ret;
             break;
         case Pop_rBP:
-            instruction->kind = InstructionKind::Pop;
-            instruction->operand1 = Register::rBP;
-            instruction->size = SizeKind::Quad;
+            instruction.kind = InstructionKind::Pop;
+            instruction.operand1 = Register::rBP;
+            instruction.size = SizeKind::Quad;
             break;
         case Xor_Ev_Gv:
         {
             uint8_t modrmByte = getByte(instruction);
-            instruction->kind = InstructionKind::Xor;
-            instruction->operand1 = createEv(modrmByte, instruction, true);
-            instruction->operand2 = createGv(modrmByte, instruction->size == SizeKind::Quad);
+            instruction.kind = InstructionKind::Xor;
+            instruction.operand1 = createEv(modrmByte, instruction, true);
+            instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
             break;
         }
         case CallNear:
         {
-            instruction->kind = InstructionKind::Call;
+            instruction.kind = InstructionKind::Call;
             auto doubleWord = getDoubleWord(instruction);
-            instruction->operand1 = Jv(doubleWord);
-            instruction->size = SizeKind::Quad;
+            instruction.operand1 = Jv(doubleWord);
+            instruction.size = SizeKind::Quad;
             break;
         }
         case Lea_Gv_M:
         {
             uint8_t modrmByte = getByte(instruction);
-            instruction->kind = InstructionKind::Lea;
-            instruction->operand1 = createGv(modrmByte, instruction);
-            if (instruction->size == SizeKind::Quad)
+            instruction.kind = InstructionKind::Lea;
+            instruction.operand1 = createGv(modrmByte, true);
+            if (instruction.size == SizeKind::Quad)
             {
-                instruction->operand2 = createMemoryAddress32(instruction);
+                instruction.operand2 = createMemoryAddress32(instruction);
             }
             else
             {
-                instruction->operand2 = createMemoryAddress16();
+                instruction.operand2 = createMemoryAddress16();
             }
             break;
         }
         case Push_rBP:
-            instruction->kind = InstructionKind::Push;
-            instruction->operand1 = Register::rBP;
-            instruction->size = SizeKind::Quad;
+            instruction.kind = InstructionKind::Push;
+            instruction.operand1 = Register::rBP;
+            instruction.size = SizeKind::Quad;
             break;
         case Mov_Ev_Gv:
         {
             uint8_t modrmByte = getByte(instruction);
-            instruction->kind = InstructionKind::Mov;
-            instruction->operand1 = createEv(modrmByte, instruction, true);
-            instruction->operand2 = createGv(modrmByte, instruction->size == SizeKind::Quad);
+            instruction.kind = InstructionKind::Mov;
+            instruction.operand1 = createEv(modrmByte, instruction, true);
+            instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
             break;
         }
         case Mov_Gv_Ev:
         {
             uint8_t modrmByte = getByte(instruction);
-            instruction->kind = InstructionKind::Mov;
-            instruction->operand1 = createGv(modrmByte, instruction->size == SizeKind::Quad);
-            instruction->operand2 = createEv(modrmByte, instruction, true);
+            instruction.kind = InstructionKind::Mov;
+            instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
+            instruction.operand2 = createEv(modrmByte, instruction, true);
             break;
         }
         default:;
-//                throw std::runtime_error("Could not find decode opcode.");
+//            throw std::runtime_error("Could not find decode opcode.");
     }
-    instructions.add(instruction);
 }
 
 
 
 void
-X86Parser::parseTwoByteOpCode(uint8_t opcode, Instruction* instruction, List<Instruction*>& instructions)
+X86AssemblyParser::parseTwoByteOpCode(uint8_t opcode, Instruction& instruction)
 {
     switch (opcode)
     {
         case ThreeByteOpCode::Nop_0_Ev:
             uint8_t modrmByte = getByte(instruction);
-            instruction->kind = InstructionKind::Nop;
-            instruction->operand1 = createEv(modrmByte, instruction, true);
+            instruction.kind = InstructionKind::Nop;
+            instruction.operand1 = createEv(modrmByte, instruction, true);
             break;
     }
-    instructions.add(instruction);
 }
 
 
 void
-X86Parser::parseThreeByteOpCode(uint8_t opcode, Instruction* instruction, List<Instruction*>& instructions)
+X86AssemblyParser::parseThreeByteOpCode(uint8_t opcode, Instruction& instruction, List<Instruction>& instructions)
 {
     switch (opcode)
     {
         case ThreeByteOpCode::Nop_0_Ev:
             uint8_t modrmByte = getByte(instruction);
-            instruction->kind = InstructionKind::Nop;
-            instruction->operand1 = createEv(modrmByte, instruction, true);
+            instruction.kind = InstructionKind::Nop;
+            instruction.operand1 = createEv(modrmByte, instruction, true);
             break;
     }
-    instructions.add(instruction);
 }
 
 
 Ev*
-X86Parser::createEv(uint8_t modrmByte, Instruction* instruction, bool useOnlyRmField)
+X86AssemblyParser::createEv(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField)
 {
     auto ev = new Ev();
     if (useOnlyRmField)
@@ -233,7 +228,7 @@ X86Parser::createEv(uint8_t modrmByte, Instruction* instruction, bool useOnlyRmF
                 }
                 return ev;
             case ModBits::Mod3:
-                if (instruction->size == SizeKind::Quad)
+                if (instruction.size == SizeKind::Quad)
                 {
                     ev->emplace<Register>(mapQuadWordRegisterIndex(rm));
                 }
@@ -250,7 +245,7 @@ X86Parser::createEv(uint8_t modrmByte, Instruction* instruction, bool useOnlyRmF
 
 
 Gv*
-X86Parser::createGv(std::uint8_t opcode, bool isQuadWord)
+X86AssemblyParser::createGv(std::uint8_t opcode, bool isQuadWord)
 {
     std::uint8_t reg = (opcode & REG_BITS) >> 3;
     return isQuadWord ? new Gv(mapQuadWordRegisterIndex(reg)) : new Gv(mapDoubleWordRegisterIndex(reg));
@@ -258,7 +253,7 @@ X86Parser::createGv(std::uint8_t opcode, bool isQuadWord)
 
 
 Register
-X86Parser::mapDoubleWordRegisterIndex(std::uint8_t reg)
+X86AssemblyParser::mapDoubleWordRegisterIndex(std::uint8_t reg)
 {
     switch (reg)
     {
@@ -284,7 +279,7 @@ X86Parser::mapDoubleWordRegisterIndex(std::uint8_t reg)
 
 
 Register
-X86Parser::mapQuadWordRegisterIndex(std::uint8_t reg)
+X86AssemblyParser::mapQuadWordRegisterIndex(std::uint8_t reg)
 {
     switch (reg)
     {
@@ -309,13 +304,13 @@ X86Parser::mapQuadWordRegisterIndex(std::uint8_t reg)
 }
 
 
-std::array<std::uint8_t, 4>
-X86Parser::getDoubleWord(Instruction* instruction)
+std::array<uint8_t, 4>
+X86AssemblyParser::getDoubleWord(Instruction& instruction)
 {
-    std::array<std::uint8_t, 4> result = { 0, 0, 0, 0 };
+    std::array<uint8_t, 4> result = { 0, 0, 0, 0 };
     for (unsigned int i = 0; i < 4; ++i)
     {
-        std::uint8_t opcode = getByte(instruction);
+        uint8_t opcode = getByte(instruction);
         result[i] = opcode;
     }
     return result;
@@ -323,16 +318,16 @@ X86Parser::getDoubleWord(Instruction* instruction)
 
 
 uint8_t
-X86Parser::getByte(Instruction* instruction)
+X86AssemblyParser::getByte(Instruction& instruction)
 {
     uint8_t result = (*_output)[_cursor++];
-    instruction->bytes.add(result);
+    instruction.bytes.add(result);
     return result;
 }
 
 
 MemoryAddress32*
-X86Parser::createMemoryAddress32(Instruction* instruction)
+X86AssemblyParser::createMemoryAddress32(Instruction& instruction)
 {
     std::array<uint8_t, 4> opcode = getDoubleWord(instruction);
     return new MemoryAddress32(opcode);
@@ -340,7 +335,7 @@ X86Parser::createMemoryAddress32(Instruction* instruction)
 
 
 MemoryAddress32*
-X86Parser::createMemoryAddress16()
+X86AssemblyParser::createMemoryAddress16()
 {
     throw std::invalid_argument("Not implemented");
 }

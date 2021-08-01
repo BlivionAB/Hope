@@ -19,7 +19,7 @@ MachoFileWriter::MachoFileWriter(AssemblyTarget assemblyTarget):
         case AssemblyTarget::x86_64:
             assemblyWriter = new X86_64Writer(&_text);
             break;
-        case AssemblyTarget::AArch64:
+        case AssemblyTarget::Aarch64:
             assemblyWriter = new Aarch64Writer(&_text);
             break;
     }
@@ -187,7 +187,7 @@ MachoFileWriter::writeTextSegmentCommand()
         0,
         _textSize,
         0,
-        4,
+        _assemblyTarget == AssemblyTarget::x86_64 ? 4u : 2u,
         0,
         0,
         MachoSectionFlags::S_ATTR_PURE_INSTRUCTIONS | MachoSectionFlags::S_ATTR_SOME_INSTRUCTIONS,
@@ -202,12 +202,12 @@ MachoFileWriter::writeTextSegmentCommand()
          static_cast<uint64_t>(_stubsOffset),
          _stubsSize,
          _stubsOffset,
-         1,
+         _assemblyTarget == AssemblyTarget::x86_64 ? 1u : 2u,
          0,
          0,
          MachoSectionFlags::S_SYMBOL_STUBS | MachoSectionFlags::S_ATTR_PURE_INSTRUCTIONS | MachoSectionFlags::S_ATTR_SOME_INSTRUCTIONS,
          0,
-         6, /*byte size of each stub entry*/
+         _assemblyTarget == AssemblyTarget::x86_64 ? 6u : 12u, /*byte size of each stub entry*/
          0
     }, _textSegment);
 
@@ -254,7 +254,7 @@ MachoFileWriter::writeHeader()
             cpuType = MachoCpuType::CPU_TYPE_X86_64;
             cpuSubType = MachoCpuType::CPU_SUBTYPE_X86_64_ALL;
             break;
-        case AssemblyTarget::AArch64:
+        case AssemblyTarget::Aarch64:
             cpuType = MachoCpuType::CPU_TYPE_ARM64;
             cpuSubType = MachoCpuType::CPU_SUBTYPE_ARM64_ALL;
             break;
@@ -474,7 +474,7 @@ MachoFileWriter::writeDataConstSegment()
     {
         for (const auto& relocationAddress : gotBoundRoutine->relocationAddresses)
         {
-            _bw->writeDoubleWordAtAddress(offset - (textSegmentStartOffset + relocationAddress + 4), textSegmentStartOffset + relocationAddress);
+            assemblyWriter->relocateGotBoundRoutine(offset - (textSegmentStartOffset + relocationAddress), textSegmentStartOffset + relocationAddress);
         }
         _bw->writeQuadWord(0);
     }

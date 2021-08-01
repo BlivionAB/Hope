@@ -1,21 +1,21 @@
 #include <fstream>
-#include "X86BaselinePrinter.h"
-#include "X86Parser.h"
+#include "X86AssemblyPrinter.h"
+#include "X86AssemblyParser.h"
 #include "X86Types.h"
 
 
-namespace elet::domain::compiler::test
+namespace elet::domain::compiler::test::x86
 {
 
 
-X86BaselinePrinter::X86BaselinePrinter()
+X86AssemblyPrinter::X86AssemblyPrinter()
 {
-    _parser = new X86Parser();
+    _parser = new X86AssemblyParser();
 }
 
 
 Utf8String
-X86BaselinePrinter::print()
+X86AssemblyPrinter::print(List<x86::Instruction>& instructions)
 {
     _tw.addColumn(18);
     _tw.addColumn(40);
@@ -29,13 +29,13 @@ X86BaselinePrinter::print()
 
 
 void
-X86BaselinePrinter::writeInstruction(Instruction* instruction)
+X86AssemblyPrinter::writeInstruction(const Instruction& instruction)
 {
     writeAddress();
     _tw.tab();
     writeByteInstruction(instruction);
     _tw.tab();
-    switch (instruction->kind)
+    switch (instruction.kind)
     {
         case InstructionKind::Add:
             writeInstructionWithName("add", instruction);
@@ -74,24 +74,24 @@ X86BaselinePrinter::writeInstruction(Instruction* instruction)
 
 
 void
-X86BaselinePrinter::writeInstructionWithName(const char* name, const Instruction* instruction)
+X86AssemblyPrinter::writeInstructionWithName(const char* name, const Instruction& instruction)
 {
     _tw.write(name);
     writeSizeSuffix(instruction);
-    if (!std::holds_alternative<std::monostate>(instruction->operand2))
+    if (!std::holds_alternative<std::monostate>(instruction.operand2))
     {
-        writeOperand(&instruction->operand2, instruction);
+        writeOperand(&instruction.operand2, instruction);
         _tw.write(", ");
     }
-    if (!std::holds_alternative<std::monostate>(instruction->operand1))
+    if (!std::holds_alternative<std::monostate>(instruction.operand1))
     {
-        writeOperand(&instruction->operand1, instruction);
+        writeOperand(&instruction.operand1, instruction);
     }
 }
 
 
 void
-X86BaselinePrinter::writeOperand(const Operand* operand, const Instruction* instruction)
+X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& instruction)
 {
     if (auto ev = std::get_if<Ev*>(operand))
     {
@@ -140,14 +140,14 @@ X86BaselinePrinter::writeOperand(const Operand* operand, const Instruction* inst
 }
 
 void
-X86BaselinePrinter::writeMemoryAddress(const std::array<uint8_t, 4> mem)
+X86AssemblyPrinter::writeMemoryAddress(const std::array<uint8_t, 4> mem)
 {
     size_t offset = 0;
     for (int i = 0; i < 4; ++i)
     {
         offset += mem[i] << 8 * i;
     }
-    size_t vmAddress = offset + address;
+    size_t vmAddress = offset + textSectionStartAddress;
     if (vmAddress >= cstringSectionOffset && vmAddress <= cstringSectionOffset + cstringSectionSize)
     {
         _tw.write("\"");
@@ -177,10 +177,10 @@ X86BaselinePrinter::writeMemoryAddress(const std::array<uint8_t, 4> mem)
 
 
 void
-X86BaselinePrinter::writeGeneralPurposeRegister(const Register _register, const Instruction* instruction)
+X86AssemblyPrinter::writeGeneralPurposeRegister(const Register _register, const Instruction& instruction)
 {
     _tw.write("%");
-    switch (instruction->size)
+    switch (instruction.size)
     {
         case SizeKind::Quad:
             _tw.write("r");
@@ -222,7 +222,7 @@ X86BaselinePrinter::writeGeneralPurposeRegister(const Register _register, const 
 
 
 void
-X86BaselinePrinter::writeRegisterDisplacement(RegisterDisplacement* displacement, const Instruction* instruction)
+X86AssemblyPrinter::writeRegisterDisplacement(RegisterDisplacement* displacement, const Instruction& instruction)
 {
     _tw.write("(");
     writeGeneralPurposeRegister(displacement->base, instruction);
@@ -231,7 +231,7 @@ X86BaselinePrinter::writeRegisterDisplacement(RegisterDisplacement* displacement
 
 
 void
-X86BaselinePrinter::writeLongDisplacement(LongDisplacement* displacement, const Instruction* instruction)
+X86AssemblyPrinter::writeLongDisplacement(LongDisplacement* displacement, const Instruction& instruction)
 {
     if (auto sibDisplacement = std::get_if<SibDisplacement*>(&displacement->base))
     {
@@ -274,7 +274,7 @@ X86BaselinePrinter::writeLongDisplacement(LongDisplacement* displacement, const 
 
 
 void
-X86BaselinePrinter::writeByteDisplacement(ByteDisplacement* displacement, const Instruction* instruction)
+X86AssemblyPrinter::writeByteDisplacement(ByteDisplacement* displacement, const Instruction& instruction)
 {
     auto disp = displacement->displacement;
     if (disp)
@@ -317,9 +317,9 @@ X86BaselinePrinter::writeByteDisplacement(ByteDisplacement* displacement, const 
 
 
 void
-X86BaselinePrinter::writeSizeSuffix(const Instruction* instruction)
+X86AssemblyPrinter::writeSizeSuffix(const Instruction& instruction)
 {
-    switch (instruction->size)
+    switch (instruction.size)
     {
         case SizeKind::Quad:
             _tw.write("q ");
@@ -340,12 +340,12 @@ X86BaselinePrinter::writeSizeSuffix(const Instruction* instruction)
 
 
 void
-X86BaselinePrinter::writeByteInstruction(Instruction* instruction)
+X86AssemblyPrinter::writeByteInstruction(const Instruction& instruction)
 {
-    for (const auto byte : instruction->bytes)
+    for (const auto byte : instruction.bytes)
     {
         _tw.writeByteHex(byte);
-        ++address;
+        ++textSectionStartAddress;
     }
 }
 

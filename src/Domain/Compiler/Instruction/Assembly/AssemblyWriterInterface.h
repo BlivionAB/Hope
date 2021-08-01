@@ -57,6 +57,14 @@ public:
 
     virtual
     void
+    relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset) = 0;
+
+    virtual
+    void
+    relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) = 0;
+
+    virtual
+    void
     writeStubs() = 0;
 
     virtual
@@ -106,9 +114,6 @@ protected:
 
     uint64_t
     _offset = 0;
-
-    uint64_t
-    _dyldStubBinderOffset;
 
     uint64_t
     getStackSizeFromFunctionParameters(const FunctionRoutine* routine);

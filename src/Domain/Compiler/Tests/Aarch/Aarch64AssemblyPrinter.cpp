@@ -1,12 +1,13 @@
-#include "Aarch64BaselinePrinter.h"
+#include "Aarch64AssemblyPrinter.h"
 
 
 namespace elet::domain::compiler::test::aarch
 {
 
 
+
 Utf8String
-Aarch64BaselinePrinter::print()
+Aarch64AssemblyPrinter::print(List<OneOfInstruction>& instructions)
 {
     _tw.addColumn(18);
     _tw.addColumn(40);
@@ -20,8 +21,8 @@ Aarch64BaselinePrinter::print()
         _tw.tab();
         switch (instruction->kind)
         {
-            case Aarch64Instruction::AdrpImmediate64:
-                writeAdrpInstruction(reinterpret_cast<const AdrpInstruction*>(instruction));
+            case Aarch64Instruction::Adrp:
+                writeAdrpInstruction(reinterpret_cast<const AdrInstruction*>(instruction));
                 break;
             case Aarch64Instruction::StrImmediateBaseOffset64:
             case Aarch64Instruction::LdrImmediateBaseOffset64:
@@ -44,10 +45,13 @@ Aarch64BaselinePrinter::print()
                 writeMov(reinterpret_cast<const MovInstruction*>(instruction));
                 break;
             case Aarch64Instruction::Bl:
-                writeBl(reinterpret_cast<const UnconditionalBranchImmediateInstruction*>(instruction));
+                writeBl(reinterpret_cast<const BlInstruction*>(instruction));
                 break;
             case Aarch64Instruction::Ret:
                 writeBranchExceptionSyscallInstruction(reinterpret_cast<const BranchExceptionSyscallInstruction*>(instruction));
+                break;
+            case Aarch64Instruction::Nop:
+                writeNopInstruction();
                 break;
             default:
                 throw std::runtime_error("Unknown instruction.");
@@ -59,7 +63,7 @@ Aarch64BaselinePrinter::print()
 
 
 void
-Aarch64BaselinePrinter::writeAdrpInstruction(const AdrpInstruction* instruction)
+Aarch64AssemblyPrinter::writeAdrpInstruction(const AdrInstruction* instruction)
 {
     _tw.write("adrp ");
     writeGeneralPurposeRegister64(instruction->rd);
@@ -68,7 +72,7 @@ Aarch64BaselinePrinter::writeAdrpInstruction(const AdrpInstruction* instruction)
 
 
 void
-Aarch64BaselinePrinter::writeMov(const MovInstruction* instruction)
+Aarch64AssemblyPrinter::writeMov(const MovInstruction* instruction)
 {
     _tw.write("mov ");
     writeGeneralPurposeRegister64(instruction->rd);
@@ -78,7 +82,7 @@ Aarch64BaselinePrinter::writeMov(const MovInstruction* instruction)
 
 
 void
-Aarch64BaselinePrinter::writeMovImmediate(const MovWideImmediateInstruction* instruction)
+Aarch64AssemblyPrinter::writeMovImmediate(const MovWideImmediateInstruction* instruction)
 {
     _tw.write("movz ");
     writeGeneralPurposeRegister32(instruction->rd);
@@ -88,7 +92,7 @@ Aarch64BaselinePrinter::writeMovImmediate(const MovWideImmediateInstruction* ins
 
 
 void
-Aarch64BaselinePrinter::writeLoadStoreInstruction(const LoadStoreInstruction* instruction)
+Aarch64AssemblyPrinter::writeLoadStoreInstruction(const LoadStoreInstruction* instruction)
 {
     switch (instruction->kind)
     {
@@ -108,7 +112,7 @@ Aarch64BaselinePrinter::writeLoadStoreInstruction(const LoadStoreInstruction* in
 }
 
 void
-Aarch64BaselinePrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset)
+Aarch64AssemblyPrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset)
 {
     switch (addressMode)
     {
@@ -133,7 +137,7 @@ Aarch64BaselinePrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16
 
 
 void
-Aarch64BaselinePrinter::writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction)
+Aarch64AssemblyPrinter::writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction)
 {
     switch (instruction->kind)
     {
@@ -162,7 +166,7 @@ Aarch64BaselinePrinter::writeLoadStorePairInstruction(const LoadStorePairInstruc
 
 
 void
-Aarch64BaselinePrinter::writeGeneralPurposeRegister32(Register reg)
+Aarch64AssemblyPrinter::writeGeneralPurposeRegister32(Register reg)
 {
     switch (reg)
     {
@@ -209,7 +213,7 @@ Aarch64BaselinePrinter::writeGeneralPurposeRegister32(Register reg)
 
 
 void
-Aarch64BaselinePrinter::writeGeneralPurposeRegister64(Register reg)
+Aarch64AssemblyPrinter::writeGeneralPurposeRegister64(Register reg)
 {
     switch (reg)
     {
@@ -256,17 +260,17 @@ Aarch64BaselinePrinter::writeGeneralPurposeRegister64(Register reg)
 
 
 void
-Aarch64BaselinePrinter::writeByteInstruction(const Instruction* instruction)
+Aarch64AssemblyPrinter::writeByteInstruction(const Instruction* instruction)
 {
     for (const auto byte : instruction->bytes)
     {
         _tw.writeByteHex(byte);
-        ++address;
+        ++textSectionStartAddress;
     }
 }
 
 void
-Aarch64BaselinePrinter::writeBranchExceptionSyscallInstruction(const BranchExceptionSyscallInstruction* instruction)
+Aarch64AssemblyPrinter::writeBranchExceptionSyscallInstruction(const BranchExceptionSyscallInstruction* instruction)
 {
     if (instruction->kind == Aarch64Instruction::Ret)
     {
@@ -277,11 +281,11 @@ Aarch64BaselinePrinter::writeBranchExceptionSyscallInstruction(const BranchExcep
 
 
 void
-Aarch64BaselinePrinter::writeBl(const UnconditionalBranchImmediateInstruction* instruction)
+Aarch64AssemblyPrinter::writeBl(const BlInstruction* instruction)
 {
     _tw.write("bl ");
 
-    uint64_t vmAddress = instruction->imm26 * 4 + address - 4 /* We wrote the byte instruction above*/;
+    uint64_t vmAddress = instruction->imm26 * 4 + textSectionStartAddress - 4 /* We wrote the byte instruction above*/;
     auto result = symbols->find(vmAddress + vmOffset);
     if (result == symbols->end())
     {
@@ -301,7 +305,7 @@ Aarch64BaselinePrinter::writeBl(const UnconditionalBranchImmediateInstruction* i
 }
 
 void
-Aarch64BaselinePrinter::writeDataProcessImmediateInstruction(const DataProcessImmediateInstruction* instruction)
+Aarch64AssemblyPrinter::writeDataProcessImmediateInstruction(const DataProcessImmediateInstruction* instruction)
 {
     switch (instruction->kind)
     {
@@ -319,6 +323,13 @@ Aarch64BaselinePrinter::writeDataProcessImmediateInstruction(const DataProcessIm
     writeGeneralPurposeRegister64(instruction->rn);
     _tw.write(", ");
     _tw.writeDisplacement(instruction->imm12);
+}
+
+
+void
+Aarch64AssemblyPrinter::writeNopInstruction()
+{
+    _tw.write("nop");
 }
 
 

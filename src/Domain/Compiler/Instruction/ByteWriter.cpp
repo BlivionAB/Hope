@@ -65,7 +65,7 @@ ByteWriter::writeDoubleWordAtAddress(uint32_t instruction, size_t offset)
 
 
 void
-ByteWriter::writeDoubleWordAtAddress(std::uint32_t instruction, std::size_t offset, List<uint8_t>& output)
+ByteWriter::writeDoubleWordAtAddress(uint32_t instruction, uint64_t offset, List<uint8_t>& output)
 {
     output[offset] = instruction & 0xff;
     output[offset + 1] = (instruction >> 8) & 0xff;
@@ -118,9 +118,10 @@ ByteWriter::writeByteAtAddress(std::uint8_t instruction, std::size_t offset)
 }
 
 
-void
+uint64_t
 ByteWriter::writeUleb128(uint64_t value)
 {
+    uint64_t size = 0;
     do {
         uint8_t byte = value & 0b01111111;
         value >>= 7;
@@ -129,8 +130,10 @@ ByteWriter::writeUleb128(uint64_t value)
             byte |= 0b10000000;
         }
         writeByte(byte);
+        size++;
     }
     while (value != 0);
+    return size;
 }
 
 
@@ -262,7 +265,7 @@ ByteWriter::writeString(const char* string)
 }
 
 
-void
+uint64_t
 ByteWriter::writeString(const Utf8StringView& string)
 {
     for (auto s : string)
@@ -270,7 +273,10 @@ ByteWriter::writeString(const Utf8StringView& string)
         output->add(static_cast<uint8_t>(s));
     }
     output->add('\0');
-    *offset += string.size() + 1;
+    uint64_t size = string.size() + 1;
+    *offset += size;
+    return size;
+
 }
 
 uint32_t

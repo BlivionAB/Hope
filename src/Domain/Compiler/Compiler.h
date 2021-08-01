@@ -57,7 +57,7 @@ enum class AssemblyTarget
 {
     Unknown,
     x86_64,
-    AArch64,
+    Aarch64,
 };
 
 struct ParsingTask

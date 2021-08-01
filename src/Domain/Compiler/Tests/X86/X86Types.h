@@ -6,7 +6,7 @@
 #include "Foundation/List.h"
 
 
-namespace elet::domain::compiler::test
+namespace elet::domain::compiler::test::x86
 {
 
 

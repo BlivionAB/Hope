@@ -15,7 +15,7 @@ namespace elet::domain::compiler::test
 using namespace elet::foundation;
 using namespace elet::domain::compiler::instruction;
 
-
+template<typename TOneOfInstruction>
 class BaselinePrinter
 {
 
@@ -23,10 +23,16 @@ public:
 
     virtual
     Utf8String
-    print() = 0;
+    print(List<TOneOfInstruction>& instructions) = 0;
 
     uint64_t
-    address = 0;
+    textSectionStartAddress = 0;
+
+    List<TOneOfInstruction>*
+    textSectionInstructions;
+
+    List<TOneOfInstruction>*
+    stubsSectionInstructions;
 
     uint64_t
     cstringSectionOffset;
@@ -47,6 +53,7 @@ public:
     vmOffset = 0x0000000100000000;
 
 protected:
+
     void
     writeColumnHeader();
 
@@ -55,5 +62,7 @@ protected:
 };
 
 }
+
+#include "BaselinePrinterImpl.h"
 
 #endif //ELET_BASELINEPRINTER_H

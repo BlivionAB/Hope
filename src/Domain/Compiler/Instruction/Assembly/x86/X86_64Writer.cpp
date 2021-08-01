@@ -47,7 +47,6 @@ X86_64Writer::writeStubHelper()
     // jmpq dyld_stub_binder
     bw->writeByte(OneByteOpCode::ExtGroup5);
     bw->writeByte(OneByteOpCode::ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
-    _dyldStubBinderOffset = _offset;
     Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
     Utf8StringView string = Utf8StringView(*dyldStubBinderString);
     ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);
@@ -415,6 +414,20 @@ void
 X86_64Writer::relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset)
 {
     bw->writeDoubleWordAtAddress(dataSectionOffset - (textSegmentStartOffset + dyldPrivateOffset + 4), textSegmentStartOffset + dyldPrivateOffset);
+}
+
+
+void
+X86_64Writer::relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset)
+{
+    bw->writeDoubleWordAtAddress(offset, textSegmentStartOffset + stubHelperAddress + 1);
+}
+
+
+void
+X86_64Writer::relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset)
+{
+    bw->writeDoubleWordAtAddress(gotOffset - 4 /* -4 due to we haven't added it to relocation address*/, offset);
 }
 
 

@@ -4,6 +4,7 @@
 
 #include <gmock/gmock.h>
 #include <fstream>
+#include <optional>
 #include "CompilerBaselineParser.h"
 #include <Foundation/FilePath.h>
 #include <Foundation/File.h>
@@ -16,6 +17,21 @@
 namespace elet::domain::compiler::test
 {
 
+
+struct TestProjectOptions
+{
+    ObjectFileTarget
+    objectFileTarget;
+
+    AssemblyTarget
+    assemblyTarget;
+
+    Utf8String
+    baselineName;
+
+    std::optional<bool>
+    assertStubs;
+};
 
 class FileReaderMock : public FileReader
 {
@@ -152,29 +168,45 @@ protected:
 
     void SetUp()
     {
-        project = new TestProject();
+
     }
 
     Utf8String
     currentPath = "src/Domain/Compiler/Tests/__Baselines__";
 
-    TestProject*
+    TestProject
     project;
 
     testing::AssertionResult
-    testProject(const TestProject* project, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget, const Utf8String baselineName)
+    testProject(TestProjectOptions options)
     {
-        Compiler compiler(*project->fileReader, assemblyTarget, objectFileTarget);
+        Compiler compiler(*project.fileReader, options.assemblyTarget, options.objectFileTarget);
+        List<uint8_t>& output2 = compiler.getOutput();
+
         compiler.startWorkers();
-        compiler.addFile(project->getEntryFile());
+        compiler.addFile(project.getEntryFile());
         compiler.endWorkers();
-        auto output = compiler.getOutput();
-        CompilerBaselineParser baselineParser(output, assemblyTarget);
-        Utf8String result = baselineParser.write();
+        List<uint8_t>& output = compiler.getOutput();
+        switch (options.assemblyTarget)
+        {
+            case AssemblyTarget::x86_64:
+                return baselineTest<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, output);
+            case AssemblyTarget::Aarch64:
+                return baselineTest<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, output);
+        }
+
+    }
+
+    template<typename TAssemblyParser, typename TAssemblyPrinter, typename TInstruction>
+    testing::AssertionResult
+    baselineTest(TestProjectOptions& options, List<uint8_t>& output)
+    {
+        CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, options.assemblyTarget);
+        Utf8String result = baselineParser.serializeTextSection();
         DiffPrinter printer;
         MyersDiff differ;
         bool isDiffing = false;
-        FilePath basm = FilePath::cwd() / ".." / currentPath / (baselineName + ".basm");
+        FilePath basm = FilePath::cwd() / ".." / currentPath / (options.baselineName + ".basm");
         FilePath baselineFolder = FilePath::folderOf(basm);
 
         writeOutput(output);
