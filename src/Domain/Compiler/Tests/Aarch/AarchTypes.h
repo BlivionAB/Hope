@@ -22,6 +22,8 @@ enum Register : uint8_t
     r6 = 6,
     r7 = 7,
     r8 = 8,
+    r16 = 16,
+    r17 = 17,
     fp = 29,
     lr = 30,
     sp = 31,
@@ -134,7 +136,8 @@ struct BInstruction : Instruction
     imm26;
 };
 
-struct BranchExceptionSyscallInstruction : Instruction
+
+struct BrInstruction : Instruction
 {
     Register
     rn;
@@ -220,7 +223,7 @@ union OneOfInstruction
     DataProcessImmediateInstruction dp;
     LoadStoreInstruction ldstpr;
     LoadStorePairInstruction lst;
-    BranchExceptionSyscallInstruction brexcpsysc;
+    BrInstruction brexcpsysc;
     BlInstruction unbrimm;
     MovInstruction mov;
 

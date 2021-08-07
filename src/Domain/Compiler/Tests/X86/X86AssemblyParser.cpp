@@ -34,6 +34,10 @@ X86AssemblyParser::parse(List<Instruction>& instructions, List<uint8_t>& output,
             {
                 instruction.size = SizeKind::Quad;
             }
+            if (opcode & RexB)
+            {
+                instruction.rexb = true;
+            }
             opcode = getByte(instruction);
         }
         bool hasOperandSizePrefix = false;
@@ -66,7 +70,7 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
 {
     switch (opcode)
     {
-        case Ev_Ib:
+        case OneByteOpCode::Ev_Ib:
         {
             uint8_t modrmByte = getByte(instruction);
             uint8_t offset = getByte(instruction); // Note only one byte offset from "Ib".
@@ -86,15 +90,15 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             instruction.operand2 = new Ib(offset);
             break;
         }
-        case Ret:
+        case OneByteOpCode::Ret:
             instruction.kind = InstructionKind::Ret;
             break;
-        case Pop_rBP:
+        case OneByteOpCode::Pop_rBP:
             instruction.kind = InstructionKind::Pop;
             instruction.operand1 = Register::rBP;
             instruction.size = SizeKind::Quad;
             break;
-        case Xor_Ev_Gv:
+        case OneByteOpCode::Xor_Ev_Gv:
         {
             uint8_t modrmByte = getByte(instruction);
             instruction.kind = InstructionKind::Xor;
@@ -102,7 +106,11 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
             break;
         }
-        case CallNear:
+        case OneByteOpCode::JmpNear:
+            instruction.kind = InstructionKind::Jmp;
+            instruction.operand1.emplace<MemoryAddress32>(getDoubleWord(instruction));
+            break;
+        case OneByteOpCode::CallNear:
         {
             instruction.kind = InstructionKind::Call;
             auto doubleWord = getDoubleWord(instruction);
@@ -110,7 +118,7 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             instruction.size = SizeKind::Quad;
             break;
         }
-        case Lea_Gv_M:
+        case OneByteOpCode::Lea_Gv_M:
         {
             uint8_t modrmByte = getByte(instruction);
             instruction.kind = InstructionKind::Lea;
@@ -121,16 +129,32 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             }
             else
             {
-                instruction.operand2 = createMemoryAddress16();
+//                instruction.operand2 = createMemoryAddress16();
             }
             break;
         }
-        case Push_rBP:
+        case OneByteOpCode::Push_Iz:
+            instruction.kind = InstructionKind::Push;
+            instruction.operand1.emplace<Iz>(getDoubleWord(instruction));
+            break;
+        case OneByteOpCode::Push_rBX:
+            instruction.kind = InstructionKind::Push;
+            if (instruction.rexb)
+            {
+                instruction.operand1 = Register::r11;
+            }
+            else
+            {
+                instruction.operand1 = Register::rBX;
+            }
+            instruction.size = SizeKind::Quad;
+            break;
+        case OneByteOpCode::Push_rBP:
             instruction.kind = InstructionKind::Push;
             instruction.operand1 = Register::rBP;
             instruction.size = SizeKind::Quad;
             break;
-        case Mov_Ev_Gv:
+        case OneByteOpCode::Mov_Ev_Gv:
         {
             uint8_t modrmByte = getByte(instruction);
             instruction.kind = InstructionKind::Mov;
@@ -138,7 +162,7 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
             break;
         }
-        case Mov_Gv_Ev:
+        case OneByteOpCode::Mov_Gv_Ev:
         {
             uint8_t modrmByte = getByte(instruction);
             instruction.kind = InstructionKind::Mov;
@@ -146,6 +170,19 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             instruction.operand2 = createEv(modrmByte, instruction, true);
             break;
         }
+        case OneByteOpCode::ExtGroup5:
+        {
+            uint8_t modrmByte = getByte(instruction);
+            instruction.kind = InstructionKind::Jmp;
+            instruction.operand1 = createEv(modrmByte, instruction, true);
+
+            // Note, it is forced(f64) 64-bits, See opcode map for reference.
+            instruction.size = SizeKind::Quad;
+            break;
+        }
+        case OneByteOpCode::Nop:
+            instruction.kind = InstructionKind::Nop;
+            break;
         default:;
 //            throw std::runtime_error("Could not find decode opcode.");
     }
@@ -192,7 +229,15 @@ X86AssemblyParser::createEv(uint8_t modrmByte, Instruction& instruction, bool us
         switch (mod)
         {
             case ModBits::Mod0:
-                ev->emplace<RegisterDisplacement>(mapDoubleWordRegisterIndex(rm));
+                if (rm == RmBits::Rm5)
+                {
+                    std::array<uint8_t, 4> dw = getDoubleWord(instruction);
+                    ev->emplace<MemoryAddress32>(dw);
+                }
+                else
+                {
+                    ev->emplace<RegisterDisplacement>(mapDoubleWordRegisterIndex(rm));
+                }
                 return ev;
             case ModBits::Mod1:
                 if (rm == RmBits::Rm4)
@@ -326,18 +371,12 @@ X86AssemblyParser::getByte(Instruction& instruction)
 }
 
 
-MemoryAddress32*
+MemoryAddress32
 X86AssemblyParser::createMemoryAddress32(Instruction& instruction)
 {
     std::array<uint8_t, 4> opcode = getDoubleWord(instruction);
-    return new MemoryAddress32(opcode);
+    return MemoryAddress32(opcode);
 }
 
-
-MemoryAddress32*
-X86AssemblyParser::createMemoryAddress16()
-{
-    throw std::invalid_argument("Not implemented");
-}
 
 }

@@ -71,7 +71,7 @@ enum Aarch64Instruction : uint32_t
     Bl = static_cast<uint32_t>(0b100101) << 26,
     B = static_cast<uint32_t>(0b000101) << 26,
     Br = static_cast<uint32_t>(0b11010110000111110000000000000000) << 0,
-
+    BrMask = MASK(0, 10) | 0b11111,
     Nop = static_cast<uint32_t>(0xd503201f) << 0,
 
     UnconditionalBranchRegister = static_cast<uint32_t>(0b1101011) << 25,

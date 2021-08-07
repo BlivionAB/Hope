@@ -21,9 +21,8 @@ class BaselinePrinter
 
 public:
 
-    virtual
     Utf8String
-    print(List<TOneOfInstruction>& instructions) = 0;
+    print();
 
     uint64_t
     textSectionStartAddress = 0;
@@ -33,6 +32,9 @@ public:
 
     List<TOneOfInstruction>*
     stubsSectionInstructions;
+
+    List<TOneOfInstruction>*
+    stubHelperSectionInstructions;
 
     uint64_t
     cstringSectionOffset;
@@ -53,6 +55,10 @@ public:
     vmOffset = 0x0000000100000000;
 
 protected:
+
+    virtual
+    void
+    writeInstructions(const List<TOneOfInstruction>& instructions) = 0;
 
     void
     writeColumnHeader();

@@ -22,7 +22,7 @@ X86_64Writer::writeStubs()
             bw->writeDoubleWordAtAddress(_offset - (relocationAddress + 4), relocationAddress);
         }
         bw->writeByte(ExtGroup5);
-        bw->writeByte(ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
+        bw->writeByte(ExtGroup5_NearCallRegistryBits | MOD_DISP0 | Rm5);
         routine->stubAddress = _offset;
         bw->writeDoubleWord(0);
     }
@@ -46,7 +46,7 @@ X86_64Writer::writeStubHelper()
 
     // jmpq dyld_stub_binder
     bw->writeByte(OneByteOpCode::ExtGroup5);
-    bw->writeByte(OneByteOpCode::ExtGroup5_FarCallRegistryBits | MOD_DISP0 | Rm5);
+    bw->writeByte(OneByteOpCode::ExtGroup5_NearCallRegistryBits | MOD_DISP0 | Rm5);
     Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
     Utf8StringView string = Utf8StringView(*dyldStubBinderString);
     ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);

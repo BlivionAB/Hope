@@ -21,6 +21,7 @@ namespace elet::domain::compiler::test
 
 using namespace elet::domain::compiler::test::aarch;
 
+
 template<
     typename TAssemblyParser,
     typename TAssemblyPrinter,
@@ -33,8 +34,8 @@ public:
 
     CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget);
 
-    Utf8String
-    serializeTextSection();
+    void
+    parse();
 
     List<TOneOfInstructions>
     textSectionInstructions;
@@ -44,6 +45,9 @@ public:
 
     List<TOneOfInstructions>
     stubHelperSectionInstructions;
+
+    Utf8String
+    serializeTextSegment();
 
 private:
 
@@ -70,7 +74,6 @@ private:
 
     x86::X86AssemblyPrinter*
     _x86BaselinePrinter;
-
 
     std::map<uint64_t, const char*>
     _symbols;

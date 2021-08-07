@@ -45,11 +45,8 @@ private:
     Register
     mapQuadWordRegisterIndex(uint8_t reg);
 
-    MemoryAddress32*
+    MemoryAddress32
     createMemoryAddress32(Instruction& instruction);
-
-    MemoryAddress32*
-    createMemoryAddress16();
 
     void
     parseOneByteOpCode(List<Instruction>& instructions, Instruction& instruction, uint8_t opcode);

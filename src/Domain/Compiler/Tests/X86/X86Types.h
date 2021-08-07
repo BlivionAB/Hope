@@ -3,6 +3,7 @@
 
 
 #include <variant>
+#include <cmath>
 #include "Foundation/List.h"
 
 
@@ -26,6 +27,7 @@ enum class InstructionKind
     Nop,
     Add,
     Sub,
+    Jmp,
 };
 
 
@@ -39,6 +41,8 @@ enum Register : uint8_t
     rBP,
     rSI,
     rDI,
+
+    r11,
 };
 
 
@@ -126,19 +130,31 @@ struct Ib
 
 struct Jv
 {
-    std::array<std::uint8_t, 4>
+    std::array<uint8_t, 4>
     offset;
 
-    Jv(std::array<std::uint8_t, 4> offset):
+    Jv(std::array<uint8_t, 4> offset):
         offset(offset)
-    {}
+    { }
+};
+
+
+struct Iz
+{
+    int32_t
+    offset;
+
+    Iz(std::array<uint8_t, 4> offset):
+        offset(offset[0] + offset[1] * std::pow(16, 2) + offset[2] * std::pow(16, 4) + offset[3] * std::pow(16, 6))
+    {
+    }
 };
 
 typedef std::variant<Register> Gv;
 
-typedef std::variant<Register, ByteDisplacement, LongDisplacement, RegisterDisplacement> Ev;
+typedef std::variant<Register, ByteDisplacement, LongDisplacement, RegisterDisplacement, MemoryAddress32> Ev;
 
-typedef std::variant<std::monostate, Register, Ev*, Gv*, Jv, Ib*, MemoryAddress32*> Operand;
+typedef std::variant<std::monostate, Register, Ev*, Gv*, Jv, Iz, Ib*, MemoryAddress32> Operand;
 
 
 struct ModRMByte
@@ -173,6 +189,9 @@ struct Instruction
 
     SizeKind
     size;
+
+    bool
+    rexb = false;
 
     Operand
     operand1;

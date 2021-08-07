@@ -18,6 +18,33 @@ BaselinePrinter<TOneOfInstructions>::writeColumnHeader()
 }
 
 
+template<typename TOneOfInstructions>
+Utf8String
+BaselinePrinter<TOneOfInstructions>::print()
+{
+    _tw.addColumn(18);
+    _tw.addColumn(40);
+    writeColumnHeader();
+    _tw.newline();
+    _tw.writeLine("__TEXT,__text:");
+    writeInstructions(*textSectionInstructions);
+    if (stubsSectionInstructions && stubsSectionInstructions->size() > 0)
+    {
+        _tw.newline();
+        _tw.writeLine("__TEXT,__stubs:");
+        _tw.newline();
+        writeInstructions(*stubsSectionInstructions);
+    }
+    if (stubHelperSectionInstructions && stubHelperSectionInstructions->size() > 0)
+    {
+        _tw.newline();
+        _tw.writeLine("__TEXT,__stub_helper:");
+        _tw.newline();
+        writeInstructions(*stubHelperSectionInstructions);
+    }
+    return _tw.toString();
+}
+
 
 template<typename TOneOfInstructions>
 void

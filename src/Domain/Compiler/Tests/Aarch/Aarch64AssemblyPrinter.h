@@ -13,8 +13,8 @@ class Aarch64AssemblyPrinter : public BaselinePrinter<OneOfInstruction>
 {
 public:
 
-    Utf8String
-    print(List<OneOfInstruction>& instructions) override;
+    void
+    writeInstructions(const List<OneOfInstruction>& instructions) override;
 
     void
     writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction);
@@ -32,7 +32,7 @@ public:
     writeByteInstruction(const Instruction* instruction);
 
     void
-    writeBranchExceptionSyscallInstruction(const BranchExceptionSyscallInstruction* pInstruction);
+    writeBranchExceptionSyscallInstruction(const BrInstruction* pInstruction);
 
     void
     writeBl(const BlInstruction* pInstruction);
@@ -50,10 +50,25 @@ public:
     writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset);
 
     void
-    writeAdrpInstruction(const AdrInstruction* pInstruction);
+    writeAdrInstruction(const AdrInstruction* instruction);
+
+    void
+    writeAdrpInstruction(const AdrpInstruction* instruction);
 
     void
     writeNopInstruction();
+
+    void
+    writeLdr(const LdrInstruction* instruction);
+
+    void
+    writeB(const BInstruction* instruction);
+
+    void
+    writeUdf(const UdfInstruction* instruction);
+
+    void
+    writeBr(const BrInstruction* instruction);
 };
 
 }

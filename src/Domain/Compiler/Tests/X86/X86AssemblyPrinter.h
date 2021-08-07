@@ -24,13 +24,10 @@ public:
 
     X86AssemblyPrinter();
 
-    Utf8String
-    print(List<x86::Instruction>& instructions) override;
-
 private:
 
-    X86AssemblyParser*
-    _parser;
+    void
+    writeInstructions(const List<Instruction>& instructions) override;
 
     void
     writeInstruction(const Instruction& instruction);

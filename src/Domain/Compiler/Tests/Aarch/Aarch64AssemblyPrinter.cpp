@@ -4,14 +4,9 @@
 namespace elet::domain::compiler::test::aarch
 {
 
-
-
-Utf8String
-Aarch64AssemblyPrinter::print(List<OneOfInstruction>& instructions)
+void
+Aarch64AssemblyPrinter::writeInstructions(const List<OneOfInstruction>& instructions)
 {
-    _tw.addColumn(18);
-    _tw.addColumn(40);
-    writeColumnHeader();
     for (OneOfInstruction& oneOfInstruction : instructions)
     {
         const Instruction* instruction = reinterpret_cast<Instruction*>(&oneOfInstruction);
@@ -21,52 +16,78 @@ Aarch64AssemblyPrinter::print(List<OneOfInstruction>& instructions)
         _tw.tab();
         switch (instruction->kind)
         {
-            case Aarch64Instruction::Adrp:
-                writeAdrpInstruction(reinterpret_cast<const AdrInstruction*>(instruction));
+            case Adr:
+                writeAdrInstruction(reinterpret_cast<const AdrInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::StrImmediateBaseOffset64:
-            case Aarch64Instruction::LdrImmediateBaseOffset64:
+            case Adrp:
+                writeAdrpInstruction(reinterpret_cast<const AdrpInstruction*>(instruction));
+                break;
+            case Ldr32:
+            case Ldr64:
+                writeLdr(reinterpret_cast<const LdrInstruction*>(instruction));
+                break;
+            case StrImmediateBaseOffset64:
+            case LdrImmediateBaseOffset64:
                 writeLoadStoreInstruction(reinterpret_cast<const LoadStoreInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::StpPreIndex64:
-            case Aarch64Instruction::StpBaseOffset64:
-            case Aarch64Instruction::LdpPostIndex64:
-            case Aarch64Instruction::LdpBaseOffset64:
+            case StpPreIndex64:
+            case StpBaseOffset64:
+            case LdpPostIndex64:
+            case LdpBaseOffset64:
                 writeLoadStorePairInstruction(reinterpret_cast<const LoadStorePairInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::AddImmediate64:
-            case Aarch64Instruction::SubImmediate64:
+            case AddImmediate64:
+            case SubImmediate64:
                 writeDataProcessImmediateInstruction(reinterpret_cast<const DataProcessImmediateInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::Movz64:
+            case Movz64:
                 writeMovImmediate(reinterpret_cast<const MovWideImmediateInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::Mov64:
+            case Mov64:
                 writeMov(reinterpret_cast<const MovInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::Bl:
+            case B:
+                writeB(reinterpret_cast<const BInstruction*>(instruction));
+                break;
+            case Bl:
                 writeBl(reinterpret_cast<const BlInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::Ret:
-                writeBranchExceptionSyscallInstruction(reinterpret_cast<const BranchExceptionSyscallInstruction*>(instruction));
+            case Br:
+                writeBr(reinterpret_cast<const BrInstruction*>(instruction));
                 break;
-            case Aarch64Instruction::Nop:
+            case Ret:
+                writeBranchExceptionSyscallInstruction(reinterpret_cast<const BrInstruction*>(instruction));
+                break;
+            case Nop:
                 writeNopInstruction();
+                break;
+            case Udf:
+                writeUdf(reinterpret_cast<const UdfInstruction*>(instruction));
                 break;
             default:
                 throw std::runtime_error("Unknown instruction.");
         }
         _tw.newline();
     }
-    return _tw.toString();
 }
 
 
 void
-Aarch64AssemblyPrinter::writeAdrpInstruction(const AdrInstruction* instruction)
+Aarch64AssemblyPrinter::writeAdrInstruction(const AdrInstruction* instruction)
+{
+    _tw.write("adr ");
+    writeGeneralPurposeRegister64(instruction->rd);
+    _tw.write(", ");
+    _tw.writeDisplacement(instruction->immhilo);
+}
+
+
+void
+Aarch64AssemblyPrinter::writeAdrpInstruction(const AdrpInstruction* instruction)
 {
     _tw.write("adrp ");
     writeGeneralPurposeRegister64(instruction->rd);
+    _tw.write(", ");
     _tw.writeDisplacement(instruction->immhilo);
 }
 
@@ -207,6 +228,7 @@ Aarch64AssemblyPrinter::writeGeneralPurposeRegister32(Register reg)
             _tw.write("sp");
             break;
         default:
+            std::cout << "Helloword" << std::endl;
             throw std::runtime_error("Unknown general purpose register.");
     }
 }
@@ -244,6 +266,12 @@ Aarch64AssemblyPrinter::writeGeneralPurposeRegister64(Register reg)
         case Register::r8:
             _tw.write("x8");
             break;
+        case Register::r16:
+            _tw.write("x16");
+            break;
+        case Register::r17:
+            _tw.write("x17");
+            break;
         case Register::fp:
             _tw.write("fp");
             break;
@@ -270,7 +298,7 @@ Aarch64AssemblyPrinter::writeByteInstruction(const Instruction* instruction)
 }
 
 void
-Aarch64AssemblyPrinter::writeBranchExceptionSyscallInstruction(const BranchExceptionSyscallInstruction* instruction)
+Aarch64AssemblyPrinter::writeBranchExceptionSyscallInstruction(const BrInstruction* instruction)
 {
     if (instruction->kind == Aarch64Instruction::Ret)
     {
@@ -330,6 +358,56 @@ void
 Aarch64AssemblyPrinter::writeNopInstruction()
 {
     _tw.write("nop");
+}
+
+
+void
+Aarch64AssemblyPrinter::writeLdr(const LdrInstruction* instruction)
+{
+    _tw.write("ldr ");
+    writeGeneralPurposeRegister64(instruction->rt);
+    _tw.write(", ");
+    _tw.writeDisplacement(instruction->imm19);
+}
+
+
+void
+Aarch64AssemblyPrinter::writeB(const BInstruction* instruction)
+{
+    _tw.write("b ");
+
+    uint64_t vmAddress = instruction->imm26 * 4 + textSectionStartAddress - 4 /* We wrote the byte instruction above*/;
+    auto result = symbols->find(vmAddress + vmOffset);
+    if (result == symbols->end())
+    {
+        _tw.writeAddress64(vmAddress + vmOffset);
+    }
+    else
+    {
+        _tw.write("\"");
+        _tw.writeAddress64(vmAddress + vmOffset);
+        _tw.space();
+        _tw.write("(");
+        _tw.writeCString(result->second);
+        _tw.write(")");
+        _tw.write("\"");
+    }
+}
+
+
+void
+Aarch64AssemblyPrinter::writeUdf(const UdfInstruction* instruction)
+{
+    _tw.write("udf ");
+    _tw.writeImmediateValue(instruction->imm16);
+}
+
+
+void
+Aarch64AssemblyPrinter::writeBr(const BrInstruction* instruction)
+{
+    _tw.write("br ");
+    writeGeneralPurposeRegister64(instruction->rn);
 }
 
 

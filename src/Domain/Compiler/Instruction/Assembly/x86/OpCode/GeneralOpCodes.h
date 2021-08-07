@@ -27,6 +27,7 @@ enum OneByteOpCode : uint8_t
 
     Xor_Ev_Gv = 0x31,
 
+    JmpNear = 0xe9,
     CallNear = 0xe8,
 
     Lea_Gv_M = 0x8d,
@@ -48,7 +49,7 @@ enum OneByteOpCode : uint8_t
     Ev_Ib = 0x83,
 
     ExtGroup5 = 0xff,
-    ExtGroup5_FarCallRegistryBits = 0b00100000,
+    ExtGroup5_NearCallRegistryBits = 0b00100000,
 };
 
 

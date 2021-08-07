@@ -20,16 +20,12 @@ Aarch64AssemblyParser::parse(List<OneOfInstruction>& instructions, List<uint8_t>
     {
         Instruction* instruction = reinterpret_cast<Instruction*>(instructions.emplace());
         uint32_t dw = getDoubleWord(instruction);
-
-        if (tryParse21Instructions(instruction, dw))
+        if ((dw & Aarch64Instruction::BrMask) == Aarch64Instruction::Br)
         {
+            parseBrInstruction(instruction, dw);
             continue;
         }
-        if (tryParse22Instructions(instruction, dw))
-        {
-            continue;
-        }
-        if (tryParse24Instructions(instruction, dw))
+        if (tryParse26Instructions(instruction, dw))
         {
             continue;
         }
@@ -37,7 +33,15 @@ Aarch64AssemblyParser::parse(List<OneOfInstruction>& instructions, List<uint8_t>
         {
             continue;
         }
-        if (tryParse26Instructions(instruction, dw))
+        if (tryParse24Instructions(instruction, dw))
+        {
+            continue;
+        }
+        if (tryParse22Instructions(instruction, dw))
+        {
+            continue;
+        }
+        if (tryParse21Instructions(instruction, dw))
         {
             continue;
         }
@@ -65,6 +69,16 @@ Aarch64AssemblyParser::parse(List<OneOfInstruction>& instructions, List<uint8_t>
         throw std::runtime_error("Could not find instruction when parsing.");
     }
 }
+
+
+void
+Aarch64AssemblyParser::parseBrInstruction(Instruction* instruction, uint32_t dw)
+{
+    BrInstruction* instr = reinterpret_cast<BrInstruction*>(instruction);
+    instr->kind = Aarch64Instruction::Br;
+    instr->rn = Rn(dw);
+}
+
 
 bool
 Aarch64AssemblyParser::tryParse26Instructions(Instruction* instruction, uint32_t dw)
@@ -98,7 +112,7 @@ Aarch64AssemblyParser::tryParse25Instructions(Instruction* instruction, uint32_t
 
     if (Aarch64Instruction::UnconditionalBranchRegister == kind25)
     {
-        BranchExceptionSyscallInstruction* brexsysc = reinterpret_cast<BranchExceptionSyscallInstruction*>(instruction);
+        BrInstruction* brexsysc = reinterpret_cast<BrInstruction*>(instruction);
         brexsysc->kind = Aarch64Instruction::Ret;
         brexsysc->rn = Rn(dw);
         return true;

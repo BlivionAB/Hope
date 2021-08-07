@@ -45,12 +45,14 @@ TEST_F(CompileFixture, DynamicLinkingWithCCode)
         .baselineName = "macho-x86_64",
         .assemblyTarget = AssemblyTarget::x86_64,
         .objectFileTarget = ObjectFileTarget::MachO,
+        .assertStubs = true,
     }));
 
     EXPECT_TRUE(testProject({
         .baselineName = "macho-aarch64",
         .assemblyTarget = AssemblyTarget::Aarch64,
         .objectFileTarget = ObjectFileTarget::MachO,
+        .assertStubs = true,
     }));
 }
 

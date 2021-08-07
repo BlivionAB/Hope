@@ -93,6 +93,9 @@ private:
 
     void
     parseUdfInstruction(Instruction* instruction, uint32_t dw);
+
+    void
+    parseBrInstruction(Instruction* instruction, uint32_t dw);
 };
 
 

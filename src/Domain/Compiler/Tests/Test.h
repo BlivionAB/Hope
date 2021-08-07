@@ -31,6 +31,12 @@ struct TestProjectOptions
 
     std::optional<bool>
     assertStubs;
+
+    std::optional<bool>
+    assertStubHelper;
+
+    std::optional<bool>
+    writeExecutable;
 };
 
 class FileReaderMock : public FileReader
@@ -190,36 +196,56 @@ protected:
         switch (options.assemblyTarget)
         {
             case AssemblyTarget::x86_64:
-                return baselineTest<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, output);
+                return checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(
+                    options,
+                    output);
             case AssemblyTarget::Aarch64:
-                return baselineTest<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, output);
+                return checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(
+                    options,
+                    output);
         }
 
     }
 
     template<typename TAssemblyParser, typename TAssemblyPrinter, typename TInstruction>
     testing::AssertionResult
-    baselineTest(TestProjectOptions& options, List<uint8_t>& output)
+    checkTextSegmentBaselines(TestProjectOptions& options, List<uint8_t>& output)
     {
         CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, options.assemblyTarget);
-        Utf8String result = baselineParser.serializeTextSection();
+        if (options.writeExecutable)
+        {
+            writeOutput(output, options.baselineName + ".o");
+        }
+
+        baselineParser.parse();
+        Utf8String textSection = baselineParser.serializeTextSegment();
+        auto textSectionResult = checkBaseline(textSection, options.baselineName + ".basm");
+        if (!textSectionResult)
+        {
+            return textSectionResult;
+        }
+        return testing::AssertionSuccess();
+    }
+
+
+    testing::AssertionResult
+    checkBaseline(Utf8String& result, FilePath baselineName)
+    {
         DiffPrinter printer;
         MyersDiff differ;
-        bool isDiffing = false;
-        FilePath basm = FilePath::cwd() / ".." / currentPath / (options.baselineName + ".basm");
+        FilePath basm = FilePath::cwd() / ".." / currentPath / baselineName;
         FilePath baselineFolder = FilePath::folderOf(basm);
-
-        writeOutput(output);
-
         if (!FilePath::exists(baselineFolder))
         {
             File::createDirectory(baselineFolder);
         }
+        bool isDiffing = false;
         Utf8String baseline("");
         if (FilePath::exists(basm))
         {
             baseline = File::read(basm);
         }
+
         auto diffs = differ.diffText(baseline, result, isDiffing);
         if (isDiffing)
         {
@@ -238,17 +264,17 @@ protected:
     }
 
     void
-    writeOutput(const List<uint8_t>& output) const
+    writeOutput(const List<uint8_t>& output, FilePath file) const
     {
-        std::ofstream file;
-        const char* path = FilePath::resolve(FilePath::cwd(), "test.o").toString().toString();
-        file.open(path, std::ios_base::binary);
+        std::ofstream fileHandle;
+        const char* path = FilePath::resolve(FilePath::cwd(), file).toString().toString();
+        fileHandle.open(path, std::ios_base::binary);
         for (int i = 0; i < output.size(); ++i)
         {
-            file.write(reinterpret_cast<char*>(&output[i]), 1);
+            fileHandle.write(reinterpret_cast<char*>(&output[i]), 1);
         }
         std::cout << path << std::endl;
-        file.close();
+        fileHandle.close();
     }
 };
 

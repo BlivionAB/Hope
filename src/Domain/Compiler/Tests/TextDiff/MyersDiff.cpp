@@ -175,7 +175,7 @@ MyersDiff::forwards(const Box& box, List<int64_t>& vf, List<int64_t>& vb, int64_
         y = box.top + (x - box.left) - k;
         py = (d == 0 || x != px) ? y : y - 1;
 
-        while (x < box.right && y < box.bottom && a[x] == b[y])
+        while ((x < box.right) && (y < box.bottom) && (a[x] == b[y]))
         {
             x = x + 1;
             y = y + 1;
@@ -205,7 +205,7 @@ MyersDiff::backwards(const Box& box, List<int64_t>& vf, List<int64_t>& vb, int64
         int64_t py;
         int64_t x;
         int64_t y;
-        if (c == -d || (c != d && vf[max_d + c - 1] < vf[max_d + c + 1]))
+        if (c == -d || (c != d && vb[max_d + c - 1] > vb[max_d + c + 1]))
         {
             py = y = vb[max_d + c + 1];
         }
@@ -217,8 +217,7 @@ MyersDiff::backwards(const Box& box, List<int64_t>& vf, List<int64_t>& vb, int64
 
         x = box.left + (y - box.top) + k;
         px = (d == 0 || y != py) ? x : x + 1;
-
-        while (x > box.left && y > box.top && a[x - 1] == b[y - 1])
+        while ((x > box.left) && (y > box.top) && (a[x - 1] == b[y - 1]))
         {
             x = x - 1;
             y = y - 1;

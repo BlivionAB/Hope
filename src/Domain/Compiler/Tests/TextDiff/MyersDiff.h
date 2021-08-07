@@ -48,37 +48,37 @@ struct LineMove
 
 struct Box
 {
-    size_t
+    int64_t
     left;
 
-    size_t
+    int64_t
     top;
 
-    size_t
+    int64_t
     right;
 
-    size_t
+    int64_t
     bottom;
 
-    size_t
+    int64_t
     width () const
     {
         return right - left;
     }
 
-    size_t
+    int64_t
     height() const
     {
         return bottom - top;
     }
 
-    size_t
+    int64_t
     size() const
     {
         return width() + height();
     }
 
-    size_t
+    int64_t
     delta() const
     {
         return width() - height();

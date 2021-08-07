@@ -16,12 +16,14 @@ CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::C
     _assemblyTarget(assemblyTarget)
 {
     _baselinePrinter->textSectionInstructions = &textSectionInstructions;
+    _baselinePrinter->stubsSectionInstructions = &stubsSectionInstructions;
+    _baselinePrinter->stubHelperSectionInstructions = &stubHelperSectionInstructions;
 }
 
 
 template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
-Utf8String
-CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::serializeTextSection()
+void
+CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::parse()
 {
     _baselinePrinter->list = &_list;
     MachHeader64* machHeader = reinterpret_cast<MachHeader64*>(&_list[0]);
@@ -45,7 +47,6 @@ CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::s
                 _offset += cmd->cmdSize;
         }
     }
-    return _baselinePrinter->print(textSectionInstructions);
 }
 
 
@@ -80,6 +81,7 @@ CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::p
     }
 }
 
+
 template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
 template<typename T>
 void
@@ -106,5 +108,14 @@ CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::p
     }
     _baselinePrinter->symbols = &_symbols;
 }
+
+
+template<typename TAssemblyParser, typename TAssemblyPrinter, typename TOneOfInstructions>
+Utf8String
+CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::serializeTextSegment()
+{
+    return _baselinePrinter->print();
+}
+
 
 }

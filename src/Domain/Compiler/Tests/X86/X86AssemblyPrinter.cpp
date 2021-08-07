@@ -10,21 +10,17 @@ namespace elet::domain::compiler::test::x86
 
 X86AssemblyPrinter::X86AssemblyPrinter()
 {
-    _parser = new X86AssemblyParser();
+
 }
 
 
-Utf8String
-X86AssemblyPrinter::print(List<x86::Instruction>& instructions)
+void
+X86AssemblyPrinter::writeInstructions(const List<Instruction>& instructions)
 {
-    _tw.addColumn(18);
-    _tw.addColumn(40);
-    writeColumnHeader();
     for (const auto& instruction : instructions)
     {
         writeInstruction(instruction);
     }
-    return _tw.toString();
 }
 
 
@@ -66,6 +62,9 @@ X86AssemblyPrinter::writeInstruction(const Instruction& instruction)
             break;
         case InstructionKind::Mov:
             writeInstructionWithName("mov", instruction);
+            break;
+        case InstructionKind::Jmp:
+            writeInstructionWithName("jmp", instruction);
             break;
     }
     _tw.newline();
@@ -111,6 +110,14 @@ X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& inst
         {
             writeRegisterDisplacement(disp, instruction);
         }
+        else if (auto memoryAddress = std::get_if<MemoryAddress32>(*ev))
+        {
+            writeMemoryAddress(memoryAddress->value);
+        }
+    }
+    else if (auto iz = std::get_if<Iz>(operand))
+    {
+        _tw.writeImmediateValue(iz->offset);
     }
     else if (auto jv = std::get_if<Jv>(operand))
     {
@@ -125,9 +132,9 @@ X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& inst
     {
         _tw.writeImmediateValue((*ib)->offset);
     }
-    else if (auto mem = std::get_if<MemoryAddress32*>(operand))
+    else if (auto mem = std::get_if<MemoryAddress32>(operand))
     {
-        writeMemoryAddress((*mem)->value);
+        writeMemoryAddress(mem->value);
     }
     else if (auto reg = std::get_if<Register>(operand))
     {
@@ -214,6 +221,9 @@ X86AssemblyPrinter::writeGeneralPurposeRegister(const Register _register, const 
             break;
         case Register::rDI:
             _tw.write("di");
+            break;
+        case Register::r11:
+            _tw.write("11");
             break;
         default:
             throw std::runtime_error("Unknown register.");
