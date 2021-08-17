@@ -13,7 +13,7 @@ namespace elet::domain::compiler::ast
 {
     struct StatementBlock : Syntax
     {
-        List<Syntax *>
+        List<Syntax*>
         statements;
 
         NameToDeclarationMap

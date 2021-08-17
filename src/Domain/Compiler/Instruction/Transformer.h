@@ -92,6 +92,8 @@ struct CallingConvention
 //    stackOrder;
 };
 
+typedef std::variant<output::>
+
 
 class Transformer
 {
@@ -154,11 +156,23 @@ private:
     List<output::ParameterDeclaration*>
     segmentParameterDeclaration(ast::ParameterDeclaration* parameter);
 
+    bool
+    isTransformableExpression(ast::Expression* expression);
+
     List<output::ArgumentDeclaration*>
     segmentArgumentDeclarations(ast::ArgumentDeclaration* parameter);
 
     output::ArgumentDeclaration*
     transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression);
+
+    void
+    transformVariableDeclaration(ast::VariableDeclaration* variable);
+
+    void
+    transformExpression(ast::Expression* expression);
+
+    void
+    addInstruction(Instruction* instruction);
 };
 
 

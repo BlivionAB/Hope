@@ -323,6 +323,7 @@ X86_64Writer::writeFunctionEpilogue(size_t stackSize, uint64_t routineSize)
     }
 }
 
+
 /// Check the chapter instruction set reference — NOP chapter.
 /// https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-instruction-set-reference-manual-325383.pdf
 void

@@ -23,6 +23,17 @@ Scanner::takeNextToken()
             case Character::Newline:
             case Character::Space:
                 continue;
+            case Character::_0:
+            case Character::_1:
+            case Character::_2:
+            case Character::_3:
+            case Character::_4:
+            case Character::_5:
+            case Character::_6:
+            case Character::_7:
+            case Character::_8:
+            case Character::_9:
+                return scanDigits();
             case Character::Comma:
                 return Token::Comma;
             case Character::Asterisk:
@@ -56,6 +67,10 @@ Scanner::takeNextToken()
                 return Token::CloseBrace;
             case Character::Ampersand:
                 return Token::Ampersand;
+            case Character::Plus:
+                return Token::Plus;
+            case Character::Minus:
+                return Token::Minus;
             case Character::Equal:
                 if (getCharacter() == Character::Equal)
                 {
@@ -137,4 +152,24 @@ void
 Scanner::resetFlags()
 {
     _stage = 0;
+}
+
+
+Token
+Scanner::scanDigits()
+{
+    while (true)
+    {
+        Character character = getCharacter();
+        if (character >= Character::_0 && character <= Character::_9)
+        {
+            continue;
+        }
+        if (character == Character::Dot)
+        {
+            return Token::FloatLiteral;
+        }
+        break;
+    }
+    return Token::IntegerLiteral;
 }

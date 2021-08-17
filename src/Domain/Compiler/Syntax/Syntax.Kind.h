@@ -5,7 +5,7 @@
 
 namespace elet::domain::compiler::ast
 {
-    enum class SyntaxKind : std::uint8_t
+    enum class SyntaxKind : uint8_t
     {
         Unknown,
         AssemblyBlock,
@@ -24,13 +24,12 @@ namespace elet::domain::compiler::ast
         ConstructorImplementation,
         UsingStatement,
         ParameterDeclarationList,
-        PropertyExpression,
-        PropertyAccessExpression,
         ParameterDeclaration,
         Type,
-        CallExpression,
         ArgumentList,
         StringLiteral,
+        BooleanLiteral,
+        IntegerLiteral,
         Tuple,
         NamedUsage,
         WildcardUsage,
@@ -41,9 +40,17 @@ namespace elet::domain::compiler::ast
         // Modifiers, Labels
         AccessabilityLabel,
 
+        // Statements
+        IfStatement,
+        ReturnStatement,
+
         // Expressions
         LengthOfExpression,
         AddressOfExpression,
+        BinaryExpression,
+        CallExpression,
+        PropertyExpression,
+        PropertyAccessExpression,
 
         // Declarations
         ObjectDeclaration,

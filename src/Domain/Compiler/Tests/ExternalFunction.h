@@ -1,5 +1,5 @@
-#ifndef ELET_TEST_H
-#define ELET_TEST_H
+#ifndef ELET_EXTERNALFUNCTION_H
+#define ELET_EXTERNALFUNCTION_H
 
 
 #include <gmock/gmock.h>
@@ -17,6 +17,13 @@
 namespace elet::domain::compiler::test
 {
 
+enum class OptimizationLevel
+{
+    None,
+    _1,
+    _2,
+};
+
 
 struct TestProjectOptions
 {
@@ -30,13 +37,10 @@ struct TestProjectOptions
     baselineName;
 
     std::optional<bool>
-    assertStubs;
-
-    std::optional<bool>
-    assertStubHelper;
-
-    std::optional<bool>
     writeExecutable;
+
+    std::optional<OptimizationLevel>
+    optimizationLevel;
 };
 
 class FileReaderMock : public FileReader
@@ -281,4 +285,4 @@ protected:
 
 }
 
-#endif //ELET_TEST_H
+#endif //ELET_EXTERNALFUNCTION_H

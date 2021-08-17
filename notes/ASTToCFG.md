@@ -14,10 +14,12 @@ To generate a Control Flow Graph from an Abstract Syntax Tree is quite a complex
 When should we generate CFG?
 
 * One idea is as soon as possible?
-    * If soon as possible we risk allocate to much?
+    * If soon as possible we risk allocate too much?
         * But, it's more convenient to do tree shaking on CFG.
     * We need to visit a CFG for type checking anyway? 
         * Nope, we only need a tree structure for this. Since, it only need to figure out the branches from the same base if they are all being assigned or not. Etc.
+    * Decision: Do CFG type narrowing during checking phase. Also do a last transformation
+    after the CFG checking to do consolidation optimizations.
     
 `[Q]`
 Where do we do tree shaking on AST or CFG?
@@ -38,3 +40,23 @@ Where do we do tree shaking on AST or CFG?
 * I think only one representation is enough, the one that abstracts machine code. The rest can be generated directly from AST.
 * What about making the calling convention parametric? Meaning calling convention relying on the parameter of "parameters passing registers", "return registers", "classification" etc?
 * `[S]` We should at least have the MachineCodeWriters to only know some basic "rules". Such as, `R0` maps to `eax` etc.
+
+Decision:
+
+* Checking phase will add the following tasks:
+    * Flagging
+        * Type narrowing.
+        * Common sub-expression flagging.
+        * Un-use flagging.
+    * There is no need to construct a CFG to accomplish this. Better done with AST.
+    
+* Optimization phase will be:
+    * Tree-shaking (from un-use flagging).
+    * Common sub-expression elimination.
+    * Inlining
+    * Consolidations.
+        * If two instruction can be merged (like store in subsequent load instructions), it's done here.
+    * Arithmetic optimizations
+        * Example:  times 2 could be optimized with a bit shift left.
+    
+    

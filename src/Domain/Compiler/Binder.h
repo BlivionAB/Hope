@@ -105,6 +105,15 @@ private:
 
     List<ast::Expression*>
     _forwardedReferences;
+
+    void
+    bindStatementBlock(ast::StatementBlock* block);
+
+    void
+    bindVariableDeclaration(ast::VariableDeclaration* variableDeclaration);
+
+    void
+    bindIfStatement(const ast::IfStatement* ifStatement);
 };
 
 

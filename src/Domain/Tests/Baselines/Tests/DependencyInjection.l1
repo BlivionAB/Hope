@@ -1,0 +1,36 @@
+domain MyApplication implements IConsoleApplication
+{
+
+protected:
+
+    dep guidelineService: GuidelineService;
+    dep printerService: PrinterService;
+
+public:
+
+    object GuidelineService
+    {
+        dep printerService: GuidelineService: deferred;
+
+        GuidelineService()
+        {
+
+        }
+    }
+
+    object PrinterService
+    {
+        dep printerService: PrinterService;
+
+        PrinterService()
+        {
+
+        }
+    }
+
+    fn OnApplicationStart(): void
+    {
+        guidelineService = GuidelineService();
+        printerService = PrinterService();
+    }
+}

@@ -35,6 +35,8 @@ public:
         ObserveKeyword,
         OnKeyword,
         FromKeyword,
+        TrueKeyword,
+        FalseKeyword,
 
         // Declarations
         AssemblyKeyword,
@@ -67,6 +69,15 @@ public:
         DoubleQuote,
         SingleQuote,
 
+
+        AmpersandAmpersand,
+        PipePipe,
+        Plus,
+        Minus,
+
+        BinaryOperationStart = AmpersandAmpersand,
+        BinaryOperationEnd = Minus,
+
         // Types
         VoidKeyword,
         IntKeyword,
@@ -92,6 +103,8 @@ public:
         SizeOfKeyword,
 
         StringLiteral,
+        FloatLiteral,
+        IntegerLiteral,
 
         EndOfFile,
     };
@@ -121,6 +134,9 @@ private:
 
     std::uint8_t
     _stage;
+
+    Token
+    scanDigits();
 };
 
 using Token = Scanner::Token;
@@ -164,6 +180,9 @@ const HashTableMap<const char*, Token> eletStringToToken =
     { "string", Token::StringKeyword },
     { "void", Token::VoidKeyword },
     { "literal", Token::LiteralKeyword, },
+
+    { "true", Token::TrueKeyword },
+    { "false", Token::FalseKeyword },
 
     // Statements
     { "using", Token::UsingKeyword },
@@ -213,6 +232,10 @@ const HashTableMap<Token, const char*> eletTokenToString =
     { Token::StringKeyword, "string" },
     { Token::VoidKeyword, "void" },
     { Token::LiteralKeyword, "literal" },
+
+
+    { Token::TrueKeyword,  "true" },
+    { Token::FalseKeyword, "false" },
 
     // For errors only
     { Token::Identifier, "identifier" },

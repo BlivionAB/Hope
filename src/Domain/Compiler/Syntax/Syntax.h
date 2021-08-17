@@ -222,6 +222,13 @@ struct BinaryOperator : Syntax
 };
 
 
+struct BooleanLiteral : Expression
+{
+    bool
+    value;
+};
+
+
 struct StringLiteral : Expression
 {
     const char*
@@ -229,6 +236,12 @@ struct StringLiteral : Expression
 
     const char*
     stringEnd;
+};
+
+
+struct IntegerLiteral : Expression
+{
+
 };
 
 
@@ -246,6 +259,16 @@ struct Tuple : Expression
 };
 
 
+enum class BinaryOperatorKind
+{
+    And,
+    Or,
+    Equal,
+    Plus,
+    Minus,
+};
+
+
 struct BinaryExpression : Expression
 {
     Expression*
@@ -253,6 +276,9 @@ struct BinaryExpression : Expression
 
     BinaryOperator*
     binaryOperator;
+
+    BinaryOperatorKind
+    binaryOperatorKind;
 
     Expression*
     right;

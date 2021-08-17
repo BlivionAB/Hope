@@ -3,6 +3,7 @@
 
 #include <Foundation/HashTableMap.h>
 #include <Foundation/FilePath.h>
+#include <Domain/Compiler/Syntax/Syntax.Statement.h>
 #include "Scanner.h"
 #include "Compiler.h"
 #include "Syntax/Syntax.h"
@@ -86,6 +87,7 @@ struct ParameterListResult
     Utf8String
     display;
 };
+
 
 typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> DomainDeclarationMap;
 
@@ -175,9 +177,6 @@ private:
     VariableDeclaration*
     parseVariableDeclaration();
 
-    void
-    parseInterfaceDeclarationMetadata(InterfaceDeclaration* interface);
-
     CallExpression*
     parseCallExpressionOnName();
 
@@ -245,7 +244,7 @@ private:
     parseName();
 
     StatementBlock*
-    parseFunctionBody();
+    parseStatementBlock();
 
     StatementBlock*
     parseFunctionBodyOnOpenBrace();
@@ -273,6 +272,14 @@ private:
 
     Expression*
     parseExpression();
+
+    Expression*
+    parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPrecedence);
+
+    unsigned int
+    getOperatorPrecedence(Token token) const;
+
+    bool isBinaryOperator(Token token) const;
 
     LengthOfExpression*
     parseLengthOfExpression();
@@ -348,15 +355,24 @@ private:
     Utf8String
     getParameterDisplay(ParameterDeclaration* parameter);
 
-    bool
-    hasEqualIdentifier(Name* id1, Name* id2);
-
     void
     addSymbol(Declaration* definition);
 
     static
     void
     addTypeSymbol(Declaration* declaration);
+
+    IfStatement*
+    parseIfStatement();
+
+    BooleanLiteral*
+    createBooleanLiteral(bool value);
+
+    BinaryOperatorKind
+    getBinaryOperatorKind(Token token);
+
+    ReturnStatement*
+    parseReturnStatement();
 };
 
 

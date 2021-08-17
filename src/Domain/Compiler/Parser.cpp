@@ -238,22 +238,23 @@ Syntax*
 Parser::parseFunctionLevelStatement()
 {
     Token token = _scanner->takeNextToken();
-    Syntax* statement;
     switch (token)
     {
         case Token::VarKeyword:
-            statement = parseVariableDeclaration();
-            break;
+            return parseVariableDeclaration();
+        case Token::ReturnKeyword:
+            return parseReturnStatement();
         case Token::AssemblyKeyword:
             return parseAssemblyBlock();
+        case Token::IfKeyword:
+            return parseIfStatement();
         case Token::Identifier:
         {
             Token peek = peekNextToken();
             switch (peek)
             {
                 case Token::OpenParen:
-                    statement = parseCallExpressionOnName();
-                    goto outer;
+                   return parseCallExpressionOnName();
                 case Token::Colon:
                     return nullptr;
                 case Token::Dot:
@@ -263,18 +264,16 @@ Parser::parseFunctionLevelStatement()
                     skipNextToken();
                     propertyAccessExpression->dot = createPunctuation(PunctuationType::Dot);
                     propertyAccessExpression->expression = parsePropertyAccessOrCallExpression();
-                    statement = propertyAccessExpression;
+                    return propertyAccessExpression;
                 }
             }
         }
         case Token::EndOfFile:
             return nullptr;
         default:
-            statement = parseExpression();
+            return parseExpression();
     }
-    outer:
-    expectToken(Token::SemiColon);
-    return statement;
+    throw std::runtime_error("Could not parse function level statements");
 }
 
 
@@ -375,6 +374,7 @@ Parser::parseVariableDeclaration()
     {
         skipNextToken();
         variableDeclaration->expression = parseExpression();
+        expectToken(Token::SemiColon);
     }
     return variableDeclaration;
 }
@@ -442,7 +442,7 @@ Parser::parseParameterOnIdentifier()
 
 
 StatementBlock*
-Parser::parseFunctionBody()
+Parser::parseStatementBlock()
 {
     StatementBlock* body = createBlock<StatementBlock>(SyntaxKind::FunctionBody);
     List<Syntax*> statements;
@@ -464,7 +464,7 @@ Parser::parseFunctionBody()
 StatementBlock*
 Parser::parseFunctionBodyOnOpenBrace()
 {
-    return parseFunctionBody();
+    return parseStatementBlock();
 }
 
 
@@ -653,6 +653,7 @@ Parser::parseCallExpressionOnName()
     expectToken(Token::OpenParen);
     expression->argumentList = parseArgumentListOnOpenParen();
     finishSyntax(expression);
+    expectToken(Token::SemiColon);
     return expression;
 }
 
@@ -686,7 +687,59 @@ Expression*
 Parser::parseExpression()
 {
     Token token = takeNextToken();
-    return parseExpressionOnToken(token);
+    Expression* expr = parseExpressionOnToken(token);
+    Token peek = peekNextToken();
+
+    // Given binary expressions A [*] B [*] C:
+    // * Parse A and B and then check if after B has a binary operator.
+    //   * If B has higher precedence:
+    //     * B becomes left and then continue parseRightHandSideOfBinaryExpression(TokenPrecedence lowestPrecedence).
+    //        * Where parseRightHandSideOfBinaryExpression only continues parsing expressions in the right-hand side
+    //          if it encounters higher token precedence. For instance, if it encounters A [*:1] B [*:2] C [*:3] D,
+    //          where ':n' denotes the precedence. From [*:2], parseRightHandSideOfBinaryExpression must evaluate [*:3]
+    //          It will evaluate whether [*:3] has a higher precedence then the passed in lowestPrecedence [*:2].
+    //
+    //   * If B has lower precedence:
+    //     * Create a binary expression of A and B first and then with C.
+    if (isBinaryOperator(peek))
+    {
+        Expression* leftExpression = expr;
+        while (isBinaryOperator(peek))
+        {
+            BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
+            unsigned int precedence = getOperatorPrecedence(peek);
+            takeNextToken();
+            binaryExpression->left = leftExpression;
+            binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+            binaryExpression->right = parseRightHandSideOfBinaryExpression(precedence);
+            leftExpression = binaryExpression;
+            peek = peekNextToken();
+        }
+        return leftExpression;
+    }
+    return expr;
+}
+
+
+Expression*
+Parser::parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPrecedence)
+{
+    Token token = takeNextToken();
+    Expression* expression = parseExpressionOnToken(token);
+    Token peek = peekNextToken();
+    if (isBinaryOperator(peek))
+    {
+        unsigned int nextOperatorPrecedence = getOperatorPrecedence(peek);
+        if (nextOperatorPrecedence > previousOperatorPrecedence)
+        {
+            BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
+            binaryExpression->left = expression;
+            binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+            binaryExpression->right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
+            return binaryExpression;
+        }
+    }
+    return expression;
 }
 
 
@@ -699,12 +752,18 @@ Parser::parseExpressionOnToken(Token token)
             return parseAddressOfExpression();
         case Token::StringLiteral:
         {
-            StringLiteral *stringLiteral = createSyntax<StringLiteral>(SyntaxKind::StringLiteral);
+            StringLiteral *stringLiteral = createSyntax<StringLiteral>(SyntaxKind::BooleanLiteral);
             finishSyntax(stringLiteral);
             stringLiteral->stringStart = stringLiteral->start + 1;
             stringLiteral->stringEnd = stringLiteral->end - 1;
             return stringLiteral;
         }
+        case Token::IntegerLiteral:
+            return createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
+        case Token::TrueKeyword:
+            return createBooleanLiteral(true);
+        case Token::FalseKeyword:
+            return createBooleanLiteral(false);
         case Token::OpenBracket:
             return parseArrayLiteral();
         case Token::OpenParen:
@@ -715,6 +774,14 @@ Parser::parseExpressionOnToken(Token token)
             return parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
     }
     throw UnexpectedExpression();
+}
+
+BooleanLiteral*
+Parser::createBooleanLiteral(bool value)
+{
+    BooleanLiteral* boolean = createSyntax<BooleanLiteral>(SyntaxKind::BooleanLiteral);
+    boolean->value = true;
+    return boolean;
 }
 
 
@@ -826,118 +893,6 @@ Parser::skipNextToken()
     _scanner->takeNextToken();
 }
 
-//
-//ImportStatement*
-//Parser::parseImportStatement()
-//{
-//    auto importStatement = createSyntax<ImportStatement>(SyntaxKind::ImportStatement);
-//    expectToken(Token::StringLiteral);
-//    auto stringLiteral = createSyntax<StringLiteral>(SyntaxKind::StringLiteral);
-//    finishSyntax(stringLiteral);
-//    Utf8StringView source(stringLiteral->start + 1, stringLiteral->end - 1);
-//    FilePath* newCurrenctDirectory = new FilePath(_currentDirectory->toString().toString());
-//    newCurrenctDirectory->add(source.toString());
-//    _compiler->addFile(newCurrenctDirectory->toString().asString());
-//    importStatement->path = stringLiteral;
-//    finishSyntax(stringLiteral);
-//    finishSyntax(importStatement);
-//    expectToken(Token::SemiColon);
-//    return importStatement;
-//}
-
-
-//ExportStatement*
-//Parser::parseExportStatement()
-//{
-//    ExportStatement* exportStatement = createSyntax<ExportStatement>(SyntaxKind::ImportStatement);
-//    expectToken(Token::Identifier);
-//    exportStatement->usage = parseModuleAccessUsageOnIdentifier();
-//    return exportStatement;
-//}
-
-
-//ModuleDeclaration*
-//Parser::parseModuleDeclaration()
-//{
-//    ModuleDeclaration* module = createDeclaration<ModuleDeclaration>(SyntaxKind::ModuleDeclaration);
-//    module->name = parseName();
-//    expectToken(Token::Colon);
-//    while(true)
-//    {
-//        Syntax* statement = parseModuleLevelStatement();
-//        if (!statement)
-//        {
-//            throw UnexpectedEndOfModule();
-//        }
-//        if (statement->kind == SyntaxKind::EndStatement)
-//        {
-//            EndStatement* endStatement = reinterpret_cast<EndStatement*>(statement);
-//            if (hasEqualIdentifier(endStatement->name, module->name))
-//            {
-//                module->endStatement = endStatement;
-//                finishSyntax(module);
-//                break;
-//            }
-//        }
-//        else
-//        {
-//            module->declarations.add(statement);
-//        }
-//    }
-//    return module;
-//}
-
-bool
-Parser::hasEqualIdentifier(Name *id1, Name* id2)
-{
-    return id1->name == id2->name;
-}
-
-//EndStatement*
-//Parser::parseEndStatement()
-//{
-//    EndStatement* endStatement = createSyntax<EndStatement>(SyntaxKind::EndStatement);
-//    endStatement->name = parseName();
-//    finishSyntax(endStatement);
-//    expectToken(Token::SemiColon);
-//    return endStatement;
-//}
-
-//DomainAccessUsage*
-//Parser::parseDomainAccessUsageOnIdentifier()
-//{
-//    DomainAccessUsage* domainAccessUsage = createSyntax<DomainAccessUsage>(SyntaxKind::DomainAccessUsage);
-//    domainAccessUsage->names.add(createName());
-//    expectToken(Token::DoubleColon);
-//    Token peek = peekNextToken();
-//    while (peek == Token::Identifier)
-//    {
-//        skipNextToken();
-//        domainAccessUsage->names = parseDomainAccessUsageOnIdentifier();
-//    }
-//    if (peek == Token::Identifier)
-//    {
-//    }
-//    else if (peek == Token::OpenBrace)
-//    {
-//        skipNextToken();
-//        domainAccessUsage->usage = parseUsageClauseOnOpenBrace();
-//    }
-//    else if (peek == Token::Asterisk)
-//    {
-//        skipNextToken();
-//        WildcardUsage* wildcardUsage = createSyntax<WildcardUsage>(SyntaxKind::WildcardUsage);
-//        finishSyntax(wildcardUsage);
-//        domainAccessUsage->usage = wildcardUsage;
-//        expectToken(Token::SemiColon);
-//    }
-//    else
-//    {
-//        throw UnexpectedModuleAccessUsage();
-//    }
-//    finishSyntax(domainAccessUsage);
-//    return domainAccessUsage;
-//}
 
 UsageClause*
 Parser::parseUsageClauseOnOpenBrace()
@@ -1050,14 +1005,6 @@ Parser::parseInterfaceDeclaration()
     return interface;
 }
 
-
-void
-Parser::parseInterfaceDeclarationMetadata(InterfaceDeclaration* interface)
-{
-    while (true)
-    {
-    }
-}
 
 ConstructorDeclaration*
 Parser::parseConstructorDeclaration()
@@ -1423,6 +1370,70 @@ Parser::parseExternCBlockLevelDeclarations()
         }
     }
     return list;
+}
+
+
+IfStatement*
+Parser::parseIfStatement()
+{
+    IfStatement* ifStatement = createSyntax<IfStatement>(SyntaxKind::IfStatement);
+    expectToken(Token::OpenParen);
+    ifStatement->condition = parseExpression();
+    expectToken(Token::CloseParen);
+    expectToken(Token::OpenBrace);
+    ifStatement->body = parseStatementBlock();
+    return ifStatement;
+}
+
+
+BinaryOperatorKind
+Parser::getBinaryOperatorKind(Token token)
+{
+    switch (token)
+    {
+        case Token::AmpersandAmpersand:
+            return BinaryOperatorKind::And;
+        case Token::PipePipe:
+            return BinaryOperatorKind::Or;
+        case Token::EqualEqual:
+            return BinaryOperatorKind::Equal;
+        case Token::Plus:
+            return BinaryOperatorKind::Plus;
+        case Token::Minus:
+            return BinaryOperatorKind::Minus;
+        default:
+            throw std::runtime_error("Unknown binary operator.");
+    }
+}
+
+ReturnStatement*
+Parser::parseReturnStatement()
+{
+    ReturnStatement* returnStatement = createSyntax<ReturnStatement>(SyntaxKind::ReturnStatement);
+    returnStatement->expression = parseExpression();
+    expectToken(Token::SemiColon);
+    return returnStatement;
+}
+
+
+unsigned int
+Parser::getOperatorPrecedence(Token token) const
+{
+    switch (token)
+    {
+        case Token::Minus:
+        case Token::Plus:
+            return 1;
+        default:
+            throw std::runtime_error("Unknown operator token.");
+    }
+}
+
+
+bool
+Parser::isBinaryOperator(Token token) const
+{
+    return token >= Token::BinaryOperationStart && token <= Token::BinaryOperationEnd;
 }
 
 

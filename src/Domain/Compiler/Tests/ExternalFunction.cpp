@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 #include "../Compiler.h"
-#include "./Test.h"
+#include "./ExternalFunction.h"
 
 
 namespace elet::domain::compiler::test
 {
 
 
-TEST_F(CompileFixture, DynamicLinkingWithCCode)
+TEST_F(CompileFixture, ExternalFunction)
 {
     project.setEntrySourceFile("main.l1",
         "domain Common::Console\n"
@@ -35,7 +35,7 @@ TEST_F(CompileFixture, DynamicLinkingWithCCode)
         "\n"
         "public:\n"
         "\n"
-        "   fn OnProcessStart(): void\n"
+        "   fn OnApplicationStart(): void\n"
         "   {\n"
         "       WriteLine(\"Hello World!\");\n"
         "   }\n"
@@ -45,17 +45,40 @@ TEST_F(CompileFixture, DynamicLinkingWithCCode)
         .baselineName = "macho-x86_64",
         .assemblyTarget = AssemblyTarget::x86_64,
         .objectFileTarget = ObjectFileTarget::MachO,
-        .assertStubs = true,
     }));
 
     EXPECT_TRUE(testProject({
         .baselineName = "macho-aarch64",
         .assemblyTarget = AssemblyTarget::Aarch64,
         .objectFileTarget = ObjectFileTarget::MachO,
-        .assertStubs = true,
     }));
 }
 
+
+
+TEST_F(CompileFixture, CommonSubExpressionElimination)
+{
+    project.setEntrySourceFile("main.l1",
+        "domain Common::MyApplication implements IConsoleApplication\n"
+        "{\n"
+        "\n"
+        "public:\n"
+        "\n"
+        "    fn OnApplicationStart(): void\n"
+        "    {\n"
+        "        var x = 1 + 2;\n"
+        "        var y = 1 + 2;\n"
+        "        return x + y;\n"
+        "    }\n"
+        "}");
+
+    EXPECT_TRUE(testProject({
+        .baselineName = "macho-x86_64",
+        .assemblyTarget = AssemblyTarget::x86_64,
+        .objectFileTarget = ObjectFileTarget::MachO,
+        .optimizationLevel = OptimizationLevel::_1,
+    }));
+}
 
 }
 

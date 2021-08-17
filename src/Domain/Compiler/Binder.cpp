@@ -123,17 +123,51 @@ Binder::bindFunctionDeclaration(ast::FunctionDeclaration* declaration)
     {
         declaration->body->symbols[parameterDeclaration->name->name] = parameterDeclaration;
     }
-    for (ast::Syntax* statement : declaration->body->statements)
+    bindStatementBlock(declaration->body);
+}
+
+
+void
+Binder::bindStatementBlock(ast::StatementBlock* block)
+{
+    for (ast::Syntax* statement : block->statements)
     {
         switch (statement->kind)
         {
+            case ast::SyntaxKind::VariableDeclaration:
+                bindVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement));
+                break;
             case ast::SyntaxKind::CallExpression:
                 bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
+            case ast::SyntaxKind::IfStatement:
+                bindIfStatement(reinterpret_cast<ast::IfStatement*>(statement));
+                break;
+            case ast::SyntaxKind::ReturnStatement:
+            {
+                ast::ReturnStatement* returnStatement = reinterpret_cast<ast::ReturnStatement*>(statement);
+                bindExpression(returnStatement->expression);
+                break;
+            }
             default:
                 throw UnknownBindingStatement();
         }
     }
+}
+
+void
+Binder::bindIfStatement(const ast::IfStatement* ifStatement)
+{
+    bindExpression(ifStatement->condition);
+    bindStatementBlock(ifStatement->body);
+}
+
+
+void
+Binder::bindVariableDeclaration(ast::VariableDeclaration* variableDeclaration)
+{
+    _currentFunctionDeclaration->body->symbols[variableDeclaration->name->name] = variableDeclaration;
+    bindExpression(variableDeclaration->expression);
 }
 
 

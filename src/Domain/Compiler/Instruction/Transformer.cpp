@@ -57,6 +57,7 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     return routine;
 }
 
+
 void
 Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine)
 {
@@ -82,6 +83,9 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
     {
         switch (statement->kind)
         {
+            case ast::SyntaxKind::VariableDeclaration:
+                transformVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement));
+                break;
             case ast::SyntaxKind::CallExpression:
                 transformCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
@@ -90,6 +94,36 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
         }
     }
     return list;
+}
+
+
+void
+Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable)
+{
+    transformExpression(variable->expression);
+}
+
+
+void
+Transformer::transformExpression(ast::Expression* expression)
+{
+    switch (expression->kind)
+    {
+        case ast::SyntaxKind::BinaryExpression:
+        {
+            ast::BinaryExpression* binaryExpression = reinterpret_cast<ast::BinaryExpression*>(expression);
+            if (!isTransformableExpression(binaryExpression->left))
+            {
+                
+            }
+            transformExpression(reinterpret_cast<ast::BinaryExpression*>(binaryExpression));
+            break;
+        }
+        case ast::SyntaxKind::IntegerLiteral:
+            break;
+        default:
+            throw std::runtime_error("");
+    }
 }
 
 
@@ -119,7 +153,14 @@ Transformer::transformCallExpression(const ast::CallExpression* callExpression)
     {
         callInstruction->routine = new output::ExternalRoutine(callExpression->referenceDeclaration->symbol->externalSymbol);
     }
-    _currentRoutineStack.top()->instructions.add(callInstruction);
+    addInstruction(callInstruction);
+}
+
+
+void
+Transformer::addInstruction(Instruction* instruction)
+{
+    _currentRoutineStack.top()->instructions.add(instruction);
 }
 
 
@@ -207,6 +248,13 @@ Transformer::segmentArgumentDeclarations(ast::ArgumentDeclaration* argumentDecla
 {
     List<output::ArgumentDeclaration*> argumentList;
     return argumentList;
+}
+
+
+bool
+Transformer::isTransformableExpression(ast::Expression* expression)
+{
+    return expression->kind == ast::SyntaxKind::IntegerLiteral;
 }
 
 
