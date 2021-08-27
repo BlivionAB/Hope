@@ -3,7 +3,9 @@
 
 #include "Utf8String.h"
 #include "List.h"
-#include "FilePath.h"
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace elet::foundation
 {
@@ -12,26 +14,15 @@ namespace elet::foundation
 class File
 {
 public:
-    struct FileRemoveException : public std::exception
-    {
-        explicit FileRemoveException() noexcept;
-    };
 
     static
     Utf8String
-    read(const FilePath& path);
+    read(const fs::path& path);
 
     static
     void
-    write(const FilePath& path, const Utf8String& content);
+    write(const fs::path& path, const Utf8String& content);
 
-    static
-    void
-    remove(const FilePath& path);
-
-    static
-    void
-    createDirectory(const FilePath& path);
 };
 
 struct FileReadError : std::exception

@@ -20,7 +20,7 @@ enum MachoMagicValue : uint64_t
 };
 
 
-enum MachoCpuType
+enum MachoCpuType : uint32_t
 {
     CPU_ARCH_ABI64 = 0x01000000,
     CPU_TYPE_X86 = 0x7,
@@ -57,7 +57,7 @@ enum MachoFlags
 };
 
 
-enum MachoSectionFlags
+enum MachoSectionFlags : uint32_t
 {
     S_ATTR_PURE_INSTRUCTIONS = 0x80000000,
     S_ATTR_SOME_INSTRUCTIONS = 0x00000400,

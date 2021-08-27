@@ -3,6 +3,7 @@
 
 #include <map>
 #include <condition_variable>
+#include <filesystem>
 #include <mutex>
 #include <thread>
 #include <queue>
@@ -14,8 +15,11 @@
 #include "Domain/Compiler/Instruction/Transformer.h"
 #include "Domain/Compiler/Instruction/AssemblyWriter.h"
 #include "Domain/Compiler/Instruction/ObjectFileWriter.h"
-#include <Foundation/FilePath.h>
 #include <Foundation/FileReader.h>
+
+
+namespace fs = std::filesystem;
+
 
 namespace elet::domain::compiler::instruction::output
 {
@@ -68,7 +72,7 @@ struct ParsingTask
     const char*
     sourceEnd;
 
-    const FilePath*
+    const fs::path*
     sourceDirectory;
 
     ast::SourceFile*
@@ -84,7 +88,7 @@ struct ParsingTask
         const char*
         end,
 
-        const FilePath*
+        const fs::path*
         directory,
 
         ast::SourceFile*
@@ -174,7 +178,7 @@ class Compiler
 public:
 
     Compiler(
-        FileReader& fileReader,
+        FileStreamReader& fileReader,
         AssemblyTarget assemblyTarget,
         ObjectFileTarget objectFileTarget);
 
@@ -185,12 +189,12 @@ public:
     endWorkers();
 
     void
-    compileFile(const FilePath& file, const FilePath& output);
+    compileFile(const fs::path& file, const fs::path& output);
 
     void
-    addFile(const FilePath& file);
+    addFile(const fs::path& file);
 
-    std::map<Utf8String, ast::SourceFile*>
+    std::map<std::string, ast::SourceFile*>
     files;
 
     List<uint8_t>&
@@ -222,8 +226,8 @@ private:
     List<ast::Syntax*>
     _syntaxTree;
 
-    FileReader&
-    _fileReader;
+    FileStreamReader&
+    _fileStreamReader;
 
     std::mutex
     _transformationWorkMutex;
@@ -267,7 +271,8 @@ private:
     std::mutex
     _parsingWorkMutex;
 
-    enum class CompilationStage {
+    enum class CompilationStage
+    {
         Parsing,
         Binding,
         Checking,
@@ -360,7 +365,7 @@ private:
     List<RelocationOperand*>
     _symbolicRelocations;
 
-    const FilePath*
+    const fs::path*
     _outputFile;
 
     unsigned int

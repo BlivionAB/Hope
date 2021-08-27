@@ -255,7 +255,7 @@ public:
         explicit
         CharIterator(const char* _value);
 
-        CharIterator(CharIterator& copy):
+        CharIterator(const CharIterator& copy):
             CharIterator(copy._value)
         {
 

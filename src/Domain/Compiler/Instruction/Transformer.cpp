@@ -1,5 +1,6 @@
 #include "Transformer.h"
 #include "Domain/Compiler/Exceptions.h"
+#include "Instruction.h"
 
 namespace elet::domain::compiler::instruction
 {
@@ -104,25 +105,82 @@ Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable)
 }
 
 
-void
+BinaryExpressionCanonicalValue
 Transformer::transformExpression(ast::Expression* expression)
 {
     switch (expression->kind)
     {
+        // Expressions must be canonicalized before transformation
         case ast::SyntaxKind::BinaryExpression:
         {
+
+            // memory * immediate
+            //   immediate * memory (it's cummutative)
+            // immediate * immediate
+            // memory * memory
+
             ast::BinaryExpression* binaryExpression = reinterpret_cast<ast::BinaryExpression*>(expression);
-            if (!isTransformableExpression(binaryExpression->left))
+            auto left = transformExpression(binaryExpression->left);
+            if (std::holds_alternative<ImmediateValue>(left))
             {
-                
+                auto right = transformExpression(binaryExpression->right);
+                if (std::holds_alternative<ImmediateValue>(right))
+                {
+                    return transformImmediateBinaryExpression(binaryExpression);
+                }
+
+                // rhs is memory here
+                return transformImmediateToMemoryExpression(std::get<ScratchRegister*>(right), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->left)), binaryExpression->binaryOperatorKind);
             }
-            transformExpression(reinterpret_cast<ast::BinaryExpression*>(binaryExpression));
-            break;
+            // lhs is memory from here
+
+//            else if (isMemoryExpression(binaryExpression->right))
+//            {
+//                return transformMemoryBinaryExpression(binaryExpression);
+//            }
+            return transformImmediateToMemoryExpression(transformExpression(binaryExpression->left), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)), binaryExpression->binaryOperatorKind);
         }
         case ast::SyntaxKind::IntegerLiteral:
-            break;
+            return reinterpret_cast<ast::IntegerLiteral*>(expression)->value;
         default:
             throw std::runtime_error("");
+    }
+}
+
+
+output::ImmediateValue
+Transformer::transformToUint(ast::IntegerLiteral* integer)
+{
+    return integer->value;
+}
+
+
+output::ScratchRegister*
+Transformer::transformImmediateToMemoryExpression(ScratchRegister* left, ImmediateValue right, ast::BinaryOperatorKind _operator)
+{
+    auto scratchRegister = new ScratchRegister();
+    scratchRegister->operation = new MemoryImmediateOperation(left, right, _operator);
+    return scratchRegister;
+}
+
+
+bool
+Transformer::isMemoryExpression(ast::Expression* expression)
+{
+    return expression->kind == ast::SyntaxKind::BinaryExpression;
+}
+
+
+
+ImmediateValue
+Transformer::transformImmediateBinaryExpression(ast::BinaryExpression* binaryExpression)
+{
+    switch (binaryExpression->binaryOperatorKind)
+    {
+        case ast::BinaryOperatorKind::Plus:
+            return reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->left)->value + reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)->value;
+        default:
+            throw std::runtime_error("Not implemented binary expression operator for immediate value.");
     }
 }
 
@@ -252,10 +310,16 @@ Transformer::segmentArgumentDeclarations(ast::ArgumentDeclaration* argumentDecla
 
 
 bool
-Transformer::isTransformableExpression(ast::Expression* expression)
+Transformer::isCompositeExpression(ast::Expression* expression)
+{
+    return expression->kind == ast::SyntaxKind::BinaryExpression;
+}
+
+
+bool
+Transformer::isImmediateExpression(ast::Expression* expression)
 {
     return expression->kind == ast::SyntaxKind::IntegerLiteral;
 }
-
 
 }

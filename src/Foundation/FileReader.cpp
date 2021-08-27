@@ -1,7 +1,5 @@
 #include "FileReader.h"
 #include <fstream>
-
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -9,26 +7,31 @@ namespace elet::foundation
 {
 
 
-int
-FileReader::openFile(const FilePath& string)
+void
+FileStreamReader::openFile(const fs::path path)
 {
-    return open(string.toString().asString(), O_RDONLY);
+    _ifstream.open(path.string().c_str(), std::ifstream::in);
 }
 
 
 size_t
-FileReader::readChunk(int fd, char* readCursor, size_t size)
+FileStreamReader::readChunk(char* readCursor, size_t size)
 {
-    return read(fd, readCursor, size);
+    return _ifstream.readsome(readCursor, size);
 }
 
 
 size_t
-FileReader::getFileSize(int fd)
+FileStreamReader::getFileSize()
 {
-    struct stat sb;
-    fstat(fd, &sb);
-    return sb.st_size;
+    return _ifstream.tellg();
+}
+
+
+void
+FileStreamReader::close()
+{
+    _ifstream.close();
 }
 
 

@@ -1,5 +1,6 @@
 #include "Aarch64Writer.h"
 #include "AArch64Encodings.h"
+#include <cassert>
 
 namespace elet::domain::compiler::instruction::output
 {

@@ -241,7 +241,8 @@ struct StringLiteral : Expression
 
 struct IntegerLiteral : Expression
 {
-
+    unsigned int
+    value;
 };
 
 

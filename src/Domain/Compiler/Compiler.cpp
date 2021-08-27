@@ -3,11 +3,10 @@
 #include "Binder.h"
 #include "Checker.h"
 #include <fcntl.h>
-#include <unistd.h>
+#include <filesystem>
 #include <vector>
 #include <mutex>
 #include <sys/stat.h>
-#include <Foundation/FilePath.h>
 #include <Foundation/File.h>
 #include "Instruction/ObjectFileWriter/MachoFileWriter.h"
 
@@ -17,8 +16,8 @@ namespace elet::domain::compiler
 {
 
 
-Compiler::Compiler(FileReader& fileReader, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
-    _fileReader(fileReader),
+Compiler::Compiler(FileStreamReader& fileStreamReader, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
+    _fileStreamReader(fileStreamReader),
     _assemblyTarget(assemblyTarget),
     _objectFileTarget(objectFileTarget),
     _parser(new ast::Parser(this)),
@@ -31,7 +30,7 @@ Compiler::Compiler(FileReader& fileReader, AssemblyTarget assemblyTarget, Object
 }
 
 void
-Compiler::compileFile(const FilePath& file, const FilePath& output)
+Compiler::compileFile(const fs::path& file, const fs::path& output)
 {
     _outputFile = &output;
     addFile(file);
@@ -39,9 +38,9 @@ Compiler::compileFile(const FilePath& file, const FilePath& output)
 
 
 void
-Compiler::addFile(const FilePath& file)
+Compiler::addFile(const fs::path& file)
 {
-    Utf8String fileString = file.toString();
+    std::string fileString = file.string();
     auto result = files.find(fileString);
     if (result != files.end())
     {
@@ -51,22 +50,12 @@ Compiler::addFile(const FilePath& file)
     files.insert(std::pair(fileString, compilerFile));
     _pendingParsingFiles++;
     static const std::size_t BUFFER_SIZE = 16*1024;
-    int fd = _fileReader.openFile(file);
-    if (fd == -1)
-    {
-        throw FileReadError();
-    }
-
-#ifndef __APPLE__
-    posix_fadvise(fd, 0, 0, FDADVICE_SEQUENTIAL);
-#endif
-
-    size_t bufferSize = _fileReader.getFileSize(fd);
+    _fileStreamReader.openFile(file);
+    size_t bufferSize = _fileStreamReader.getFileSize();
     _source = new char[bufferSize];
     _readCursor = const_cast<char*>(_source);
-    FilePath cd(file);
-    FilePath* currentDirectory = new FilePath(cd);
-    while (size_t bytesRead = _fileReader.readChunk(fd, _readCursor, BUFFER_SIZE))
+    fs::path currentDirectory(file);
+    while (size_t bytesRead = _fileStreamReader.readChunk(_readCursor, BUFFER_SIZE))
     {
         bool isEndOfFile = false;
         if (bytesRead < BUFFER_SIZE)
@@ -74,7 +63,7 @@ Compiler::addFile(const FilePath& file)
             isEndOfFile = _reachedEndOfFile = true;
         }
         char* endCursor = &_readCursor[bytesRead];
-        _parsingWork.emplace(_readCursor, endCursor, currentDirectory, compilerFile, isEndOfFile);
+        _parsingWork.emplace(_readCursor, endCursor, &currentDirectory, compilerFile, isEndOfFile);
         _parsingWorkCondition.notify_one();
         _readCursor = endCursor;
         if (_reachedEndOfFile)

@@ -12,6 +12,7 @@
 namespace elet::domain::compiler::ast
 {
     struct Declaration;
+    enum class BinaryOperatorKind;
 }
 namespace elet::domain::compiler
 {
@@ -35,6 +36,7 @@ enum class OperandKind : std::uint64_t
     Int32,
     Int64,
     Register,
+    ScratchRegister,
     Argument,
     StringReference,
     FunctionReference,
@@ -50,6 +52,7 @@ enum class InstructionKind
     ArgumentDeclaration,
     ParameterDeclaration,
     LocalVariableDeclaration,
+    TemporaryVariableDeclaration,
 };
 
 
@@ -312,6 +315,63 @@ struct Register : Operand
         index(index),
         Operand(OperandKind::Register)
     { }
+};
+
+enum class OperationKind
+{
+    MemoryImmediate,
+};
+
+
+struct Operation
+{
+    OperationKind
+    kind;
+
+    ast::BinaryOperatorKind
+    _operator;
+
+    Operation(OperationKind kind, ast::BinaryOperatorKind _operator):
+        _operator(_operator),
+        kind(kind)
+    {
+
+    }
+};
+
+
+typedef std::variant<uint8_t, uint16_t, uint32_t, uint64_t> ImmediateValue;
+
+
+struct ScratchRegister : Operand
+{
+    Operation*
+    operation;
+
+    ScratchRegister():
+        Operand(OperandKind::ScratchRegister)
+    { }
+};
+
+
+typedef std::variant<ScratchRegister*, ImmediateValue> BinaryExpressionCanonicalValue;
+
+
+struct MemoryImmediateOperation : Operation
+{
+    ScratchRegister*
+    scratchRegister;
+
+    ImmediateValue
+    immediate;
+
+    MemoryImmediateOperation(ScratchRegister* scratchRegister, ImmediateValue immediate, ast::BinaryOperatorKind _operator):
+        Operation(OperationKind::MemoryImmediate, _operator),
+        scratchRegister(scratchRegister),
+        immediate(immediate)
+    {
+
+    }
 };
 
 

@@ -1,19 +1,19 @@
 #include "File.h"
-#include <glob.h>
 #include <fstream>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 
-File::FileRemoveException::FileRemoveException() noexcept
-    : std::exception()
-{ }
+namespace fs = std::filesystem;
+
+namespace elet::foundation
+{
+
 
 Utf8String
-File::read(const FilePath& path)
+File::read(const fs::path& path)
 {
     std::ifstream inputFileStream;
-    inputFileStream.open(path.toString().toString());
+    inputFileStream.open(path.string().c_str());
 
     std::string result(
         (std::istreambuf_iterator<char>(inputFileStream)),
@@ -23,26 +23,15 @@ File::read(const FilePath& path)
     return Utf8String(text);
 }
 
+
 void
-File::write(const FilePath& path, const Utf8String& content)
+File::write(const fs::path& path, const Utf8String& content)
 {
     std::ofstream outputFileStream;
-    outputFileStream.open(path.toString().toString());
+    outputFileStream.open(path.string().c_str());
     outputFileStream << content.toString();
     outputFileStream.close();
 }
 
-void
-File::remove(const FilePath& path)
-{
-    if (std::remove(path.toString().toString()) != 0)
-    {
-        throw FileRemoveException();
-    }
-}
 
-void
-File::createDirectory(const FilePath& path)
-{
-    create_directories(boost::filesystem::path(path.toString().toString()));
 }

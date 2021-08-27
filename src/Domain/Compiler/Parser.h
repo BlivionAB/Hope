@@ -1,13 +1,16 @@
 #ifndef ELET_PARSER_H
 #define ELET_PARSER_H
 
+#include <filesystem>
 #include <Foundation/HashTableMap.h>
-#include <Foundation/FilePath.h>
 #include <Domain/Compiler/Syntax/Syntax.Statement.h>
 #include "Scanner.h"
 #include "Compiler.h"
 #include "Syntax/Syntax.h"
 #include "Domain/Compiler/Instruction/Parser.h"
+
+
+namespace fs = std::filesystem;
 
 
 namespace elet::domain::compiler
@@ -116,7 +119,7 @@ private:
 
     static
     thread_local
-    FilePath*
+    fs::path*
     _currentDirectory;
 
     static
@@ -140,7 +143,7 @@ private:
     Scanner*
     _scanner;
 
-    std::map<Utf8String, SourceFile*>&
+    std::map<std::string, SourceFile*>&
     _files;
 
     ast::DomainDeclaration*
@@ -373,6 +376,9 @@ private:
 
     ReturnStatement*
     parseReturnStatement();
+
+    unsigned int
+    getInteger(IntegerLiteral* integerLiteral);
 };
 
 

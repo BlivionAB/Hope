@@ -4,6 +4,7 @@
 
 #include <variant>
 #include <cmath>
+#include <array>
 #include "Foundation/List.h"
 
 

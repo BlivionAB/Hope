@@ -1,13 +1,17 @@
-#include <Foundation/FilePath.h>
 #include "Parser.h"
 #include "Exceptions.h"
+#include <filesystem>
+
+
+namespace fs = std::filesystem;
+
 
 namespace elet::domain::compiler::ast
 {
 
 
 thread_local
-FilePath*
+fs::path*
 Parser::_currentDirectory = nullptr;
 
 
@@ -46,7 +50,7 @@ Parser::performWork(const ParsingTask& task)
     _lastStatementLocationStart = const_cast<char*>(task.sourceStart);
     Utf8StringView sourceContent(task.sourceStart, task.sourceEnd);
     Scanner scanner(sourceContent);
-    _currentDirectory = const_cast<FilePath*>(task.sourceDirectory);
+    _currentDirectory = const_cast<fs::path*>(task.sourceDirectory);
     _scanner = &scanner;
     List<Syntax*> statements;
     ParsingTask* pendingParsingTask = nullptr;
@@ -759,7 +763,11 @@ Parser::parseExpressionOnToken(Token token)
             return stringLiteral;
         }
         case Token::IntegerLiteral:
-            return createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
+        {
+            IntegerLiteral* integer = createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
+            integer->value = getInteger(integer);
+            return integer;
+        }
         case Token::TrueKeyword:
             return createBooleanLiteral(true);
         case Token::FalseKeyword:
@@ -1434,6 +1442,22 @@ bool
 Parser::isBinaryOperator(Token token) const
 {
     return token >= Token::BinaryOperationStart && token <= Token::BinaryOperationEnd;
+}
+
+
+unsigned int
+Parser::getInteger(IntegerLiteral* integerLiteral)
+{
+    const char* cursor = integerLiteral->end;
+    unsigned int exponent = 0;
+    unsigned int result;
+    while (cursor != integerLiteral->start)
+    {
+        unsigned int s = cursor[0] - '0';
+        result += std::pow(s, 10);
+        cursor--;
+    }
+    return result;
 }
 
 

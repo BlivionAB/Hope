@@ -6,8 +6,8 @@
 #include <fstream>
 #include <optional>
 #include "CompilerBaselineParser.h"
-#include <Foundation/FilePath.h>
 #include <Foundation/File.h>
+#include <filesystem>
 #include "./TextDiff/MyersDiff.h"
 #include "./TextDiff/DiffPrinter.h"
 #include "../../../unittest.h"
@@ -16,6 +16,9 @@
 
 namespace elet::domain::compiler::test
 {
+
+namespace fs = std::filesystem;
+
 
 enum class OptimizationLevel
 {
@@ -27,14 +30,15 @@ enum class OptimizationLevel
 
 struct TestProjectOptions
 {
-    ObjectFileTarget
-    objectFileTarget;
+
+    std::string
+    baselineName;
 
     AssemblyTarget
     assemblyTarget;
 
-    Utf8String
-    baselineName;
+    ObjectFileTarget
+    objectFileTarget;
 
     std::optional<bool>
     writeExecutable;
@@ -43,40 +47,37 @@ struct TestProjectOptions
     optimizationLevel;
 };
 
-class FileReaderMock : public FileReader
+
+class FileStreamReaderMock : public FileStreamReader
 {
 
 public:
 
-    FileReaderMock(std::map<Utf8String, Utf8String>& filePathToFileSourceMap):
+    FileStreamReaderMock(std::map<fs::path, Utf8String>& filePathToFileSourceMap):
         _filePathToFileSourceMap(filePathToFileSourceMap)
     {
 
     }
 
-    int
-    openFile(const FilePath& filepath) override
+    void
+    openFile(const fs::path filepath) override
     {
-        auto result = _filePathToFileSourceMap.find(filepath.toString());
+        auto result = _filePathToFileSourceMap.find(filepath);
         if (result != _filePathToFileSourceMap.end())
         {
-            auto iterSpan = new IterationSpan(result->second.beginChar(), result->second.endChar());
-            _fdToSourceIteratorMap[assignedFd] = iterSpan;
-            return assignedFd++;
+            _currentIterSpan = new IterationSpan(result->second.beginChar(), result->second.endChar());
         }
-        return -1;
     }
 
 
     size_t
-    readChunk(int fd, char* buffer, size_t size) override
+    readChunk(char* buffer, size_t size) override
     {
-        auto iterationSpan = _fdToSourceIteratorMap[fd];
         size_t i = 0;
-        while (iterationSpan->start != iterationSpan->end && i != size)
+        while (_currentIterSpan->start != _currentIterSpan->end && i != size)
         {
-            buffer[i] = *iterationSpan->start;
-            ++iterationSpan->start;
+            buffer[i] = *_currentIterSpan->start;
+            ++_currentIterSpan->start;
             ++i;
         }
         return i;
@@ -84,33 +85,12 @@ public:
 
 
     size_t
-    getFileSize(int fd) override
+    getFileSize() override
     {
-        auto iterationSpan = _fdToSourceIteratorMap[fd];
-        return iterationSpan->end.getValue() - iterationSpan->start.getValue();
+        return _currentIterSpan->end.getValue() - _currentIterSpan->start.getValue();
     }
 
 private:
-
-    size_t
-    assignedFd = 1;
-
-
-    const char*
-    _cursor;
-
-    std::map<Utf8String, Utf8String>&
-    _filePathToFileSourceMap;
-
-    struct SourceCursor
-    {
-        Utf8String::Iterator
-        source;
-
-        const char*
-        cursor;
-    };
-
 
     struct IterationSpan
     {
@@ -125,6 +105,26 @@ private:
             end(end)
         { }
     };
+
+    IterationSpan*
+    _currentIterSpan;
+
+    const char*
+    _cursor;
+
+    std::map<fs::path, Utf8String>&
+    _filePathToFileSourceMap;
+
+    struct SourceCursor
+    {
+        Utf8String::Iterator
+        source;
+
+        const char*
+        cursor;
+    };
+
+
     std::map<int, IterationSpan*>
     _fdToSourceIteratorMap;
 };
@@ -137,37 +137,40 @@ public:
 
     TestProject()
     {
-        fileReader = new FileReaderMock(_filePathToFileSourceMap);
+        fileReader = new FileStreamReaderMock(_filePathToFileSourceMap);
     }
 
+
     void
-    setEntrySourceFile(FilePath filepath, Utf8String filesource)
+    setEntrySourceFile(fs::path filepath, Utf8String filesource)
     {
         _entryFile = filepath;
         setSourceFile(filepath, filesource);
     }
 
+
     void
-    setSourceFile(FilePath filepath, Utf8String filesource)
+    setSourceFile(fs::path filepath, Utf8String filesource)
     {
-        _filePathToFileSourceMap[filepath.toString()] = filesource;
+        _filePathToFileSourceMap[filepath] = filesource;
     }
 
-    FilePath
+
+    fs::path
     getEntryFile() const
     {
         return _entryFile;
     }
 
-    FileReaderMock*
+    FileStreamReaderMock*
     fileReader;
 
 private:
 
-    std::map<Utf8String, Utf8String>
+    std::map<fs::path, Utf8String>
     _filePathToFileSourceMap;
 
-    FilePath
+    fs::path
     _entryFile;
 };
 
@@ -181,7 +184,7 @@ protected:
 
     }
 
-    Utf8String
+    fs::path
     currentPath = "src/Domain/Compiler/Tests/__Baselines__";
 
     TestProject
@@ -233,19 +236,19 @@ protected:
 
 
     testing::AssertionResult
-    checkBaseline(Utf8String& result, FilePath baselineName)
+    checkBaseline(Utf8String& result, fs::path baselineName)
     {
         DiffPrinter printer;
         MyersDiff differ;
-        FilePath basm = FilePath::cwd() / ".." / currentPath / baselineName;
-        FilePath baselineFolder = FilePath::folderOf(basm);
-        if (!FilePath::exists(baselineFolder))
+        fs::path basm = fs::current_path() / ".." / currentPath / baselineName;
+        fs::path baselineFolder = basm.parent_path();
+        if (!fs::exists(baselineFolder))
         {
-            File::createDirectory(baselineFolder);
+            fs::create_directories(baselineFolder);
         }
         bool isDiffing = false;
         Utf8String baseline("");
-        if (FilePath::exists(basm))
+        if (fs::exists(basm))
         {
             baseline = File::read(basm);
         }
@@ -268,10 +271,10 @@ protected:
     }
 
     void
-    writeOutput(const List<uint8_t>& output, FilePath file) const
+    writeOutput(const List<uint8_t>& output, fs::path file) const
     {
         std::ofstream fileHandle;
-        const char* path = FilePath::resolve(FilePath::cwd(), file).toString().toString();
+        const char* path = (fs::current_path() / file).string().c_str();
         fileHandle.open(path, std::ios_base::binary);
         for (int i = 0; i < output.size(); ++i)
         {

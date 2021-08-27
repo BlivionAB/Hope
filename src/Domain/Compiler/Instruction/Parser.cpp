@@ -209,6 +209,7 @@ InstructionParser::createPunctuation(PunctuationType type)
 List<output::Instruction*>*
 InstructionParser::parse()
 {
+    return nullptr;
 //    List<EmbeddedSyntax*> syntaxTree;
 //    while (true)
 //    {

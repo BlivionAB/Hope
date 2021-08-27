@@ -2,29 +2,40 @@
 #define ELET_FILEREADER_H
 
 
-#include "./FilePath.h"
+#include <filesystem>
+#include <fstream>
+
+namespace fs = std::filesystem;
 
 
 namespace elet::foundation
 {
 
 
-class FileReader
+class FileStreamReader
 {
 
 public:
 
     virtual
-    int
-    openFile(const FilePath& filepath);
+    void
+    openFile(const fs::path string);
 
     virtual
     size_t
-    readChunk(int fd, char* readCursor, size_t size);
+    readChunk(char* readCursor, size_t size);
 
     virtual
     size_t
-    getFileSize(int fd);
+    getFileSize();
+
+    void
+    close();
+
+private:
+
+    std::ifstream
+    _ifstream;
 };
 
 

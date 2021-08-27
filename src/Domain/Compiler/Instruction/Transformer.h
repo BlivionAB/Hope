@@ -40,6 +40,7 @@ namespace output
     struct FunctionReference;
     struct ParameterDeclaration;
     struct String;
+    struct Register;
     struct LocalVariableDeclaration;
     struct ArgumentDeclaration;
     typedef std::variant<std::size_t, String*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
@@ -92,7 +93,8 @@ struct CallingConvention
 //    stackOrder;
 };
 
-typedef std::variant<output::>
+
+typedef std::variant<std::monostate, output::Register, output::ScratchRegister*> BinaryTemp;
 
 
 class Transformer
@@ -157,7 +159,7 @@ private:
     segmentParameterDeclaration(ast::ParameterDeclaration* parameter);
 
     bool
-    isTransformableExpression(ast::Expression* expression);
+    isCompositeExpression(ast::Expression* expression);
 
     List<output::ArgumentDeclaration*>
     segmentArgumentDeclarations(ast::ArgumentDeclaration* parameter);
@@ -169,10 +171,25 @@ private:
     transformVariableDeclaration(ast::VariableDeclaration* variable);
 
     void
+    addInstruction(output::Instruction* instruction);
+
+    BinaryExpressionCanonicalValue
     transformExpression(ast::Expression* expression);
 
-    void
-    addInstruction(Instruction* instruction);
+    bool
+    isImmediateExpression(ast::Expression* expression);
+
+    ImmediateValue
+    transformImmediateBinaryExpression(ast::BinaryExpression* binaryExpression);
+
+    bool
+    isMemoryExpression(ast::Expression* expression);
+
+    output::ScratchRegister*
+    transformImmediateToMemoryExpression(output::ScratchRegister* left, output::ImmediateValue right, ast::BinaryOperatorKind _operator);
+
+    output::ImmediateValue
+    transformToUint(ast::IntegerLiteral* expression);
 };
 
 
