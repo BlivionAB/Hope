@@ -117,6 +117,30 @@ private:
 
     ast::type::Type*
     resolveTypeFromExpression(ast::Expression* expression);
+
+    void
+    checkVariableDeclaration(ast::VariableDeclaration* variable);
+
+    ast::Type*
+    inferTypeFromExpression(ast::Expression* expression);
+
+    ast::Type*
+    getCommonRealType(ast::Type* type1, ast::Type* type2);
+
+    unsigned int
+    getConversionRanking(ast::Type* pType);
+
+    ast::Type*
+    getMaxType(ast::Type* type1, ast::Type* type2);
+
+    uint64_t
+    getMaxTypeDomain(ast::Type* type);
+
+    ast::Type*
+    getUnsignedCounterPart(ast::Type* signedType);
+
+    ast::Type*
+    getTypeFromIntegerLiteral(ast::IntegerLiteral* integerLiteral);
 };
 
 

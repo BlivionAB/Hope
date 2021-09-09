@@ -32,6 +32,7 @@ enum OneByteOpCode : uint8_t
 
     Lea_Gv_M = 0x8d,
 
+    Mov_Ev_Iz = 0xc7,
     Mov_Ev_Gv = 0x89,
     Mov_Gv_Ev = 0x8b,
 

@@ -166,7 +166,8 @@ struct Punctuation : Syntax
 
 struct Expression : Syntax
 {
-
+    Type*
+    resolvedType;
 };
 
 
@@ -236,12 +237,15 @@ struct StringLiteral : Expression
 
     const char*
     stringEnd;
+
+    Type*
+    resolvedType;
 };
 
 
 struct IntegerLiteral : Expression
 {
-    unsigned int
+    int64_t
     value;
 };
 
@@ -319,12 +323,6 @@ struct CallExpression : NamedExpression
     argumentList;
 };
 
-
-struct LengthOfExpression : Expression
-{
-    Name*
-    reference;
-};
 
 }
 

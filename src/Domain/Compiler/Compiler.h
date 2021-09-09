@@ -62,6 +62,7 @@ enum class AssemblyTarget
     Unknown,
     x86_64,
     Aarch64,
+    StashIR,
 };
 
 struct ParsingTask
@@ -172,6 +173,16 @@ struct Symbol
 };
 
 
+struct CompilerOptions
+{
+    AssemblyTarget
+    assemblyTarget;
+
+    ObjectFileTarget
+    objectFileTarget;
+};
+
+
 // Note: there are no checking in CLion, due to forward declaration of class Compiler in Parser.h
 class Compiler
 {
@@ -179,8 +190,7 @@ public:
 
     Compiler(
         FileStreamReader& fileReader,
-        AssemblyTarget assemblyTarget,
-        ObjectFileTarget objectFileTarget);
+        CompilerOptions options);
 
     void
     startWorkers();
@@ -189,13 +199,13 @@ public:
     endWorkers();
 
     void
-    compileFile(const fs::path& file, const fs::path& output);
-
-    void
-    addFile(const fs::path& file);
+    compileFile(const fs::path& file);
 
     std::map<std::string, ast::SourceFile*>
     files;
+
+    std::queue<output::FunctionRoutine*>
+    getStashIR();
 
     List<uint8_t>&
     getOutput();
@@ -222,6 +232,9 @@ private:
 
     void
     pushBindingWork(const List<ast::Syntax*> statements);
+
+    CompilerOptions
+    _options;
 
     List<ast::Syntax*>
     _syntaxTree;
@@ -346,9 +359,6 @@ private:
 
     Checker*
     _checker;
-
-    AssemblyWriter*
-    _assemblyWriter;
 
     List<output::FunctionRoutine*>
     _output;

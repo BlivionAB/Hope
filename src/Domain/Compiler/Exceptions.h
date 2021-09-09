@@ -136,6 +136,14 @@ struct UnknownLocalStatement : CompilerError
 };
 
 
+struct IntegerOverflowError : CompilerError
+{
+    IntegerOverflowError():
+        CompilerError("Integer is overflowing the max (18446744073709551615)")
+    { }
+};
+
+
 }
 
 

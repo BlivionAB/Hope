@@ -61,6 +61,12 @@ public:
     write(char ch);
 
     void
+    write(int64_t integer);
+
+    void
+    write(uint64_t integer);
+
+    void
     writeAddress64(uint64_t address);
 
     void

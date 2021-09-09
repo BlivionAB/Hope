@@ -33,16 +33,20 @@ MyersDiff::diffLines(List<Utf8String> a, List<Utf8String> b, bool& isDiffing)
         if (current.x == previous.x)
         {
             isDiffing = true;
-            diffs.emplace(EditType::Insert, std::nullopt, std::make_optional<EditLine>({ b[previous.y], previous.y + 1 }));
+            auto s = b[previous.y];
+            diffs.emplace(EditType::Insert, std::nullopt, std::make_optional<EditLine>(s, previous.y + 1 ));
         }
         else if (current.y == previous.y)
         {
             isDiffing = true;
-            diffs.emplace(EditType::Delete, std::make_optional<EditLine>({ a[previous.x], previous.x + 1 }), std::nullopt);
+            auto s = a[previous.x];
+            diffs.emplace(EditType::Delete, std::make_optional<EditLine>(s, previous.x + 1 ), std::nullopt);
         }
         else
         {
-            diffs.emplace(EditType::Equal, std::make_optional<EditLine>({ a[previous.x], previous.x + 1 }), std::make_optional<EditLine>({ b[previous.y], previous.y + 1 }));
+            auto s1 = a[previous.x];
+            auto s2 = b[previous.y];
+            diffs.emplace(EditType::Equal, EditLine(s1, previous.x + 1), EditLine(s2, previous.y + 1));
         }
     });
     return diffs;

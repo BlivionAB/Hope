@@ -11,6 +11,7 @@
 #include "./TextDiff/MyersDiff.h"
 #include "./TextDiff/DiffPrinter.h"
 #include "../../../unittest.h"
+#include "./StashIrPrinter.h"
 
 
 
@@ -190,28 +191,40 @@ protected:
     TestProject
     project;
 
+    StashIRPrinter
+    stashIRPrinter;
+
     testing::AssertionResult
     testProject(TestProjectOptions options)
     {
-        Compiler compiler(*project.fileReader, options.assemblyTarget, options.objectFileTarget);
-        List<uint8_t>& output2 = compiler.getOutput();
+        Compiler compiler(*project.fileReader, {
+            options.assemblyTarget,
+            options.objectFileTarget });
 
         compiler.startWorkers();
-        compiler.addFile(project.getEntryFile());
+        compiler.compileFile(project.getEntryFile());
         compiler.endWorkers();
-        List<uint8_t>& output = compiler.getOutput();
-        switch (options.assemblyTarget)
-        {
-            case AssemblyTarget::x86_64:
-                return checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(
-                    options,
-                    output);
-            case AssemblyTarget::Aarch64:
-                return checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(
-                    options,
-                    output);
-        }
 
+        if (options.assemblyTarget == AssemblyTarget::StashIR)
+        {
+            std::queue<output::FunctionRoutine*> output = compiler.getStashIR();
+            return checkStashIRBaseline(output, options);
+        }
+        else
+        {
+            List<uint8_t>& output = compiler.getOutput();
+            switch (options.assemblyTarget)
+            {
+                case AssemblyTarget::x86_64:
+                    return checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(
+                        options,
+                        output);
+                case AssemblyTarget::Aarch64:
+                    return checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(
+                        options,
+                        output);
+            }
+        }
     }
 
     template<typename TAssemblyParser, typename TAssemblyPrinter, typename TInstruction>
@@ -282,6 +295,13 @@ protected:
         }
         std::cout << path << std::endl;
         fileHandle.close();
+    }
+
+    testing::AssertionResult
+    checkStashIRBaseline(std::queue<output::FunctionRoutine*>& output, const TestProjectOptions& options)
+    {
+        Utf8String baselineOutput = stashIRPrinter.writeFunctionRoutines(output);
+        return checkBaseline(baselineOutput, options.baselineName + ".basm");
     }
 };
 

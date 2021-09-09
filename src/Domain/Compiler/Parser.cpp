@@ -594,12 +594,6 @@ Parser::parseType()
         case Token::USizeKeyword:
             typeAssignment->type = TypeKind::USize;
             break;
-        case Token::LengthOfKeyword:
-            typeAssignment->type = TypeKind::Length;
-            typeAssignment->size = 0;
-            typeAssignment->name = createName();
-            typeAssignment->parameter = parseName();
-            return typeAssignment;
         case Token::StringKeyword:
         case Token::Identifier:
             typeAssignment->type = TypeKind::Custom;
@@ -607,7 +601,6 @@ Parser::parseType()
         default:
             throw UnknownTypeError();
     }
-    typeAssignment->size = 0; // Size is set in the transformer.
     typeAssignment->name = createName();
     while (true)
     {
@@ -765,6 +758,7 @@ Parser::parseExpressionOnToken(Token token)
         case Token::IntegerLiteral:
         {
             IntegerLiteral* integer = createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
+            finishSyntax(integer);
             integer->value = getInteger(integer);
             return integer;
         }
@@ -776,8 +770,6 @@ Parser::parseExpressionOnToken(Token token)
             return parseArrayLiteral();
         case Token::OpenParen:
             return parseTuple();
-        case Token::LengthOfKeyword:
-            return parseLengthOfExpression();
         case Token::Identifier:
             return parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
     }
@@ -1264,15 +1256,6 @@ Parser::seek(const BaseScanner::Location& location)
 }
 
 
-LengthOfExpression*
-Parser::parseLengthOfExpression()
-{
-    LengthOfExpression* expression = createSyntax<LengthOfExpression>(SyntaxKind::LengthOfExpression);
-    expression->reference = parseName();
-    return expression;
-}
-
-
 Utf8String
 Parser::getParameterDisplay(ParameterDeclaration* parameter)
 {
@@ -1448,13 +1431,24 @@ Parser::isBinaryOperator(Token token) const
 unsigned int
 Parser::getInteger(IntegerLiteral* integerLiteral)
 {
-    const char* cursor = integerLiteral->end;
-    unsigned int exponent = 0;
-    unsigned int result;
-    while (cursor != integerLiteral->start)
+    const char* cursor = integerLiteral->end - 1;
+    unsigned int exponent = (cursor - integerLiteral->start) / 8;
+    unsigned int result = 0;
+    unsigned int leftOfResult = UINT64_MAX;
+    while (true)
     {
         unsigned int s = cursor[0] - '0';
-        result += std::pow(s, 10);
+        unsigned int f = s * std::pow(10, exponent);
+        if (f >= leftOfResult)
+        {
+            throw IntegerOverflowError();
+        }
+        result += f;
+        leftOfResult -= f;
+        if (cursor == integerLiteral->start)
+        {
+            break;
+        }
         cursor--;
     }
     return result;

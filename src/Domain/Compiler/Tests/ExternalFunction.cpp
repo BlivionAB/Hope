@@ -73,9 +73,8 @@ TEST_F(CompileFixture, CommonSubExpressionElimination)
         "}");
 
     EXPECT_TRUE(testProject({
-        .baselineName = "macho-x86_64",
-        .assemblyTarget = AssemblyTarget::x86_64,
-        .objectFileTarget = ObjectFileTarget::MachO,
+        .baselineName = "common-subexpression-elimination-x86_64",
+        .assemblyTarget = AssemblyTarget::StashIR,
         .optimizationLevel = OptimizationLevel::_1,
     }));
 }

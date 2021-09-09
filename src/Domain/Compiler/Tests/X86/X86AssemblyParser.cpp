@@ -154,6 +154,14 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             instruction.operand1 = Register::rBP;
             instruction.size = SizeKind::Quad;
             break;
+        case OneByteOpCode::Mov_Ev_Iz:
+        {
+            uint8_t modrmByte = getByte(instruction);
+            instruction.kind = InstructionKind::Mov;
+            instruction.operand1 = createEv(modrmByte, instruction, true);
+            instruction.operand2.emplace<Iz>(getDoubleWord(instruction));
+            break;
+        }
         case OneByteOpCode::Mov_Ev_Gv:
         {
             uint8_t modrmByte = getByte(instruction);

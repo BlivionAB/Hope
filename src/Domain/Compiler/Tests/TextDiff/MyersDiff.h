@@ -108,6 +108,11 @@ struct EditLine
 
     unsigned int
     number;
+
+    EditLine(Utf8StringView content, unsigned int number):
+        content(content),
+        number(number)
+    { }
 };
 
 

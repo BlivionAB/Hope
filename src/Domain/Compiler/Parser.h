@@ -54,7 +54,6 @@ struct ParameterDeclaration;
 struct Expression;
 struct Name;
 struct StatementBlock;
-struct LengthOfExpression;
 struct ArrayLiteral;
 struct AssemblyBody;
 struct Punctuation;
@@ -283,9 +282,6 @@ private:
     getOperatorPrecedence(Token token) const;
 
     bool isBinaryOperator(Token token) const;
-
-    LengthOfExpression*
-    parseLengthOfExpression();
 
     ExternCBlock*
     parseExternCBlock();

@@ -9,7 +9,7 @@
 namespace elet::domain::compiler::instruction::output
 {
     struct FunctionRoutine;
-    struct VariableDeclaration;
+    struct MemoryAllocation;
 }
 
 
@@ -43,7 +43,7 @@ namespace elet::domain::compiler::ast
         Type*
         resolvedType;
 
-        output::VariableDeclaration*
+        output::MemoryAllocation*
         referenceInstruction;
     };
 

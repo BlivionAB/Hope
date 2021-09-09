@@ -13,6 +13,11 @@ namespace elet::domain::compiler::ast
 {
     struct Declaration;
     enum class BinaryOperatorKind;
+
+    namespace type
+    {
+        enum TypeSize : uint64_t;
+    }
 }
 namespace elet::domain::compiler
 {
@@ -26,6 +31,9 @@ struct Routine;
 struct ParameterDeclaration;
 struct ArgumentDeclaration;
 struct String;
+struct ScratchRegister;
+typedef std::variant<int64_t, uint64_t> ImmediateValue;
+typedef std::variant<ScratchRegister*, ImmediateValue> CanonicalExpression;
 using namespace embedded;
 using namespace foundation;
 
@@ -51,7 +59,7 @@ enum class InstructionKind
     Call,
     ArgumentDeclaration,
     ParameterDeclaration,
-    LocalVariableDeclaration,
+    VariableDeclaration,
     TemporaryVariableDeclaration,
 };
 
@@ -239,48 +247,49 @@ struct BlockRoutine : InternalRoutine
 };
 
 
-struct VariableDeclaration : Instruction
+struct MemoryAllocation : Instruction
 {
-    unsigned int
-    index;
-
-    std::size_t
+    ast::type::TypeSize
     size;
 
     std::size_t
     stackOffset;
 
-    VariableDeclaration(InstructionKind kind, unsigned int index, std::size_t size):
-        index(index),
-        size(size),
-        Instruction(kind)
+    MemoryAllocation(InstructionKind kind, ast::type::TypeSize size):
+        Instruction(kind),
+        size(size)
     { }
 };
 
 
-struct ParameterDeclaration : VariableDeclaration
+struct VariableDeclaration : MemoryAllocation
 {
-    ParameterDeclaration(unsigned int index, std::size_t size):
-        VariableDeclaration(InstructionKind::ParameterDeclaration, index, size)
+    CanonicalExpression
+    expression;
+
+    VariableDeclaration(ast::type::TypeSize size):
+        MemoryAllocation(InstructionKind::VariableDeclaration, size)
+    { }
+
+    VariableDeclaration(InstructionKind kind, ast::type::TypeSize size):
+        MemoryAllocation(kind, size)
     { }
 };
 
 
-struct LocalVariableDeclaration : VariableDeclaration
+struct ParameterDeclaration : MemoryAllocation
 {
     unsigned int
     index;
 
-    std::size_t
-    size;
-
-    LocalVariableDeclaration(unsigned int index, std::size_t size):
-        VariableDeclaration(InstructionKind::LocalVariableDeclaration, index, size)
+    ParameterDeclaration(unsigned int index, ast::type::TypeSize size):
+        MemoryAllocation(InstructionKind::ParameterDeclaration, size),
+        index(index)
     { }
 };
 
 
-typedef std::variant<std::size_t, String*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
+typedef std::variant<std::size_t, String*, ParameterDeclaration*, VariableDeclaration*> ArgumentValue;
 
 
 struct ArgumentDeclaration : VariableDeclaration
@@ -288,9 +297,13 @@ struct ArgumentDeclaration : VariableDeclaration
     ArgumentValue
     value;
 
-    ArgumentDeclaration(unsigned int index, std::size_t size, const ArgumentValue& value):
+    unsigned int
+    index;
+
+    ArgumentDeclaration(unsigned int index, ast::type::TypeSize size, const ArgumentValue& value):
         value(value),
-        VariableDeclaration(InstructionKind::ArgumentDeclaration, index, size)
+        index(index),
+        VariableDeclaration(InstructionKind::ArgumentDeclaration, size)
     { }
 };
 
@@ -319,7 +332,7 @@ struct Register : Operand
 
 enum class OperationKind
 {
-    MemoryImmediate,
+    ImmediateToMemory,
 };
 
 
@@ -340,9 +353,6 @@ struct Operation
 };
 
 
-typedef std::variant<uint8_t, uint16_t, uint32_t, uint64_t> ImmediateValue;
-
-
 struct ScratchRegister : Operand
 {
     Operation*
@@ -354,10 +364,10 @@ struct ScratchRegister : Operand
 };
 
 
-typedef std::variant<ScratchRegister*, ImmediateValue> BinaryExpressionCanonicalValue;
+typedef std::variant<ScratchRegister*, ImmediateValue> CanonicalExpression;
 
 
-struct MemoryImmediateOperation : Operation
+struct ImmediateToMemoryOperation : Operation
 {
     ScratchRegister*
     scratchRegister;
@@ -365,8 +375,8 @@ struct MemoryImmediateOperation : Operation
     ImmediateValue
     immediate;
 
-    MemoryImmediateOperation(ScratchRegister* scratchRegister, ImmediateValue immediate, ast::BinaryOperatorKind _operator):
-        Operation(OperationKind::MemoryImmediate, _operator),
+    ImmediateToMemoryOperation(ScratchRegister* scratchRegister, ImmediateValue immediate, ast::BinaryOperatorKind _operator):
+        Operation(OperationKind::ImmediateToMemory, _operator),
         scratchRegister(scratchRegister),
         immediate(immediate)
     {

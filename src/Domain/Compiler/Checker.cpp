@@ -69,17 +69,159 @@ void
 Checker::checkFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration)
 {
     resolveTypeFromFunctionDeclaration(functionDeclaration);
-    for (const ast::Syntax* statement : functionDeclaration->body->statements)
+    for (ast::Syntax* statement : functionDeclaration->body->statements)
     {
         switch (statement->kind)
         {
             case ast::SyntaxKind::CallExpression:
-                checkCallExpression(reinterpret_cast<const ast::CallExpression*>(statement));
+                checkCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
+                break;
+            case ast::SyntaxKind::VariableDeclaration:
+                checkVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement));
                 break;
             default:;
         }
     }
 }
+
+
+void
+Checker::checkVariableDeclaration(ast::VariableDeclaration* variable)
+{
+    if (!variable->type)
+    {
+        variable->resolvedType = inferTypeFromExpression(variable->expression);
+    }
+}
+
+
+ast::Type*
+Checker::inferTypeFromExpression(ast::Expression* expression)
+{
+    switch (expression->kind)
+    {
+        case ast::SyntaxKind::BinaryExpression:
+        {
+            ast::BinaryExpression* binaryExpression = reinterpret_cast<ast::BinaryExpression*>(expression);
+            ast::Type* leftType = inferTypeFromExpression(binaryExpression->left);
+            ast::Type* rightType = inferTypeFromExpression(binaryExpression->right);
+            ast::Type* commonType = getCommonRealType(leftType, rightType);
+            binaryExpression->resolvedType = commonType;
+            return commonType;
+        }
+        case ast::SyntaxKind::IntegerLiteral:
+        {
+            ast::IntegerLiteral* integerLiteral = reinterpret_cast<ast::IntegerLiteral*>(expression);
+            ast::Type* type = getTypeFromIntegerLiteral(integerLiteral);
+            integerLiteral->resolvedType = type;
+            return type;
+        }
+    }
+}
+
+
+ast::Type*
+Checker::getTypeFromIntegerLiteral(ast::IntegerLiteral* integerLiteral)
+{
+    if (integerLiteral->value <= ast::TypeSizeBounds::Int64Max)
+    {
+        return new ast::Type(ast::TypeKind::Int64);
+    }
+    throw std::runtime_error("Cannot convert integer value.");
+}
+
+
+ast::Type*
+Checker::getCommonRealType(ast::Type* type1, ast::Type* type2)
+{
+    // See ImplicitIntegerConversion.md
+    if (type1->kind == type2->kind)
+    {
+        return type1;
+    }
+    ast::Signedness sign1 = type1->sign();
+    ast::Signedness sign2 = type2->sign();
+    if (sign1 == sign2)
+    {
+        return getMaxType(type1, type2);
+    }
+    ast::Type* signedType;
+    ast::Type* unsignedType;
+    if (sign1 == ast::Signedness::Signed)
+    {
+        signedType = type1;
+        unsignedType = type2;
+    }
+    else
+    {
+        signedType = type2;
+        unsignedType = type1;
+    }
+    if (getMaxTypeDomain(signedType) >= getMaxTypeDomain(unsignedType)/* always true: && getMinTypeDomain(signedType) <= 0 */)
+    {
+        return signedType;
+    }
+    return getUnsignedCounterPart(signedType);
+}
+
+
+ast::Type*
+Checker::getUnsignedCounterPart(ast::Type* signedType)
+{
+    switch (signedType->kind)
+    {
+        case ast::TypeKind::Int8:
+            return new ast::Type(ast::TypeKind::UInt8);
+        case ast::TypeKind::Int16:
+            return new ast::Type(ast::TypeKind::UInt16);
+        case ast::TypeKind::Int32:
+            return new ast::Type(ast::TypeKind::UInt32);
+        case ast::TypeKind::Int64:
+            return new ast::Type(ast::TypeKind::UInt64);
+        default:
+            throw std::runtime_error("Unknown signed type to fetch unsigned counter part.");
+    }
+}
+
+
+uint64_t
+Checker::getMaxTypeDomain(ast::Type* type)
+{
+    switch (type->kind)
+    {
+        case ast::TypeKind::UInt8:
+            return ast::TypeSizeBounds::UInt8Max;
+        case ast::TypeKind::UInt16:
+            return ast::TypeSizeBounds::UInt16Max;
+        case ast::TypeKind::UInt32:
+            return ast::TypeSizeBounds::UInt32Max;
+        case ast::TypeKind::UInt64:
+            return ast::TypeSizeBounds::UInt64Max;
+        default:
+            throw std::runtime_error("Cannot get max domain of type");
+    }
+}
+
+
+ast::Type*
+Checker::getMaxType(ast::Type* type1, ast::Type* type2)
+{
+    int rank1 = getConversionRanking(type1);
+    int rank2 = getConversionRanking(type2);
+    if (rank1 >= rank2)
+    {
+        return type1;
+    }
+    return type2;
+}
+
+
+unsigned int
+Checker::getConversionRanking(ast::Type* type)
+{
+    return static_cast<unsigned int>(type->kind);
+}
+
 
 void
 Checker::checkCallExpression(const ast::CallExpression* callExpression)
@@ -171,16 +313,12 @@ Checker::resolveTypeFromFunctionDeclaration(ast::FunctionDeclaration* functionDe
     }
     auto signature = new ast::type::Signature();
     signature->name = functionDeclaration->name->name;
-    signature->type = new ast::type::Type();
-    signature->type->kind = functionDeclaration->type->type;
-    signature->type->pointers = functionDeclaration->type->pointers.size();
+    signature->type = new ast::type::Type(functionDeclaration->type->type, functionDeclaration->type->pointers.size());
     for (const auto& p : functionDeclaration->parameterList->parameters)
     {
         const auto param = new ast::type::Parameter();
         param->name = p->name->name;
-        p->resolvedType = param->type = new ast::type::Type();
-        param->type->kind = p->type->type;
-        param->type->pointers = p->type->pointers.size();
+        p->resolvedType = param->type = new ast::type::Type(p->type->type, p->type->pointers.size());
         signature->parameters.add(param);
     }
     functionDeclaration->signature = signature;

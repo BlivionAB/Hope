@@ -54,12 +54,11 @@ Binder::bindDomainDeclaration(ast::DomainDeclaration* domain)
         {
             startDomainDeclaration = domain;
             static auto consoleAppInterface = new ast::type::Interface();
-            static auto onProcessStart = new ast::type::Signature();
-            onProcessStart->isStartFunction = true;
-            onProcessStart->name = "OnProcessStart";
-            onProcessStart->type = new ast::type::Type();
-            onProcessStart->type->kind = ast::type::TypeKind::Void;
-            consoleAppInterface->signatures.add(onProcessStart);
+            static auto onApplicationStart = new ast::type::Signature();
+            onApplicationStart->isStartFunction = true;
+            onApplicationStart->name = "OnApplicationStart";
+            onApplicationStart->type = new ast::type::Type(ast::type::TypeKind::Void);
+            consoleAppInterface->signatures.add(onApplicationStart);
             domain->implements = consoleAppInterface;
         }
     }

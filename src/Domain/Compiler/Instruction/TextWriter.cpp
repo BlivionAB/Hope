@@ -100,10 +100,12 @@ TextWriter::writeLine(const Utf8StringView &text)
 }
 
 
-void TextWriter::newline()
+void
+TextWriter::newline()
 {
     _output += "\n";
     _column = 0;
+    writeIndent();
 }
 
 
@@ -286,6 +288,49 @@ TextWriter::writeCString(const char* text)
 {
     _output += text;
     _column += std::strlen(text);
+}
+
+
+
+void
+TextWriter::write(int64_t integer)
+{
+    int exp = 64;
+    int rest = integer;
+    bool hasSeenNonZeroInt = false;
+    while (exp >= 0)
+    {
+        int base = pow(10, exp);
+        int result = rest / base;
+        if (result != 0 || hasSeenNonZeroInt)
+        {
+            write(std::to_string(result).c_str());
+            hasSeenNonZeroInt = true;
+        }
+        rest = rest % base;
+        --exp;
+    }
+}
+
+
+void
+TextWriter::write(uint64_t integer)
+{
+    int exp = 64;
+    int rest = integer;
+    bool hasSeenNonZeroInt = false;
+    while (exp >= 0)
+    {
+        int base = pow(10, exp);
+        int result = rest / base;
+        if (result != 0 || hasSeenNonZeroInt)
+        {
+            write(std::to_string(result).c_str());
+            hasSeenNonZeroInt = true;
+        }
+        rest = rest % base;
+        --exp;
+    }
 }
 
 }

@@ -16,29 +16,20 @@ namespace elet::domain::compiler
 {
 
 
-Compiler::Compiler(FileStreamReader& fileStreamReader, AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
+Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions options):
     _fileStreamReader(fileStreamReader),
-    _assemblyTarget(assemblyTarget),
-    _objectFileTarget(objectFileTarget),
+    _options(options),
     _parser(new ast::Parser(this)),
-    _assemblyWriter(new AssemblyWriter(assemblyTarget)),
     _binder(new Binder()),
     _checker(new Checker(_binder))
 {
     _transformer = new Transformer(_dataMutex);
-    _objectFileWriter = new MachoFileWriter(assemblyTarget);
-}
-
-void
-Compiler::compileFile(const fs::path& file, const fs::path& output)
-{
-    _outputFile = &output;
-    addFile(file);
+    _objectFileWriter = new MachoFileWriter(options.assemblyTarget);
 }
 
 
 void
-Compiler::addFile(const fs::path& file)
+Compiler::compileFile(const fs::path& file)
 {
     std::string fileString = file.string();
     auto result = files.find(fileString);
@@ -145,6 +136,13 @@ Compiler::endWorkers()
 //    std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
 //    std::cout << "join workers" << std::endl;
 
+}
+
+
+std::queue<output::FunctionRoutine*>
+Compiler::getStashIR()
+{
+    return _routines;
 }
 
 
@@ -369,6 +367,10 @@ Compiler::acceptTransformationWork()
 void
 Compiler::acceptAssemblyWritingWork()
 {
+    if (_options.assemblyTarget == AssemblyTarget::StashIR)
+    {
+        return;
+    }
     while (_compilationStage == CompilationStage::Writing)
     {
         if (_routines.empty())

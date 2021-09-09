@@ -58,7 +58,7 @@ private:
     writeFunctionParameters(const FunctionRoutine* routine, uint64_t& stackOffset);
 
     uint64_t
-    writeFunctionInstructions(FunctionRoutine* routine);
+    writeFunctionInstructions(FunctionRoutine* routine, uint64_t& stackOffset);
 
     uint64_t
     writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
@@ -89,6 +89,9 @@ private:
 
     void
     relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
+
+    void
+    writeVariableDeclaration(VariableDeclaration* variableDeclaration, uint64_t& size, uint64_t& stackOffset);
 };
 
 

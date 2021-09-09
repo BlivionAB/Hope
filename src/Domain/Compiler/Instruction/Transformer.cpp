@@ -90,6 +90,9 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
             case ast::SyntaxKind::CallExpression:
                 transformCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
+            case ast::SyntaxKind::ReturnStatement:
+                transformReturnStatement(reinterpret_cast<ast::ReturnStatement*>(statement));
+                break;
             default:
                 throw UnknownLocalStatement();
         }
@@ -99,13 +102,22 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
 
 
 void
-Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable)
+Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement)
 {
-    transformExpression(variable->expression);
+
 }
 
 
-BinaryExpressionCanonicalValue
+void
+Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable)
+{
+    output::VariableDeclaration* localVariable = new output::VariableDeclaration(variable->resolvedType->size());
+    localVariable->expression = transformExpression(variable->expression);
+    addInstruction(localVariable);
+}
+
+
+CanonicalExpression
 Transformer::transformExpression(ast::Expression* expression)
 {
     switch (expression->kind)
@@ -138,7 +150,7 @@ Transformer::transformExpression(ast::Expression* expression)
 //            {
 //                return transformMemoryBinaryExpression(binaryExpression);
 //            }
-            return transformImmediateToMemoryExpression(transformExpression(binaryExpression->left), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)), binaryExpression->binaryOperatorKind);
+//            return transformImmediateToMemoryExpression(transformExpression(binaryExpression->left), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)), binaryExpression->binaryOperatorKind);
         }
         case ast::SyntaxKind::IntegerLiteral:
             return reinterpret_cast<ast::IntegerLiteral*>(expression)->value;
@@ -159,17 +171,9 @@ output::ScratchRegister*
 Transformer::transformImmediateToMemoryExpression(ScratchRegister* left, ImmediateValue right, ast::BinaryOperatorKind _operator)
 {
     auto scratchRegister = new ScratchRegister();
-    scratchRegister->operation = new MemoryImmediateOperation(left, right, _operator);
+    scratchRegister->operation = new ImmediateToMemoryOperation(left, right, _operator);
     return scratchRegister;
 }
-
-
-bool
-Transformer::isMemoryExpression(ast::Expression* expression)
-{
-    return expression->kind == ast::SyntaxKind::BinaryExpression;
-}
-
 
 
 ImmediateValue
@@ -178,7 +182,34 @@ Transformer::transformImmediateBinaryExpression(ast::BinaryExpression* binaryExp
     switch (binaryExpression->binaryOperatorKind)
     {
         case ast::BinaryOperatorKind::Plus:
-            return reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->left)->value + reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)->value;
+        {
+            ast::IntegerLiteral* left = reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->left);
+            ast::IntegerLiteral* right = reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right);
+            if (left->resolvedType->sign() == ast::type::Signedness::Signed)
+            {
+                switch (left->resolvedType->size())
+                {
+                    case ast::TypeSize::_64:
+                        return left->value + right->value;
+//                    case ast::TypeSize::_32:
+//                        return static_cast<int32_t>(left->value) + static_cast<int32_t>(right->value);
+                    default:
+                        throw std::runtime_error("Should not contain lower than 32bit ints.");
+                }
+            }
+            else
+            {
+                switch (left->resolvedType->size())
+                {
+                    case ast::TypeSize::_64:
+                        return static_cast<uint64_t>(left->value) + static_cast<uint64_t>(right->value);
+//                    case ast::TypeSize::_32:
+//                        return static_cast<uint32_t>(left->value) + static_cast<uint32_t>(right->value);
+                    default:
+                        throw std::runtime_error("Should not contain lower than 32bit ints.");
+                }
+            }
+        }
         default:
             throw std::runtime_error("Not implemented binary expression operator for immediate value.");
     }
@@ -230,8 +261,8 @@ Transformer::transformArgumentPropertyExpression(ast::PropertyExpression* proper
     {
         case InstructionKind::ParameterDeclaration:
             return new ArgumentDeclaration(_currentArgumentIndex++, referenceInstruction->size, reinterpret_cast<ParameterDeclaration*>(referenceInstruction));
-        case InstructionKind::LocalVariableDeclaration:
-            return new ArgumentDeclaration(_currentArgumentIndex++, referenceInstruction->size, reinterpret_cast<LocalVariableDeclaration*>(referenceInstruction));
+        case InstructionKind::VariableDeclaration:
+            return new ArgumentDeclaration(_currentArgumentIndex++, referenceInstruction->size, reinterpret_cast<VariableDeclaration*>(referenceInstruction));
         default:;
     }
 }
@@ -241,33 +272,7 @@ ArgumentDeclaration*
 Transformer::transformArgumentStringLiteral(ast::StringLiteral* stringLiteral)
 {
     output::String* cstring = addStaticConstantString(stringLiteral);
-    return new ArgumentDeclaration(_currentArgumentIndex++, _pointerSize, cstring);
-}
-
-
-std::size_t
-Transformer::resolvePrimitiveTypeSize(ast::TypeAssignment* type)
-{
-    if (type->size == 0)
-    {
-        if (!type->pointers.isEmpty())
-        {
-            return _pointerSize;
-        }
-        switch (type->type)
-        {
-            case ast::TypeKind::Int:
-            case ast::TypeKind::UInt:
-            case ast::TypeKind::UInt64:
-                return TYPE_SIZE_64;
-            case ast::TypeKind::UInt8:
-            case ast::TypeKind::Char:
-                return TYPE_SIZE_8;
-            default:
-                throw UnknownPrimitiveType();
-        }
-    }
-    return type->size;
+    return new ArgumentDeclaration(_currentArgumentIndex++, ast::type::TypeSize::Pointer, cstring);
 }
 
 
@@ -293,7 +298,7 @@ Transformer::segmentParameterDeclaration(ast::ParameterDeclaration* parameter)
     List<output::ParameterDeclaration*> parameterList;
     if (parameter->resolvedType->pointers > 0)
     {
-        output::ParameterDeclaration* parameterDeclaration = new output::ParameterDeclaration(0, TYPE_SIZE_64);
+        output::ParameterDeclaration* parameterDeclaration = new output::ParameterDeclaration(0, ast::type::TypeSize::_64);
         parameter->referenceInstruction = parameterDeclaration;
         parameterList.add(parameterDeclaration);
     }

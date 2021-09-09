@@ -26,6 +26,11 @@ namespace elet::domain::compiler
         struct StringLiteral;
         struct PropertyExpression;
         struct ArgumentDeclaration;
+
+        namespace type
+        {
+            enum TypeSize : uint64_t;
+        }
     }
 }
 
@@ -38,14 +43,17 @@ namespace output
     struct Parameter;
     struct Operand;
     struct FunctionReference;
+    struct VariableDeclaration;
     struct ParameterDeclaration;
     struct String;
     struct Register;
-    struct LocalVariableDeclaration;
+    struct VariableDeclaration;
     struct ArgumentDeclaration;
-    typedef std::variant<std::size_t, String*, ParameterDeclaration*, LocalVariableDeclaration*> ArgumentValue;
+    typedef std::variant<std::size_t, String*, ParameterDeclaration*, VariableDeclaration*> ArgumentValue;
     struct InternalRoutine;
     struct FunctionRoutine;
+    typedef std::variant<int64_t, uint64_t> ImmediateValue;
+    typedef std::variant<ScratchRegister*, ImmediateValue> CanonicalExpression;
 }
 using namespace compiler;
 
@@ -124,9 +132,6 @@ private:
     List<output::Instruction*>*
     transformLocalStatements(List<ast::Syntax*>& statements);
 
-    std::size_t
-    resolvePrimitiveTypeSize(ast::TypeAssignment* type) ;
-
     static
     Utf8StringView
     getSymbolReference(ast::NamedExpression *expression);
@@ -173,23 +178,23 @@ private:
     void
     addInstruction(output::Instruction* instruction);
 
-    BinaryExpressionCanonicalValue
+    output::CanonicalExpression
     transformExpression(ast::Expression* expression);
 
     bool
     isImmediateExpression(ast::Expression* expression);
 
-    ImmediateValue
+    output::ImmediateValue
     transformImmediateBinaryExpression(ast::BinaryExpression* binaryExpression);
-
-    bool
-    isMemoryExpression(ast::Expression* expression);
 
     output::ScratchRegister*
     transformImmediateToMemoryExpression(output::ScratchRegister* left, output::ImmediateValue right, ast::BinaryOperatorKind _operator);
 
     output::ImmediateValue
     transformToUint(ast::IntegerLiteral* expression);
+
+    void
+    transformReturnStatement(ast::ReturnStatement* returnStatement);
 };
 
 

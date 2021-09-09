@@ -90,7 +90,7 @@ X86_64Writer::writeFunction(FunctionRoutine* routine)
     uint64_t routineSize = 0;
     routineSize += writeFunctionPrologue(stackSize);
     routineSize += writeFunctionParameters(routine, stackOffset);
-    routineSize += writeFunctionInstructions(routine);
+    routineSize += writeFunctionInstructions(routine, stackOffset);
     if (routine->isStartFunction)
     {
         bw->writeByte(OneByteOpCode::Xor_Ev_Gv);
@@ -123,9 +123,9 @@ X86_64Writer::writeFunctionRelocationAddresses(FunctionRoutine* routine)
 
 
 uint64_t
-X86_64Writer::writeFunctionInstructions(FunctionRoutine* routine)
+X86_64Writer::writeFunctionInstructions(FunctionRoutine* routine, uint64_t& stackOffset)
 {
-    size_t size = 0;
+    uint64_t size = 0;
     for (const auto& instruction : routine->instructions)
     {
         switch (instruction->kind)
@@ -133,9 +133,36 @@ X86_64Writer::writeFunctionInstructions(FunctionRoutine* routine)
             case InstructionKind::Call:
                 size += writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction), routine);
                 break;
+            case InstructionKind::VariableDeclaration:
+                writeVariableDeclaration(reinterpret_cast<VariableDeclaration*>(instruction), stackOffset, size);
+                break;
+            default:
+                throw std::runtime_error("Unknown local instruction.");
         }
     }
     return size;
+}
+
+
+
+void
+X86_64Writer::writeVariableDeclaration(VariableDeclaration* variableDeclaration, uint64_t& stackOffset, uint64_t& size)
+{
+    if (std::holds_alternative<ImmediateValue>(variableDeclaration->expression))
+    {
+        ImmediateValue imm = std::get<ImmediateValue>(variableDeclaration->expression);
+        bw->writeByte(OneByteOpCode::Mov_Ev_Iz);
+        bw->writeByte(ModBits::Mod1 | RmBits::Rm5);
+        bw->writeByte(-stackOffset);
+        bw->writeDoubleWord(std::get<int64_t>(imm));
+        stackOffset += 4;
+        size += 7;
+        variableDeclaration->stackOffset = stackOffset;
+    }
+    else
+    {
+        throw std::runtime_error("Not implemented variable declaration.");
+    }
 }
 
 
@@ -212,11 +239,6 @@ X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
         if (auto parameter = std::get_if<ParameterDeclaration*>(&argument->value))
         {
             writeMoveFromOffset(reg, (*parameter)->stackOffset);
-            size += 4;
-        }
-        else if (auto localVariable = std::get_if<LocalVariableDeclaration*>(&argument->value))
-        {
-            writeMoveFromOffset(reg, (*localVariable)->stackOffset);
             size += 4;
         }
         else if (auto string = std::get_if<String*>(&argument->value))
