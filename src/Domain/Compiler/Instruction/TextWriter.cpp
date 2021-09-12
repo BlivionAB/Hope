@@ -291,24 +291,32 @@ TextWriter::writeCString(const char* text)
 }
 
 
+void
+TextWriter::write(int32_t integer)
+{
+    if (integer < 0)
+    {
+        write("-");
+        writeFixedIntegerSize(static_cast<uint64_t>(integer * -1), 32);
+    }
+    else
+    {
+        writeFixedIntegerSize(static_cast<uint64_t>(integer), 32);
+    }
+}
+
 
 void
 TextWriter::write(int64_t integer)
 {
-    int exp = 64;
-    int rest = integer;
-    bool hasSeenNonZeroInt = false;
-    while (exp >= 0)
+    if (integer < 0)
     {
-        int base = pow(10, exp);
-        int result = rest / base;
-        if (result != 0 || hasSeenNonZeroInt)
-        {
-            write(std::to_string(result).c_str());
-            hasSeenNonZeroInt = true;
-        }
-        rest = rest % base;
-        --exp;
+        write("-");
+        writeFixedIntegerSize(static_cast<uint64_t>(integer * -1), 64);
+    }
+    else
+    {
+        writeFixedIntegerSize(static_cast<uint64_t>(integer), 64);
     }
 }
 
@@ -316,12 +324,18 @@ TextWriter::write(int64_t integer)
 void
 TextWriter::write(uint64_t integer)
 {
-    int exp = 64;
+    writeFixedIntegerSize(integer, 64);
+}
+
+
+void
+TextWriter::writeFixedIntegerSize(uint64_t integer, int bitSize)
+{
     int rest = integer;
     bool hasSeenNonZeroInt = false;
-    while (exp >= 0)
+    while (bitSize >= 0)
     {
-        int base = pow(10, exp);
+        int base = pow(10, bitSize);
         int result = rest / base;
         if (result != 0 || hasSeenNonZeroInt)
         {
@@ -329,7 +343,11 @@ TextWriter::write(uint64_t integer)
             hasSeenNonZeroInt = true;
         }
         rest = rest % base;
-        --exp;
+        --bitSize;
+    }
+    if (!hasSeenNonZeroInt)
+    {
+        write("0");
     }
 }
 

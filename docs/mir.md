@@ -110,7 +110,7 @@ using Common::Console::{ WriteLine };
 
 fn OnProcessStart(): void
 {
-    var a: number = 0;
+    var a: index = 0;
     if (CreateRandomNumber() > 0.5) 
     {
         if (CreateRandomNumber() > 0.5) 
@@ -132,7 +132,7 @@ fn OnProcessStart(): void
 
 1:st step:
 ```
-var a: number = 0;
+var a: index = 0;
 if (CreateRandomNumber() > 0.5) 
 {
 }
@@ -143,7 +143,7 @@ WriteLine(a);
 ```
 The block inside if and else statements are "walked back" to parent block's next block.
 ```
-var a: number = 0;
+var a: index = 0;
 if (CreateRandomNumber() > 0.5) 
 {
     if (CreateRandomNumber() > 0.5) 
@@ -162,7 +162,7 @@ WriteLine(a);
 
 The block inside if and else statements are "walked back" to parent block's next block.
 ```
-var a: number = 0;
+var a: index = 0;
 if (CreateRandomNumber() > 0.5) 
 {
     if (CreateRandomNumber() > 0.5) 

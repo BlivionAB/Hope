@@ -5,13 +5,13 @@
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
 #include <Domain/Compiler/Syntax/Syntax.h>
-#include "Domain/Compiler/Instruction/Syntax.h"
 #include <variant>
 
 
 namespace elet::domain::compiler::ast
 {
     struct Declaration;
+    struct VariableDeclaration;
     enum class BinaryOperatorKind;
 
     namespace type
@@ -19,539 +19,634 @@ namespace elet::domain::compiler::ast
         enum TypeSize : uint64_t;
     }
 }
+
+
 namespace elet::domain::compiler
 {
     struct Symbol;
 }
 
+
 namespace elet::domain::compiler::instruction::output
 {
-
-struct Routine;
-struct ParameterDeclaration;
-struct ArgumentDeclaration;
-struct String;
-struct ScratchRegister;
-typedef std::variant<int64_t, uint64_t> ImmediateValue;
-typedef std::variant<ScratchRegister*, ImmediateValue> CanonicalExpression;
-using namespace embedded;
-using namespace foundation;
-
-
-enum class OperandKind : std::uint64_t
-{
-    Unknown,
-    Int32,
-    Int64,
-    Register,
-    ScratchRegister,
-    Argument,
-    StringReference,
-    FunctionReference,
-    AssemblyReference,
-    VariableReference,
-    Label,
-};
-
-
-enum class InstructionKind
-{
-    Call,
-    ArgumentDeclaration,
-    ParameterDeclaration,
-    VariableDeclaration,
-    TemporaryVariableDeclaration,
-};
-
-
-struct Instruction
-{
-    InstructionKind
-    kind;
-
-    Instruction(InstructionKind kind):
-        kind(kind)
-    { }
-};
-
-
-struct CallInstruction : Instruction
-{
-    List<ArgumentDeclaration*>
-    arguments;
-
-    Routine*
-    routine;
-
-    std::uint64_t
-    offset;
-
-    CallInstruction():
-        Instruction(InstructionKind::Call)
-    { }
-};
-
-
-struct Condition
-{
-
-};
-
-
-struct Jump
-{
-    Condition*
-    condition;
-
-    Routine*
-    routine;
-};
-
-
-enum class RoutineKind
-{
-    Function,
-    Block,
-    External,
-};
-
-
-struct Routine
-{
-    RoutineKind
-    kind;
-
-    uint64_t
-    offset = 0;
-
-    uint32_t
-    symbolTableIndex;
-
-    uint64_t
-    stringTableIndexAddress;
-
-    Routine(RoutineKind kind):
-        kind(kind)
-    { }
-};
-
-
-struct InternalRoutine : Routine
-{
-    List<Instruction*>
-    instructions;
-
-    List<Jump*>
-    jumps;
-
-    InternalRoutine*
-    next;
-
-    InternalRoutine(RoutineKind kind):
-        Routine(kind)
-    { }
-};
-
-
-struct ExternalRoutine : Routine
-{
-    List<size_t>
-    relocationAddresses;
-
-    Utf8StringView
-    name;
-
-    uint16_t
-    libraryOrdinal;
-
-    uint64_t
-    stubAddress;
-
-    uint64_t
-    stubHelperAddress;
-
-    ExternalRoutine(Utf8StringView& name):
-        name(name),
-        Routine(RoutineKind::External)
-    { }
-};
-
-
-struct RelocationPlaceholder
-{
-    uint32_t
-    offset;
-
-    // aarch64: adrp instruction offset. It's used to calculate mod 4k page size.
-    uint32_t
-    value1;
-
-    // aarch64: string offset. Since, relocation is required after the text segment is placed in the object file.
-    uint32_t
-    value2;
-
-    RelocationPlaceholder(uint32_t offset, uint32_t value1):
-        offset(offset),
-        value1(value1),
-        value2(0)
-    { }
-
-    RelocationPlaceholder(uint32_t offset, uint32_t value1, uint32_t value2):
-        offset(offset),
-        value1(value1),
-        value2(value2)
-    { }
-};
-
-
-struct FunctionRoutine : InternalRoutine
-{
-    Utf8StringView
-    name;
-
-    List<ParameterDeclaration*>
-    parameters;
-
-    bool
-    hasWrittenOutput = false;
-
-    List<FunctionRoutine*>
-    subRoutines;
-
-    List<RelocationPlaceholder>
-    relocationAddresses;
-
-    bool
-    isStartFunction;
-
-    uint64_t
-    stackSize;
-
-    FunctionRoutine(const Utf8StringView& name):
-        name(name),
-        InternalRoutine(RoutineKind::Function)
-    { }
-};
-
-
-static int blockRoutineIndex = 0;
-struct BlockRoutine : InternalRoutine
-{
-    std::size_t
-    index;
-
-    BlockRoutine():
-        index(blockRoutineIndex++),
-        InternalRoutine(RoutineKind::Block)
-    { }
-};
-
-
-struct MemoryAllocation : Instruction
-{
-    ast::type::TypeSize
-    size;
-
-    std::size_t
-    stackOffset;
-
-    MemoryAllocation(InstructionKind kind, ast::type::TypeSize size):
-        Instruction(kind),
-        size(size)
-    { }
-};
-
-
-struct VariableDeclaration : MemoryAllocation
-{
-    CanonicalExpression
-    expression;
-
-    VariableDeclaration(ast::type::TypeSize size):
-        MemoryAllocation(InstructionKind::VariableDeclaration, size)
-    { }
-
-    VariableDeclaration(InstructionKind kind, ast::type::TypeSize size):
-        MemoryAllocation(kind, size)
-    { }
-};
-
-
-struct ParameterDeclaration : MemoryAllocation
-{
-    unsigned int
-    index;
-
-    ParameterDeclaration(unsigned int index, ast::type::TypeSize size):
-        MemoryAllocation(InstructionKind::ParameterDeclaration, size),
-        index(index)
-    { }
-};
-
-
-typedef std::variant<std::size_t, String*, ParameterDeclaration*, VariableDeclaration*> ArgumentValue;
-
-
-struct ArgumentDeclaration : VariableDeclaration
-{
-    ArgumentValue
-    value;
-
-    unsigned int
-    index;
-
-    ArgumentDeclaration(unsigned int index, ast::type::TypeSize size, const ArgumentValue& value):
-        value(value),
-        index(index),
-        VariableDeclaration(InstructionKind::ArgumentDeclaration, size)
-    { }
-};
-
-
-struct Operand
-{
-    OperandKind
-    kind;
-
-    Operand(OperandKind kind):
-        kind(kind)
-    { }
-};
-
-
-struct Register : Operand
-{
-    std::uint8_t
-    index;
-
-    Register(unsigned int index):
-        index(index),
-        Operand(OperandKind::Register)
-    { }
-};
-
-enum class OperationKind
-{
-    ImmediateToMemory,
-};
-
-
-struct Operation
-{
-    OperationKind
-    kind;
-
-    ast::BinaryOperatorKind
-    _operator;
-
-    Operation(OperationKind kind, ast::BinaryOperatorKind _operator):
-        _operator(_operator),
-        kind(kind)
+    struct Routine;
+    struct ParameterDeclaration;
+    struct ArgumentDeclaration;
+    struct String;
+    enum class OperandRegister;
+    typedef std::variant<int32_t, uint32_t, int64_t, uint64_t> ImmediateValue;
+    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
+    using namespace foundation;
+
+
+    enum class OperandKind : std::uint64_t
+    {
+        Unknown,
+        Int32,
+        Int64,
+        Register,
+        ScratchRegister,
+        Argument,
+        StringReference,
+        FunctionReference,
+        AssemblyReference,
+        VariableReference,
+        Label,
+    };
+
+
+    enum class OperandRegister
+    {
+        Return,
+        Left,
+        Right,
+    };
+
+
+    enum class InstructionKind
+    {
+        Load,
+        Store,
+        AddRegisterToRegister,
+        Call,
+        MoveImmediate,
+        MoveRegister,
+        ArgumentDeclaration,
+        ParameterDeclaration,
+        VariableDeclaration,
+        Return,
+        TemporaryVariableDeclaration,
+    };
+
+
+    struct Instruction
+    {
+        InstructionKind
+        kind;
+
+        Instruction(InstructionKind kind):
+            kind(kind)
+        { }
+    };
+
+
+    struct StoreInstruction : Instruction
     {
 
-    }
-};
+    };
+
+    struct LoadInstruction : Instruction
+    {
+        uint64_t
+        stackOffset;
+
+        OperandRegister
+        destination;
+
+        LoadInstruction(OperandRegister destination, uint64_t stackOffset):
+            destination(destination),
+            stackOffset(stackOffset),
+            Instruction(InstructionKind::Load)
+        { }
+    };
 
 
-struct ScratchRegister : Operand
-{
-    Operation*
-    operation;
+    struct MoveImmediateInstruction : Instruction
+    {
+        OperandRegister
+        destination;
 
-    ScratchRegister():
-        Operand(OperandKind::ScratchRegister)
-    { }
-};
+        ImmediateValue
+        immediateValue;
+
+        MoveImmediateInstruction(OperandRegister destination, ImmediateValue immediateValue):
+            Instruction(InstructionKind::MoveImmediate),
+            destination(destination),
+            immediateValue(immediateValue)
+        { }
+    };
+
+    struct MoveRegisterInstruction : Instruction
+    {
+        OperandRegister
+        destination;
+
+        OperandRegister
+        target;
+
+        MoveRegisterInstruction(OperandRegister destination, OperandRegister target):
+            Instruction(InstructionKind::MoveRegister),
+            destination(destination),
+            target(target)
+        { }
+    };
+
+    struct CallInstruction : Instruction
+    {
+        List<ArgumentDeclaration*>
+        arguments;
+
+        Routine*
+        routine;
+
+        std::uint64_t
+        offset;
+
+        CallInstruction():
+            Instruction(InstructionKind::Call)
+        { }
+    };
 
 
-typedef std::variant<ScratchRegister*, ImmediateValue> CanonicalExpression;
-
-
-struct ImmediateToMemoryOperation : Operation
-{
-    ScratchRegister*
-    scratchRegister;
-
-    ImmediateValue
-    immediate;
-
-    ImmediateToMemoryOperation(ScratchRegister* scratchRegister, ImmediateValue immediate, ast::BinaryOperatorKind _operator):
-        Operation(OperationKind::ImmediateToMemory, _operator),
-        scratchRegister(scratchRegister),
-        immediate(immediate)
+    struct Condition
     {
 
-    }
-};
+    };
 
 
-enum class DataReferenceKind
-{
-    String,
-};
+    struct Jump
+    {
+        Condition*
+        condition;
+
+        Routine*
+        routine;
+    };
 
 
-struct DataReference : Operand
-{
-    Utf8StringView*
-    data;
-
-    DataReference(OperandKind kind, Utf8StringView* data):
-        data(data),
-        Operand(kind)
-    { }
-};
+    enum class RoutineKind
+    {
+        Function,
+        Block,
+        External,
+    };
 
 
-struct VariableReference : Operand
-{
-    std::size_t
-    index;
+    struct Routine
+    {
+        RoutineKind
+        kind;
 
-    std::size_t
-    offset;
+        uint64_t
+        offset = 0;
 
-    std::size_t
-    size;
+        uint32_t
+        symbolTableIndex;
 
-    bool
-    isParameter;
+        uint64_t
+        stringTableIndexAddress;
 
-    VariableReference(std::size_t index, std::size_t size, std::size_t offset, bool isParameter):
-        index(index),
-        size(size),
-        offset(offset),
-        isParameter(isParameter),
-        Operand(OperandKind::VariableReference)
-    { }
-};
+        Routine(RoutineKind kind):
+            kind(kind)
+        { }
+    };
 
 
-struct Label : Operand
-{
-    Utf8StringView
-    symbol;
+    struct InternalRoutine : Routine
+    {
+        List<Instruction*>
+        instructions;
 
-    Label(Utf8StringView& symbol):
-        symbol(symbol),
-        Operand(OperandKind::Label)
-    { }
-};
+        List<Jump*>
+        jumps;
 
+        InternalRoutine*
+        next;
 
-struct AssemblyReference : Operand
-{
-    Utf8StringView
-    name;
-
-    ast::Declaration*
-    reference;
-
-    AssemblyReference(Utf8StringView name):
-        name(name),
-        Operand(OperandKind::AssemblyReference)
-    { }
-};
+        InternalRoutine(RoutineKind kind):
+            Routine(kind)
+        { }
+    };
 
 
-struct Int32 : Operand
-{
-    std::uint32_t
-    value;
+    struct ExternalRoutine : Routine
+    {
+        List<size_t>
+        relocationAddresses;
 
-    Int32(std::uint32_t value):
-        value(value),
-        Operand(OperandKind::Int32)
-    { }
-};
+        Utf8StringView
+        name;
 
-enum class RelocationType : std::uint8_t
-{
-    None,
-    CString,
-    Constant
-};
+        uint16_t
+        libraryOrdinal;
 
-struct Int64 : Operand
-{
-    std::uint64_t
-    value;
+        uint64_t
+        stubAddress;
 
-    Int64(std::uint64_t value):
-        value(value),
-        Operand(OperandKind::Int64)
-    { }
-};
+        uint64_t
+        stubHelperAddress;
+
+        ExternalRoutine(Utf8StringView& name):
+            name(name),
+            Routine(RoutineKind::External)
+        { }
+    };
 
 
-struct RelocationOperand : Operand
-{
-    std::uint32_t
-    dataOffset;
+    struct RelocationPlaceholder
+    {
+        uint32_t
+        offset;
 
-    std::uint32_t
-    textOffset;
+        // aarch64: adrp instruction offset. It's used to calculate mod 4k page size.
+        uint32_t
+        value1;
 
-    Symbol*
-    symbol;
+        // aarch64: string offset. Since, relocation is required after the text segment is placed in the object file.
+        uint32_t
+        value2;
 
-    RelocationOperand(OperandKind kind):
-        Operand(kind)
-    { }
-};
+        RelocationPlaceholder(uint32_t offset, uint32_t value1):
+            offset(offset),
+            value1(value1),
+            value2(0)
+        { }
+
+        RelocationPlaceholder(uint32_t offset, uint32_t value1, uint32_t value2):
+            offset(offset),
+            value1(value1),
+            value2(value2)
+        { }
+    };
 
 
-struct Parameter
-{
-    std::size_t
-    size;
+    struct FunctionRoutine : InternalRoutine
+    {
+        Utf8StringView
+        name;
 
-    std::size_t
-    offset;
+        List<ParameterDeclaration*>
+        parameters;
 
-    unsigned int
-    index;
+        bool
+        hasWrittenOutput = false;
 
-    Utf8StringView
-    symbol;
+        List<FunctionRoutine*>
+        subRoutines;
 
-    Utf8StringView
-    typeLabel;
+        List<RelocationPlaceholder>
+        relocationAddresses;
 
-    Parameter(
+        bool
+        isStartFunction;
+
+        uint64_t
+        stackSize;
+
+        FunctionRoutine(const Utf8StringView& name):
+            name(name),
+            InternalRoutine(RoutineKind::Function)
+        { }
+    };
+
+
+    static int blockRoutineIndex = 0;
+    struct BlockRoutine : InternalRoutine
+    {
         std::size_t
-        size,
+        index;
 
-        std::size_t
-        offset,
+        BlockRoutine():
+            index(blockRoutineIndex++),
+            InternalRoutine(RoutineKind::Block)
+        { }
+    };
+
+
+    struct MemoryAllocation : Instruction
+    {
+        ast::type::TypeSize
+        size;
+
+        uint64_t
+        stackOffset;
+
+        MemoryAllocation(InstructionKind kind, ast::type::TypeSize size):
+            Instruction(kind),
+            size(size)
+        { }
+
+        MemoryAllocation(InstructionKind kind, ast::type::TypeSize size, uint64_t& stackOffset):
+            Instruction(kind),
+            size(size),
+            stackOffset(stackOffset)
+        {
+            stackOffset += size / 8;
+        }
+    };
+
+
+    struct VariableDeclaration : MemoryAllocation
+    {
+        CanonicalExpression
+        expression;
+
+        VariableDeclaration(ast::VariableDeclaration* variableDeclaration, uint64_t& stackOffset):
+            MemoryAllocation(InstructionKind::VariableDeclaration, ast::type::TypeSize::_32, stackOffset)
+        {
+            variableDeclaration->outputDeclaration = this;
+        }
+
+        VariableDeclaration(InstructionKind kind, ast::type::TypeSize size):
+            MemoryAllocation(kind, size)
+        { }
+    };
+
+
+    struct ParameterDeclaration : MemoryAllocation
+    {
+        unsigned int
+        index;
+
+        ParameterDeclaration(unsigned int index, ast::type::TypeSize size):
+            MemoryAllocation(InstructionKind::ParameterDeclaration, size),
+            index(index)
+        { }
+    };
+
+
+    typedef std::variant<std::size_t, String*, ParameterDeclaration*, VariableDeclaration*> ArgumentValue;
+
+
+    struct ArgumentDeclaration : VariableDeclaration
+    {
+        ArgumentValue
+        value;
 
         unsigned int
-        index,
+        index;
+
+        ArgumentDeclaration(unsigned int index, ast::type::TypeSize size, const ArgumentValue& value):
+            value(value),
+            index(index),
+            VariableDeclaration(InstructionKind::ArgumentDeclaration, size)
+        { }
+    };
+
+
+    struct Operand
+    {
+        OperandKind
+        kind;
+
+        Operand(OperandKind kind):
+            kind(kind)
+        { }
+    };
+
+
+    struct Register : Operand
+    {
+        std::uint8_t
+        index;
+
+        Register(unsigned int index):
+            index(index),
+            Operand(OperandKind::Register)
+        { }
+    };
+
+    enum class OperationKind
+    {
+        ImmediateToMemory,
+    };
+
+
+    struct Operation
+    {
+        OperationKind
+        kind;
+
+        ast::BinaryOperatorKind
+        _operator;
+
+        Operation(OperationKind kind, ast::BinaryOperatorKind _operator):
+            _operator(_operator),
+            kind(kind)
+        {
+
+        }
+    };
+
+
+    enum class ScratchRegisterIndex
+    {
+        _0,
+        _1,
+    };
+
+
+    struct ScratchRegister : Operand
+    {
+        ScratchRegisterIndex
+        index;
+
+        Operation*
+        operation;
+
+        ScratchRegister(ScratchRegisterIndex index):
+            Operand(OperandKind::ScratchRegister),
+            index(index)
+        { }
+    };
+
+
+    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
+
+
+    struct ImmediateToMemoryOperation : Operation
+    {
+        ScratchRegister*
+        scratchRegister;
+
+        ImmediateValue
+        immediate;
+
+        ImmediateToMemoryOperation(ScratchRegister* scratchRegister, ImmediateValue immediate, ast::BinaryOperatorKind _operator):
+            Operation(OperationKind::ImmediateToMemory, _operator),
+            scratchRegister(scratchRegister),
+            immediate(immediate)
+        {
+
+        }
+    };
+
+
+    enum class DataReferenceKind
+    {
+        String,
+    };
+
+
+    struct DataReference : Operand
+    {
+        Utf8StringView*
+        data;
+
+        DataReference(OperandKind kind, Utf8StringView* data):
+            data(data),
+            Operand(kind)
+        { }
+    };
+
+
+    struct VariableReference : Operand
+    {
+        std::size_t
+        index;
+
+        std::size_t
+        offset;
+
+        std::size_t
+        size;
+
+        bool
+        isParameter;
+
+        VariableReference(std::size_t index, std::size_t size, std::size_t offset, bool isParameter):
+            index(index),
+            size(size),
+            offset(offset),
+            isParameter(isParameter),
+            Operand(OperandKind::VariableReference)
+        { }
+    };
+
+
+    struct Label : Operand
+    {
+        Utf8StringView
+        symbol;
+
+        Label(Utf8StringView& symbol):
+            symbol(symbol),
+            Operand(OperandKind::Label)
+        { }
+    };
+
+
+    struct AssemblyReference : Operand
+    {
+        Utf8StringView
+        name;
+
+        ast::Declaration*
+        reference;
+
+        AssemblyReference(Utf8StringView name):
+            name(name),
+            Operand(OperandKind::AssemblyReference)
+        { }
+    };
+
+
+    struct Int32 : Operand
+    {
+        std::uint32_t
+        value;
+
+        Int32(std::uint32_t value):
+            value(value),
+            Operand(OperandKind::Int32)
+        { }
+    };
+
+    enum class RelocationType : std::uint8_t
+    {
+        None,
+        CString,
+        Constant
+    };
+
+    struct Int64 : Operand
+    {
+        std::uint64_t
+        value;
+
+        Int64(std::uint64_t value):
+            value(value),
+            Operand(OperandKind::Int64)
+        { }
+    };
+
+
+    struct RelocationOperand : Operand
+    {
+        std::uint32_t
+        dataOffset;
+
+        std::uint32_t
+        textOffset;
+
+        Symbol*
+        symbol;
+
+        RelocationOperand(OperandKind kind):
+            Operand(kind)
+        { }
+    };
+
+
+    struct Parameter
+    {
+        std::size_t
+        size;
+
+        std::size_t
+        offset;
+
+        unsigned int
+        index;
 
         Utf8StringView
-        symbol,
+        symbol;
 
         Utf8StringView
-        label
-    ):
-        size(size),
-        offset(offset),
-        index(index),
-        symbol(symbol),
-        typeLabel(label)
-    { }
-};
+        typeLabel;
+
+        Parameter(
+            std::size_t
+            size,
+
+            std::size_t
+            offset,
+
+            unsigned int
+            index,
+
+            Utf8StringView
+            symbol,
+
+            Utf8StringView
+            label
+        ):
+            size(size),
+            offset(offset),
+            index(index),
+            symbol(symbol),
+            typeLabel(label)
+        { }
+    };
 
 
-struct Function : FunctionRoutine
-{
-    List<Parameter*>
-    parameters;
-};
+    struct Function : FunctionRoutine
+    {
+        List<Parameter*>
+        parameters;
+    };
 
 
+    struct ReturnInstruction : Instruction
+    {
+        ReturnInstruction():
+            Instruction(InstructionKind::Return)
+        { }
+    };
 }
 
 #include "Instruction.Constant.h"
+#include "Instruction.Arithmetic.h"
+
 
 #endif //ELET_INSTRUCTION_H

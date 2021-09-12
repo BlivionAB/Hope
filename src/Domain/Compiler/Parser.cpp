@@ -1390,8 +1390,6 @@ Parser::getBinaryOperatorKind(Token token)
             return BinaryOperatorKind::Equal;
         case Token::Plus:
             return BinaryOperatorKind::Plus;
-        case Token::Minus:
-            return BinaryOperatorKind::Minus;
         default:
             throw std::runtime_error("Unknown binary operator.");
     }

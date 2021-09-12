@@ -142,7 +142,7 @@ X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& inst
     }
     else
     {
-        throw std::runtime_error("Could not resolve operand.");
+        throw std::runtime_error("Could not resolve destination.");
     }
 }
 

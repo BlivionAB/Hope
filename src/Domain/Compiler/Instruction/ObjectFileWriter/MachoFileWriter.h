@@ -166,7 +166,7 @@ enum SymbolType : uint8_t
 
     N_UNDF = 0x0u,		/* undefined, n_sect == NO_SECT */
     N_ABS =	0x2u,		    /* absolute, n_sect == NO_SECT */
-    N_SECT = 0xeu,		/* defined in section number n_sect */
+    N_SECT = 0xeu,		/* defined in section index n_sect */
     N_PBUD = 0xcu,		/* prebound undefined (defined in a dylib) */
     N_INDR = 0xau,		/* indirect */
 };

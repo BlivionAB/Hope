@@ -51,16 +51,17 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     }
     output::FunctionRoutine* routine = createFunctionRoutine(functionDeclaration->name->name);
     _currentRoutineStack.push(routine);
+    uint64_t stackOffset = 0;
     routine->name = functionDeclaration->signature->isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
-    transformFunctionParameters(functionDeclaration, routine);
-    transformLocalStatements(functionDeclaration->body->statements);
+    transformFunctionParameters(functionDeclaration, routine, stackOffset);
+    transformLocalStatements(functionDeclaration->body->statements, stackOffset);
     _currentRoutineStack.pop();
     return routine;
 }
 
 
 void
-Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine)
+Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine, uint64_t& stackOffset)
 {
     unsigned int i = 0;
     for (ast::ParameterDeclaration* parameterDeclaration : functionDeclaration->parameterList->parameters)
@@ -71,13 +72,14 @@ Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functio
             param->index = i;
             routine->parameters.add(param);
             ++i;
+            stackOffset += param->size;
         }
     }
 }
 
 
 List<output::Instruction*>*
-Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
+Transformer::transformLocalStatements(List<ast::Syntax*>& statements, uint64_t& stackOffset)
 {
     List<output::Instruction*>* list = new List<output::Instruction*>();
     for (const auto& statement : statements)
@@ -85,13 +87,13 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
         switch (statement->kind)
         {
             case ast::SyntaxKind::VariableDeclaration:
-                transformVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement));
+                transformVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement), stackOffset);
                 break;
             case ast::SyntaxKind::CallExpression:
                 transformCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
                 break;
             case ast::SyntaxKind::ReturnStatement:
-                transformReturnStatement(reinterpret_cast<ast::ReturnStatement*>(statement));
+                transformReturnStatement(reinterpret_cast<ast::ReturnStatement*>(statement), stackOffset);
                 break;
             default:
                 throw UnknownLocalStatement();
@@ -102,61 +104,56 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements)
 
 
 void
-Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement)
+Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset)
 {
-
+    output::CanonicalExpression expression = transformExpression(returnStatement->expression, stackOffset, output::OperandRegister::Left);
+    if (std::holds_alternative<output::ImmediateValue>(expression))
+    {
+        addInstruction(new output::MoveImmediateInstruction(output::OperandRegister::Return, std::get<output::ImmediateValue>(expression)));
+    }
+    else if (std::holds_alternative<OperandRegister>(expression))
+    {
+        addInstruction(new output::MoveRegisterInstruction(output::OperandRegister::Return, output::OperandRegister::Left));
+    }
+    else
+    {
+        // Returns void
+    }
+    addInstruction(new output::ReturnInstruction());
 }
 
 
 void
-Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable)
+Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset)
 {
-    output::VariableDeclaration* localVariable = new output::VariableDeclaration(variable->resolvedType->size());
-    localVariable->expression = transformExpression(variable->expression);
+    output::VariableDeclaration* localVariable = new output::VariableDeclaration(variable, stackOffset);
+    variable->referenceInstruction = localVariable;
+    localVariable->expression = transformExpression(variable->expression, stackOffset, output::OperandRegister::Left);
     addInstruction(localVariable);
 }
 
 
-CanonicalExpression
-Transformer::transformExpression(ast::Expression* expression)
+output::CanonicalExpression
+Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, output::OperandRegister operandRegister)
 {
     switch (expression->kind)
     {
-        // Expressions must be canonicalized before transformation
         case ast::SyntaxKind::BinaryExpression:
-        {
-
-            // memory * immediate
-            //   immediate * memory (it's cummutative)
-            // immediate * immediate
-            // memory * memory
-
-            ast::BinaryExpression* binaryExpression = reinterpret_cast<ast::BinaryExpression*>(expression);
-            auto left = transformExpression(binaryExpression->left);
-            if (std::holds_alternative<ImmediateValue>(left))
-            {
-                auto right = transformExpression(binaryExpression->right);
-                if (std::holds_alternative<ImmediateValue>(right))
-                {
-                    return transformImmediateBinaryExpression(binaryExpression);
-                }
-
-                // rhs is memory here
-                return transformImmediateToMemoryExpression(std::get<ScratchRegister*>(right), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->left)), binaryExpression->binaryOperatorKind);
-            }
-            // lhs is memory from here
-
-//            else if (isMemoryExpression(binaryExpression->right))
-//            {
-//                return transformMemoryBinaryExpression(binaryExpression);
-//            }
-//            return transformImmediateToMemoryExpression(transformExpression(binaryExpression->left), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)), binaryExpression->binaryOperatorKind);
-        }
+            return transformBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression), stackOffset);
         case ast::SyntaxKind::IntegerLiteral:
             return reinterpret_cast<ast::IntegerLiteral*>(expression)->value;
+        case ast::SyntaxKind::PropertyExpression:
+            return transformPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression), operandRegister);
         default:
-            throw std::runtime_error("");
+            throw std::runtime_error("Unknown expression for transformation.");
     }
+}
+
+
+bool
+Transformer::isAddressValueExpression(ast::Expression* expression)
+{
+    return !isImmediateValueExpression(expression);
 }
 
 
@@ -170,9 +167,9 @@ Transformer::transformToUint(ast::IntegerLiteral* integer)
 output::ScratchRegister*
 Transformer::transformImmediateToMemoryExpression(ScratchRegister* left, ImmediateValue right, ast::BinaryOperatorKind _operator)
 {
-    auto scratchRegister = new ScratchRegister();
-    scratchRegister->operation = new ImmediateToMemoryOperation(left, right, _operator);
-    return scratchRegister;
+//    auto scratchRegister = new ScratchRegister();
+//    scratchRegister->operation = new ImmediateToMemoryOperation(left, right, _operator);
+    return nullptr;
 }
 
 
@@ -191,8 +188,8 @@ Transformer::transformImmediateBinaryExpression(ast::BinaryExpression* binaryExp
                 {
                     case ast::TypeSize::_64:
                         return left->value + right->value;
-//                    case ast::TypeSize::_32:
-//                        return static_cast<int32_t>(left->value) + static_cast<int32_t>(right->value);
+                    case ast::TypeSize::_32:
+                        return static_cast<int32_t>(left->value) + static_cast<int32_t>(right->value);
                     default:
                         throw std::runtime_error("Should not contain lower than 32bit ints.");
                 }
@@ -203,8 +200,8 @@ Transformer::transformImmediateBinaryExpression(ast::BinaryExpression* binaryExp
                 {
                     case ast::TypeSize::_64:
                         return static_cast<uint64_t>(left->value) + static_cast<uint64_t>(right->value);
-//                    case ast::TypeSize::_32:
-//                        return static_cast<uint32_t>(left->value) + static_cast<uint32_t>(right->value);
+                    case ast::TypeSize::_32:
+                        return static_cast<uint32_t>(left->value) + static_cast<uint32_t>(right->value);
                     default:
                         throw std::runtime_error("Should not contain lower than 32bit ints.");
                 }
@@ -322,9 +319,69 @@ Transformer::isCompositeExpression(ast::Expression* expression)
 
 
 bool
-Transformer::isImmediateExpression(ast::Expression* expression)
+Transformer::isImmediateValueExpression(ast::Expression* expression)
 {
     return expression->kind == ast::SyntaxKind::IntegerLiteral;
+}
+
+
+output::OperandRegister
+Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression, output::OperandRegister operandRegister)
+{
+    uint64_t stackOffset = propertyExpression->referenceDeclaration->referenceInstruction->stackOffset;
+    output::LoadInstruction* loadInstruction = new output::LoadInstruction(operandRegister, stackOffset);
+    addInstruction(loadInstruction);
+    return output::OperandRegister::Left;
+}
+
+
+void
+Transformer::transformMemoryToMemoryBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind)
+{
+    // Str [Sp + 0], 3
+    // Str [Sp + 4], 3
+    // Ldr Op1, [Sp + 0]
+    // Ldr Op2, [Sp + 4]
+    // Add Op1, Op1, Op2
+    // Note, we can implicitly just add both destination registers!
+    switch (binaryOperatorKind)
+    {
+        case ast::BinaryOperatorKind::Plus:
+            addInstruction(new output::AddRegisterToRegisterInstruction());
+            break;
+        default:
+            throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
+    }
+}
+
+output::CanonicalExpression
+Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset)
+{
+    // memory * immediate
+    //   immediate * memory (it's cummutative)
+    // immediate * immediate
+    // memory * memory
+    auto left = transformExpression(binaryExpression->left, stackOffset, output::OperandRegister::Left);
+    if (std::holds_alternative<ImmediateValue>(left))
+    {
+        auto right = transformExpression(binaryExpression->right, stackOffset, output::OperandRegister::Left);
+        if (std::holds_alternative<ImmediateValue>(right))
+        {
+            return transformImmediateBinaryExpression(binaryExpression);
+        }
+
+        // rhs is memory here
+//        return transformImmediateToMemoryExpression(std::get<output::ScratchRegister*>(right), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->left)), binaryExpression->binaryOperatorKind);
+    }
+    // lhs is memory from here
+
+    else if (isAddressValueExpression(binaryExpression->right))
+    {
+        transformExpression(binaryExpression->right, stackOffset, output::OperandRegister::Right);
+        transformMemoryToMemoryBinaryExpression(binaryExpression->binaryOperatorKind);
+    }
+    //            return transformImmediateToMemoryExpression(transformExpression(binaryExpression->left), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)), binaryExpression->binaryOperatorKind);
+    return OperandRegister::Left;
 }
 
 }

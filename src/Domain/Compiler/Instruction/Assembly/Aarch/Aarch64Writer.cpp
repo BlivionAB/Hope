@@ -253,27 +253,24 @@ Aarch64Writer::writeFunctionPrologue(FunctionRoutine* routine, uint64_t& stackOf
 
 
 void
-Aarch64Writer::writeFunctionParameters(const FunctionRoutine* routine, uint64_t& stackOffset, uint64_t& stackSize, uint64_t& routineSize)
+Aarch64Writer::writeFunctionParameters(const FunctionRoutine* routine, uint64_t& routineStackSize)
 {
     for (unsigned int i = 0; i < routine->parameters.size(); ++i)
     {
         auto parameter = routine->parameters[i];
         if (i < _callingConvention.registers.size())
         {
-            writeParameter(parameter->size, i, stackOffset, stackSize, routineSize);
-            parameter->stackOffset = stackOffset;
+            writeParameter(parameter->size, i, routineStackSize);
         }
     }
 }
 
 
 void
-Aarch64Writer::writeParameter(uint64_t size, unsigned int index, uint64_t& stackOffset, uint64_t& stackSize, uint64_t& routineSize)
+Aarch64Writer::writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, uint64_t& routineSize)
 {
-    stackOffset += size;
-    assert(("_localStackOffset must be smaller then INT8_MAX", stackOffset < INT8_MAX));
-
-    bw->writeDoubleWord(Aarch64Instruction::StrImmediateBaseOffset64 | uimm12((stackSize - stackOffset) / 8) | Rn(Aarch64Register::sp) | Rt(_callingConvention.registers[index]));
+    assert(("_localStackOffset must be smaller then INT8_MAX", parameterDeclaration->stackOffset < INT8_MAX));
+    bw->writeDoubleWord(Aarch64Instruction::StrImmediateBaseOffset64 | uimm12((stackSize - parameterDeclaration->stackOffset) / 8) | Rn(Aarch64Register::sp) | Rt(_callingConvention.registers[index]));
     routineSize += 4;
 }
 

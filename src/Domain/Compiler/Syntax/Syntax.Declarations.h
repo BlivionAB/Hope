@@ -4,10 +4,10 @@
 #include "Syntax.h"
 #include "Syntax.Block.h"
 #include "Syntax.Type.h"
-#include "Domain/Compiler/Instruction/Instruction.h"
 
 namespace elet::domain::compiler::instruction::output
 {
+    struct VariableDeclaration;
     struct FunctionRoutine;
     struct MemoryAllocation;
 }
@@ -148,6 +148,9 @@ namespace elet::domain::compiler::ast
 
         Expression*
         expression;
+
+        instruction::output::VariableDeclaration*
+        outputDeclaration;
     };
 
 
@@ -188,5 +191,7 @@ namespace elet::domain::compiler::ast
     };
 }
 
+
+#include "Domain/Compiler/Instruction/Instruction.h"
 
 #endif //ELET_SYNTAX_DECLARATIONS_H

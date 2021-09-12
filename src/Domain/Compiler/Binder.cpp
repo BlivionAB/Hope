@@ -201,11 +201,22 @@ Binder::bindExpression(ast::Expression* expression)
 {
     switch (expression->kind)
     {
+        case ast::SyntaxKind::BinaryExpression:
+            bindBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression));
+            break;
         case ast::SyntaxKind::PropertyExpression:
             bindPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression));
             break;
         default:;
     }
+}
+
+
+void
+Binder::bindBinaryExpression(ast::BinaryExpression* binaryExpression)
+{
+    bindExpression(binaryExpression->left);
+    bindExpression(binaryExpression->right);
 }
 
 

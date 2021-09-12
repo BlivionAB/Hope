@@ -29,11 +29,22 @@ enum class OptimizationLevel
 };
 
 
+enum class CompilationTarget
+{
+    MachO_x86_64,
+    MachO_aarch64,
+    StashIR,
+};
+
+
 struct TestProjectOptions
 {
 
     std::string
     baselineName;
+
+    List<CompilationTarget>
+    targets;
 
     AssemblyTarget
     assemblyTarget;
@@ -194,18 +205,56 @@ protected:
     StashIRPrinter
     stashIRPrinter;
 
+    CompilerOptions
+    getCompilerOptionsFromCompilationTarget(const CompilationTarget compilationTarget)
+    {
+        AssemblyTarget assemblyTarget;
+        ObjectFileTarget objectFileTarget;
+        switch (compilationTarget)
+        {
+            case CompilationTarget::MachO_aarch64:
+                assemblyTarget = AssemblyTarget::Aarch64;
+                objectFileTarget = ObjectFileTarget::MachO;
+                break;
+            case CompilationTarget::MachO_x86_64:
+                assemblyTarget = AssemblyTarget::x86_64;
+                objectFileTarget = ObjectFileTarget::MachO;
+                break;
+            case CompilationTarget::StashIR:
+                assemblyTarget = AssemblyTarget::StashIR;
+                objectFileTarget = ObjectFileTarget::StashIR;
+                break;
+            default:
+                throw std::runtime_error("Unknown compilation target.");
+        }
+        return CompilerOptions(assemblyTarget, objectFileTarget);
+    }
+
     testing::AssertionResult
     testProject(TestProjectOptions options)
     {
-        Compiler compiler(*project.fileReader, {
-            options.assemblyTarget,
-            options.objectFileTarget });
+        for (const auto target : options.targets)
+        {
+            testing::AssertionResult success = compileTarget(target, options);
+            if (!success)
+            {
+                return success;
+            }
+        }
+        return testing::AssertionSuccess();
+    }
+
+    testing::AssertionResult
+    compileTarget(const CompilationTarget target, const TestProjectOptions& options)
+    {
+        CompilerOptions compilerOptions = getCompilerOptionsFromCompilationTarget(target);
+        Compiler compiler(*project.fileReader, compilerOptions);
 
         compiler.startWorkers();
         compiler.compileFile(project.getEntryFile());
         compiler.endWorkers();
 
-        if (options.assemblyTarget == AssemblyTarget::StashIR)
+        if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
         {
             std::queue<output::FunctionRoutine*> output = compiler.getStashIR();
             return checkStashIRBaseline(output, options);
@@ -213,7 +262,7 @@ protected:
         else
         {
             List<uint8_t>& output = compiler.getOutput();
-            switch (options.assemblyTarget)
+            switch (compilerOptions.assemblyTarget)
             {
                 case AssemblyTarget::x86_64:
                     return checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(
@@ -229,7 +278,7 @@ protected:
 
     template<typename TAssemblyParser, typename TAssemblyPrinter, typename TInstruction>
     testing::AssertionResult
-    checkTextSegmentBaselines(TestProjectOptions& options, List<uint8_t>& output)
+    checkTextSegmentBaselines(const TestProjectOptions& options, List<uint8_t>& output)
     {
         CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, options.assemblyTarget);
         if (options.writeExecutable)

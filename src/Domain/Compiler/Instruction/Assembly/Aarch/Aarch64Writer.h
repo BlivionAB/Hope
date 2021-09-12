@@ -53,8 +53,7 @@ private:
                           uint64_t& routineSize);
 
     void
-    writeFunctionParameters(const FunctionRoutine* routine, uint64_t& stackOffset, uint64_t& stackSize,
-                            uint64_t& routineSize);
+    writeFunctionParameters(const FunctionRoutine* routine, uint64_t& routineStackSize) override;
 
     void
     writeParameter(uint64_t size, unsigned int index, uint64_t& stackOffset, uint64_t& stackSize,

@@ -212,7 +212,7 @@ MemoryPooledPerfectHashTable<T>::tryGeneratePerfectHashAlgorithm()
      *
      *   2) Assign the associated values* of each character in the order calculated above
      *      by the previous largest hash plus one, starting with hash value of zero. Stop
-     *      when the hash value exceeds or is equal to the number of key signatures plus
+     *      when the hash value exceeds or is equal to the index of key signatures plus
      *      one.
      *
      *                   hash     hash     hash
@@ -223,7 +223,7 @@ MemoryPooledPerfectHashTable<T>::tryGeneratePerfectHashAlgorithm()
      *
      *      This method guarantees that the entropy always increases on each assignment.
      *      Since, we always begin by assigning '1' instead of '0', the entropy reaches
-     *      its maximum when the hash equals number of keys minus 1.
+     *      its maximum when the hash equals index of keys minus 1.
      *
      * Footnotes:
      *

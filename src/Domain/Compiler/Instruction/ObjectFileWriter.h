@@ -16,6 +16,7 @@ using namespace elet::foundation;
 enum class ObjectFileTarget
 {
     Unknown,
+    StashIR,
     MachO,
     Elf,
     Coff,

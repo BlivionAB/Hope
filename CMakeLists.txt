@@ -6,18 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(third_party/googletest)
 add_subdirectory(third_party/fmt)
 
-add_definitions(-DBOOST_ALL_NO_LIB)
-set(Boost_USE_STATIC_LIBS ON)
-
-set(Boost_DEBUG on)
-set(Boost_USE_MULTITHREADED TRUE)
-find_package(Boost 1.67 COMPONENTS system filesystem regex REQUIRED)
-
 include_directories(
     src
     third_party/googletest/googletest/include
     third_party/googletest/googlemock/include
-    ${Boost_INCLUDE_DIR}
 )
 
 
@@ -52,8 +44,8 @@ add_executable(
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
-    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.cpp src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.h src/Domain/Compiler/Syntax/Syntax.Statement.h src/Domain/Compiler/Tests/StashIrPrinter.cpp src/Domain/Compiler/Tests/StashIrPrinter.h)
+    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.cpp src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.h src/Domain/Compiler/Syntax/Syntax.Statement.h src/Domain/Compiler/Tests/StashIrPrinter.cpp src/Domain/Compiler/Tests/StashIrPrinter.h src/Domain/Compiler/Instruction/Instruction.Arithmetic.h)
 
-set(LIBS fmt ${Boost_LIBRARIES})
+set(LIBS fmt)
 set(TEST_LIBS gtest gmock)
 target_link_libraries(unittest ${TEST_LIBS} ${LIBS})

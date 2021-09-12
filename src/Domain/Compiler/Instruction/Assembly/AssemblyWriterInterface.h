@@ -39,6 +39,17 @@ public:
     void
     writeTextSection(FunctionRoutine* routine) = 0;
 
+    void
+    writeFunction(FunctionRoutine* routine);
+
+    virtual
+    void
+    writeFunctionRelocationAddresses(FunctionRoutine* routine) = 0;
+
+    virtual
+    void
+    writeFunctionParameters(const FunctionRoutine* routine);
+
     virtual
     void
     writeCStringSection() = 0;

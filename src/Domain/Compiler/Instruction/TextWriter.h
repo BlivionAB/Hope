@@ -61,7 +61,13 @@ public:
     write(char ch);
 
     void
+    write(int32_t integer);
+
+    void
     write(int64_t integer);
+
+    void
+    writeFixedIntegerSize(uint64_t integer, int bitSize);
 
     void
     write(uint64_t integer);

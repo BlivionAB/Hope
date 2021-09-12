@@ -123,9 +123,9 @@ Checker::inferTypeFromExpression(ast::Expression* expression)
 ast::Type*
 Checker::getTypeFromIntegerLiteral(ast::IntegerLiteral* integerLiteral)
 {
-    if (integerLiteral->value <= ast::TypeSizeBounds::Int64Max)
+    if (integerLiteral->value <= ast::TypeSizeBounds::Int32Max)
     {
-        return new ast::Type(ast::TypeKind::Int64);
+        return new ast::Type(ast::TypeKind::Int32);
     }
     throw std::runtime_error("Cannot convert integer value.");
 }
@@ -341,7 +341,7 @@ Checker::checkFunctionSignature(const ast::type::Signature* target, const ast::t
     }
     if (target->parameters.size() != source->parameters.size())
     {
-        addDiagnostic(new Diagnostic("Mismatching number of parameters."));
+        addDiagnostic(new Diagnostic("Mismatching index of parameters."));
     }
     for (unsigned int i = 0; target->parameters.size(); i++)
     {
@@ -349,7 +349,7 @@ Checker::checkFunctionSignature(const ast::type::Signature* target, const ast::t
         auto sourceParameter = source->parameters[i];
         if (!isTypeEqualToType(targetParameter->type, sourceParameter->type))
         {
-            addDiagnostic(new Diagnostic("Mismatching number of parameters."));
+            addDiagnostic(new Diagnostic("Mismatching index of parameters."));
         }
     }
     if (!isTypeEqualToType(target->type, source->type))

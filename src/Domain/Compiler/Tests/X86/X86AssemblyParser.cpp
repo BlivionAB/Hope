@@ -84,7 +84,7 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
                     instruction.kind = InstructionKind::Sub;
                     break;
                 default:
-                    throw std::runtime_error("Unknown operand code from modrmByte.");
+                    throw std::runtime_error("Unknown destination code from modrmByte.");
             }
             instruction.operand1 = createEv(modrmByte, instruction, true);
             instruction.operand2 = new Ib(offset);

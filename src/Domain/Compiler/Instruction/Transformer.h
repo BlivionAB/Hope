@@ -6,6 +6,7 @@
 #include "Instruction.h"
 #include <queue>
 #include <stack>
+#include <cstdint>
 #include <Domain/Compiler/Compiler.h>
 
 #define TYPE_SIZE_64 8
@@ -43,6 +44,7 @@ namespace output
     struct Parameter;
     struct Operand;
     struct FunctionReference;
+    struct LoadInstruction;
     struct VariableDeclaration;
     struct ParameterDeclaration;
     struct String;
@@ -52,8 +54,10 @@ namespace output
     typedef std::variant<std::size_t, String*, ParameterDeclaration*, VariableDeclaration*> ArgumentValue;
     struct InternalRoutine;
     struct FunctionRoutine;
-    typedef std::variant<int64_t, uint64_t> ImmediateValue;
-    typedef std::variant<ScratchRegister*, ImmediateValue> CanonicalExpression;
+    struct MoveRegisterInstruction;
+    typedef std::variant<int32_t, uint32_t, int64_t, uint64_t> ImmediateValue;
+    enum class OperandRegister;
+    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
 }
 using namespace compiler;
 
@@ -118,7 +122,8 @@ public:
 private:
 
     void
-    transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine);
+    transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration,
+                                output::FunctionRoutine* routine, uint64_t& stackOffset);
 
     output::FunctionRoutine*
     transformFunctionDeclaration(const ast::FunctionDeclaration* functionDeclaration);
@@ -130,7 +135,7 @@ private:
     createFunctionRoutine(const Utf8StringView& name);
 
     List<output::Instruction*>*
-    transformLocalStatements(List<ast::Syntax*>& statements);
+    transformLocalStatements(List<ast::Syntax*>& statements, uint64_t& stackOffset);
 
     static
     Utf8StringView
@@ -173,16 +178,16 @@ private:
     transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression);
 
     void
-    transformVariableDeclaration(ast::VariableDeclaration* variable);
+    transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset);
 
     void
     addInstruction(output::Instruction* instruction);
 
     output::CanonicalExpression
-    transformExpression(ast::Expression* expression);
+    transformExpression(ast::Expression* expression, uint64_t& stackOffset, output::OperandRegister operandRegister);
 
     bool
-    isImmediateExpression(ast::Expression* expression);
+    isImmediateValueExpression(ast::Expression* expression);
 
     output::ImmediateValue
     transformImmediateBinaryExpression(ast::BinaryExpression* binaryExpression);
@@ -194,7 +199,19 @@ private:
     transformToUint(ast::IntegerLiteral* expression);
 
     void
-    transformReturnStatement(ast::ReturnStatement* returnStatement);
+    transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset);
+
+    output::OperandRegister
+    transformPropertyExpression(ast::PropertyExpression* propertyExpression, output::OperandRegister operandRegister);
+
+    bool
+    isAddressValueExpression(ast::Expression* expression);
+
+    void
+    transformMemoryToMemoryBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind);
+
+    output::CanonicalExpression
+    transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset);
 };
 
 

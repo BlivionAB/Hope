@@ -222,7 +222,7 @@ MachoFileWriter::writeTextSegmentCommand()
         0,
         MachoSectionFlags::S_ATTR_PURE_INSTRUCTIONS | MachoSectionFlags::S_ATTR_SOME_INSTRUCTIONS,
         0,
-        0, /*number of stubs*/
+        0, /*index of stubs*/
         0
     }, _textSegment);
 

@@ -114,6 +114,9 @@ private:
 
     void
     bindIfStatement(const ast::IfStatement* ifStatement);
+
+    static void
+    bindBinaryExpression(ast::BinaryExpression* binaryExpression);
 };
 
 

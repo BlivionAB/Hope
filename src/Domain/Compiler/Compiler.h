@@ -180,6 +180,11 @@ struct CompilerOptions
 
     ObjectFileTarget
     objectFileTarget;
+
+    CompilerOptions(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
+        assemblyTarget(assemblyTarget),
+        objectFileTarget(objectFileTarget)
+    { }
 };
 
 

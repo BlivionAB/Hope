@@ -91,7 +91,7 @@ ExportTrieNode::updateOffset(uint32_t& offset)
     }
 
     // Compute size of all child edges.
-    ++nodeSize; // Byte for number of children.
+    ++nodeSize; // Byte for index of children.
     for (const ExportTrieEdge* edge : edges)
     {
         nodeSize += edge->label.size() + 1 // String length.
@@ -107,7 +107,7 @@ ExportTrieNode::updateOffset(uint32_t& offset)
     // Update offset for next iteration.
     offset += nodeSize;
 
-    // Return true if trieOffset was changed.
+    // ReturnOperandRegister true if trieOffset was changed.
     return result;
 }
 

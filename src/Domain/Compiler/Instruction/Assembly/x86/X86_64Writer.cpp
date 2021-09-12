@@ -75,40 +75,40 @@ X86_64Writer::writeTextSection(FunctionRoutine* routine)
 }
 
 
-void
-X86_64Writer::writeFunction(FunctionRoutine* routine)
-{
-    if (routine->hasWrittenOutput)
-    {
-        writeFunctionRelocationAddresses(routine);
-        return;
-    }
-    routine->offset = _offset;
-    writeFunctionRelocationAddresses(routine);
-    uint64_t stackSize = getStackSizeFromFunctionParameters(routine);
-    uint64_t stackOffset = 0;
-    uint64_t routineSize = 0;
-    routineSize += writeFunctionPrologue(stackSize);
-    routineSize += writeFunctionParameters(routine, stackOffset);
-    routineSize += writeFunctionInstructions(routine, stackOffset);
-    if (routine->isStartFunction)
-    {
-        bw->writeByte(OneByteOpCode::Xor_Ev_Gv);
-        bw->writeByte(ModBits::Mod3 | OpCodeRegister::Reg_RAX | RmBits::Rm0);
-        routineSize += 2;
-    }
-    writeFunctionEpilogue(stackSize, routineSize);
-    for (const auto& subRoutine : routine->subRoutines)
-    {
-        writeFunction(subRoutine);
-    }
-    routine->hasWrittenOutput = true;
-    if (routine->isStartFunction)
-    {
-        exportedRoutines.add(routine);
-    }
-    internalRoutines.add(routine);
-}
+//void
+//X86_64Writer::writeFunction(FunctionRoutine* routine)
+//{
+//    if (routine->hasWrittenOutput)
+//    {
+//        writeFunctionRelocationAddresses(routine);
+//        return;
+//    }
+//    routine->offset = _offset;
+//    writeFunctionRelocationAddresses(routine);
+//    uint64_t stackSize = getStackSizeFromFunctionParameters(routine);
+//    uint64_t stackOffset = 0;
+//    uint64_t routineSize = 0;
+//    routineSize += writeFunctionPrologue(stackSize);
+//    routineSize += writeFunctionParameters(routine, stackOffset);
+//    routineSize += writeFunctionInstructions(routine, stackOffset);
+//    if (routine->isStartFunction)
+//    {
+//        bw->writeByte(OneByteOpCode::Xor_Ev_Gv);
+//        bw->writeByte(ModBits::Mod3 | OpCodeRegister::Reg_RAX | RmBits::Rm0);
+//        routineSize += 2;
+//    }
+//    writeFunctionEpilogue(stackSize, routineSize);
+//    for (const auto& subRoutine : routine->subRoutines)
+//    {
+//        writeFunction(subRoutine);
+//    }
+//    routine->hasWrittenOutput = true;
+//    if (routine->isStartFunction)
+//    {
+//        exportedRoutines.add(routine);
+//    }
+//    internalRoutines.add(routine);
+//}
 
 
 void
@@ -154,7 +154,7 @@ X86_64Writer::writeVariableDeclaration(VariableDeclaration* variableDeclaration,
         bw->writeByte(OneByteOpCode::Mov_Ev_Iz);
         bw->writeByte(ModBits::Mod1 | RmBits::Rm5);
         bw->writeByte(-stackOffset);
-        bw->writeDoubleWord(std::get<int64_t>(imm));
+        bw->writeDoubleWord(std::get<int32_t>(imm));
         stackOffset += 4;
         size += 7;
         variableDeclaration->stackOffset = stackOffset;
@@ -268,20 +268,17 @@ X86_64Writer::writeMoveFromOffset(uint8_t reg, size_t offset)
 }
 
 
-uint64_t
-X86_64Writer::writeFunctionParameters(const FunctionRoutine* routine, uint64_t& stackOffset)
+void
+X86_64Writer::writeFunctionParameters(const FunctionRoutine* routine)
 {
-    uint64_t size = 0;
     for (unsigned int i = 0; i < routine->parameters.size(); ++i)
     {
         auto parameter = routine->parameters[i];
         if (i < _callingConvention.registers.size())
         {
-            size += writeParameter(parameter->size, i, stackOffset);
-            parameter->stackOffset = stackOffset;
+            writeParameter(parameter->size, i);
         }
     }
-    return size;
 }
 
 

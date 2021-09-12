@@ -18,4 +18,4 @@ This documents specifies the intermediate representation of the assembly.
 | --- | --- | --- | --- | --- |
 | Store | R0-R8,BP,sp | Immediate value | Stores the value of Operand2 into Operand1 |
 | Load | R0-R8,BP,sp | Memory Address | Stores the value of Operand2 into Operand1 |
-| Return | | | Return from function |
+| ReturnOperandRegister | | | ReturnOperandRegister from function |

@@ -46,8 +46,60 @@ StashIRPrinter::writeInstruction(const output::Instruction* instruction)
         case output::InstructionKind::VariableDeclaration:
             writeVariableDeclaration(reinterpret_cast<const output::VariableDeclaration*>(instruction));
             break;
+        case output::InstructionKind::Load:
+            writeLoadInstruction(reinterpret_cast<const output::LoadInstruction*>(instruction));
+            break;
+        case output::InstructionKind::MoveRegister:
+            writeMoveRegisterInstruction(reinterpret_cast<const output::MoveRegisterInstruction*>(instruction));
+            break;
+        case output::InstructionKind::Return:
+            _tw.write("Ret");
+            break;
+        case output::InstructionKind::AddRegisterToRegister:
+            _tw.write("Add OpL, OpL, OpR");
+            break;
         default:
             throw std::runtime_error("Unknown instruction");
+    }
+    _tw.newline();
+}
+
+
+void
+StashIRPrinter::writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction)
+{
+    _tw.write("Mov ");
+    writeOperandRegister(moveRegisterInstruction->destination);
+    _tw.write(", ");
+    writeOperandRegister(moveRegisterInstruction->target);
+}
+
+
+void
+StashIRPrinter::writeLoadInstruction(const output::LoadInstruction* loadInstruction)
+{
+    _tw.write("Ldr ");
+    writeOperandRegister(loadInstruction->destination);
+    _tw.write(", [Sp + ");
+    _tw.write(loadInstruction->stackOffset);
+    _tw.write("]");
+}
+
+
+void
+StashIRPrinter::writeOperandRegister(output::OperandRegister operandRegister)
+{
+    switch (operandRegister)
+    {
+        case output::OperandRegister::Return:
+            _tw.write("OpRet");
+            break;
+        case output::OperandRegister::Left:
+            _tw.write("OpL");
+            break;
+        case output::OperandRegister::Right:
+            _tw.write("OpR");
+            break;
     }
 }
 
@@ -57,14 +109,26 @@ StashIRPrinter::writeVariableDeclaration(const output::VariableDeclaration* vari
 {
     if (std::holds_alternative<output::ImmediateValue>(variableDeclaration->expression))
     {
-        _tw.write("Store ");
-        _tw.write(std::get<int64_t>(std::get<output::ImmediateValue>(variableDeclaration->expression)));
-        _tw.newline();
+        _tw.write("Str [Sp + ");
+        _tw.write(variableDeclaration->stackOffset);
+        _tw.write("], ");
+        output::ImmediateValue value = std::get<output::ImmediateValue>(variableDeclaration->expression);
+        if (std::holds_alternative<int32_t>(value))
+        {
+            _tw.write(std::get<int32_t>(value));
+        }
+        else
+        {
+            _tw.write(std::get<int64_t>(value));
+        }
     }
     else // std::holds_alternative<output::ScratchRegister*>
     {
-        const output::ScratchRegister* scratchRegister = std::get<output::ScratchRegister*>(variableDeclaration->expression);
-        writeOperation(scratchRegister->operation);
+        _tw.write("Str [Sp + ");
+        _tw.write(variableDeclaration->stackOffset);
+        _tw.write("], ");
+        _tw.write("Op1");
+
     }
 }
 
@@ -78,6 +142,5 @@ StashIRPrinter::writeOperation(output::Operation* operation)
             break;
     }
 }
-
 
 }

@@ -38,6 +38,15 @@ private:
 
     void
     writeOperation(output::Operation* operation);
+
+    void
+    writeLoadInstruction(const output::LoadInstruction* loadInstruction);
+
+    void
+    writeOperandRegister(output::OperandRegister operandRegister);
+
+    void
+    writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction);
 };
 
 
