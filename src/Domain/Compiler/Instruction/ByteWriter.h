@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <Foundation/List.h>
 #include <Foundation/Utf8StringView.h>
+#include "Instruction.h"
 
 
 namespace elet::domain::compiler::instruction::output
@@ -31,6 +32,8 @@ public:
     void
     writeDoubleWord(uint32_t instruction);
 
+    void
+    writeDoubleWordInFunction(std::uint32_t instruction, output::FunctionRoutine* function);
 
     void
     writeDoubleWordAtAddress(uint32_t instruction, size_t offset);
@@ -41,6 +44,12 @@ public:
 
     void
     writeByte(uint8_t instruction);
+
+    void
+    writeByteInFunction(uint8_t instruction, output::FunctionRoutine* function);
+
+    void
+    writeInstructionsInFunction(std::initializer_list<uint8_t> instructions, output::FunctionRoutine* function);
 
     void
     writeByte(uint8_t instruction, uint64_t& size);

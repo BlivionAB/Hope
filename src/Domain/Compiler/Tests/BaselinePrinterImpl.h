@@ -27,6 +27,7 @@ BaselinePrinter<TOneOfInstructions>::print()
     writeColumnHeader();
     _tw.newline();
     _tw.writeLine("__TEXT,__text:");
+    _tw.newline();
     writeInstructions(*textSectionInstructions);
     if (stubsSectionInstructions && stubsSectionInstructions->size() > 0)
     {
@@ -50,14 +51,13 @@ template<typename TOneOfInstructions>
 void
 BaselinePrinter<TOneOfInstructions>::writeAddress()
 {
-    auto vmAddress = textSectionStartAddress + vmOffset;
+    auto vmAddress = textSectionStartOffset + vmOffset;
     auto result = symbols->find(vmAddress);
     if (result != symbols->end())
     {
         _tw.newline();
         _tw.write(result->second);
-        _tw.write(":");
-        _tw.newline();
+        _tw.writeLine(":");
     }
     _tw.writeByteHex((vmAddress >> 56) & 0xff);
     _tw.writeByteHex((vmAddress >> 48) & 0xff);

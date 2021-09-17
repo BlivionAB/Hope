@@ -51,12 +51,15 @@ Decision:
     * There is no need to construct a CFG to accomplish this. Better done with AST.
     
 * Optimization phase will be:
-    * Tree-shaking (from un-use flagging).
+    * Tree-shaking (from un-use flagging). 
     * Common sub-expression elimination.
     * Inlining
     * Consolidations.
         * If two instruction can be merged (like store in subsequent load instructions), it's done here.
     * Arithmetic optimizations
         * Example:  times 2 could be optimized with a bit shift left.
-    
+
+* FunctionRoutine does not have parameters.
+  * note: unused parameters and arguments are not transformed to stack stores also 
+    access to those will also not be transformed.
     

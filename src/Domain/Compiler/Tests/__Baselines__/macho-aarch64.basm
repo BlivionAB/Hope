@@ -5,7 +5,7 @@ _main:
 0000000100003f60  fd7bbfa9              stp fp, lr, [sp, #-0x10]!
 0000000100003f64  fd030091              add fp, sp, 0x0
 0000000100003f68  00000090              adrp x00x0
-0000000100003f6c  00903f91              add x0, x0, -0xfffff01c
+0000000100003f6c  00903f91              add x0, x0, -0xfffff01c // Points to helloword
 0000000100003f70  05000094              bl "0x0000000100003f84 (WriteLine)"
 0000000100003f74  08008052              movz w8, #0x0
 0000000100003f78  e00308aa              mov x0, x8
@@ -17,7 +17,7 @@ WriteLine:
 0000000100003f88  fd7b01a9              stp fp, lr, [sp, #0x10]
 0000000100003f8c  fd430091              add fp, sp, 0x10
 0000000100003f90  e00700f9              str x0, [sp, #0x8]
-0000000100003f94  e0ff7ff9              ldr x0, [sp, #-0xffff8008]
+0000000100003f94  e0ff7ff9              ldr x0, [sp, #-0xffff8008] // This one feels a bit odd?
 0000000100003f98  04000094              bl 0x0000000100003fa8
 0000000100003f9c  fd7b41a9              ldp fp, lr, [sp, #0x10]
 0000000100003fa0  ff830091              add sp, sp, 0x20

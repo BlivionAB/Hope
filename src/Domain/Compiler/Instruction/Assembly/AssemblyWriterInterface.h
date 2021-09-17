@@ -33,6 +33,27 @@ class AssemblyWriterInterface
 
 public:
 
+    class InstructionIterator
+    {
+    public:
+
+        InstructionIterator(List<output::Instruction*>& instructions);
+
+        output::Instruction*
+        next();
+
+        output::Instruction*
+        peek();
+
+    private:
+
+        List<output::Instruction*>&
+        _instructions;
+
+        size_t
+        _cursor = 0;
+    };
+
     AssemblyWriterInterface(List<uint8_t>* output);
 
     virtual
@@ -40,7 +61,10 @@ public:
     writeTextSection(FunctionRoutine* routine) = 0;
 
     void
-    writeFunction(FunctionRoutine* routine);
+    writeFunction(FunctionRoutine* function);
+
+    void
+    writeFunctionInstructions(FunctionRoutine* function);
 
     virtual
     void
@@ -48,7 +72,62 @@ public:
 
     virtual
     void
-    writeFunctionParameters(const FunctionRoutine* routine);
+    writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
+
+    virtual
+    void
+    writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function);
+
+//    virtual
+//    void
+//    writeFunctionPrologue(FunctionRoutine* functionRoutine) = 0;
+
+//    virtual
+//    void
+//    writeFunctionEpilogue(FunctionRoutine* function) = 0;
+
+//    virtual
+//    void
+//    writeStartFunctionEpilogue(FunctionRoutine* function) = 0;
+
+//    void
+//    writeFunctionParameters(FunctionRoutine* routine);
+//
+//    virtual
+//    void
+//    writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine) = 0;
 
     virtual
     void
@@ -114,6 +193,12 @@ public:
 
 protected:
 
+    output::Instruction*
+    _nextInstruction;
+
+    List<output::Instruction*>::Iterator*
+    _instructionIterator;
+
     CallingConvention
     _callingConvention;
 
@@ -128,6 +213,9 @@ protected:
 
     uint64_t
     getStackSizeFromFunctionParameters(const FunctionRoutine* routine);
+
+    bool
+    nextInstructionIs(InstructionKind kind) const;
 };
 
 }

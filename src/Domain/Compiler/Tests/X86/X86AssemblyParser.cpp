@@ -232,8 +232,8 @@ X86AssemblyParser::createEv(uint8_t modrmByte, Instruction& instruction, bool us
     auto ev = new Ev();
     if (useOnlyRmField)
     {
-        uint8_t mod = modrmByte & MOD_BITS;
-        uint8_t rm = modrmByte & RM_BITS;
+        uint8_t mod = modrmByte & ModRmMask::Mod;
+        uint8_t rm = modrmByte & ModRmMask::Rm;
         switch (mod)
         {
             case ModBits::Mod0:
@@ -300,7 +300,7 @@ X86AssemblyParser::createEv(uint8_t modrmByte, Instruction& instruction, bool us
 Gv*
 X86AssemblyParser::createGv(std::uint8_t opcode, bool isQuadWord)
 {
-    std::uint8_t reg = (opcode & REG_BITS) >> 3;
+    std::uint8_t reg = (opcode & ModRmMask::Reg) >> 3;
     return isQuadWord ? new Gv(mapQuadWordRegisterIndex(reg)) : new Gv(mapDoubleWordRegisterIndex(reg));
 }
 

@@ -68,8 +68,8 @@ MachoFileWriter::writeTextSegment()
     {
         modSize += 16;
     }
-    size_t padding = _modTextSegmentSize - modSize;
-    size_t newVmAddress = padding + vmAddress;
+    uint64_t padding = _modTextSegmentSize - modSize;
+    uint64_t newVmAddress = vmAddress + padding;
 
     writePadding(padding - offset);
     textSegmentStartOffset = offset;
@@ -633,9 +633,9 @@ MachoFileWriter::writeSymbolTable()
     symtabCommand->symbolOffset = offset;
     writeDyldPrivateSymbol();
 
-    for (FunctionRoutine* internalRoutine : assemblyWriter->internalRoutines)
+    for (FunctionRoutine* function : assemblyWriter->internalRoutines)
     {
-        internalRoutine->stringTableIndexAddress = offset;
+        function->stringTableIndexAddress = offset;
 
         // String table Index
         _bw->writeDoubleWord(0);
@@ -653,9 +653,9 @@ MachoFileWriter::writeSymbolTable()
         _bw->writeByte(0);
 
         // Value
-        _bw->writeQuadWord(_textSegmentStartVmAddress + internalRoutine->offset);
+        _bw->writeQuadWord(_textSegmentStartVmAddress + function->offset);
 
-        internalRoutine->symbolTableIndex = symbolTableIndex;
+        function->symbolTableIndex = symbolTableIndex;
         ++symbolTableIndex;
     }
 

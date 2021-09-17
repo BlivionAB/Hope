@@ -18,7 +18,7 @@ struct Int32;
 struct CallInstruction;
 
 
-class X86_64Writer : public AssemblyWriterInterface
+class X86_64Writer final : public AssemblyWriterInterface
 {
 
 public:
@@ -42,32 +42,26 @@ private:
     size_t
     _subtractStackAddress;
 
+//    void
+//    writeFunction(FunctionRoutine* routine);
+
+//    void
+//    writeFunctionPrologue(FunctionRoutine* functionRoutine) override;
+//
+//    void
+//    writeFunctionEpilogue(FunctionRoutine* function) override;
+//
+//    void
+//    writeStartFunctionEpilogue(FunctionRoutine* function) override;
+
+//    void
+//    writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine) override;
+
     void
-    writeFunction(FunctionRoutine* routine);
-
-    uint64_t
-    writeFunctionPrologue(size_t stackSize);
-
-    void
-    writeFunctionEpilogue(size_t stackSize, uint64_t routineSize);
-
-    uint64_t
-    writeParameter(uint64_t size, unsigned int index, uint64_t& stackOffset);
-
-    void
-    writeFunctionParameters(const FunctionRoutine* routine) override;
-
-    uint64_t
-    writeFunctionInstructions(FunctionRoutine* routine, uint64_t& stackOffset);
-
-    uint64_t
-    writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
+    writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* function) override;
 
     uint64_t
     writeCallInstructionArguments(CallInstruction* callInstruction);
-
-    void
-    writeMoveFromOffset(uint8_t reg, size_t offset);
 
     void
     writePointer(std::uint64_t address);
@@ -91,7 +85,43 @@ private:
     relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
 
     void
-    writeVariableDeclaration(VariableDeclaration* variableDeclaration, uint64_t& size, uint64_t& stackOffset);
+    writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
+
+    void
+    writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function) override;
+
+    void
+    writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function) override;
+
+    void
+    writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
+
+    void
+    writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
+
+    void
+    writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function) override;
+
+    void
+    writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
+
+    void
+    writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
+
+    void
+    writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function) override;
+
+    RegisterBits
+    getRegisterBitsFromOperandRegister(OperandRegister operandRegister);
+
+    RmBits
+    getRmBitsFromOperandRegister(OperandRegister operandRegister);
+
+    void
+    writeModRmAndStackOffset(LoadInstruction* loadInstruction, FunctionRoutine* function);
+
+    void
+    writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister operandRegister, FunctionRoutine* function);
 };
 
 

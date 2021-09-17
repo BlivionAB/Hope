@@ -25,7 +25,7 @@ public:
     print();
 
     uint64_t
-    textSectionStartAddress = 0;
+    textSectionStartOffset = 0;
 
     List<TOneOfInstruction>*
     textSectionInstructions;

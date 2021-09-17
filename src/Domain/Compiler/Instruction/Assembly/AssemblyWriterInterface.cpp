@@ -14,39 +14,49 @@ AssemblyWriterInterface::AssemblyWriterInterface(List<std::uint8_t>* output):
 
 
 void
-AssemblyWriterInterface::writeFunction(FunctionRoutine* routine)
+AssemblyWriterInterface::writeFunction(FunctionRoutine* function)
 {
-    if (routine->hasWrittenOutput)
+    if (function->hasWrittenOutput)
     {
-        writeFunctionRelocationAddresses(routine);
+        writeFunctionRelocationAddresses(function);
         return;
     }
-    routine->offset = _offset;
-    writeFunctionRelocationAddresses(routine);
-    uint64_t stackSize = getStackSizeFromFunctionParameters(routine);
-    uint64_t stackOffset = 0;
-    uint64_t routineStackSize = 0;
-    routineStackSize += writeFunctionPrologue(stackSize);
-    writeFunctionParameters(routine, routineStackSize);
-    routineStackSize += writeFunctionInstructions(routine, stackOffset);
-    if (routine->isStartFunction)
-    {
-        bw->writeByte(OneByteOpCode::Xor_Ev_Gv);
-        bw->writeByte(ModBits::Mod3 | OpCodeRegister::Reg_RAX | RmBits::Rm0);
-        routineStackSize += 2;
-    }
-    writeFunctionEpilogue(stackSize, routineStackSize);
-    for (const auto& subRoutine : routine->subRoutines)
+    function->offset = _offset;
+    writeFunctionRelocationAddresses(function);
+//    writeFunctionPrologue(function);
+//    writeFunctionParameters(function);
+    writeFunctionInstructions(function);
+//    if (function->isStartFunction)
+//    {
+//        writeStartFunctionEpilogue(function);
+//    }
+//    writeFunctionEpilogue(function);
+    for (const auto& subRoutine : function->subRoutines)
     {
         writeFunction(subRoutine);
     }
-    routine->hasWrittenOutput = true;
-    if (routine->isStartFunction)
+    function->hasWrittenOutput = true;
+    if (function->isStartFunction)
     {
-        exportedRoutines.add(routine);
+        exportedRoutines.add(function);
     }
-    internalRoutines.add(routine);
+    internalRoutines.add(function);
 }
+
+
+//void
+//AssemblyWriterInterface::writeFunctionParameters(FunctionRoutine* routine)
+//{
+//    for (unsigned int i = 0; i < routine->parameters.size(); ++i)
+//    {
+//        auto parameter = routine->parameters[i];
+//        if (i < _callingConvention.registers.size())
+//        {
+//            writeParameter(parameter, i, routine);
+//        }
+//    }
+//}
+
 
 List<std::uint8_t>*
 AssemblyWriterInterface::getOutput()
@@ -104,6 +114,164 @@ void
 AssemblyWriterInterface::relocateCStrings(uint64_t textSegmentStartOffset)
 {
     // Optional, Implement this function if the object file requires relocation of C Strings.
+}
+
+void
+AssemblyWriterInterface::writeFunctionInstructions(FunctionRoutine* function)
+{
+    auto instructionIterator = function->instructions.begin();
+    _instructionIterator = &instructionIterator;
+    auto end = function->instructions.end();
+    while (instructionIterator != end)
+    {
+        output::Instruction* instruction = *instructionIterator;
+        auto peek = instructionIterator.peek();
+        if (peek != end)
+        {
+            _nextInstruction = *peek;
+        }
+        else
+        {
+            _nextInstruction = nullptr;
+        }
+        switch (instruction->kind)
+        {
+            case InstructionKind::Call:
+                writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction), function);
+                break;
+            case InstructionKind::Load:
+                writeLoadInstruction(reinterpret_cast<LoadInstruction*>(instruction), function);
+                break;
+            case InstructionKind::StoreImmediate:
+                writeStoreImmediateInstruction(reinterpret_cast<StoreImmediateInstruction*>(instruction), function);
+                break;
+            case InstructionKind::StoreRegister:
+                writeStoreRegisterInstruction(reinterpret_cast<StoreRegisterInstruction*>(instruction), function);
+                break;
+            case InstructionKind::MoveRegister:
+                writeMoveRegisterInstruction(reinterpret_cast<MoveRegisterInstruction*>(instruction), function);
+                break;
+            case InstructionKind::MoveAddress:
+                writeMoveAddressInstruction(reinterpret_cast<MoveAddressInstruction*>(instruction), function);
+                break;
+            case InstructionKind::Push:
+                writePushInstruction(reinterpret_cast<PushInstruction*>(instruction), function);
+                break;
+            case InstructionKind::Pop:
+                writePopInstruction(reinterpret_cast<PopInstruction*>(instruction), function);
+                break;
+            case InstructionKind::AddRegister:
+                writeAddRegisterInstruction(reinterpret_cast<AddRegisterInstruction*>(instruction), function);
+                break;
+            case InstructionKind::Return:
+                writeReturnInstruction(reinterpret_cast<ReturnInstruction*>(instruction), function);
+                break;
+            default:
+                throw std::runtime_error("Unknown local instruction.");
+        }
+        instructionIterator.next();
+    }
+}
+
+
+
+void
+AssemblyWriterInterface::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+
+void
+AssemblyWriterInterface::writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented method.");
+}
+
+
+void
+AssemblyWriterInterface::writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented");
+}
+
+
+bool
+AssemblyWriterInterface::nextInstructionIs(InstructionKind kind) const
+{
+    return _nextInstruction && _nextInstruction->kind == kind;
+}
+
+
+AssemblyWriterInterface::InstructionIterator::InstructionIterator(List<output::Instruction*>& instructions):
+    _instructions(instructions)
+{
+
+}
+
+
+output::Instruction*
+AssemblyWriterInterface::InstructionIterator::next()
+{
+    _cursor += 1;
+    return _instructions[_cursor];
+}
+
+
+output::Instruction*
+AssemblyWriterInterface::InstructionIterator::peek()
+{
+    return _instructions[_cursor + 1];
 }
 
 

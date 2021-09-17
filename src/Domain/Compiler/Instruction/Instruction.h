@@ -29,6 +29,7 @@ namespace elet::domain::compiler
 
 namespace elet::domain::compiler::instruction::output
 {
+    struct Constant;
     struct Routine;
     struct ParameterDeclaration;
     struct ArgumentDeclaration;
@@ -60,22 +61,34 @@ namespace elet::domain::compiler::instruction::output
         Return,
         Left,
         Right,
+        FramePointer,
+        StackPointer,
+        LinkRegister,
+
+        Arg0,
+        Arg1,
+        Arg2,
+        Arg3,
+
+        Argument = Arg0,
     };
 
 
     enum class InstructionKind
     {
+        Push,
+        Pop,
         Load,
-        Store,
-        AddRegisterToRegister,
+        StoreImmediate,
+        StoreRegister,
+        AddRegister,
         Call,
         MoveImmediate,
         MoveRegister,
+        MoveAddress,
         ArgumentDeclaration,
         ParameterDeclaration,
-        VariableDeclaration,
         Return,
-        TemporaryVariableDeclaration,
     };
 
 
@@ -90,10 +103,29 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    struct StoreInstruction : Instruction
+    struct PushInstruction : Instruction
     {
+        OperandRegister
+        target;
 
+        PushInstruction(OperandRegister target):
+            Instruction(InstructionKind::Push),
+            target(target)
+        { }
     };
+
+
+    struct PopInstruction : Instruction
+    {
+        OperandRegister
+        target;
+
+        PopInstruction(OperandRegister target):
+            Instruction(InstructionKind::Pop),
+            target(target)
+        { }
+    };
+
 
     struct LoadInstruction : Instruction
     {
@@ -119,12 +151,35 @@ namespace elet::domain::compiler::instruction::output
         ImmediateValue
         immediateValue;
 
+        std::optional<output::Constant*>
+        constant;
+
         MoveImmediateInstruction(OperandRegister destination, ImmediateValue immediateValue):
             Instruction(InstructionKind::MoveImmediate),
             destination(destination),
             immediateValue(immediateValue)
         { }
     };
+
+
+    struct MoveAddressInstruction : Instruction
+    {
+        OperandRegister
+        destination;
+
+        uint64_t
+        offset;
+
+        std::variant<std::monostate, output::Constant*, output::String*>
+        constant;
+
+        MoveAddressInstruction(OperandRegister destination, uint64_t offset):
+            Instruction(InstructionKind::MoveAddress),
+            destination(destination),
+            offset(offset)
+        { }
+    };
+
 
     struct MoveRegisterInstruction : Instruction
     {
@@ -293,6 +348,9 @@ namespace elet::domain::compiler::instruction::output
         uint64_t
         stackSize;
 
+        uint64_t
+        codeSize = 0;
+
         FunctionRoutine(const Utf8StringView& name):
             name(name),
             InternalRoutine(RoutineKind::Function)
@@ -336,21 +394,38 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    struct VariableDeclaration : MemoryAllocation
+    struct StoreRegisterInstruction : MemoryAllocation
     {
-        CanonicalExpression
-        expression;
+        OperandRegister
+        target;
 
-        VariableDeclaration(ast::VariableDeclaration* variableDeclaration, uint64_t& stackOffset):
-            MemoryAllocation(InstructionKind::VariableDeclaration, ast::type::TypeSize::_32, stackOffset)
+        StoreRegisterInstruction(OperandRegister target, uint64_t& stackOffset, ast::type::TypeSize size):
+            MemoryAllocation(InstructionKind::StoreRegister, size, stackOffset),
+            target(target)
         {
-            variableDeclaration->outputDeclaration = this;
-        }
 
-        VariableDeclaration(InstructionKind kind, ast::type::TypeSize size):
-            MemoryAllocation(kind, size)
-        { }
+        }
     };
+
+
+    struct StoreImmediateInstruction : MemoryAllocation
+    {
+        ImmediateValue
+        value;
+
+        std::optional<output::Constant*>
+        constant;
+
+        StoreImmediateInstruction(ImmediateValue value, ast::type::TypeSize size, uint64_t& stackOffset):
+            MemoryAllocation(InstructionKind::StoreImmediate, size, stackOffset),
+            value(value)
+        {
+
+        }
+    };
+
+
+
 
 
     struct ParameterDeclaration : MemoryAllocation
@@ -365,23 +440,7 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    typedef std::variant<std::size_t, String*, ParameterDeclaration*, VariableDeclaration*> ArgumentValue;
-
-
-    struct ArgumentDeclaration : VariableDeclaration
-    {
-        ArgumentValue
-        value;
-
-        unsigned int
-        index;
-
-        ArgumentDeclaration(unsigned int index, ast::type::TypeSize size, const ArgumentValue& value):
-            value(value),
-            index(index),
-            VariableDeclaration(InstructionKind::ArgumentDeclaration, size)
-        { }
-    };
+    typedef std::variant<std::size_t, String*, ParameterDeclaration*, StoreRegisterInstruction*> ArgumentValue;
 
 
     struct Operand

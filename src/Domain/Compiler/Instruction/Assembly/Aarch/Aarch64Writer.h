@@ -8,7 +8,7 @@
 namespace elet::domain::compiler::instruction::output
 {
 
-class Aarch64Writer : public AssemblyWriterInterface
+class Aarch64Writer final : public AssemblyWriterInterface
 {
 
 public:
@@ -44,29 +44,17 @@ public:
 
 private:
 
+//    void
+//    writeFunctionPrologue(FunctionRoutine* function) override;
+//
+//    void
+//    writeFunctionEpilogue(FunctionRoutine* routine) override;
+//
+//    void
+//    writeStartFunctionEpilogue(FunctionRoutine* function) override;
 
-    void
-    writeFunction(FunctionRoutine* routine);
-
-    void
-    writeFunctionPrologue(FunctionRoutine* routine, uint64_t& stackOffset, uint64_t& stackSize,
-                          uint64_t& routineSize);
-
-    void
-    writeFunctionParameters(const FunctionRoutine* routine, uint64_t& routineStackSize) override;
-
-    void
-    writeParameter(uint64_t size, unsigned int index, uint64_t& stackOffset, uint64_t& stackSize,
-                   uint64_t& routineSize);
-
-    void
-    writeFunctionEpilogue(FunctionRoutine* routine, uint64_t& stackSize, uint64_t& routineSize);
-
-    void
-    writeFunctionInstructions(FunctionRoutine* routine, uint64_t& routineSize);
-
-    uint64_t
-    writeCallInstruction(CallInstruction* instruction, FunctionRoutine* routine);
+//    void
+//    writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine) override;
 
     void
     writeFunctionRelocationAddresses(FunctionRoutine* routine);
@@ -116,14 +104,23 @@ private:
     uint32_t
     immhilo(int32_t value) const;
 
-    uint64_t
-    writeCallInstructionArguments(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
-
     void
     writeB(int32_t offset);
 
     void
     writeInstructionsPadding(uint64_t i);
+
+    void
+    writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
+
+    void
+    writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function) override;
+
+    void
+    writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
+
+    void
+    writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* function) override;
 };
 
 }

@@ -21,7 +21,7 @@ namespace elet::domain::compiler::instruction::output
 {
     struct Instruction;
     struct Parameter;
-    struct VariableDeclaration;
+    struct StoreRegisterInstruction;
 }
 
 
@@ -102,7 +102,7 @@ namespace elet::domain::compiler::ast
         TypeKind
         type;
 
-        std::size_t
+        type::TypeSize
         size;
 
         Name*

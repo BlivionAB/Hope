@@ -8,10 +8,9 @@ namespace elet::domain::compiler::instruction
 using namespace compiler;
 
 
-Transformer::Transformer(
-    std::mutex& dataMutex):
-
-    _dataMutex(dataMutex)
+Transformer::Transformer(std::mutex& dataMutex, CompilerOptions& compilerOptions) :
+    _dataMutex(dataMutex),
+    _compilerOptions(compilerOptions)
 {
 
 }
@@ -49,14 +48,54 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     {
         return functionDeclaration->routine;
     }
-    output::FunctionRoutine* routine = createFunctionRoutine(functionDeclaration->name->name);
-    _currentRoutineStack.push(routine);
+    output::FunctionRoutine* function = createFunctionRoutine(functionDeclaration->name->name);
+    _currentRoutineStack.push(function);
     uint64_t stackOffset = 0;
-    routine->name = functionDeclaration->signature->isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
-    transformFunctionParameters(functionDeclaration, routine, stackOffset);
+    function->name = functionDeclaration->signature->isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
+    transformFunctionPrologue(function);
+    transformFunctionParameters(functionDeclaration, function, stackOffset);
     transformLocalStatements(functionDeclaration->body->statements, stackOffset);
+    transformFunctionEpilogue(function);
     _currentRoutineStack.pop();
-    return routine;
+    return function;
+}
+
+
+void
+Transformer::transformFunctionPrologue(output::FunctionRoutine* function)
+{
+    addInstruction(new output::PushInstruction(OperandRegister::FramePointer));
+    function->stackSize += 8;
+    if (supportsLinkRegister())
+    {
+        addInstruction(new output::PushInstruction(OperandRegister::LinkRegister));
+        function->stackSize += 8;
+    }
+    addInstruction(new output::MoveRegisterInstruction(OperandRegister::StackPointer, OperandRegister::FramePointer));
+}
+
+
+void
+Transformer::transformFunctionEpilogue(output::FunctionRoutine* function)
+{
+    addInstruction(new output::PopInstruction(OperandRegister::FramePointer));
+    if (supportsLinkRegister())
+    {
+        addInstruction(new output::PopInstruction(OperandRegister::LinkRegister));
+    }
+    addInstruction(new output::ReturnInstruction());
+}
+
+
+bool
+Transformer::supportsLinkRegister()
+{
+    switch (_compilerOptions.assemblyTarget)
+    {
+        case AssemblyTarget::Aarch64:
+            return true;
+    }
+    return false;
 }
 
 
@@ -69,9 +108,11 @@ Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functio
         List<output::ParameterDeclaration*> parameterList = segmentParameterDeclaration(parameterDeclaration);
         for (const auto& param : parameterList)
         {
-            param->index = i;
-            routine->parameters.add(param);
-            ++i;
+            output::StoreRegisterInstruction* store = new output::StoreRegisterInstruction(static_cast<OperandRegister>(static_cast<int>(OperandRegister::Arg0) + i), stackOffset, param->size);
+            addInstruction(store);
+
+            // TODO: The reference instruction should be on property basis.
+            parameterDeclaration->referenceInstruction = store;
             stackOffset += param->size;
         }
     }
@@ -90,7 +131,7 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements, uint64_t& 
                 transformVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement), stackOffset);
                 break;
             case ast::SyntaxKind::CallExpression:
-                transformCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
+                transformCallExpression(reinterpret_cast<ast::CallExpression*>(statement), stackOffset);
                 break;
             case ast::SyntaxKind::ReturnStatement:
                 transformReturnStatement(reinterpret_cast<ast::ReturnStatement*>(statement), stackOffset);
@@ -126,10 +167,10 @@ Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement, uin
 void
 Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset)
 {
-    output::VariableDeclaration* localVariable = new output::VariableDeclaration(variable, stackOffset);
-    variable->referenceInstruction = localVariable;
-    localVariable->expression = transformExpression(variable->expression, stackOffset, output::OperandRegister::Left);
-    addInstruction(localVariable);
+    transformExpression(variable->expression, stackOffset, output::OperandRegister::Left);
+    output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(OperandRegister::Left, stackOffset, variable->resolvedType->size());
+    variable->referenceInstruction = storeInstruction;
+    addInstruction(storeInstruction);
 }
 
 
@@ -214,18 +255,19 @@ Transformer::transformImmediateBinaryExpression(ast::BinaryExpression* binaryExp
 
 
 void
-Transformer::transformCallExpression(const ast::CallExpression* callExpression)
+Transformer::transformCallExpression(const ast::CallExpression* callExpression, uint64_t& stackOffset)
 {
     auto callInstruction = new CallInstruction();
+    uint64_t argumentIndex = 0;
     for (const auto& argument : callExpression->argumentList->arguments)
     {
         switch (argument->kind)
         {
             case ast::SyntaxKind::StringLiteral:
-                callInstruction->arguments.add(transformArgumentStringLiteral(reinterpret_cast<ast::StringLiteral*>(argument)));
+                transformArgumentStringLiteral(reinterpret_cast<ast::StringLiteral*>(argument), argumentIndex);
                 break;
             case ast::SyntaxKind::PropertyExpression:
-                callInstruction->arguments.add(transformArgumentPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(argument)));
+                transformArgumentPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(argument), argumentIndex);
                 break;
             default:;
         }
@@ -250,26 +292,32 @@ Transformer::addInstruction(Instruction* instruction)
 }
 
 
-ArgumentDeclaration*
-Transformer::transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression)
+void
+Transformer::transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression, uint64_t argumentIndex)
 {
-    auto referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
-    switch (referenceInstruction->kind)
-    {
-        case InstructionKind::ParameterDeclaration:
-            return new ArgumentDeclaration(_currentArgumentIndex++, referenceInstruction->size, reinterpret_cast<ParameterDeclaration*>(referenceInstruction));
-        case InstructionKind::VariableDeclaration:
-            return new ArgumentDeclaration(_currentArgumentIndex++, referenceInstruction->size, reinterpret_cast<VariableDeclaration*>(referenceInstruction));
-        default:;
-    }
+    output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
+    output::LoadInstruction* loadInstruction = new output::LoadInstruction(
+        getOperandRegisterFromArgumentIndex(argumentIndex),
+        referenceInstruction->stackOffset);
+    addInstruction(loadInstruction);
 }
 
 
-ArgumentDeclaration*
-Transformer::transformArgumentStringLiteral(ast::StringLiteral* stringLiteral)
+void
+Transformer::transformArgumentStringLiteral(ast::StringLiteral* stringLiteral, uint64_t argumentIndex)
 {
     output::String* cstring = addStaticConstantString(stringLiteral);
-    return new ArgumentDeclaration(_currentArgumentIndex++, ast::type::TypeSize::Pointer, cstring);
+    output::MoveAddressInstruction* store = new output::MoveAddressInstruction(
+        getOperandRegisterFromArgumentIndex(argumentIndex), 0);
+    store->constant = cstring;
+    addInstruction(store);
+}
+
+
+output::OperandRegister
+Transformer::getOperandRegisterFromArgumentIndex(uint64_t argumentIndex)
+{
+    return static_cast<OperandRegister>(static_cast<uint64_t>(OperandRegister::Arg0) + argumentIndex);
 }
 
 
@@ -303,21 +351,6 @@ Transformer::segmentParameterDeclaration(ast::ParameterDeclaration* parameter)
 }
 
 
-List<output::ArgumentDeclaration*>
-Transformer::segmentArgumentDeclarations(ast::ArgumentDeclaration* argumentDeclaration)
-{
-    List<output::ArgumentDeclaration*> argumentList;
-    return argumentList;
-}
-
-
-bool
-Transformer::isCompositeExpression(ast::Expression* expression)
-{
-    return expression->kind == ast::SyntaxKind::BinaryExpression;
-}
-
-
 bool
 Transformer::isImmediateValueExpression(ast::Expression* expression)
 {
@@ -343,11 +376,14 @@ Transformer::transformMemoryToMemoryBinaryExpression(ast::BinaryOperatorKind bin
     // Ldr Op1, [Sp + 0]
     // Ldr Op2, [Sp + 4]
     // Add Op1, Op1, Op2
-    // Note, we can implicitly just add both destination registers!
+    // Note, we can implicitly just add both destination registers!.
+    //
+    // A catch in x86. It supports directly mem to register addition. So, it should take the previous move's memory
+    // address and apply it on the operation.
     switch (binaryOperatorKind)
     {
         case ast::BinaryOperatorKind::Plus:
-            addInstruction(new output::AddRegisterToRegisterInstruction());
+            addInstruction(new output::AddRegisterInstruction());
             break;
         default:
             throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");

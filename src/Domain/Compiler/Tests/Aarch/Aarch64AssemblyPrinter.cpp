@@ -293,7 +293,7 @@ Aarch64AssemblyPrinter::writeByteInstruction(const Instruction* instruction)
     for (const auto byte : instruction->bytes)
     {
         _tw.writeByteHex(byte);
-        ++textSectionStartAddress;
+        ++textSectionStartOffset;
     }
 }
 
@@ -313,7 +313,7 @@ Aarch64AssemblyPrinter::writeBl(const BlInstruction* instruction)
 {
     _tw.write("bl ");
 
-    uint64_t vmAddress = instruction->imm26 * 4 + textSectionStartAddress - 4 /* We wrote the byte instruction above*/;
+    uint64_t vmAddress = instruction->imm26 * 4 + textSectionStartOffset - 4 /* We wrote the byte instruction above*/;
     auto result = symbols->find(vmAddress + vmOffset);
     if (result == symbols->end())
     {
@@ -376,7 +376,7 @@ Aarch64AssemblyPrinter::writeB(const BInstruction* instruction)
 {
     _tw.write("b ");
 
-    uint64_t vmAddress = instruction->imm26 * 4 + textSectionStartAddress - 4 /* We wrote the byte instruction above*/;
+    uint64_t vmAddress = instruction->imm26 * 4 + textSectionStartOffset - 4 /* We wrote the byte instruction above*/;
     auto result = symbols->find(vmAddress + vmOffset);
     if (result == symbols->end())
     {

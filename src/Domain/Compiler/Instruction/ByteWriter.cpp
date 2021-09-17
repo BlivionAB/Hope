@@ -29,7 +29,7 @@ ByteWriter::writeQuadWord(uint64_t instruction)
 
 
 void
-ByteWriter::writeQuadWordAtAddress(std::uint64_t instruction, std::uint64_t address)
+ByteWriter::writeQuadWordAtAddress(uint64_t instruction, uint64_t address)
 {
     (*output)[address] = instruction & 0xff;
     (*output)[address + 1] = (instruction >> 8) & 0xff;
@@ -43,13 +43,25 @@ ByteWriter::writeQuadWordAtAddress(std::uint64_t instruction, std::uint64_t addr
 
 
 void
-ByteWriter::writeDoubleWord(std::uint32_t instruction)
+ByteWriter::writeDoubleWord(uint32_t instruction)
 {
     (*offset) += 4;
     output->add(instruction & 0xff);
     output->add((instruction >> 8) & 0xff);
     output->add((instruction >> 16) & 0xff);
     output->add((instruction >> 24) & 0xff);
+}
+
+
+void
+ByteWriter::writeDoubleWordInFunction(uint32_t instruction, output::FunctionRoutine* function)
+{
+    (*offset) += 4;
+    output->add(instruction & 0xff);
+    output->add((instruction >> 8) & 0xff);
+    output->add((instruction >> 16) & 0xff);
+    output->add((instruction >> 24) & 0xff);
+    function->codeSize += 4;
 }
 
 
@@ -79,6 +91,14 @@ ByteWriter::writeByte(uint8_t instruction)
 {
     ++(*offset);
     output->add(instruction);
+}
+
+
+void
+ByteWriter::writeByteInFunction(uint8_t instruction, output::FunctionRoutine* function)
+{
+    writeByte(instruction);
+    function->codeSize += 1;
 }
 
 
@@ -290,5 +310,15 @@ ByteWriter::getDoubleWord(uint64_t offset)
     return result;
 }
 
+
+void
+ByteWriter::writeInstructionsInFunction(std::initializer_list<uint8_t> instructions, output::FunctionRoutine* function)
+{
+    for (const uint8_t instruction : instructions)
+    {
+        writeByte(instruction);
+    }
+    function->codeSize += instructions.size();
+}
 
 }

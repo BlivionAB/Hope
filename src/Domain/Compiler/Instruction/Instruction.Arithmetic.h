@@ -7,10 +7,10 @@
 
 namespace elet::domain::compiler::instruction::output
 {
-    struct AddRegisterToRegisterInstruction : Instruction
+    struct AddRegisterInstruction : Instruction
     {
-        AddRegisterToRegisterInstruction():
-            Instruction(InstructionKind::AddRegisterToRegister)
+        AddRegisterInstruction():
+            Instruction(InstructionKind::AddRegister)
         { }
     };
 }

@@ -154,7 +154,7 @@ X86AssemblyPrinter::writeMemoryAddress(const std::array<uint8_t, 4> mem)
     {
         offset += mem[i] << 8 * i;
     }
-    size_t vmAddress = offset + textSectionStartAddress;
+    size_t vmAddress = offset + textSectionStartOffset;
     if (vmAddress >= cstringSectionOffset && vmAddress <= cstringSectionOffset + cstringSectionSize)
     {
         _tw.write("\"");
@@ -355,7 +355,7 @@ X86AssemblyPrinter::writeByteInstruction(const Instruction& instruction)
     for (const auto byte : instruction.bytes)
     {
         _tw.writeByteHex(byte);
-        ++textSectionStartAddress;
+        ++textSectionStartOffset;
     }
 }
 

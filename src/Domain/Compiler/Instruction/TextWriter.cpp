@@ -95,8 +95,6 @@ TextWriter::writeLine(const Utf8StringView &text)
 {
     write(text);
     newline();
-    _column += text.size() + 1;
-    writeIndent();
 }
 
 

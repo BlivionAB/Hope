@@ -62,7 +62,7 @@ CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TOneOfInstructions>::p
         if (std::strcmp(section->sectionName, "__text") == 0)
         {
             parseTextSection(section, textSectionInstructions);
-            _baselinePrinter->textSectionStartAddress = section->offset;
+            _baselinePrinter->textSectionStartOffset = section->offset;
         }
         else if (std::strcmp(section->sectionName, "__stubs") == 0)
         {

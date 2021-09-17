@@ -22,7 +22,7 @@ X86_64Writer::writeStubs()
             bw->writeDoubleWordAtAddress(_offset - (relocationAddress + 4), relocationAddress);
         }
         bw->writeByte(ExtGroup5);
-        bw->writeByte(ExtGroup5_NearCallRegistryBits | MOD_DISP0 | Rm5);
+        bw->writeByte(ExtGroup5_NearCallRegistryBits | ModBits::Mod0 | Rm5);
         routine->stubAddress = _offset;
         bw->writeDoubleWord(0);
     }
@@ -36,7 +36,7 @@ X86_64Writer::writeStubHelper()
     // leaq dyld_private, r11
     bw->writeByte(RexMagic | RexW | RexR);
     bw->writeByte(OneByteOpCode::Lea_Gv_M);
-    bw->writeByte(MOD_DISP0 | RmBits::Rm5 | OpCodeRegister::Reg3);
+    bw->writeByte(ModBits::Mod0 | RmBits::Rm5 | RegisterBits::Reg3);
     dyldPrivateOffset = _offset;
     bw->writeDoubleWord(0);
 
@@ -46,7 +46,7 @@ X86_64Writer::writeStubHelper()
 
     // jmpq dyld_stub_binder
     bw->writeByte(OneByteOpCode::ExtGroup5);
-    bw->writeByte(OneByteOpCode::ExtGroup5_NearCallRegistryBits | MOD_DISP0 | Rm5);
+    bw->writeByte(OneByteOpCode::ExtGroup5_NearCallRegistryBits | ModBits::Mod0 | Rm5);
     Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
     Utf8StringView string = Utf8StringView(*dyldStubBinderString);
     ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);
@@ -75,42 +75,6 @@ X86_64Writer::writeTextSection(FunctionRoutine* routine)
 }
 
 
-//void
-//X86_64Writer::writeFunction(FunctionRoutine* routine)
-//{
-//    if (routine->hasWrittenOutput)
-//    {
-//        writeFunctionRelocationAddresses(routine);
-//        return;
-//    }
-//    routine->offset = _offset;
-//    writeFunctionRelocationAddresses(routine);
-//    uint64_t stackSize = getStackSizeFromFunctionParameters(routine);
-//    uint64_t stackOffset = 0;
-//    uint64_t routineSize = 0;
-//    routineSize += writeFunctionPrologue(stackSize);
-//    routineSize += writeFunctionParameters(routine, stackOffset);
-//    routineSize += writeFunctionInstructions(routine, stackOffset);
-//    if (routine->isStartFunction)
-//    {
-//        bw->writeByte(OneByteOpCode::Xor_Ev_Gv);
-//        bw->writeByte(ModBits::Mod3 | OpCodeRegister::Reg_RAX | RmBits::Rm0);
-//        routineSize += 2;
-//    }
-//    writeFunctionEpilogue(stackSize, routineSize);
-//    for (const auto& subRoutine : routine->subRoutines)
-//    {
-//        writeFunction(subRoutine);
-//    }
-//    routine->hasWrittenOutput = true;
-//    if (routine->isStartFunction)
-//    {
-//        exportedRoutines.add(routine);
-//    }
-//    internalRoutines.add(routine);
-//}
-
-
 void
 X86_64Writer::writeFunctionRelocationAddresses(FunctionRoutine* routine)
 {
@@ -122,55 +86,44 @@ X86_64Writer::writeFunctionRelocationAddresses(FunctionRoutine* routine)
 }
 
 
-uint64_t
-X86_64Writer::writeFunctionInstructions(FunctionRoutine* routine, uint64_t& stackOffset)
+void
+X86_64Writer::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function)
 {
-    uint64_t size = 0;
-    for (const auto& instruction : routine->instructions)
-    {
-        switch (instruction->kind)
-        {
-            case InstructionKind::Call:
-                size += writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction), routine);
-                break;
-            case InstructionKind::VariableDeclaration:
-                writeVariableDeclaration(reinterpret_cast<VariableDeclaration*>(instruction), stackOffset, size);
-                break;
-            default:
-                throw std::runtime_error("Unknown local instruction.");
-        }
-    }
-    return size;
+    bw->writeInstructionsInFunction({
+                                        OpCodePrefix::RexMagic | OpCodePrefix::RexW,
+                                        OneByteOpCode::Mov_Gv_Ev}, function);
+    writeEbpReferenceBytes(storeRegisterInstruction->stackOffset, storeRegisterInstruction->target, function);
 }
-
 
 
 void
-X86_64Writer::writeVariableDeclaration(VariableDeclaration* variableDeclaration, uint64_t& stackOffset, uint64_t& size)
+X86_64Writer::writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function)
 {
-    if (std::holds_alternative<ImmediateValue>(variableDeclaration->expression))
-    {
-        ImmediateValue imm = std::get<ImmediateValue>(variableDeclaration->expression);
-        bw->writeByte(OneByteOpCode::Mov_Ev_Iz);
-        bw->writeByte(ModBits::Mod1 | RmBits::Rm5);
-        bw->writeByte(-stackOffset);
-        bw->writeDoubleWord(std::get<int32_t>(imm));
-        stackOffset += 4;
-        size += 7;
-        variableDeclaration->stackOffset = stackOffset;
-    }
-    else
-    {
-        throw std::runtime_error("Not implemented variable declaration.");
-    }
+    bw->writeByteInFunction(OneByteOpCode::Push_rBP, function);
 }
 
 
-uint64_t
-X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine)
+void
+X86_64Writer::writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function)
 {
-    uint64_t size = 0;
-    size += writeCallInstructionArguments(callInstruction);
+    bw->writeByteInFunction(OneByteOpCode::Pop_rBP, function);
+}
+
+
+void
+X86_64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function)
+{
+    bw->writeByte(OneByteOpCode::Mov_Ev_Iz);
+    bw->writeByte(ModBits::Mod1 | RmBits::Rm5);
+    bw->writeByte(-storeImmediateInstruction->stackOffset);
+    bw->writeDoubleWord(std::get<int32_t>(storeImmediateInstruction->value));
+    function->codeSize += 7;
+}
+
+
+void
+X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* function)
+{
     bw->writeByte(CallNear);
     switch (callInstruction->routine->kind)
     {
@@ -185,10 +138,10 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRou
             {
                 routine->relocationAddresses.emplace(_offset, _offset + 4);
                 bw->writeDoubleWord(0);
-                parentRoutine->subRoutines.add(routine);
+                function->subRoutines.add(routine);
             }
-            size += 5;
-            return size;
+            function->codeSize += 5;
+            break;
         }
         case RoutineKind::External:
         {
@@ -196,8 +149,8 @@ X86_64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRou
             routine->relocationAddresses.add(_offset);
             bw->writeDoubleWord(0);
             externalRoutines.add(routine);
-            size += 5;
-            return size;
+            function->codeSize += 5;
+            break;
         }
         default:
             throw std::runtime_error("Unknown routine kind.");
@@ -228,118 +181,23 @@ X86_64Writer::writeCStringSection()
 }
 
 
-uint64_t
-X86_64Writer::writeCallInstructionArguments(CallInstruction* callInstruction)
-{
-    uint64_t size = 0;
-    unsigned int i = 0;
-    for (const auto& argument : callInstruction->arguments)
-    {
-        auto reg = _callingConvention.registers[i];
-        if (auto parameter = std::get_if<ParameterDeclaration*>(&argument->value))
-        {
-            writeMoveFromOffset(reg, (*parameter)->stackOffset);
-            size += 4;
-        }
-        else if (auto string = std::get_if<String*>(&argument->value))
-        {
-            bw->writeByte(RexMagic | RexW);
-            bw->writeByte(Lea_Gv_M);
-            bw->writeByte(reg | Rm5 | MOD_DISP0);
-            (*string)->relocationAddress.offset = _offset;
-            bw->writeDoubleWord(0);
-            size += 7;
-            _strings.add(*string);
-        }
-        ++i;
-    }
-    return size;
-}
-
-
 void
-X86_64Writer::writeMoveFromOffset(uint8_t reg, size_t offset)
+X86_64Writer::writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
 {
-    assert(("Offset must be smaller then INT8_MAX", offset < INT8_MAX));
-    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-    bw->writeByte(OneByteOpCode::Mov_Gv_Ev);
-    bw->writeByte(MODRM_EBP_DISP8 | reg);
-    bw->writeByte(-offset);
-}
-
-
-void
-X86_64Writer::writeFunctionParameters(const FunctionRoutine* routine)
-{
-    for (unsigned int i = 0; i < routine->parameters.size(); ++i)
+    // It's an unnecessary move, since they are the same register.
+    if (moveRegisterInstruction->destination == OperandRegister::Return && moveRegisterInstruction->target == OperandRegister::Left)
     {
-        auto parameter = routine->parameters[i];
-        if (i < _callingConvention.registers.size())
-        {
-            writeParameter(parameter->size, i);
-        }
+        return;
     }
-}
-
-
-uint64_t
-X86_64Writer::writeParameter(uint64_t size, unsigned int index, uint64_t& stackOffset)
-{
-    stackOffset += size;
-    assert(("_localStackOffset must be smaller then INT8_MAX", stackOffset < INT8_MAX));
-    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-    bw->writeByte(OneByteOpCode::Mov_Ev_Gv);
-    bw->writeByte(MODRM_EBP_DISP8 | _callingConvention.registers[index]);
-    bw->writeByte(-stackOffset);
-    return 4;
-}
-
-
-uint64_t
-X86_64Writer::writeFunctionPrologue(size_t stackSize)
-{
-    uint64_t size = 4;
-    bw->writeByte(OneByteOpCode::Push_rBP);
-    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-    bw->writeByte(OneByteOpCode::Mov_Ev_Gv);
-    bw->writeByte(MODRM_EBP | Reg4);
-
-    // Subtract rSP
-    if (stackSize)
-    {
-        bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-        bw->writeByte(OneByteOpCode::Ev_Ib);
-        bw->writeByte(OpCodeRegister::Reg5 | ModBits::Mod3 | RmBits::Rm4);
-        _subtractStackAddress = _offset;
-        bw->writeByte(stackSize);
-        size += 4;
-    }
-    return size;
-}
-
-
-void
-X86_64Writer::writeFunctionEpilogue(size_t stackSize, uint64_t routineSize)
-{
-    // Add back rSP
-    if (stackSize)
-    {
-        bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-        bw->writeByte(OneByteOpCode::Ev_Ib);
-        bw->writeByte(OpCodeRegister::Reg0 | ModBits::Mod3 | RmBits::Rm4);
-        bw->writeByte(stackSize);
-        routineSize += 4;
-    }
-
-    bw->writeByte(Pop_rBP);
-    bw->writeByte(Ret);
-    routineSize += 2;
-
-    uint64_t rest = routineSize % 16;
-    if (rest != 0)
-    {
-        writeInstructionsPadding(16 - rest);
-    }
+    bw->writeInstructionsInFunction({
+                                        OpCodePrefix::RexMagic | OpCodePrefix::RexW,
+                                        OneByteOpCode::Mov_Ev_Gv,
+                                        static_cast<uint8_t>(ModBits::Mod3
+                                                             | getRegisterBitsFromOperandRegister(
+                                            moveRegisterInstruction->destination)
+                                                             | getRmBitsFromOperandRegister(
+                                            moveRegisterInstruction->target))
+                                    }, function);
 }
 
 
@@ -450,5 +308,139 @@ X86_64Writer::relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset)
     bw->writeDoubleWordAtAddress(gotOffset - 4 /* -4 due to we haven't added it to relocation address*/, offset);
 }
 
+
+void
+X86_64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
+{
+    if (loadInstruction->destination == OperandRegister::Right && nextInstructionIs(InstructionKind::AddRegister))
+    {
+        bw->writeByte(OneByteOpCode::Add_Gv_Ev);
+        function->codeSize += 1;
+        writeModRmAndStackOffset(loadInstruction, function);
+
+        // Skip next instruction, since we already processed it.
+        _instructionIterator->next();
+        return;
+    }
+
+    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
+    bw->writeByte(OneByteOpCode::Mov_Ev_Gv);
+    function->codeSize += 2;
+    writeModRmAndStackOffset(loadInstruction, function);
+}
+
+
+void
+X86_64Writer::writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister operandRegister, FunctionRoutine* function)
+{
+    RegisterBits registerBits = getRegisterBitsFromOperandRegister(operandRegister);
+    int64_t convertedStackOffset = static_cast<int64_t>(stackOffset);
+    if (convertedStackOffset <= INT8_MAX && convertedStackOffset >= INT8_MIN)
+    {
+        bw->writeByte(ModBits::Mod1 | registerBits | RmBits::EbpPlusDisp8);
+        bw->writeByte(-convertedStackOffset);
+        function->codeSize += 2;
+    }
+    else if (convertedStackOffset <= INT32_MAX && convertedStackOffset >= INT32_MIN)
+    {
+        bw->writeByte(ModBits::Mod2 | registerBits | RmBits::EbpPlusDisp32);
+        bw->writeDoubleWord(-convertedStackOffset);
+        function->codeSize += 5;
+    }
+    else
+    {
+        throw std::runtime_error("The stack offset is larger than 32 bit.");
+    }
+}
+
+
+void
+X86_64Writer::writeModRmAndStackOffset(LoadInstruction* loadInstruction, FunctionRoutine* function)
+{
+    writeEbpReferenceBytes(loadInstruction->stackOffset, loadInstruction->destination, function);
+}
+
+
+void
+X86_64Writer::writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented");
+}
+
+
+void
+X86_64Writer::writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function)
+{
+    bw->writeByteInFunction(OneByteOpCode::Ret, function);
+}
+
+
+RegisterBits
+X86_64Writer::getRegisterBitsFromOperandRegister(OperandRegister operandRegister)
+{
+    switch (operandRegister)
+    {
+        case OperandRegister::Arg0:
+            return RegisterBits::Reg_RDI;
+        case OperandRegister::Left:
+            return RegisterBits::Reg_RAX;
+        case OperandRegister::Right:
+            return RegisterBits::Reg_RCX;
+        case OperandRegister::Return:
+            return RegisterBits::Reg_RAX;
+        case OperandRegister::StackPointer:
+            return RegisterBits::Reg_RSP;
+        case OperandRegister::FramePointer:
+            return RegisterBits::Reg_RBP;
+        default:
+            throw std::runtime_error("Not implemented operand register.");
+    }
+}
+
+
+RmBits
+X86_64Writer::getRmBitsFromOperandRegister(OperandRegister operandRegister)
+{
+    switch (operandRegister)
+    {
+        case OperandRegister::Arg0:
+            return RmBits::Rm_RDI;
+        case OperandRegister::Left:
+            return RmBits::Rm_RAX;
+        case OperandRegister::Right:
+            return RmBits::Rm_RBX;
+        case OperandRegister::FramePointer:
+            return RmBits::Rm_RBP;
+        case OperandRegister::StackPointer:
+            return RmBits::Rm_RSP;
+        case OperandRegister::Return:
+            return RmBits::Rm_RAX;
+        default:
+            throw std::runtime_error("Not implemented operand register.");
+    }
+}
+
+
+void
+X86_64Writer::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function)
+{
+    bw->writeInstructionsInFunction({
+        OpCodePrefix::RexMagic | OpCodePrefix::RexW,
+        OneByteOpCode::Lea_Gv_M,
+        static_cast<uint8_t>(ModBits::Mod0 | getRegisterBitsFromOperandRegister(moveAddressInstruction->destination) | RmBits::Rm5)
+    }, function);
+    auto constant = moveAddressInstruction->constant;
+    if (std::holds_alternative<output::String*>(constant))
+    {
+        output::String* string = std::get<output::String*>(constant);
+        string->relocationAddress.offset = _offset;
+        bw->writeDoubleWordInFunction(0, function);
+        _strings.add(string);
+    }
+    else
+    {
+        throw std::runtime_error("Does not support constants other than strings.");
+    }
+}
 
 }

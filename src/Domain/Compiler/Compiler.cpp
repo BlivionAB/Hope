@@ -23,7 +23,7 @@ Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions options):
     _binder(new Binder()),
     _checker(new Checker(_binder))
 {
-    _transformer = new Transformer(_dataMutex);
+    _transformer = new Transformer(_dataMutex, options);
     _objectFileWriter = new MachoFileWriter(options.assemblyTarget);
 }
 

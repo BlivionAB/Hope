@@ -16,14 +16,6 @@ template<typename T>
 class List
 {
 public:
-    struct Result
-    {
-        bool
-        Success;
-
-        T*
-        Value;
-    };
 
     class Iterator {
         friend class List;
@@ -36,6 +28,19 @@ public:
 
         const Iterator&
         operator ++ ()
+        {
+            value++;
+            return *this;
+        }
+
+        const Iterator&
+        peek() const
+        {
+            return Iterator(value + 1);
+        }
+
+        const Iterator&
+        next()
         {
             value++;
             return *this;

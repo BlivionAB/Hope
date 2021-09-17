@@ -34,7 +34,7 @@ private:
     writeInstruction(const output::Instruction* instruction);
 
     void
-    writeVariableDeclaration(const output::VariableDeclaration* variableDeclaration);
+    writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction);
 
     void
     writeOperation(output::Operation* operation);

@@ -43,8 +43,8 @@ StashIRPrinter::writeInstruction(const output::Instruction* instruction)
 {
     switch (instruction->kind)
     {
-        case output::InstructionKind::VariableDeclaration:
-            writeVariableDeclaration(reinterpret_cast<const output::VariableDeclaration*>(instruction));
+        case output::InstructionKind::StoreImmediate:
+            writeStoreImmediateInstruction(reinterpret_cast<const output::StoreImmediateInstruction*>(instruction));
             break;
         case output::InstructionKind::Load:
             writeLoadInstruction(reinterpret_cast<const output::LoadInstruction*>(instruction));
@@ -55,7 +55,7 @@ StashIRPrinter::writeInstruction(const output::Instruction* instruction)
         case output::InstructionKind::Return:
             _tw.write("Ret");
             break;
-        case output::InstructionKind::AddRegisterToRegister:
+        case output::InstructionKind::AddRegister:
             _tw.write("Add OpL, OpL, OpR");
             break;
         default:
@@ -105,30 +105,19 @@ StashIRPrinter::writeOperandRegister(output::OperandRegister operandRegister)
 
 
 void
-StashIRPrinter::writeVariableDeclaration(const output::VariableDeclaration* variableDeclaration)
+StashIRPrinter::writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction)
 {
-    if (std::holds_alternative<output::ImmediateValue>(variableDeclaration->expression))
+    _tw.write("Str [Sp + ");
+    _tw.write(storeImmediateInstruction->stackOffset);
+    _tw.write("], ");
+    output::ImmediateValue value = storeImmediateInstruction->value;
+    if (std::holds_alternative<int32_t>(value))
     {
-        _tw.write("Str [Sp + ");
-        _tw.write(variableDeclaration->stackOffset);
-        _tw.write("], ");
-        output::ImmediateValue value = std::get<output::ImmediateValue>(variableDeclaration->expression);
-        if (std::holds_alternative<int32_t>(value))
-        {
-            _tw.write(std::get<int32_t>(value));
-        }
-        else
-        {
-            _tw.write(std::get<int64_t>(value));
-        }
+        _tw.write(std::get<int32_t>(value));
     }
-    else // std::holds_alternative<output::ScratchRegister*>
+    else
     {
-        _tw.write("Str [Sp + ");
-        _tw.write(variableDeclaration->stackOffset);
-        _tw.write("], ");
-        _tw.write("Op1");
-
+        _tw.write(std::get<int64_t>(value));
     }
 }
 

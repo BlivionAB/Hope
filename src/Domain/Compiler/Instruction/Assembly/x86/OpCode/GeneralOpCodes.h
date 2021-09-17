@@ -41,7 +41,7 @@ enum OneByteOpCode : uint8_t
     Ret = 0xc3,
 
     Sub = 0xec,
-    Add = 0xc4,
+    Add_Gv_Ev = 0x03,
 
     // Immediate Group 1
     Eb_lb = 0x80,

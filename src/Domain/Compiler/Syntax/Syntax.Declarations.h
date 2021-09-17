@@ -7,7 +7,7 @@
 
 namespace elet::domain::compiler::instruction::output
 {
-    struct VariableDeclaration;
+    struct StoreRegisterInstruction;
     struct FunctionRoutine;
     struct MemoryAllocation;
 }
@@ -149,7 +149,7 @@ namespace elet::domain::compiler::ast
         Expression*
         expression;
 
-        instruction::output::VariableDeclaration*
+        instruction::output::StoreRegisterInstruction*
         outputDeclaration;
     };
 

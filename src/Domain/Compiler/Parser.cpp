@@ -749,7 +749,7 @@ Parser::parseExpressionOnToken(Token token)
             return parseAddressOfExpression();
         case Token::StringLiteral:
         {
-            StringLiteral *stringLiteral = createSyntax<StringLiteral>(SyntaxKind::BooleanLiteral);
+            StringLiteral *stringLiteral = createSyntax<StringLiteral>(SyntaxKind::StringLiteral);
             finishSyntax(stringLiteral);
             stringLiteral->stringStart = stringLiteral->start + 1;
             stringLiteral->stringEnd = stringLiteral->end - 1;

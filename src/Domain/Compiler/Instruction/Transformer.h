@@ -19,6 +19,7 @@ using namespace elet::domain::compiler::instruction;
 namespace elet::domain::compiler
 {
     struct Symbol;
+    struct CompilerOptions;
 
     namespace ast
     {
@@ -45,13 +46,13 @@ namespace output
     struct Operand;
     struct FunctionReference;
     struct LoadInstruction;
-    struct VariableDeclaration;
+    struct StoreRegisterInstruction;
     struct ParameterDeclaration;
     struct String;
     struct Register;
-    struct VariableDeclaration;
+    struct StoreRegisterInstruction;
     struct ArgumentDeclaration;
-    typedef std::variant<std::size_t, String*, ParameterDeclaration*, VariableDeclaration*> ArgumentValue;
+    typedef std::variant<std::size_t, String*, ParameterDeclaration*, StoreRegisterInstruction*> ArgumentValue;
     struct InternalRoutine;
     struct FunctionRoutine;
     struct MoveRegisterInstruction;
@@ -113,8 +114,7 @@ class Transformer
 {
 public:
 
-    Transformer(
-        std::mutex& dataMutex);
+    Transformer(std::mutex& dataMutex, CompilerOptions& compilerOptions);
 
     output::FunctionRoutine*
     transform(ast::Declaration* declaration);
@@ -122,14 +122,13 @@ public:
 private:
 
     void
-    transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration,
-                                output::FunctionRoutine* routine, uint64_t& stackOffset);
+    transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine, uint64_t& stackOffset);
 
     output::FunctionRoutine*
     transformFunctionDeclaration(const ast::FunctionDeclaration* functionDeclaration);
 
-    output::ArgumentDeclaration*
-    transformArgumentStringLiteral(ast::StringLiteral* stringLiteral);
+    void
+    transformArgumentStringLiteral(ast::StringLiteral* stringLiteral, uint64_t argumentIndex);
 
     output::FunctionRoutine*
     createFunctionRoutine(const Utf8StringView& name);
@@ -142,10 +141,13 @@ private:
     getSymbolReference(ast::NamedExpression *expression);
 
     void
-    transformCallExpression(const ast::CallExpression* callExpression);
+    transformCallExpression(const ast::CallExpression* callExpression, uint64_t& stackOffset);
 
     output::String*
     addStaticConstantString(ast::StringLiteral* stringLiteral);
+
+    CompilerOptions&
+    _compilerOptions;
 
     std::size_t
     _pointerSize = TYPE_SIZE_64;
@@ -168,14 +170,8 @@ private:
     List<output::ParameterDeclaration*>
     segmentParameterDeclaration(ast::ParameterDeclaration* parameter);
 
-    bool
-    isCompositeExpression(ast::Expression* expression);
-
-    List<output::ArgumentDeclaration*>
-    segmentArgumentDeclarations(ast::ArgumentDeclaration* parameter);
-
-    output::ArgumentDeclaration*
-    transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression);
+    void
+    transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression, uint64_t argumentIndex);
 
     void
     transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset);
@@ -212,6 +208,18 @@ private:
 
     output::CanonicalExpression
     transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset);
+
+    void
+    transformFunctionPrologue(output::FunctionRoutine* function);
+
+    bool
+    supportsLinkRegister();
+
+    void
+    transformFunctionEpilogue(output::FunctionRoutine* function);
+
+    output::OperandRegister
+    getOperandRegisterFromArgumentIndex(uint64_t argumentIndex);
 };
 
 
