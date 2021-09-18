@@ -10,7 +10,8 @@ using namespace compiler;
 
 Transformer::Transformer(std::mutex& dataMutex, CompilerOptions& compilerOptions) :
     _dataMutex(dataMutex),
-    _compilerOptions(compilerOptions)
+    _compilerOptions(compilerOptions),
+    _defaultFunctionStackOffset(getDefaultFunctionStackOffset(compilerOptions))
 {
 
 }
@@ -50,95 +51,19 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     }
     output::FunctionRoutine* function = createFunctionRoutine(functionDeclaration->name->name);
     _currentRoutineStack.push(function);
-    uint64_t stackOffset = 0;
+    uint64_t stackOffset = _defaultFunctionStackOffset;
     bool isStartFunction = functionDeclaration->signature->isStartFunction;
     function->name = isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
-    transformFunctionPrologue(function);
     transformFunctionParameters(functionDeclaration, function, stackOffset);
     transformLocalStatements(functionDeclaration->body->statements, stackOffset);
-    if (isStartFunction)
-    {
-        addInstruction(new output::ResetRegisterInstruction(OperandRegister::Return));
-    }
-    transformFunctionEpilogue(function);
+    function->stackSize = stackOffset;
     _currentRoutineStack.pop();
     return function;
 }
 
 
 void
-Transformer::transformFunctionPrologue(output::FunctionRoutine* function)
-{
-    if (stackSubtractionLocation() == StackSubtractionLocation::BeforePush)
-    {
-        function->subtractStackInstruction = new output::SubtractImmediateInstruction(OperandRegister::StackPointer, 0);
-        addInstruction(function->subtractStackInstruction);
-    }
-    addInstruction(new output::PushInstruction(OperandRegister::FramePointer));
-    function->stackSize += 8;
-    if (supportsLinkRegister())
-    {
-        addInstruction(new output::PushInstruction(OperandRegister::LinkRegister));
-        function->stackSize += 8;
-    }
-    addInstruction(new output::MoveRegisterInstruction(OperandRegister::StackPointer, OperandRegister::FramePointer));
-    if (stackSubtractionLocation() == StackSubtractionLocation::AfterPush)
-    {
-        function->subtractStackInstruction = new output::SubtractImmediateInstruction(OperandRegister::StackPointer, 0);
-        addInstruction(function->subtractStackInstruction);
-    }
-}
-
-
-StackSubtractionLocation
-Transformer::stackSubtractionLocation()
-{
-    switch (_compilerOptions.assemblyTarget)
-    {
-        case AssemblyTarget::Aarch64:
-            return StackSubtractionLocation::BeforePush;
-    }
-    return StackSubtractionLocation::AfterPush;
-}
-
-
-void
-Transformer::transformFunctionEpilogue(output::FunctionRoutine* function)
-{
-    uint64_t reservedStackSize = getReservedStackSize(function->stackSize);
-    function->subtractStackInstruction->value = reservedStackSize;
-    if (stackSubtractionLocation() == StackSubtractionLocation::BeforePop)
-    {
-        addInstruction(new output::AddImmediateInstruction(OperandRegister::StackPointer, reservedStackSize));
-    }
-    addInstruction(new output::PopInstruction(OperandRegister::FramePointer));
-    if (supportsLinkRegister())
-    {
-        addInstruction(new output::PopInstruction(OperandRegister::LinkRegister));
-    }
-    if (stackSubtractionLocation() == StackSubtractionLocation::AfterPop)
-    {
-        addInstruction(new output::AddImmediateInstruction(OperandRegister::StackPointer, reservedStackSize));
-    }
-    addInstruction(new output::ReturnInstruction());
-
-}
-
-
-bool
-Transformer::supportsLinkRegister()
-{
-    switch (_compilerOptions.assemblyTarget)
-    {
-        case AssemblyTarget::Aarch64:
-            return true;
-    }
-    return false;
-}
-
-
-void
-Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* routine, uint64_t& stackOffset)
+Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functionDeclaration, output::FunctionRoutine* function, uint64_t& stackOffset)
 {
     unsigned int i = 0;
     for (ast::ParameterDeclaration* parameterDeclaration : functionDeclaration->parameterList->parameters)
@@ -151,7 +76,7 @@ Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functio
 
             // TODO: The reference instruction should be on property basis.
             parameterDeclaration->referenceInstruction = store;
-            stackOffset += param->size;
+            stackOffset += param->size / 8;
         }
     }
 }
@@ -460,11 +385,17 @@ Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, 
 
 
 uint64_t
-Transformer::getReservedStackSize(uint64_t stackSize)
+Transformer::getDefaultFunctionStackOffset(const CompilerOptions& compilerOptions)
 {
-    // All supported targets (x86 and arm) has 16 bytes alignment.
-    uint64_t alignment = 16;
-    return stackSize % alignment + stackSize;
+    switch (compilerOptions.assemblyTarget)
+    {
+        case AssemblyTarget::x86_64:
+            return 0;
+        case AssemblyTarget::Aarch64:
+            return 16;
+        default:
+            return 0;
+    }
 }
 
 

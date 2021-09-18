@@ -46,7 +46,7 @@ public:
     writeByte(uint8_t instruction);
 
     void
-    writeByteInFunction(uint8_t instruction, output::FunctionRoutine* function);
+    writeInstructionInFunction(uint8_t instruction, output::FunctionRoutine* function);
 
     void
     writeInstructionsInFunction(std::initializer_list<uint8_t> instructions, output::FunctionRoutine* function);

@@ -23,14 +23,9 @@ AssemblyWriterInterface::writeFunction(FunctionRoutine* function)
     }
     function->offset = _offset;
     writeFunctionRelocationAddresses(function);
-//    writeFunctionPrologue(function);
-//    writeFunctionParameters(function);
+    writeFunctionPrologue(function);
     writeFunctionInstructions(function);
-//    if (function->isStartFunction)
-//    {
-//        writeStartFunctionEpilogue(function);
-//    }
-//    writeFunctionEpilogue(function);
+    writeFunctionEpilogue(function);
     writeInstructionsPadding(function);
     for (const auto& subRoutine : function->subRoutines)
     {
@@ -274,6 +269,19 @@ void
 AssemblyWriterInterface::writeAddImmediateInstruction(AddImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function)
 {
     throw std::runtime_error("Not implemented");
+}
+
+
+void
+AssemblyWriterInterface::writeFunctionEpilogue(FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented.");
+}
+
+void
+AssemblyWriterInterface::writeFunctionPrologue(FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented.");
 }
 
 

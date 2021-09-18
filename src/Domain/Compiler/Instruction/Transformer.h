@@ -154,6 +154,13 @@ private:
     output::String*
     addStaticConstantString(ast::StringLiteral* stringLiteral);
 
+    static
+    uint64_t
+    getDefaultFunctionStackOffset(const CompilerOptions& compilerOptions);
+
+    uint64_t
+    _defaultFunctionStackOffset;
+
     CompilerOptions&
     _compilerOptions;
 
@@ -217,23 +224,9 @@ private:
     output::CanonicalExpression
     transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset);
 
-    void
-    transformFunctionPrologue(output::FunctionRoutine* function);
-
-    bool
-    supportsLinkRegister();
-
-    void
-    transformFunctionEpilogue(output::FunctionRoutine* function);
-
     output::OperandRegister
     getOperandRegisterFromArgumentIndex(uint64_t argumentIndex);
 
-    StackSubtractionLocation
-    stackSubtractionLocation();
-
-    uint64_t
-    getReservedStackSize(uint64_t stackSize);
 };
 
 

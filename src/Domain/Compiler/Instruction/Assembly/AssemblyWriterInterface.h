@@ -128,6 +128,15 @@ public:
 
     virtual
     void
+    writeFunctionEpilogue(FunctionRoutine* function);
+
+    virtual
+    void
+    writeFunctionPrologue(FunctionRoutine* function);
+
+
+    virtual
+    void
     writeCStringSection() = 0;
 
     virtual

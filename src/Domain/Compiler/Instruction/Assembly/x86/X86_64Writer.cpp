@@ -13,6 +13,52 @@ X86_64Writer::X86_64Writer(List<std::uint8_t>* output) :
 
 
 void
+X86_64Writer::writeFunctionPrologue(FunctionRoutine* function)
+{
+    bw->writeInstructionsInFunction(
+        {
+            OneByteOpCode::Push_rBP,
+            OpCodePrefix::RexMagic | OpCodePrefix::RexW,
+            OneByteOpCode::Mov_Ev_Gv,
+            ModBits::Mod3 | RegisterBits::Reg_RSP | RmBits::Rm_RBP
+        },
+        function);
+
+    if (function->stackSize > 0)
+    {
+        writeSubtractImmediateInstruction(OperandRegister::StackPointer, function->stackSize, function);
+    }
+}
+
+
+void
+X86_64Writer::writeFunctionEpilogue(FunctionRoutine* function)
+{
+    if (function->isStartFunction)
+    {
+        bw->writeInstructionsInFunction(
+            {
+                OneByteOpCode::Xor_Ev_Gv,
+                ModBits::Mod3 | RegisterBits::Reg_RAX | RmBits::Rm_RAX
+            },
+            function);
+    }
+    if (function->stackSize > 0)
+    {
+        writeAddImmediateInstruction(OperandRegister::StackPointer, function->stackSize, function);
+    }
+    bw->writeInstructionsInFunction(
+        {
+            OneByteOpCode::Pop_rBP,
+            OneByteOpCode::Ret,
+        },
+        function);
+
+
+}
+
+
+void
 X86_64Writer::writeStubs()
 {
     for (const auto& routine : externalRoutines)
@@ -91,7 +137,7 @@ X86_64Writer::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegis
 {
     bw->writeInstructionsInFunction({
         OpCodePrefix::RexMagic | OpCodePrefix::RexW,
-        OneByteOpCode::Mov_Gv_Ev
+        OneByteOpCode::Mov_Ev_Gv
     }, function);
     writeEbpReferenceBytes(storeRegisterInstruction->stackOffset, storeRegisterInstruction->target, function);
 }
@@ -100,14 +146,14 @@ X86_64Writer::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegis
 void
 X86_64Writer::writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function)
 {
-    bw->writeByteInFunction(OneByteOpCode::Push_rBP, function);
+    bw->writeInstructionInFunction(OneByteOpCode::Push_rBP, function);
 }
 
 
 void
 X86_64Writer::writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function)
 {
-    bw->writeByteInFunction(OneByteOpCode::Pop_rBP, function);
+    bw->writeInstructionInFunction(OneByteOpCode::Pop_rBP, function);
 }
 
 
@@ -323,7 +369,7 @@ X86_64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRou
     }
 
     bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-    bw->writeByte(OneByteOpCode::Mov_Ev_Gv);
+    bw->writeByte(OneByteOpCode::Mov_Gv_Ev);
     function->codeSize += 2;
     writeModRmAndStackOffset(loadInstruction, function);
 }
@@ -337,13 +383,13 @@ X86_64Writer::writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister opera
     if (convertedStackOffset <= INT8_MAX && convertedStackOffset >= INT8_MIN)
     {
         bw->writeByte(ModBits::Mod1 | registerBits | RmBits::EbpPlusDisp8);
-        bw->writeByte(-convertedStackOffset);
+        bw->writeByte(-convertedStackOffset - 8);
         function->codeSize += 2;
     }
     else if (convertedStackOffset <= INT32_MAX && convertedStackOffset >= INT32_MIN)
     {
         bw->writeByte(ModBits::Mod2 | registerBits | RmBits::EbpPlusDisp32);
-        bw->writeDoubleWord(-convertedStackOffset);
+        bw->writeDoubleWord(-convertedStackOffset - 32);
         function->codeSize += 5;
     }
     else
@@ -370,23 +416,30 @@ X86_64Writer::writeAddRegisterInstruction(AddRegisterInstruction* addRegisterIns
 void
 X86_64Writer::writeAddImmediateInstruction(AddImmediateInstruction* addImmediateInstruction, FunctionRoutine* function)
 {
-    if (addImmediateInstruction->value <= UINT8_MAX)
+    writeAddImmediateInstruction(addImmediateInstruction->destination, addImmediateInstruction->value, function);
+}
+
+
+void
+X86_64Writer::writeAddImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function)
+{
+    if (value <= UINT8_MAX)
     {
         bw->writeInstructionsInFunction({
             OpCodePrefix::RexMagic | OpCodePrefix::RexW,
             OneByteOpCode::ImmediateGroup1_Ev_Ib,
-            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Add | getRmBitsFromOperandRegister(addImmediateInstruction->destination))
+            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Add | getRmBitsFromOperandRegister(destination))
             }, function);
-        bw->writeByteInFunction(addImmediateInstruction->value, function);
+        bw->writeInstructionInFunction(value, function);
     }
     else
     {
         bw->writeInstructionsInFunction({
             OpCodePrefix::RexMagic | OpCodePrefix::RexW,
             OneByteOpCode::ImmediateGroup1_Ev_Iz,
-            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Add | getRmBitsFromOperandRegister(addImmediateInstruction->destination))
+            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Add | getRmBitsFromOperandRegister(destination))
             }, function);
-        bw->writeDoubleWordInFunction(addImmediateInstruction->value, function);
+        bw->writeDoubleWordInFunction(value, function);
     }
 }
 
@@ -394,31 +447,37 @@ X86_64Writer::writeAddImmediateInstruction(AddImmediateInstruction* addImmediate
 void
 X86_64Writer::writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function)
 {
-    if (subtractImmediateInstruction->value <= UINT8_MAX)
+    writeSubtractImmediateInstruction(subtractImmediateInstruction->destination, subtractImmediateInstruction->value, function);
+}
+
+
+void
+X86_64Writer::writeSubtractImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function)
+{
+    if (value <= UINT8_MAX)
     {
         bw->writeInstructionsInFunction({
             OpCodePrefix::RexMagic | OpCodePrefix::RexW,
             OneByteOpCode::ImmediateGroup1_Ev_Ib,
-            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Sub | getRmBitsFromOperandRegister(subtractImmediateInstruction->destination))
+            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Sub | getRmBitsFromOperandRegister(destination))
             }, function);
-        bw->writeByteInFunction(subtractImmediateInstruction->value, function);
+        bw->writeInstructionInFunction(value, function);
     }
     else
     {
         bw->writeInstructionsInFunction({
             OpCodePrefix::RexMagic | OpCodePrefix::RexW,
             OneByteOpCode::ImmediateGroup1_Ev_Iz,
-            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Sub | getRmBitsFromOperandRegister(subtractImmediateInstruction->destination))
+            static_cast<uint8_t>(ModBits::Mod3 | RegisterBits::ImmediateGroup1_Sub | getRmBitsFromOperandRegister(destination))
             }, function);
-        bw->writeDoubleWordInFunction(subtractImmediateInstruction->value, function);
+        bw->writeDoubleWordInFunction(value, function);
     }
 }
-
 
 void
 X86_64Writer::writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function)
 {
-    bw->writeByteInFunction(OneByteOpCode::Ret, function);
+    bw->writeInstructionInFunction(OneByteOpCode::Ret, function);
 }
 
 

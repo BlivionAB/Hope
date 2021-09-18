@@ -95,7 +95,7 @@ ByteWriter::writeByte(uint8_t instruction)
 
 
 void
-ByteWriter::writeByteInFunction(uint8_t instruction, output::FunctionRoutine* function)
+ByteWriter::writeInstructionInFunction(uint8_t instruction, output::FunctionRoutine* function)
 {
     writeByte(instruction);
     function->codeSize += 1;

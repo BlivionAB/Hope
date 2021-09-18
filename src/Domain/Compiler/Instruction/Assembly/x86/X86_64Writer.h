@@ -112,7 +112,13 @@ private:
     writeAddImmediateInstruction(AddImmediateInstruction* addImmediateInstruction, FunctionRoutine* function) override;
 
     void
+    writeAddImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
+
+    void
     writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function) override;
+
+    void
+    writeSubtractImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
 
     void
     writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function) override;
@@ -120,7 +126,12 @@ private:
     void
     writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function) override;
 
-    virtual
+    void
+    writeFunctionPrologue(FunctionRoutine* function) override;
+
+    void
+    writeFunctionEpilogue(FunctionRoutine* function) override;
+
     void
     writeInstructionsPadding(FunctionRoutine* function) override;
 

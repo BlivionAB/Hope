@@ -27,7 +27,6 @@ BaselinePrinter<TOneOfInstructions>::print()
     writeColumnHeader();
     _tw.newline();
     _tw.writeLine("__TEXT,__text:");
-    _tw.newline();
     writeInstructions(*textSectionInstructions);
     if (stubsSectionInstructions && stubsSectionInstructions->size() > 0)
     {
