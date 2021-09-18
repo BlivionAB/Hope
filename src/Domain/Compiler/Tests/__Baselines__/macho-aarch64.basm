@@ -8,7 +8,7 @@ _main:
 0000000100003f6c  00903f91              add x0, x0, -0xfffff01c // Points to helloword
 0000000100003f70  05000094              bl "0x0000000100003f84 (WriteLine)"
 0000000100003f74  08008052              movz w8, #0x0
-0000000100003f78  e00308aa              mov x0, x8
+0000000100003f78  e00308aa              mov x0, x8 // We can mov 0 directly??
 0000000100003f7c  fd7bc1a8              ldp fp, lr, [sp], #0x10
 0000000100003f80  c0035fd6              ret lr
 

@@ -64,6 +64,9 @@ enum RegisterBits : uint8_t
     Reg_RBP = Reg5,
     Reg_RSI = Reg6,
     Reg_RDI = Reg7,
+
+    ImmediateGroup1_Add = Reg0,
+    ImmediateGroup1_Sub = Reg5,
 };
 
 

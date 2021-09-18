@@ -108,26 +108,23 @@ public:
 
     virtual
     void
+    writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function);
+
+    virtual
+    void
     writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function);
 
-//    virtual
-//    void
-//    writeFunctionPrologue(FunctionRoutine* functionRoutine) = 0;
+    virtual
+    void
+    writeAddImmediateInstruction(AddImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
 
-//    virtual
-//    void
-//    writeFunctionEpilogue(FunctionRoutine* function) = 0;
+    virtual
+    void
+    writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
 
-//    virtual
-//    void
-//    writeStartFunctionEpilogue(FunctionRoutine* function) = 0;
-
-//    void
-//    writeFunctionParameters(FunctionRoutine* routine);
-//
-//    virtual
-//    void
-//    writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine) = 0;
+    virtual
+    void
+    writeInstructionsPadding(FunctionRoutine* function);
 
     virtual
     void

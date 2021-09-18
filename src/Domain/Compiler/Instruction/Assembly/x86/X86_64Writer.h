@@ -109,7 +109,20 @@ private:
     writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
 
     void
+    writeAddImmediateInstruction(AddImmediateInstruction* addImmediateInstruction, FunctionRoutine* function) override;
+
+    void
+    writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function) override;
+
+    void
     writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function) override;
+
+    void
+    writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function) override;
+
+    virtual
+    void
+    writeInstructionsPadding(FunctionRoutine* function) override;
 
     RegisterBits
     getRegisterBitsFromOperandRegister(OperandRegister operandRegister);

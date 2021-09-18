@@ -70,7 +70,7 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
 {
     switch (opcode)
     {
-        case OneByteOpCode::Ev_Ib:
+        case OneByteOpCode::ImmediateGroup1_Ev_Ib:
         {
             uint8_t modrmByte = getByte(instruction);
             uint8_t offset = getByte(instruction); // Note only one byte offset from "Ib".

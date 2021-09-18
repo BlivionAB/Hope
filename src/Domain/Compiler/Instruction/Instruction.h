@@ -34,8 +34,9 @@ namespace elet::domain::compiler::instruction::output
     struct ParameterDeclaration;
     struct ArgumentDeclaration;
     struct String;
+    struct SubtractImmediateInstruction;
     enum class OperandRegister;
-    typedef std::variant<int32_t, uint32_t, int64_t, uint64_t> ImmediateValue;
+    typedef std::variant<int8_t, uint8_t, int32_t, uint32_t, int64_t, uint64_t> ImmediateValue;
     typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
     using namespace foundation;
 
@@ -82,6 +83,8 @@ namespace elet::domain::compiler::instruction::output
         StoreImmediate,
         StoreRegister,
         AddRegister,
+        AddImmediate,
+        SubtractImmediate,
         Call,
         MoveImmediate,
         MoveRegister,
@@ -89,6 +92,7 @@ namespace elet::domain::compiler::instruction::output
         ArgumentDeclaration,
         ParameterDeclaration,
         Return,
+        ResetRegister,
     };
 
 
@@ -107,6 +111,9 @@ namespace elet::domain::compiler::instruction::output
     {
         OperandRegister
         target;
+
+        uint64_t
+        stackSize = 0;
 
         PushInstruction(OperandRegister target):
             Instruction(InstructionKind::Push),
@@ -346,10 +353,13 @@ namespace elet::domain::compiler::instruction::output
         isStartFunction;
 
         uint64_t
-        stackSize;
+        stackSize = 0;
 
         uint64_t
         codeSize = 0;
+
+        SubtractImmediateInstruction*
+        subtractStackInstruction;
 
         FunctionRoutine(const Utf8StringView& name):
             name(name),
@@ -700,6 +710,18 @@ namespace elet::domain::compiler::instruction::output
     {
         ReturnInstruction():
             Instruction(InstructionKind::Return)
+        { }
+    };
+
+
+    struct ResetRegisterInstruction : Instruction
+    {
+        OperandRegister
+        target;
+
+        ResetRegisterInstruction(OperandRegister target):
+            Instruction(InstructionKind::ResetRegister),
+            target(target)
         { }
     };
 }

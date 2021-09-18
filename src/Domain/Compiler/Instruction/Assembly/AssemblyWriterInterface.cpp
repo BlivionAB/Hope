@@ -31,6 +31,7 @@ AssemblyWriterInterface::writeFunction(FunctionRoutine* function)
 //        writeStartFunctionEpilogue(function);
 //    }
 //    writeFunctionEpilogue(function);
+    writeInstructionsPadding(function);
     for (const auto& subRoutine : function->subRoutines)
     {
         writeFunction(subRoutine);
@@ -163,8 +164,17 @@ AssemblyWriterInterface::writeFunctionInstructions(FunctionRoutine* function)
             case InstructionKind::AddRegister:
                 writeAddRegisterInstruction(reinterpret_cast<AddRegisterInstruction*>(instruction), function);
                 break;
+            case InstructionKind::AddImmediate:
+                writeAddImmediateInstruction(reinterpret_cast<AddImmediateInstruction*>(instruction), function);
+                break;
+            case InstructionKind::SubtractImmediate:
+                writeSubtractImmediateInstruction(reinterpret_cast<SubtractImmediateInstruction*>(instruction), function);
+                break;
             case InstructionKind::Return:
                 writeReturnInstruction(reinterpret_cast<ReturnInstruction*>(instruction), function);
+                break;
+            case InstructionKind::ResetRegister:
+                writeResetRegisterInstruction(reinterpret_cast<ResetRegisterInstruction*>(instruction), function);
                 break;
             default:
                 throw std::runtime_error("Unknown local instruction.");
@@ -246,6 +256,27 @@ AssemblyWriterInterface::writeReturnInstruction(ReturnInstruction* returnInstruc
 }
 
 
+void
+AssemblyWriterInterface::writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented");
+}
+
+
+void
+AssemblyWriterInterface::writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented");
+}
+
+
+void
+AssemblyWriterInterface::writeAddImmediateInstruction(AddImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented");
+}
+
+
 bool
 AssemblyWriterInterface::nextInstructionIs(InstructionKind kind) const
 {
@@ -272,6 +303,13 @@ output::Instruction*
 AssemblyWriterInterface::InstructionIterator::peek()
 {
     return _instructions[_cursor + 1];
+}
+
+
+void
+AssemblyWriterInterface::writeInstructionsPadding(FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented.");
 }
 
 

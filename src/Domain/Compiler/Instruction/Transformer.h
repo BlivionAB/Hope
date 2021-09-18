@@ -56,7 +56,7 @@ namespace output
     struct InternalRoutine;
     struct FunctionRoutine;
     struct MoveRegisterInstruction;
-    typedef std::variant<int32_t, uint32_t, int64_t, uint64_t> ImmediateValue;
+    typedef std::variant<int8_t, uint8_t, int32_t, uint32_t, int64_t, uint64_t> ImmediateValue;
     enum class OperandRegister;
     typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
 }
@@ -81,6 +81,14 @@ enum class ParameterStackOrder
     LTR,
 };
 
+
+enum class StackSubtractionLocation
+{
+    BeforePush,
+    AfterPush,
+    BeforePop = AfterPush,
+    AfterPop = BeforePush,
+};
 
 struct CallingConvention
 {
@@ -220,6 +228,12 @@ private:
 
     output::OperandRegister
     getOperandRegisterFromArgumentIndex(uint64_t argumentIndex);
+
+    StackSubtractionLocation
+    stackSubtractionLocation();
+
+    uint64_t
+    getReservedStackSize(uint64_t stackSize);
 };
 
 

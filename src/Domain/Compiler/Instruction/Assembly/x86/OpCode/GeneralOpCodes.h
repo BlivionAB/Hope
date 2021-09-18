@@ -44,10 +44,10 @@ enum OneByteOpCode : uint8_t
     Add_Gv_Ev = 0x03,
 
     // Immediate Group 1
-    Eb_lb = 0x80,
-    Ev_lz = 0x81,
-    Eb_lb_i64 = 0x82,
-    Ev_Ib = 0x83,
+    ImmediateGroup1_Eb_Ib = 0x80,
+    ImmediateGroup1_Ev_Iz = 0x81,
+    ImmediateGroup1_Eb_Ib_i64 = 0x82,
+    ImmediateGroup1_Ev_Ib = 0x83,
 
     ExtGroup5 = 0xff,
     ExtGroup5_NearCallRegistryBits = 0b00100000,

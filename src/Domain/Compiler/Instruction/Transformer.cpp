@@ -51,10 +51,15 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     output::FunctionRoutine* function = createFunctionRoutine(functionDeclaration->name->name);
     _currentRoutineStack.push(function);
     uint64_t stackOffset = 0;
-    function->name = functionDeclaration->signature->isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
+    bool isStartFunction = functionDeclaration->signature->isStartFunction;
+    function->name = isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
     transformFunctionPrologue(function);
     transformFunctionParameters(functionDeclaration, function, stackOffset);
     transformLocalStatements(functionDeclaration->body->statements, stackOffset);
+    if (isStartFunction)
+    {
+        addInstruction(new output::ResetRegisterInstruction(OperandRegister::Return));
+    }
     transformFunctionEpilogue(function);
     _currentRoutineStack.pop();
     return function;
@@ -64,6 +69,11 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
 void
 Transformer::transformFunctionPrologue(output::FunctionRoutine* function)
 {
+    if (stackSubtractionLocation() == StackSubtractionLocation::BeforePush)
+    {
+        function->subtractStackInstruction = new output::SubtractImmediateInstruction(OperandRegister::StackPointer, 0);
+        addInstruction(function->subtractStackInstruction);
+    }
     addInstruction(new output::PushInstruction(OperandRegister::FramePointer));
     function->stackSize += 8;
     if (supportsLinkRegister())
@@ -72,18 +82,46 @@ Transformer::transformFunctionPrologue(output::FunctionRoutine* function)
         function->stackSize += 8;
     }
     addInstruction(new output::MoveRegisterInstruction(OperandRegister::StackPointer, OperandRegister::FramePointer));
+    if (stackSubtractionLocation() == StackSubtractionLocation::AfterPush)
+    {
+        function->subtractStackInstruction = new output::SubtractImmediateInstruction(OperandRegister::StackPointer, 0);
+        addInstruction(function->subtractStackInstruction);
+    }
+}
+
+
+StackSubtractionLocation
+Transformer::stackSubtractionLocation()
+{
+    switch (_compilerOptions.assemblyTarget)
+    {
+        case AssemblyTarget::Aarch64:
+            return StackSubtractionLocation::BeforePush;
+    }
+    return StackSubtractionLocation::AfterPush;
 }
 
 
 void
 Transformer::transformFunctionEpilogue(output::FunctionRoutine* function)
 {
+    uint64_t reservedStackSize = getReservedStackSize(function->stackSize);
+    function->subtractStackInstruction->value = reservedStackSize;
+    if (stackSubtractionLocation() == StackSubtractionLocation::BeforePop)
+    {
+        addInstruction(new output::AddImmediateInstruction(OperandRegister::StackPointer, reservedStackSize));
+    }
     addInstruction(new output::PopInstruction(OperandRegister::FramePointer));
     if (supportsLinkRegister())
     {
         addInstruction(new output::PopInstruction(OperandRegister::LinkRegister));
     }
+    if (stackSubtractionLocation() == StackSubtractionLocation::AfterPop)
+    {
+        addInstruction(new output::AddImmediateInstruction(OperandRegister::StackPointer, reservedStackSize));
+    }
     addInstruction(new output::ReturnInstruction());
+
 }
 
 
@@ -419,5 +457,15 @@ Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, 
     //            return transformImmediateToMemoryExpression(transformExpression(binaryExpression->left), transformToUint(reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right)), binaryExpression->binaryOperatorKind);
     return OperandRegister::Left;
 }
+
+
+uint64_t
+Transformer::getReservedStackSize(uint64_t stackSize)
+{
+    // All supported targets (x86 and arm) has 16 bytes alignment.
+    uint64_t alignment = 16;
+    return stackSize % alignment + stackSize;
+}
+
 
 }
