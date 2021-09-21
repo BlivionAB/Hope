@@ -61,6 +61,10 @@ TextWriter::writeZeroLength(const Utf8StringView& text)
 void
 TextWriter::write(const Utf8StringView& text)
 {
+    if (_column < _indentation * _indentationStep)
+    {
+        writeIndent();
+    }
     _output += text;
     _column += text.size();
 }
@@ -103,7 +107,6 @@ TextWriter::newline()
 {
     _output += "\n";
     _column = 0;
-    writeIndent();
 }
 
 
@@ -167,7 +170,7 @@ TextWriter::writeByteWithHexPrefix(uint8_t integer)
 void
 TextWriter::writeDisplacement(int32_t n)
 {
-    if (n & 0x80)
+    if (n < 0)
     {
         write("-");
         n = ~n + 1;

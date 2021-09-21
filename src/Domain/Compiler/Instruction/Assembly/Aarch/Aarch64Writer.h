@@ -42,6 +42,18 @@ public:
     void
     relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
 
+    void
+    writeFunctionPrologue(FunctionRoutine* function) override;
+
+    void
+    writeFunctionEpilogue(FunctionRoutine* function) override;
+
+    void
+    writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function) override;
+
+    void
+    writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
+
 private:
 
 //    void
@@ -60,10 +72,13 @@ private:
     writeFunctionRelocationAddresses(FunctionRoutine* routine);
 
     void
-    writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value);
+    writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function);
 
     void
-    writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value);
+    writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function);
+
+    void
+    writeInstructionsPadding(FunctionRoutine* function) override;
 
     void
     writeBr(Aarch64Register rn);
@@ -114,13 +129,13 @@ private:
     writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
 
     void
-    writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function) override;
-
-    void
     writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
 
     void
     writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* function) override;
+
+    int
+    getAarch64RegisterFromOperandRegister(OperandRegister operandRegister) const;
 };
 
 }

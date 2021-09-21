@@ -243,7 +243,7 @@ Aarch64AssemblyParser::tryParse21Instructions(Instruction* instruction, uint32_t
 
     switch (kind21)
     {
-        case Movz64:
+        case Movz32:
             parseMovImmediateInstruction(instruction, dw);
             return true;
         case Mov64:
@@ -267,7 +267,7 @@ void
 Aarch64AssemblyParser::parseMovImmediateInstruction(Instruction* instruction, uint32_t dw)
 {
     MovWideImmediateInstruction* movz = reinterpret_cast<MovWideImmediateInstruction*>(instruction);
-    movz->kind = Movz64;
+    movz->kind = Movz32;
     movz->rd = Rd(dw);
     movz->imm16 = uimm16(dw);
 }

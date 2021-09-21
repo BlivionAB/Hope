@@ -45,7 +45,7 @@ namespace output
     struct Parameter;
     struct Operand;
     struct FunctionReference;
-    struct LoadInstruction;
+    struct  LoadInstruction;
     struct StoreRegisterInstruction;
     struct ParameterDeclaration;
     struct String;
@@ -227,6 +227,8 @@ private:
     output::OperandRegister
     getOperandRegisterFromArgumentIndex(uint64_t argumentIndex);
 
+    uint64_t
+    getAlignedStackSizeFromStackOffset(uint64_t offset);
 };
 
 

@@ -88,12 +88,6 @@ private:
     writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
 
     void
-    writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function) override;
-
-    void
-    writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function) override;
-
-    void
     writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
 
     void
@@ -122,9 +116,6 @@ private:
 
     void
     writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function) override;
-
-    void
-    writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function) override;
 
     void
     writeFunctionPrologue(FunctionRoutine* function) override;

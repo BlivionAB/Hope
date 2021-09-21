@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "../Compiler.h"
-#include "./ExternalFunction.h"
+#include "./CompilerTestHarness.h"
 
 
 namespace elet::domain::compiler::test
@@ -41,38 +41,46 @@ TEST_F(CompileFixture, ExternalFunction)
         "}");
 
     EXPECT_TRUE(testProject({
-        .baselineName = "macho-x86_64",
-        .targets = { CompilationTarget::MachO_x86_64 },
+        .baselineName = "external-function",
+        .targets = {
+            CompilationTarget::MachO_x86_64,
+            CompilationTarget::MachO_Aarch64,
+            CompilationTarget::StashIR
+        },
     }));
-
-//    EXPECT_TRUE(testProject({
-//        .baselineName = "macho-aarch64",
-//        .assemblyTarget = AssemblyTarget::Aarch64,
-//        .objectFileTarget = ObjectFileTarget::MachO,
-//    }));
 }
 
 
 
-TEST_F(CompileFixture, CommonSubExpressionElimination)
+TEST_F(CompileFixture, Return_BinaryExpression_Variable)
 {
-    project.setEntrySourceFile("main.l1",
-        "domain Common::MyApplication implements IConsoleApplication\n"
-        "{\n"
-        "\n"
-        "public:\n"
-        "\n"
-        "    fn OnApplicationStart(): void\n"
-        "    {\n"
-        "        var x = 1 + 2;\n"
-        "        var y = 1 + 2;\n"
-        "        return x + y;\n"
-        "    }\n"
-        "}");
+    testMainFunction(
+        "var x = 1 + 2;\n"
+        "var y = 1 + 2;\n"
+        "return x + y;");
 
     EXPECT_TRUE(testProject({
-        .baselineName = "common-subexpression-elimination-x86_64",
-        .targets = { CompilationTarget::MachO_x86_64 },
+        .baselineName = "return-binary_expression-variable",
+        .targets = {
+            CompilationTarget::StashIR,
+            CompilationTarget::MachO_x86_64
+        },
+        .optimizationLevel = OptimizationLevel::_1,
+    }));
+}
+
+
+TEST_F(CompileFixture, Return_BinaryExpresison_ImmediateValue)
+{
+    testMainFunction(
+        "return 1 + 2;");
+
+    EXPECT_TRUE(testProject({
+        .baselineName = "return-binary_expression-immediate_value",
+        .targets = {
+            //            CompilationTarget::StashIR,
+            CompilationTarget::MachO_x86_64
+        },
         .optimizationLevel = OptimizationLevel::_1,
     }));
 }

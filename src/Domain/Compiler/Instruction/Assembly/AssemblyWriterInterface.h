@@ -33,27 +33,6 @@ class AssemblyWriterInterface
 
 public:
 
-    class InstructionIterator
-    {
-    public:
-
-        InstructionIterator(List<output::Instruction*>& instructions);
-
-        output::Instruction*
-        next();
-
-        output::Instruction*
-        peek();
-
-    private:
-
-        List<output::Instruction*>&
-        _instructions;
-
-        size_t
-        _cursor = 0;
-    };
-
     AssemblyWriterInterface(List<uint8_t>* output);
 
     virtual
@@ -80,14 +59,6 @@ public:
 
     virtual
     void
-    writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function);
-
-    virtual
-    void
-    writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function);
-
-    virtual
-    void
     writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function);
 
     virtual
@@ -104,14 +75,6 @@ public:
 
     virtual
     void
-    writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function);
-
-    virtual
-    void
-    writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function);
-
-    virtual
-    void
     writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function);
 
     virtual
@@ -122,18 +85,22 @@ public:
     void
     writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
 
+
+    virtual
+    void
+    writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function);
+
     virtual
     void
     writeInstructionsPadding(FunctionRoutine* function);
 
     virtual
     void
-    writeFunctionEpilogue(FunctionRoutine* function);
+    writeFunctionPrologue(FunctionRoutine* function);
 
     virtual
     void
-    writeFunctionPrologue(FunctionRoutine* function);
-
+    writeFunctionEpilogue(FunctionRoutine* function);
 
     virtual
     void

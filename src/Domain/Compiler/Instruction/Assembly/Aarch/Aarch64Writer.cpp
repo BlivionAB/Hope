@@ -91,8 +91,6 @@ Aarch64Writer::writeFunctionRelocationAddresses(FunctionRoutine* routine)
 void
 Aarch64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine)
 {
-//    writeCallInstructionArguments(callInstruction, parentRoutine);
-
     switch (callInstruction->routine->kind)
     {
         case RoutineKind::Function:
@@ -100,23 +98,23 @@ Aarch64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRo
             auto routine = reinterpret_cast<FunctionRoutine*>(callInstruction->routine);
             if (routine->offset)
             {
-                bw->writeDoubleWord(Aarch64Instruction::Bl | simm26((routine->offset - _offset) / 4));
+                bw->writeDoubleWordInFunction(Aarch64Instruction::Bl | simm26((routine->offset - _offset) / 4), parentRoutine);
             }
             else
             {
                 routine->relocationAddresses.emplace(_offset, Aarch64Instruction::Bl);
-                bw->writeDoubleWord(Aarch64Instruction::Bl);
+                bw->writeDoubleWordInFunction(Aarch64Instruction::Bl, parentRoutine);
                 parentRoutine->subRoutines.add(routine);
             }
-            parentRoutine->codeSize += 4;
+            break;
         }
         case RoutineKind::External:
         {
             auto routine = reinterpret_cast<ExternalRoutine*>(callInstruction->routine);
             routine->relocationAddresses.add(_offset);
-            bw->writeDoubleWord(Aarch64Instruction::Bl | simm26(0));
+            bw->writeDoubleWordInFunction(Aarch64Instruction::Bl | simm26(0), parentRoutine);
             externalRoutines.add(routine);
-            parentRoutine->codeSize += 4;
+            break;
         }
         default:
             throw std::runtime_error("Unknown routine kind.");
@@ -169,60 +167,41 @@ Aarch64Writer::writeCStringSection()
 }
 
 
-//void
-//Aarch64Writer::writeFunctionPrologue(FunctionRoutine* function)
-//{
-//    /*16 for stp fp, sp*/
-//    function->stackSize += 16;
-//
-//    if (stackSize == 16)
-//    {
-//        bw->writeDoubleWord(Aarch64Instruction::StpPreIndex64 | simm7(-16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp));
-//        writeAddImmediate64(Aarch64Register::fp, Aarch64Register::sp, 0);
-//        function->codeSize += + 8;
-//    }
-//    else
-//    {
-//        writeSubImmediate64(Aarch64Register::sp, Aarch64Register::sp, function->stackSize);
-//        bw->writeDoubleWord(Aarch64Instruction::StpBaseOffset64 | simm7(function->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp));
-//        writeAddImmediate64(Aarch64Register::fp, Aarch64Register::sp, 16);
-//        function->codeSize += + 12;
-//    }
-//}
+void
+Aarch64Writer::writeFunctionPrologue(FunctionRoutine* function)
+{
+    if (function->stackSize == 16)
+    {
+        bw->writeDoubleWordInFunction(Aarch64Instruction::StpPreIndex64 | simm7(-16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
+        writeAddImmediate64(Aarch64Register::fp, Aarch64Register::sp, 0, function);
+    }
+    else
+    {
+        writeSubImmediate64(Aarch64Register::sp, Aarch64Register::sp, function->stackSize, function);
+        bw->writeDoubleWordInFunction(Aarch64Instruction::StpBaseOffset64 | simm7(function->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
+        writeAddImmediate64(Aarch64Register::fp, Aarch64Register::sp, 16, function);
+    }
+}
 
 
-//void
-//Aarch64Writer::writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine)
-//{
-//    assert(("_localStackOffset must be smaller then INT8_MAX", parameterDeclaration->stackOffset < INT8_MAX));
-//    bw->writeDoubleWord(Aarch64Instruction::StrImmediateBaseOffset64 | uimm12((routine->stackSize - parameterDeclaration->stackOffset) / 8) | Rn(Aarch64Register::sp) | Rt(_callingConvention.registers[index]));
-//}
-
-
-//void
-//Aarch64Writer::writeFunctionEpilogue(FunctionRoutine* routine)
-//{
-//    if (routine->stackSize == 16)
-//    {
-//        bw->writeDoubleWord(Aarch64Instruction::LdpPostIndex64 | simm7(16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp));
-//    }
-//    else
-//    {
-//        bw->writeDoubleWord(Aarch64Instruction::LdpBaseOffset64 | simm7(routine->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp));
-//        writeAddImmediate64(Aarch64Register::sp, Aarch64Register::sp, routine->stackSize);
-//    }
-//    bw->writeDoubleWord(Aarch64Instruction::Ret | Rn(Aarch64Register::lr));
-//}
-
-
-//void
-//Aarch64Writer::writeStartFunctionEpilogue(FunctionRoutine* function)
-//{
-//    bw->writeDoubleWord(Aarch64Instruction::Movz64 | Rd(Aarch64Register::r8) | uimm16(0));
-//    bw->writeDoubleWord(Aarch64Instruction::Mov64 | Rm(Aarch64Register::r8) | uimm6(0) | Rn(0b11111) | Rd(Aarch64Register::r0));
-//    function->codeSize += 16;
-//}
-
+void
+Aarch64Writer::writeFunctionEpilogue(FunctionRoutine* function)
+{
+    if (function->isStartFunction)
+    {
+        bw->writeDoubleWordInFunction(Aarch64Instruction::Movz32 | Rd(Aarch64Register::r0) | uimm16(0), function);
+    }
+    if (function->stackSize == 16)
+    {
+        bw->writeDoubleWordInFunction(Aarch64Instruction::LdpPostIndex64 | simm7(16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
+    }
+    else
+    {
+        bw->writeDoubleWordInFunction(Aarch64Instruction::LdpBaseOffset64 | simm7(function->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
+        writeAddImmediate64(Aarch64Register::sp, Aarch64Register::sp, function->stackSize, function);
+    }
+    bw->writeDoubleWordInFunction(Aarch64Instruction::Ret | Rn(Aarch64Register::lr), function);
+}
 
 uint32_t
 Aarch64Writer::Rm(uint8_t reg) const
@@ -315,16 +294,16 @@ Aarch64Writer::immhilo(int32_t value) const
 
 
 void
-Aarch64Writer::writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value)
+Aarch64Writer::writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function)
 {
-    bw->writeDoubleWord(Aarch64Instruction::AddImmediate64 | uimm12(value) | Rn(rn) | Rd(rd));
+    bw->writeDoubleWordInFunction(Aarch64Instruction::AddImmediate64 | uimm12(value) | Rn(rn) | Rd(rd), function);
 }
 
 
 void
-Aarch64Writer::writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value)
+Aarch64Writer::writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function)
 {
-    bw->writeDoubleWord(Aarch64Instruction::SubImmediate64 | uimm12(value) | Rn(rn) | Rd(rd));
+    bw->writeDoubleWordInFunction(Aarch64Instruction::SubImmediate64 | uimm12(value) | Rn(rn) | Rd(rd), function);
 }
 
 
@@ -392,17 +371,65 @@ Aarch64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* storeIm
 
 }
 
-void
-Aarch64Writer::writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function)
-{
-
-}
-
 
 void
 Aarch64Writer::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function)
 {
+    bw->writeDoubleWordInFunction(
+        Aarch64Instruction::StrImmediateBaseOffset64 |
+        uimm12((function->stackSize - storeRegisterInstruction->stackOffset - 8)) |
+        Rn(Aarch64Register::sp) |
+        Rt(getAarch64RegisterFromOperandRegister(storeRegisterInstruction->target)), function);
+}
 
+void
+Aarch64Writer::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function)
+{
+    output::String* string = std::get<output::String*>(moveAddressInstruction->constant);
+    string->relocationAddress.value1 = _offset;
+    bw->writeDoubleWordInFunction(Aarch64Instruction::Adrp | immhilo(0) | Rd(Aarch64Register::r0), function);
+    string->relocationAddress.offset = _offset;
+    writeAddImmediate64(Aarch64Register::r0, Aarch64Register::r0, 0, function);
+    _strings.add(string);
+}
+
+void
+Aarch64Writer::writeInstructionsPadding(FunctionRoutine* function)
+{
+    uint64_t rest = function->codeSize % 8;
+    if (rest != 0)
+    {
+        bw->writeDoubleWord(Aarch64Instruction::Nop);
+    }
+}
+
+
+void
+Aarch64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
+{
+    bw->writeDoubleWordInFunction(
+        Aarch64Instruction::LdrImmediateBaseOffset64 |
+        uimm12((function->stackSize - loadInstruction->stackOffset - 8) / 8) |
+        Rn(Aarch64Register::sp) | Rt(getAarch64RegisterFromOperandRegister(loadInstruction->destination)), function);
+}
+
+
+int
+Aarch64Writer::getAarch64RegisterFromOperandRegister(OperandRegister operandRegister) const
+{
+    switch (operandRegister)
+    {
+        case OperandRegister::Arg0:
+            return Aarch64Register::r0;
+        case OperandRegister::Arg1:
+            return Aarch64Register::r1;
+        case OperandRegister::Arg2:
+            return Aarch64Register::r2;
+        case OperandRegister::Arg3:
+            return Aarch64Register::r3;
+        default:
+            throw std::runtime_error("Cannot get aarch64 register.");
+    }
 }
 
 

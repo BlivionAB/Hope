@@ -65,7 +65,7 @@ enum Aarch64Instruction : uint32_t
     AddImmediate64 = static_cast<uint32_t>(0b1001000100) << 22,
     SubImmediate64 = static_cast<uint32_t>(0b1101000100) << 22,
 
-    Movz64 = static_cast<uint32_t>(0b01010010100) << 21,
+    Movz32 = static_cast<uint32_t>(0b01010010100) << 21,
     Mov64 = static_cast<uint32_t>(0b10101010000) << 21,
     Ret = static_cast<uint32_t>(0xd65f03c0) << 0,
     Bl = static_cast<uint32_t>(0b100101) << 26,

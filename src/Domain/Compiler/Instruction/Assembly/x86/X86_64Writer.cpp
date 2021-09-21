@@ -34,7 +34,7 @@ X86_64Writer::writeFunctionPrologue(FunctionRoutine* function)
 void
 X86_64Writer::writeFunctionEpilogue(FunctionRoutine* function)
 {
-    if (function->isStartFunction)
+    if (function->inferReturn0)
     {
         bw->writeInstructionsInFunction(
             {
@@ -144,25 +144,11 @@ X86_64Writer::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegis
 
 
 void
-X86_64Writer::writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function)
-{
-    bw->writeInstructionInFunction(OneByteOpCode::Push_rBP, function);
-}
-
-
-void
-X86_64Writer::writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function)
-{
-    bw->writeInstructionInFunction(OneByteOpCode::Pop_rBP, function);
-}
-
-
-void
 X86_64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function)
 {
     bw->writeByte(OneByteOpCode::Mov_Ev_Iz);
     bw->writeByte(ModBits::Mod1 | RmBits::Rm5);
-    bw->writeByte(-storeImmediateInstruction->stackOffset);
+    bw->writeByte(-storeImmediateInstruction->stackOffset - storeImmediateInstruction->size);
     bw->writeDoubleWord(std::get<int32_t>(storeImmediateInstruction->value));
     function->codeSize += 7;
 }
@@ -359,18 +345,21 @@ X86_64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRou
 {
     if (loadInstruction->destination == OperandRegister::Right && nextInstructionIs(InstructionKind::AddRegister))
     {
-        bw->writeByte(OneByteOpCode::Add_Gv_Ev);
-        function->codeSize += 1;
-        writeModRmAndStackOffset(loadInstruction, function);
-
+        bw->writeInstructionInFunction(OneByteOpCode::Add_Gv_Ev, function);
+        writeEbpReferenceBytes(loadInstruction->stackOffset, OperandRegister::Left, function);
         // Skip next instruction, since we already processed it.
         _instructionIterator->next();
         return;
     }
 
-    bw->writeByte(OpCodePrefix::RexMagic | OpCodePrefix::RexW);
-    bw->writeByte(OneByteOpCode::Mov_Gv_Ev);
-    function->codeSize += 2;
+    if (loadInstruction->size == ast::type::TypeSize::Quad)
+    {
+        bw->writeInstructionsInFunction({ OpCodePrefix::RexMagic | OpCodePrefix::RexW , OneByteOpCode::Mov_Gv_Ev }, function);
+    }
+    else
+    {
+        bw->writeInstructionInFunction(OneByteOpCode::Mov_Gv_Ev, function);
+    }
     writeModRmAndStackOffset(loadInstruction, function);
 }
 
@@ -382,15 +371,15 @@ X86_64Writer::writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister opera
     int64_t convertedStackOffset = static_cast<int64_t>(stackOffset);
     if (convertedStackOffset <= INT8_MAX && convertedStackOffset >= INT8_MIN)
     {
-        bw->writeByte(ModBits::Mod1 | registerBits | RmBits::EbpPlusDisp8);
-        bw->writeByte(-convertedStackOffset - 8);
-        function->codeSize += 2;
+        bw->writeInstructionsInFunction({
+            static_cast<uint8_t>(ModBits::Mod1 | registerBits | RmBits::EbpPlusDisp8),
+            static_cast<uint8_t>(-convertedStackOffset)
+        }, function);
     }
     else if (convertedStackOffset <= INT32_MAX && convertedStackOffset >= INT32_MIN)
     {
-        bw->writeByte(ModBits::Mod2 | registerBits | RmBits::EbpPlusDisp32);
-        bw->writeDoubleWord(-convertedStackOffset - 32);
-        function->codeSize += 5;
+        bw->writeInstructionInFunction(ModBits::Mod2 | registerBits | RmBits::EbpPlusDisp32, function);
+        bw->writeDoubleWordInFunction(-convertedStackOffset, function);
     }
     else
     {
@@ -402,7 +391,7 @@ X86_64Writer::writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister opera
 void
 X86_64Writer::writeModRmAndStackOffset(LoadInstruction* loadInstruction, FunctionRoutine* function)
 {
-    writeEbpReferenceBytes(loadInstruction->stackOffset, loadInstruction->destination, function);
+    writeEbpReferenceBytes(loadInstruction->stackOffset + loadInstruction->size, loadInstruction->destination, function);
 }
 
 
@@ -474,22 +463,11 @@ X86_64Writer::writeSubtractImmediateInstruction(OperandRegister destination, uin
     }
 }
 
+
 void
 X86_64Writer::writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function)
 {
     bw->writeInstructionInFunction(OneByteOpCode::Ret, function);
-}
-
-
-void
-X86_64Writer::writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function)
-{
-    bw->writeInstructionsInFunction({
-        OneByteOpCode::Xor_Ev_Gv,
-        static_cast<uint8_t>(ModBits::Mod3 |
-            getRegisterBitsFromOperandRegister(resetResetRegisterInstruction->target) |
-            getRegisterBitsFromOperandRegister(resetResetRegisterInstruction->target))
-    }, function);
 }
 
 

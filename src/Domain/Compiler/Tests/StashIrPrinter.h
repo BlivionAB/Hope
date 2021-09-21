@@ -23,7 +23,7 @@ public:
     writeFunctionRoutines(std::queue<output::FunctionRoutine*>& instructions);
 
     void
-    writeFunctionRoutine(output::FunctionRoutine* functionRoutine);
+    writeFunctionRoutine(output::FunctionRoutine* function);
 
 private:
 
@@ -31,7 +31,7 @@ private:
     _tw;
 
     void
-    writeInstruction(const output::Instruction* instruction);
+    writeInstruction(const output::Instruction* instruction, output::FunctionRoutine* function);
 
     void
     writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction);
@@ -47,6 +47,15 @@ private:
 
     void
     writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction);
+
+    void
+    writeMoveAddressInstruction(const output::MoveAddressInstruction* moveAddressInstruction);
+
+    void
+    writeCallInstruction(const output::CallInstruction* callInstruction, output::FunctionRoutine* function);
+
+    void
+    writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction);
 };
 
 

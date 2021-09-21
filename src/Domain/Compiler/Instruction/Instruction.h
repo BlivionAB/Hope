@@ -142,10 +142,14 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         destination;
 
-        LoadInstruction(OperandRegister destination, uint64_t stackOffset):
+        ast::type::TypeSize
+        size;
+
+        LoadInstruction(OperandRegister destination, uint64_t stackOffset, ast::type::TypeSize size):
+            Instruction(InstructionKind::Load),
             destination(destination),
             stackOffset(stackOffset),
-            Instruction(InstructionKind::Load)
+            size(size)
         { }
     };
 
@@ -352,14 +356,14 @@ namespace elet::domain::compiler::instruction::output
         bool
         isStartFunction;
 
+        bool
+        inferReturn0;
+
         uint64_t
         stackSize = 0;
 
         uint64_t
         codeSize = 0;
-
-        SubtractImmediateInstruction*
-        subtractStackInstruction;
 
         FunctionRoutine(const Utf8StringView& name):
             name(name),
@@ -399,7 +403,7 @@ namespace elet::domain::compiler::instruction::output
             size(size),
             stackOffset(stackOffset)
         {
-            stackOffset += size / 8;
+            stackOffset += size;
         }
     };
 

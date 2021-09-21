@@ -52,11 +52,12 @@ Transformer::transformFunctionDeclaration(const ast::FunctionDeclaration* functi
     output::FunctionRoutine* function = createFunctionRoutine(functionDeclaration->name->name);
     _currentRoutineStack.push(function);
     uint64_t stackOffset = _defaultFunctionStackOffset;
-    bool isStartFunction = functionDeclaration->signature->isStartFunction;
+    bool isStartFunction = function->isStartFunction = functionDeclaration->signature->isStartFunction;
+    function->inferReturn0 = isStartFunction && functionDeclaration->signature->hasReturnStatementOnAllBranches;
     function->name = isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
     transformFunctionParameters(functionDeclaration, function, stackOffset);
     transformLocalStatements(functionDeclaration->body->statements, stackOffset);
-    function->stackSize = stackOffset;
+    function->stackSize = getAlignedStackSizeFromStackOffset(stackOffset);
     _currentRoutineStack.pop();
     return function;
 }
@@ -76,7 +77,7 @@ Transformer::transformFunctionParameters(const ast::FunctionDeclaration* functio
 
             // TODO: The reference instruction should be on property basis.
             parameterDeclaration->referenceInstruction = store;
-            stackOffset += param->size / 8;
+            stackOffset += param->size;
         }
     }
 }
@@ -123,17 +124,25 @@ Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement, uin
     {
         // Returns void
     }
-    addInstruction(new output::ReturnInstruction());
 }
 
 
 void
 Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset)
 {
-    transformExpression(variable->expression, stackOffset, output::OperandRegister::Left);
-    output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(OperandRegister::Left, stackOffset, variable->resolvedType->size());
-    variable->referenceInstruction = storeInstruction;
-    addInstruction(storeInstruction);
+    output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset, output::OperandRegister::Left);
+    if (std::holds_alternative<ImmediateValue>(canonicalExpression))
+    {
+        output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(std::get<ImmediateValue>(canonicalExpression), variable->resolvedType->size(), stackOffset);
+        variable->referenceInstruction = storeInstruction;
+        addInstruction(storeInstruction);
+    }
+    else
+    {
+        output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(OperandRegister::Left, stackOffset, variable->resolvedType->size());
+        variable->referenceInstruction = storeInstruction;
+        addInstruction(storeInstruction);
+    }
 }
 
 
@@ -261,7 +270,8 @@ Transformer::transformArgumentPropertyExpression(ast::PropertyExpression* proper
     output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
     output::LoadInstruction* loadInstruction = new output::LoadInstruction(
         getOperandRegisterFromArgumentIndex(argumentIndex),
-        referenceInstruction->stackOffset);
+        referenceInstruction->stackOffset,
+        referenceInstruction->size);
     addInstruction(loadInstruction);
 }
 
@@ -324,8 +334,8 @@ Transformer::isImmediateValueExpression(ast::Expression* expression)
 output::OperandRegister
 Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression, output::OperandRegister operandRegister)
 {
-    uint64_t stackOffset = propertyExpression->referenceDeclaration->referenceInstruction->stackOffset;
-    output::LoadInstruction* loadInstruction = new output::LoadInstruction(operandRegister, stackOffset);
+    output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
+    output::LoadInstruction* loadInstruction = new output::LoadInstruction(operandRegister, referenceInstruction->stackOffset, referenceInstruction->size);
     addInstruction(loadInstruction);
     return output::OperandRegister::Left;
 }
@@ -396,6 +406,18 @@ Transformer::getDefaultFunctionStackOffset(const CompilerOptions& compilerOption
         default:
             return 0;
     }
+}
+
+
+uint64_t
+Transformer::getAlignedStackSizeFromStackOffset(uint64_t stackOffset)
+{
+    uint64_t rest = stackOffset % 16;
+    if (rest != 0)
+    {
+        return (16 - rest) + stackOffset;
+    }
+    return stackOffset;
 }
 
 

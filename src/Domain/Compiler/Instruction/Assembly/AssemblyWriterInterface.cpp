@@ -150,12 +150,6 @@ AssemblyWriterInterface::writeFunctionInstructions(FunctionRoutine* function)
             case InstructionKind::MoveAddress:
                 writeMoveAddressInstruction(reinterpret_cast<MoveAddressInstruction*>(instruction), function);
                 break;
-            case InstructionKind::Push:
-                writePushInstruction(reinterpret_cast<PushInstruction*>(instruction), function);
-                break;
-            case InstructionKind::Pop:
-                writePopInstruction(reinterpret_cast<PopInstruction*>(instruction), function);
-                break;
             case InstructionKind::AddRegister:
                 writeAddRegisterInstruction(reinterpret_cast<AddRegisterInstruction*>(instruction), function);
                 break;
@@ -167,9 +161,6 @@ AssemblyWriterInterface::writeFunctionInstructions(FunctionRoutine* function)
                 break;
             case InstructionKind::Return:
                 writeReturnInstruction(reinterpret_cast<ReturnInstruction*>(instruction), function);
-                break;
-            case InstructionKind::ResetRegister:
-                writeResetRegisterInstruction(reinterpret_cast<ResetRegisterInstruction*>(instruction), function);
                 break;
             default:
                 throw std::runtime_error("Unknown local instruction.");
@@ -183,7 +174,7 @@ AssemblyWriterInterface::writeFunctionInstructions(FunctionRoutine* function)
 void
 AssemblyWriterInterface::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented method.");
+    throw std::runtime_error("Not implemented \"writeMoveAddressInstruction\" method.");
 }
 
 
@@ -191,97 +182,77 @@ AssemblyWriterInterface::writeMoveAddressInstruction(MoveAddressInstruction* mov
 void
 AssemblyWriterInterface::writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented method.");
-}
-
-
-void
-AssemblyWriterInterface::writePushInstruction(PushInstruction* pushInstruction, FunctionRoutine* function)
-{
-    throw std::runtime_error("Not implemented method.");
-}
-
-
-void
-AssemblyWriterInterface::writePopInstruction(PopInstruction* popInstruction, FunctionRoutine* function)
-{
-    throw std::runtime_error("Not implemented method.");
+    throw std::runtime_error("Not implemented \"writeAddRegisterInstruction\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented method.");
+    throw std::runtime_error("Not implemented \"writeStoreRegisterInstruction\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented method.");
+    throw std::runtime_error("Not implemented \"writeStoreImmediateInstruction\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine)
 {
-    throw std::runtime_error("Not implemented method.");
+    throw std::runtime_error("Not implemented \"writeCallInstruction\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented method.");
+    throw std::runtime_error("Not implemented \"writeLoadInstruction\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented method.");
-}
-
-
-void
-AssemblyWriterInterface::writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function)
-{
-    throw std::runtime_error("Not implemented");
-}
-
-
-void
-AssemblyWriterInterface::writeResetRegisterInstruction(ResetRegisterInstruction* resetResetRegisterInstruction, FunctionRoutine* function)
-{
-    throw std::runtime_error("Not implemented");
+    throw std::runtime_error("Not implemented \"writeMoveRegisterInstruction\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented");
+    throw std::runtime_error("Not implemented \"writeSubtractImmediateInstruction\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeAddImmediateInstruction(AddImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented");
+    throw std::runtime_error("Not implemented \"writeAddImmediateInstruction\" method.");
+}
+
+
+void
+AssemblyWriterInterface::writeFunctionPrologue(FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented \"writeFunctionPrologue\" method.");
 }
 
 
 void
 AssemblyWriterInterface::writeFunctionEpilogue(FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented.");
+    throw std::runtime_error("Not implemented \"writeFunctionEpilogue\" method.");
 }
 
+
 void
-AssemblyWriterInterface::writeFunctionPrologue(FunctionRoutine* function)
+AssemblyWriterInterface::writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented.");
+    throw std::runtime_error("Not implemented \"writeReturnInstruction\" method.");
 }
 
 
@@ -292,32 +263,10 @@ AssemblyWriterInterface::nextInstructionIs(InstructionKind kind) const
 }
 
 
-AssemblyWriterInterface::InstructionIterator::InstructionIterator(List<output::Instruction*>& instructions):
-    _instructions(instructions)
-{
-
-}
-
-
-output::Instruction*
-AssemblyWriterInterface::InstructionIterator::next()
-{
-    _cursor += 1;
-    return _instructions[_cursor];
-}
-
-
-output::Instruction*
-AssemblyWriterInterface::InstructionIterator::peek()
-{
-    return _instructions[_cursor + 1];
-}
-
-
 void
 AssemblyWriterInterface::writeInstructionsPadding(FunctionRoutine* function)
 {
-    throw std::runtime_error("Not implemented.");
+    throw std::runtime_error("Not implemented \"writeInstructionsPadding\" method.");
 }
 
 

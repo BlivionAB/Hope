@@ -34,9 +34,7 @@ BaselinePrinter<TOneOfInstructions>::print()
         _tw.writeLine("__TEXT,__stubs:");
         _tw.newline();
         writeInstructions(*stubsSectionInstructions);
-    }
-    if (stubHelperSectionInstructions && stubHelperSectionInstructions->size() > 0)
-    {
+
         _tw.newline();
         _tw.writeLine("__TEXT,__stub_helper:");
         _tw.newline();

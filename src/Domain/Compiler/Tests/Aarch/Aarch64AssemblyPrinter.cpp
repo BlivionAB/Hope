@@ -40,7 +40,7 @@ Aarch64AssemblyPrinter::writeInstructions(const List<OneOfInstruction>& instruct
             case SubImmediate64:
                 writeDataProcessImmediateInstruction(reinterpret_cast<const DataProcessImmediateInstruction*>(instruction));
                 break;
-            case Movz64:
+            case Movz32:
                 writeMovImmediate(reinterpret_cast<const MovWideImmediateInstruction*>(instruction));
                 break;
             case Mov64:

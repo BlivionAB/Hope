@@ -378,7 +378,14 @@ Compiler::acceptAssemblyWritingWork()
             break;
         }
         output::FunctionRoutine* routine = _routines.front();
-        _objectFileWriter->write(routine);
+        try
+        {
+            _objectFileWriter->write(routine);
+        }
+        catch (std::exception& e)
+        {
+            std::cout << e.what() << std::endl;
+        }
         _routines.pop();
     }
 }

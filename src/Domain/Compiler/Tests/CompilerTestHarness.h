@@ -1,5 +1,5 @@
-#ifndef ELET_EXTERNALFUNCTION_H
-#define ELET_EXTERNALFUNCTION_H
+#ifndef ELET_COMPILERTESTHARNESS_H
+#define ELET_COMPILERTESTHARNESS_H
 
 
 #include <gmock/gmock.h>
@@ -32,7 +32,7 @@ enum class OptimizationLevel
 enum class CompilationTarget
 {
     MachO_x86_64,
-    MachO_aarch64,
+    MachO_Aarch64,
     StashIR,
 };
 
@@ -46,14 +46,11 @@ struct TestProjectOptions
     List<CompilationTarget>
     targets;
 
-    AssemblyTarget
-    assemblyTarget;
-
-    ObjectFileTarget
-    objectFileTarget;
-
     std::optional<bool>
     writeExecutable;
+
+    std::optional<bool>
+    updateBaselines;
 
     std::optional<OptimizationLevel>
     optimizationLevel;
@@ -205,6 +202,23 @@ protected:
     StashIRPrinter
     stashIRPrinter;
 
+
+    void
+    testMainFunction(Utf8String source)
+    {
+        project.setEntrySourceFile("main.l1",
+            Utf8String() + "domain Common::MyApplication implements IConsoleApplication\n"
+            "{\n"
+            "\n"
+            "public:\n"
+            "\n"
+            "    fn OnApplicationStart(): void\n"
+            "    {\n"
+            + source +
+            "    }\n"
+            "}");
+    }
+
     CompilerOptions
     getCompilerOptionsFromCompilationTarget(const CompilationTarget compilationTarget)
     {
@@ -212,7 +226,7 @@ protected:
         ObjectFileTarget objectFileTarget;
         switch (compilationTarget)
         {
-            case CompilationTarget::MachO_aarch64:
+            case CompilationTarget::MachO_Aarch64:
                 assemblyTarget = AssemblyTarget::Aarch64;
                 objectFileTarget = ObjectFileTarget::MachO;
                 break;
@@ -233,19 +247,16 @@ protected:
     testing::AssertionResult
     testProject(TestProjectOptions options)
     {
+        testing::AssertionResult result(true);
         for (const auto target : options.targets)
         {
-            testing::AssertionResult success = compileTarget(target, options);
-            if (!success)
-            {
-                return success;
-            }
+            compileTarget(target, options, result);
         }
-        return testing::AssertionSuccess();
+        return result;
     }
 
-    testing::AssertionResult
-    compileTarget(const CompilationTarget target, const TestProjectOptions& options)
+    void
+    compileTarget(const CompilationTarget target, const TestProjectOptions& options, testing::AssertionResult& result)
     {
         CompilerOptions compilerOptions = getCompilerOptionsFromCompilationTarget(target);
         Compiler compiler(*project.fileReader, compilerOptions);
@@ -257,7 +268,7 @@ protected:
         if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
         {
             std::queue<output::FunctionRoutine*> output = compiler.getStashIR();
-            return checkStashIRBaseline(output, options);
+            checkStashIRBaseline(output, options, compilerOptions, result);
         }
         else
         {
@@ -265,22 +276,46 @@ protected:
             switch (compilerOptions.assemblyTarget)
             {
                 case AssemblyTarget::x86_64:
-                    return checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(
-                        options,
-                        output);
+                    checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
+                    break;
                 case AssemblyTarget::Aarch64:
-                    return checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(
-                        options,
-                        output);
+                    checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, compilerOptions, output,result);
+                    break;
             }
         }
     }
 
-    template<typename TAssemblyParser, typename TAssemblyPrinter, typename TInstruction>
-    testing::AssertionResult
-    checkTextSegmentBaselines(const TestProjectOptions& options, List<uint8_t>& output)
+    std::string
+    getArchitecture(const CompilerOptions& compilerOptions)
     {
-        CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, options.assemblyTarget);
+        if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
+        {
+            return "stash-ir";
+        }
+        switch (compilerOptions.objectFileTarget)
+        {
+            case ObjectFileTarget::MachO:
+            {
+                std::string result = "macho";
+                switch (compilerOptions.assemblyTarget)
+                {
+                    case AssemblyTarget::Aarch64:
+                        return result + "-aarch64";
+                    case AssemblyTarget::x86_64:
+                        return result + "-x86_64";
+                }
+                break;
+            }
+        }
+        throw std::runtime_error("Unknown target in getArchitecture.");
+    }
+
+
+    template<typename TAssemblyParser, typename TAssemblyPrinter, typename TInstruction>
+    void
+    checkTextSegmentBaselines(const TestProjectOptions& options, const CompilerOptions& compilerOptions, List<uint8_t>& output, testing::AssertionResult& result)
+    {
+        CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, compilerOptions.assemblyTarget);
         if (options.writeExecutable)
         {
             writeOutput(output, options.baselineName + ".o");
@@ -288,21 +323,16 @@ protected:
 
         baselineParser.parse();
         Utf8String textSection = baselineParser.serializeTextSegment();
-        auto textSectionResult = checkBaseline(textSection, options.baselineName + ".basm");
-        if (!textSectionResult)
-        {
-            return textSectionResult;
-        }
-        return testing::AssertionSuccess();
+        checkBaseline(textSection, options, compilerOptions, result);
     }
 
 
-    testing::AssertionResult
-    checkBaseline(Utf8String& result, fs::path baselineName)
+    void
+    checkBaseline(Utf8String& result, const TestProjectOptions& options, const CompilerOptions& compilerOptions, testing::AssertionResult& testResult)
     {
         DiffPrinter printer;
         MyersDiff differ;
-        fs::path basm = fs::current_path() / ".." / currentPath / baselineName;
+        fs::path basm = fs::current_path() / ".." / currentPath / (options.baselineName + "-" + getArchitecture(compilerOptions) + ".basm");
         fs::path baselineFolder = basm.parent_path();
         if (!fs::exists(baselineFolder))
         {
@@ -318,19 +348,26 @@ protected:
         auto diffs = differ.diffText(baseline, result, isDiffing);
         if (isDiffing)
         {
-            if (std::getenv("UPDATE_BASELINES") != nullptr || std::getenv("U") != nullptr)
+            if (options.updateBaselines)
             {
                 File::write(basm, result);
-                return testing::AssertionSuccess();
             }
             else
             {
-                return testing::AssertionFailure() << printer.print(diffs, true);
+                testing::AssertionResult failure(false);
+                failure << std::endl;
+                failure << testResult.message();
+                failure << std::endl;
+                failure << basm.filename().c_str() << std::endl;
+                failure << "==============================" << std::endl;
+                failure << printer.print(diffs, true);
+                testResult = failure;
             }
+            return;
         }
         File::write(basm, result);
-        return testing::AssertionSuccess();
     }
+
 
     void
     writeOutput(const List<uint8_t>& output, fs::path file) const
@@ -346,15 +383,16 @@ protected:
         fileHandle.close();
     }
 
-    testing::AssertionResult
-    checkStashIRBaseline(std::queue<output::FunctionRoutine*>& output, const TestProjectOptions& options)
+
+    void
+    checkStashIRBaseline(std::queue<output::FunctionRoutine*>& output, const TestProjectOptions& options, const CompilerOptions& compilerOptions, testing::AssertionResult& result)
     {
         Utf8String baselineOutput = stashIRPrinter.writeFunctionRoutines(output);
-        return checkBaseline(baselineOutput, options.baselineName + ".basm");
+        checkBaseline(baselineOutput, options, compilerOptions, result);
     }
 };
 
 
 }
 
-#endif //ELET_EXTERNALFUNCTION_H
+#endif //ELET_COMPILERTESTHARNESS_H

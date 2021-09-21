@@ -34,8 +34,15 @@ Checker::checkExpression(ast::Expression* expression)
 {
     switch (expression->kind)
     {
+        case ast::SyntaxKind::BinaryExpression:
+            checkExpression(reinterpret_cast<ast::BinaryExpression*>(expression)->left);
+            checkExpression(reinterpret_cast<ast::BinaryExpression*>(expression)->right);
+            break;
         case ast::SyntaxKind::PropertyExpression:
             checkPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression));
+            break;
+        case ast::SyntaxKind::IntegerLiteral:
+            resolveTypeFromExpression(reinterpret_cast<ast::IntegerLiteral*>(expression));
             break;
         default:;
     }
@@ -78,6 +85,9 @@ Checker::checkFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration)
                 break;
             case ast::SyntaxKind::VariableDeclaration:
                 checkVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement));
+                break;
+            case ast::SyntaxKind::ReturnStatement:
+                checkExpression(reinterpret_cast<ast::ReturnStatement*>(statement)->expression);
                 break;
             default:;
         }

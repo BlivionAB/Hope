@@ -188,6 +188,16 @@ struct CompilerOptions
 };
 
 
+struct Diagnostic
+{
+    uint32_t
+    code;
+
+    std::string
+    message;
+};
+
+
 // Note: there are no checking in CLion, due to forward declaration of class Compiler in Parser.h
 class Compiler
 {
@@ -237,6 +247,9 @@ private:
 
     void
     pushBindingWork(const List<ast::Syntax*> statements);
+
+    List<Diagnostic>
+    _diagnostics;
 
     CompilerOptions
     _options;

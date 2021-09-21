@@ -16,10 +16,12 @@ struct Struct;
 
 enum TypeSize : uint64_t
 {
-    _8 = 8,
-    _16 = 16,
-    _32 = 32,
-    _64 = 64,
+    _8 = 1,
+    _16 = 2,
+    _32 = 4,
+    _64 = 8,
+    Dword = _32,
+    Quad = _64,
     Pointer = _64,
 };
 
@@ -156,6 +158,9 @@ struct Signature : Property
 {
     bool
     isStartFunction;
+
+    bool
+    hasReturnStatementOnAllBranches = false;
 
     List<Parameter*>
     parameters;

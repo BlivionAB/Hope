@@ -1,5 +1,6 @@
 #include "X86AssemblyParser.h"
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h"
+#include "Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h"
 #include <cmath>
 
 namespace elet::domain::compiler::test::x86
@@ -74,13 +75,13 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
         {
             uint8_t modrmByte = getByte(instruction);
             uint8_t offset = getByte(instruction); // Note only one byte offset from "Ib".
-            uint8_t op = (modrmByte & ModRmMask::Reg) >> 3;
+            uint8_t op = (modrmByte & ModRmMask::Reg);
             switch (op)
             {
-                case 0:
+                case RegisterBits::ImmediateGroup1_Add:
                     instruction.kind = InstructionKind::Add;
                     break;
-                case 5:
+                case RegisterBits::ImmediateGroup1_Sub:
                     instruction.kind = InstructionKind::Sub;
                     break;
                 default:
@@ -191,8 +192,16 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
         case OneByteOpCode::Nop:
             instruction.kind = InstructionKind::Nop;
             break;
-        default:;
-//            throw std::runtime_error("Could not find decode opcode.");
+        case OneByteOpCode::Add_Gv_Ev:
+        {
+            uint8_t modrmByte = getByte(instruction);
+            instruction.kind = InstructionKind::Add;
+            instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
+            instruction.operand2 = createEv(modrmByte, instruction, true);
+            break;
+        }
+        default:
+            throw std::runtime_error("Could not find decode opcode.");
     }
 }
 

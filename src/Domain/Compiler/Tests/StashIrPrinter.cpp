@@ -19,35 +19,49 @@ StashIRPrinter::writeFunctionRoutines(std::queue<output::FunctionRoutine*>& inst
 
 
 void
-StashIRPrinter::writeFunctionRoutine(output::FunctionRoutine* functionRoutine)
+StashIRPrinter::writeFunctionRoutine(output::FunctionRoutine* function)
 {
-    _tw.write(functionRoutine->name);
+    _tw.write(function->name);
     _tw.write("(");
-    for (const output::ParameterDeclaration* parameterDeclaration : functionRoutine->parameters)
+    for (const output::ParameterDeclaration* parameterDeclaration : function->parameters)
     {
         _tw.write(parameterDeclaration->size);
     }
     _tw.write("):");
     _tw.newline();
     _tw.indent();
-    for (const output::Instruction* instruction : functionRoutine->instructions)
+    for (const output::Instruction* instruction : function->instructions)
     {
-        writeInstruction(instruction);
+        writeInstruction(instruction, function);
     }
     _tw.unindent();
+    _tw.newline();
+    for (output::FunctionRoutine* f : function->subRoutines)
+    {
+        writeFunctionRoutine(f);
+    }
 }
 
 
 void
-StashIRPrinter::writeInstruction(const output::Instruction* instruction)
+StashIRPrinter::writeInstruction(const output::Instruction* instruction, output::FunctionRoutine* function)
 {
     switch (instruction->kind)
     {
+        case output::InstructionKind::Call:
+            writeCallInstruction(reinterpret_cast<const output::CallInstruction*>(instruction), function);
+            break;
+        case output::InstructionKind::StoreRegister:
+            writeStoreRegisterInstruction(reinterpret_cast<const output::StoreRegisterInstruction*>(instruction));
+            break;
         case output::InstructionKind::StoreImmediate:
             writeStoreImmediateInstruction(reinterpret_cast<const output::StoreImmediateInstruction*>(instruction));
             break;
         case output::InstructionKind::Load:
             writeLoadInstruction(reinterpret_cast<const output::LoadInstruction*>(instruction));
+            break;
+        case output::InstructionKind::MoveAddress:
+            writeMoveAddressInstruction(reinterpret_cast<const output::MoveAddressInstruction*>(instruction));
             break;
         case output::InstructionKind::MoveRegister:
             writeMoveRegisterInstruction(reinterpret_cast<const output::MoveRegisterInstruction*>(instruction));
@@ -56,7 +70,7 @@ StashIRPrinter::writeInstruction(const output::Instruction* instruction)
             _tw.write("Ret");
             break;
         case output::InstructionKind::AddRegister:
-            _tw.write("Add OpL, OpL, OpR");
+            _tw.write("Add OpLeft, OpLeft, OpRight");
             break;
         default:
             throw std::runtime_error("Unknown instruction");
@@ -64,6 +78,16 @@ StashIRPrinter::writeInstruction(const output::Instruction* instruction)
     _tw.newline();
 }
 
+
+void
+StashIRPrinter::writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction)
+{
+    _tw.write("Str ");
+    _tw.write("[Sp + ");
+    _tw.write(storeRegisterInstruction->stackOffset);
+    _tw.write("], ");
+    writeOperandRegister(storeRegisterInstruction->target);
+}
 
 void
 StashIRPrinter::writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction)
@@ -80,8 +104,8 @@ StashIRPrinter::writeLoadInstruction(const output::LoadInstruction* loadInstruct
 {
     _tw.write("Ldr ");
     writeOperandRegister(loadInstruction->destination);
-    _tw.write(", [Sp + ");
-    _tw.write(loadInstruction->stackOffset);
+    _tw.write(", [Sp + #");
+    _tw.write(-loadInstruction->stackOffset - loadInstruction->size);
     _tw.write("]");
 }
 
@@ -95,11 +119,25 @@ StashIRPrinter::writeOperandRegister(output::OperandRegister operandRegister)
             _tw.write("OpRet");
             break;
         case output::OperandRegister::Left:
-            _tw.write("OpL");
+            _tw.write("OpLeft");
             break;
         case output::OperandRegister::Right:
-            _tw.write("OpR");
+            _tw.write("OpRight");
             break;
+        case output::OperandRegister::Arg0:
+            _tw.write("Arg0");
+            break;
+        case output::OperandRegister::Arg1:
+            _tw.write("Arg1");
+            break;
+        case output::OperandRegister::Arg2:
+            _tw.write("Arg2");
+            break;
+        case output::OperandRegister::Arg3:
+            _tw.write("Arg3");
+            break;
+        default:
+            throw std::runtime_error("Unknown OperandRegister in writeOperandRegister.");
     }
 }
 
@@ -107,8 +145,8 @@ StashIRPrinter::writeOperandRegister(output::OperandRegister operandRegister)
 void
 StashIRPrinter::writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction)
 {
-    _tw.write("Str [Sp + ");
-    _tw.write(storeImmediateInstruction->stackOffset);
+    _tw.write("Str [Sp + #");
+    _tw.write(-storeImmediateInstruction->stackOffset - storeImmediateInstruction->size);
     _tw.write("], ");
     output::ImmediateValue value = storeImmediateInstruction->value;
     if (std::holds_alternative<int32_t>(value))
@@ -129,6 +167,36 @@ StashIRPrinter::writeOperation(output::Operation* operation)
         case output::OperationKind::ImmediateToMemory:
             _tw.write("Store");
             break;
+    }
+}
+
+
+void
+StashIRPrinter::writeMoveAddressInstruction(const output::MoveAddressInstruction* moveAddressInstruction)
+{
+    _tw.write("Mov ");
+    writeOperandRegister(moveAddressInstruction->destination);
+    _tw.write(", [\"");
+    _tw.write(std::get<output::String*>(moveAddressInstruction->constant)->value);
+    _tw.write("\"]");
+}
+
+void
+StashIRPrinter::writeCallInstruction(const output::CallInstruction* callInstruction, output::FunctionRoutine* function)
+{
+    _tw.write("Call ");
+    if (callInstruction->routine->kind == output::RoutineKind::Function)
+    {
+        _tw.write(reinterpret_cast<output::FunctionRoutine*>(callInstruction->routine)->name);
+        function->subRoutines.add(reinterpret_cast<output::FunctionRoutine*>(callInstruction->routine));
+    }
+    else if (callInstruction->routine->kind == output::RoutineKind::External)
+    {
+        _tw.write(reinterpret_cast<output::ExternalRoutine*>(callInstruction->routine)->name);
+    }
+    else
+    {
+        throw std::runtime_error("Unknown RoutineKind in writeCallInstruction.");
     }
 }
 
