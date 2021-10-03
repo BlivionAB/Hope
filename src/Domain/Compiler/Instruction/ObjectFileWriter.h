@@ -6,23 +6,10 @@
 
 namespace elet::domain::compiler::instruction::output
 {
+    struct AssemblySegments;
 
 
-struct AssemblySegments;
-
-
-using namespace elet::foundation;
-
-enum class ObjectFileTarget
-{
-    Unknown,
-    StashIR,
-    MachO,
-    Elf,
-    Coff,
-};
-
-
+    using namespace elet::foundation;
 }
 
 #endif //ELET_OBJECTFILEWRITER_H

@@ -7,33 +7,30 @@
 
 namespace elet::domain::compiler::instruction::output
 {
-
-using namespace elet::foundation;
-
-
-struct Constant
-{
-    RelocationPlaceholder
-    relocationAddress;
-
-    Constant():
-        relocationAddress(0, 0, 0)
-    { }
-};
+    using namespace elet::foundation;
 
 
-struct String : Constant
-{
-    Utf8StringView
-    value;
+    struct Constant
+    {
+        RelocationPlaceholder
+        relocationAddress;
 
-    String(Utf8StringView value):
-        value(value),
-        Constant()
-    { }
-};
+        Constant():
+            relocationAddress(0, 0, 0)
+        { }
+    };
 
 
+    struct String : Constant
+    {
+        Utf8StringView
+        value;
+
+        String(Utf8StringView value):
+            value(value),
+            Constant()
+        { }
+    };
 }
 
 #include "Instruction.h"

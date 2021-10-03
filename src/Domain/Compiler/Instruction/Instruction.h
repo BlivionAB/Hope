@@ -5,6 +5,7 @@
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
 #include <Domain/Compiler/Syntax/Syntax.h>
+#include <Domain/Compiler/CompilerTypes.h>
 #include <variant>
 
 
@@ -21,12 +22,6 @@ namespace elet::domain::compiler::ast
 }
 
 
-namespace elet::domain::compiler
-{
-    struct Symbol;
-}
-
-
 namespace elet::domain::compiler::instruction::output
 {
     struct Constant;
@@ -36,8 +31,8 @@ namespace elet::domain::compiler::instruction::output
     struct String;
     struct SubtractImmediateInstruction;
     enum class OperandRegister;
-    typedef std::variant<int8_t, uint8_t, int32_t, uint32_t, int64_t, uint64_t> ImmediateValue;
-    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
+    typedef std::variant<uint8_t, uint16_t, uint32_t, uint64_t> ImmediateValue;
+    typedef std::variant<std::monostate, OperandRegister, uint64_t> CanonicalExpression;
     using namespace foundation;
 
 
@@ -101,8 +96,16 @@ namespace elet::domain::compiler::instruction::output
         InstructionKind
         kind;
 
+        RegisterSize
+        registerSize = RegisterSize::None;
+
         Instruction(InstructionKind kind):
             kind(kind)
+        { }
+
+        Instruction(InstructionKind kind, RegisterSize registerSize):
+            kind(kind),
+            registerSize(registerSize)
         { }
     };
 
@@ -142,14 +145,14 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         destination;
 
-        ast::type::TypeSize
-        size;
+        RegisterSize
+        allocationSize;
 
-        LoadInstruction(OperandRegister destination, uint64_t stackOffset, ast::type::TypeSize size):
+        LoadInstruction(OperandRegister destination, uint64_t stackOffset, RegisterSize allocationSize):
             Instruction(InstructionKind::Load),
             destination(destination),
             stackOffset(stackOffset),
-            size(size)
+            allocationSize(allocationSize)
         { }
     };
 
@@ -159,16 +162,16 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         destination;
 
-        ImmediateValue
-        immediateValue;
+        uint64_t
+        value;
 
         std::optional<output::Constant*>
         constant;
 
-        MoveImmediateInstruction(OperandRegister destination, ImmediateValue immediateValue):
-            Instruction(InstructionKind::MoveImmediate),
+        MoveImmediateInstruction(OperandRegister destination, uint64_t value, RegisterSize registerSize):
+            Instruction(InstructionKind::MoveImmediate, registerSize),
             destination(destination),
-            immediateValue(immediateValue)
+            value(value)
         { }
     };
 
@@ -206,6 +209,7 @@ namespace elet::domain::compiler::instruction::output
             target(target)
         { }
     };
+
 
     struct CallInstruction : Instruction
     {
@@ -357,7 +361,7 @@ namespace elet::domain::compiler::instruction::output
         isStartFunction;
 
         bool
-        inferReturn0;
+        inferReturnZero;
 
         uint64_t
         stackSize = 0;
@@ -387,23 +391,23 @@ namespace elet::domain::compiler::instruction::output
 
     struct MemoryAllocation : Instruction
     {
-        ast::type::TypeSize
-        size;
+        RegisterSize
+        allocationSize;
 
         uint64_t
         stackOffset;
 
-        MemoryAllocation(InstructionKind kind, ast::type::TypeSize size):
-            Instruction(kind),
-            size(size)
+        MemoryAllocation(InstructionKind kind, RegisterSize size):
+            Instruction(kind, allocationSize),
+            allocationSize(size)
         { }
 
-        MemoryAllocation(InstructionKind kind, ast::type::TypeSize size, uint64_t& stackOffset):
-            Instruction(kind),
-            size(size),
+        MemoryAllocation(InstructionKind kind, uint64_t& stackOffset, RegisterSize allocationSize):
+            Instruction(kind, allocationSize),
+            allocationSize(allocationSize),
             stackOffset(stackOffset)
         {
-            stackOffset += size;
+            stackOffset += static_cast<int>(allocationSize);
         }
     };
 
@@ -413,8 +417,8 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         target;
 
-        StoreRegisterInstruction(OperandRegister target, uint64_t& stackOffset, ast::type::TypeSize size):
-            MemoryAllocation(InstructionKind::StoreRegister, size, stackOffset),
+        StoreRegisterInstruction(OperandRegister target, uint64_t& stackOffset, RegisterSize allocationSize):
+            MemoryAllocation(InstructionKind::StoreRegister, stackOffset, allocationSize),
             target(target)
         {
 
@@ -424,14 +428,14 @@ namespace elet::domain::compiler::instruction::output
 
     struct StoreImmediateInstruction : MemoryAllocation
     {
-        ImmediateValue
+        uint64_t
         value;
 
-        std::optional<output::Constant*>
+        std::optional<Constant*>
         constant;
 
-        StoreImmediateInstruction(ImmediateValue value, ast::type::TypeSize size, uint64_t& stackOffset):
-            MemoryAllocation(InstructionKind::StoreImmediate, size, stackOffset),
+        StoreImmediateInstruction(uint64_t value, uint64_t& stackOffset, RegisterSize allocationSize):
+            MemoryAllocation(InstructionKind::StoreImmediate, stackOffset, allocationSize),
             value(value)
         {
 
@@ -439,16 +443,13 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-
-
-
     struct ParameterDeclaration : MemoryAllocation
     {
         unsigned int
         index;
 
-        ParameterDeclaration(unsigned int index, ast::type::TypeSize size):
-            MemoryAllocation(InstructionKind::ParameterDeclaration, size),
+        ParameterDeclaration(unsigned int index, RegisterSize registerSize):
+            MemoryAllocation(InstructionKind::ParameterDeclaration, registerSize),
             index(index)
         { }
     };
@@ -524,7 +525,7 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
+    typedef std::variant<std::monostate, OperandRegister, uint64_t> CanonicalExpression;
 
 
     struct ImmediateToMemoryOperation : Operation

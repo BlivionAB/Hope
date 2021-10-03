@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "../MyersDiff.h"
-#include "../DiffPrinter.h"
+#include "Domain/Compiler/TestHarness/TextDiff/MyersDiff.h"
+#include "Domain/Compiler/TestHarness/TextDiff/DiffPrinter.h"
 
 namespace elet::domain::compiler::test
 {
@@ -20,7 +20,7 @@ TEST(MyersDiff, Insertion)
     MyersDiff myersDiff;
     DiffPrinter diffPrinter;
     auto result = myersDiff.diffText("D", "D\nB");
-    EXPECT_EQ(diffPrinter.print(result), "  1    1    D\n+      2    B\n  1    1    D\n+      2    B\n");
+    EXPECT_EQ(diffPrinter.print(result), "  1    1    D\n+      2    B\n");
 }
 
 

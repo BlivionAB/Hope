@@ -1,6 +1,6 @@
 ```
 Let's assume that the following performance timings holds
-* Immediate value access < Register/Memory access < Arithmetic access
+* Immediate immediateValue access < Register/Memory access < Arithmetic access
 
 fn f1()
 {
@@ -39,7 +39,7 @@ fn f2()
 It will record expressions using identifiers:
   * For binary expressions:
     * (typeId + instanceId) + operatorId + (typeId + instanceId)
-      * Note for literals (int) it is the value itself that is the id.
+      * Note for literals (int) it is the immediateValue itself that is the id.
   * Variable has a variableId that is unique in local scope.
 
 ## Temporary Variable Assignment

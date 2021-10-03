@@ -16,6 +16,6 @@ This documents specifies the intermediate representation of the assembly.
 
 | Method | Operand1 | Operand2 | Description |
 | --- | --- | --- | --- | --- |
-| Store | R0-R8,BP,sp | Immediate value | Stores the value of Operand2 into Operand1 |
-| Load | R0-R8,BP,sp | Memory Address | Stores the value of Operand2 into Operand1 |
+| Store | R0-R8,BP,sp | Immediate immediateValue | Stores the immediateValue of Operand2 into Operand1 |
+| Load | R0-R8,BP,sp | Memory Address | Stores the immediateValue of Operand2 into Operand1 |
 | ReturnOperandRegister | | | ReturnOperandRegister from function |

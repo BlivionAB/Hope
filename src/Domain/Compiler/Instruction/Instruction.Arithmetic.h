@@ -14,6 +14,7 @@ namespace elet::domain::compiler::instruction::output
         { }
     };
 
+
     struct AddImmediateInstruction : Instruction
     {
         OperandRegister
@@ -28,6 +29,7 @@ namespace elet::domain::compiler::instruction::output
             value(value)
         { }
     };
+
 
     struct SubtractImmediateInstruction : Instruction
     {

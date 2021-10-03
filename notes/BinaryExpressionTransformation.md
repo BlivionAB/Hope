@@ -14,7 +14,7 @@ Where both are memory values
 x + x
 
 
-One is immediate value
+One is immediate immediateValue
 x + 1
 
 
@@ -30,7 +30,7 @@ converted to memory values before.
 
 So either a binary expression can be boiled down to 
 * memory * memory
-* memory * immediate value
-* immediate value * memmory
+* memory * immediate immediateValue
+* immediate immediateValue * memmory
 
 

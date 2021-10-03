@@ -1,5 +1,5 @@
-#ifndef ELET_AARCHTYPES_H
-#define ELET_AARCHTYPES_H
+#ifndef ELET_AARCH64INSTRUCTIONS_H
+#define ELET_AARCH64INSTRUCTIONS_H
 
 
 #include <variant>
@@ -24,6 +24,7 @@ enum Register : uint8_t
     r8 = 8,
     r16 = 16,
     r17 = 17,
+    r28 = 28,
     fp = 29,
     lr = 30,
     sp = 31,
@@ -45,9 +46,17 @@ struct Instruction
     Aarch64Instruction
     kind;
 
+    bool
+    is64Bit;
+
     List<uint8_t>
     bytes;
+
+    Instruction(Aarch64Instruction kind):
+        kind(kind)
+    { }
 };
+
 
 
 struct UdfInstruction : Instruction
@@ -153,24 +162,38 @@ struct BlInstruction : Instruction
     imm26;
 
     BlInstruction(int32_t imm26):
+        Instruction(Aarch64Instruction::Bl),
         withLink(true),
         imm26(imm26)
     { }
 };
 
 
-struct MovWideImmediateInstruction : Instruction
+struct OrrImmediateInstruction : Instruction
 {
     Register
     rd;
 
-    uint32_t
-    imm16;
+    Register
+    rn;
 
-    MovWideImmediateInstruction(Register rd, uint32_t imm16):
+    uint64_t
+    immediateValue;
+
+    OrrImmediateInstruction(Register rd, uint64_t value):
+        Instruction(Aarch64Instruction::OrrImmediate),
         rd(rd),
-        imm16(imm16)
+        immediateValue(value)
     { }
+};
+
+
+enum class Hw : uint8_t
+{
+    _0,
+    _16,
+    _32,
+    _48,
 };
 
 
@@ -179,12 +202,53 @@ struct MovInstruction : Instruction
     Register
     rd;
 
-    Register
-    rm;
+    uint16_t
+    imm16;
 
-    MovInstruction(Register rd, Register rm):
+    Hw
+    hw;
+
+    MovInstruction(Aarch64Instruction kind, Register rd, uint16_t imm16, Hw hw):
+        Instruction(kind),
         rd(rd),
-        rm(rm)
+        imm16(imm16),
+        hw(hw)
+    { }
+};
+
+
+struct MovzInstruction : MovInstruction
+{
+    uint64_t
+    immediateValue;
+
+    MovzInstruction(Register rd, uint16_t imm16, Hw hw):
+        MovInstruction(Aarch64Instruction::Movz, rd, imm16, hw)
+    { }
+};
+
+
+struct MovnInstruction : MovInstruction
+{
+
+    uint64_t
+    immediateValue;
+
+    MovnInstruction(Register rd, uint16_t imm16, Hw hw):
+        MovInstruction(Aarch64Instruction::Movn, rd, imm16, hw)
+    { }
+};
+
+
+
+
+struct MovkInstruction : MovInstruction
+{
+    uint64_t
+    immediateValue;
+
+    MovkInstruction(Register rd, uint16_t imm16, Hw hw):
+        MovInstruction(Aarch64Instruction::Movk, rd, imm16, hw)
     { }
 };
 
@@ -198,6 +262,7 @@ struct AdrpInstruction : Instruction
     immhilo;
 
     AdrpInstruction(Register rd, uint32_t immhilo):
+        Instruction(Aarch64Instruction::Adrp),
         rd(rd),
         immhilo(immhilo)
     { }
@@ -212,6 +277,7 @@ struct AdrInstruction : Instruction
     immhilo;
 
     AdrInstruction(Register rd, uint32_t immhilo):
+        Instruction(Aarch64Instruction::Adr),
         rd(rd),
         immhilo(immhilo)
     { }
@@ -226,6 +292,8 @@ union OneOfInstruction
     BrInstruction brexcpsysc;
     BlInstruction unbrimm;
     MovInstruction mov;
+    OrrImmediateInstruction orr;
+    MovnInstruction movn;
 
     OneOfInstruction()
     {
@@ -245,4 +313,4 @@ union OneOfInstruction
 }
 
 
-#endif //ELET_AARCHTYPES_H
+#endif //ELET_AARCH64INSTRUCTIONS_H

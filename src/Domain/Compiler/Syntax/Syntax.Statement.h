@@ -7,6 +7,10 @@
 
 namespace elet::domain::compiler::ast
 {
+    struct StatementBlock;
+    struct Expression;
+
+
     struct IfStatement : Syntax
     {
         Expression*

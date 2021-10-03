@@ -3,7 +3,7 @@
 
 
 #include <Foundation/Utf8String.h>
-#include <fmt/format.h>
+#include <format>
 #include "Scanner.h"
 
 namespace elet::domain::compiler::instruction
@@ -12,13 +12,14 @@ namespace elet::domain::compiler::instruction
 struct CompilerError : std::exception
 {
     Utf8String
-            message;
+    message;
 
     template<typename... Args>
     explicit CompilerError(const char* message, Args... args):
-            message(fmt::format(message, args...).c_str())
+            message(std::format(message, args...).c_str())
     { }
 };
+
 
 struct ExpectedTokenError : CompilerError
 {
@@ -26,6 +27,7 @@ struct ExpectedTokenError : CompilerError
         CompilerError("Expected '{0}', instead got '{1}'.", tokenToIRString.get(expected), result.toString())
     { }
 };
+
 
 struct UnknownTypeError
 {
@@ -37,13 +39,13 @@ struct UnknownTypeError
     { }
 };
 
+
 struct UnexpectedEndOfModule : CompilerError
 {
     UnexpectedEndOfModule():
             CompilerError("Unexpected end of module.")
     { }
 };
-
 
 
 struct UnexpectedExpression : CompilerError

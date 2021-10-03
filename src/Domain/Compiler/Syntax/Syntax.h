@@ -6,6 +6,7 @@
 #include <Foundation/Memory/Utf8Span.h>
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
+#include <Domain/Compiler/CompilerTypes.h>
 #include "Syntax.Labels.h"
 #include "Syntax.Kind.h"
 #include "Syntax.Type.h"
@@ -40,6 +41,110 @@ namespace elet::domain::compiler::ast
     using NameToDeclarationMap = std::map<Utf8StringView, Declaration*>;
 
 
+    enum class Token : std::size_t
+    {
+        Unknown,
+
+        Identifier,
+        Whitespace,
+
+        // Keywords
+        UsingKeyword,
+        ImplementsKeyword,
+        EnumKeyword,
+        ReturnKeyword,
+        IfKeyword,
+        ElseKeyword,
+        WhenKeyword,
+        ForKeyword,
+        WhileKeyword,
+        CancelKeyword,
+        ObserveKeyword,
+        OnKeyword,
+        FromKeyword,
+        TrueKeyword,
+        FalseKeyword,
+
+        // Declarations
+        AssemblyKeyword,
+        FunctionKeyword,
+        VarKeyword,
+        DomainKeyword,
+        ClassKeyword,
+        InterfaceKeyword,
+        ExternKeyword,
+
+        Ampersand,
+        OpenParen,
+        CloseParen,
+        OpenBrace,
+        CloseBrace,
+        OpenBracket,
+        CloseBracket,
+        Equal,
+        EqualEqual,
+        LessThan,
+        GreaterThan,
+        LessThanEqual,
+        GreaterThanEqual,
+        Comma,
+        Colon,
+        DoubleColon,
+        SemiColon,
+        Asterisk,
+        Dot,
+        DoubleQuote,
+        SingleQuote,
+
+
+        AmpersandAmpersand,
+        PipePipe,
+        Plus,
+        Minus,
+
+        BinaryOperationStart = AmpersandAmpersand,
+        BinaryOperationEnd = Minus,
+
+        // Types
+        VoidKeyword,
+        IntKeyword,
+        UnsignedIntKeyword,
+        CharKeyword,
+        StringKeyword,
+        U8Keyword,
+        U16Keyword,
+        U32Keyword,
+        U64Keyword,
+        S8Keyword,
+        S16Keyword,
+        S32Keyword,
+        S64Keyword,
+        USizeKeyword,
+        LiteralKeyword,
+
+        // Modifiers
+        ContextKeyword,
+        TypesKeyword,
+        ParamsKeyword,
+        AsyncKeyword,
+        PublicKeyword,
+        PrivateKeyword,
+        StaticKeyword,
+
+        // Operators
+        LengthOfKeyword,
+        SizeOfKeyword,
+
+        StringLiteral,
+        FloatLiteral,
+
+        DecimalLiteral,
+        HexadecimalLiteral,
+
+        EndOfFile,
+    };
+
+
     struct SourceFile
     {
         NameToDeclarationMap
@@ -48,8 +153,6 @@ namespace elet::domain::compiler::ast
         std::multimap<Utf8StringView, Declaration*>
         symbols;
     };
-
-
 
     struct Syntax
     {
@@ -83,6 +186,7 @@ namespace elet::domain::compiler::ast
         value;
     };
 
+
     struct DeclarationMetadata : Syntax
     {
         List<MetadataProperty*>
@@ -102,7 +206,7 @@ namespace elet::domain::compiler::ast
         TypeKind
         type;
 
-        type::TypeSize
+        RegisterSize
         size;
 
         Name*
@@ -156,6 +260,7 @@ namespace elet::domain::compiler::ast
         Dot,
         Asterisk,
     };
+
 
     struct Punctuation : Syntax
     {
@@ -243,10 +348,37 @@ namespace elet::domain::compiler::ast
     };
 
 
+    struct IntegerSuffix : Syntax
+    {
+        Token
+        type;
+    };
+
+
+    struct DecimalLiteral : Expression
+    {
+    };
+
+
+    struct HexadecimalLiteral : DecimalLiteral
+    {
+
+    };
+
+
     struct IntegerLiteral : Expression
     {
-        int64_t
+        std::variant<HexadecimalLiteral*, DecimalLiteral*>
+        digits;
+
+        uint64_t
         value;
+
+        IntegerSuffix*
+        suffix;
+
+        int
+        underscoresCount = 0;
     };
 
 
@@ -326,6 +458,7 @@ namespace elet::domain::compiler::ast
 
 #include "Syntax.Declarations.h"
 #include "Syntax.Block.h"
+#include "Syntax.Statement.h"
 #include "Domain/Compiler/Instruction/Instruction.h"
 
 

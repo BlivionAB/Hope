@@ -16,368 +16,380 @@ namespace fs = std::filesystem;
 namespace elet::domain::compiler
 {
     class Compiler;
-    struct Symbol;
     struct ParsingTask;
-}
 
 
-namespace elet::domain::compiler::instruction
-{
-    class InstructionParser;
+    namespace instruction
+    {
+        class InstructionParser;
+    }
 }
 
 
 namespace elet::domain::compiler::ast
 {
+    struct ParameterDeclarationList;
+    struct SourceFile;
+    struct TypeAssignment;
+    struct Declaration;
+    struct Syntax;
+    struct FunctionDeclaration;
+    struct VariableDeclaration;
+    struct CallExpression;
+    struct ArgumentList;
+    struct InterfaceDeclaration;
+    struct ClassDeclaration;
+    struct EnumDeclaration;
+    struct AssemblyBlock;
+    struct ExternCBlock;
+    struct DeclarationMetadata;
+    struct Tuple;
+    struct EndStatement;
+    struct DomainAccessUsage;
+    struct UsingStatement;
+    struct UsageClause;
+    struct ParameterDeclaration;
+    struct Expression;
+    struct Name;
+    struct StatementBlock;
+    struct ArrayLiteral;
+    struct AssemblyBody;
+    struct Punctuation;
+    struct Declaration;
+    struct DeclarationBlock;
+    struct AddressOfExpression;
+    struct ConstructorDeclaration;
+    struct AccessabilityLabel;
+    struct DomainDeclaration;
+    struct PropertyDeclaration;
+    enum class PunctuationType;
+    enum class AccessibilityType;
+    enum class SyntaxKind : std::uint8_t;
+
+
+    struct ParseResult
+    {
+        List<Syntax*>
+        statements;
+
+        ParsingTask*
+        pendingParsingTask;
+    };
+
+
+    struct ParameterListResult
+    {
+        ParameterDeclarationList*
+        parameterList;
+
+        Utf8String
+        display;
+    };
+
+
+    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, Declaration*>*, void*>> DomainDeclarationMap;
+
+
+    class Parser
+    {
+    public:
+
+        Parser(Compiler* compiler);
+
+        ParseResult
+        performWork(const ParsingTask& task);
+
+        void
+        seek(const BaseScanner::Location& location);
+
+        static
+        thread_local
+        List<Symbol*>*
+        symbols;
 
-struct ParameterDeclarationList;
-struct SourceFile;
-struct TypeAssignment;
-struct Declaration;
-struct Syntax;
-struct FunctionDeclaration;
-struct VariableDeclaration;
-struct CallExpression;
-struct ArgumentList;
-struct InterfaceDeclaration;
-struct ClassDeclaration;
-struct EnumDeclaration;
-struct AssemblyBlock;
-struct ExternCBlock;
-struct DeclarationMetadata;
-struct Tuple;
-struct EndStatement;
-struct DomainAccessUsage;
-struct UsingStatement;
-struct UsageClause;
-struct ParameterDeclaration;
-struct Expression;
-struct Name;
-struct StatementBlock;
-struct ArrayLiteral;
-struct AssemblyBody;
-struct Punctuation;
-struct Declaration;
-struct DeclarationBlock;
-struct AddressOfExpression;
-struct ConstructorDeclaration;
-struct AccessabilityLabel;
-struct DomainDeclaration;
-struct PropertyDeclaration;
-enum class PunctuationType;
-enum class AccessibilityType;
-enum class SyntaxKind : std::uint8_t;
-
-using Token = Scanner::Token;
-
-
-struct ParseResult
-{
-    List<Syntax*>
-    statements;
-
-    ParsingTask*
-    pendingParsingTask;
-};
-
-
-struct ParameterListResult
-{
-    ParameterDeclarationList*
-    parameterList;
+        DomainDeclarationMap
+        domainDeclarationMap;
 
-    Utf8String
-    display;
-};
+    private:
 
-
-typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> DomainDeclarationMap;
+        static
+        thread_local
+        fs::path*
+        _currentDirectory;
 
-class Parser
-{
+        static
+        thread_local
+        const char*
+        _lastStatementLocationStart;
 
-public:
+        static
+        thread_local
+        const char*
+        _lastStatementLocationEnd;
 
-    Parser(Compiler* compiler);
+        static
+        thread_local
+        std::uint64_t
+        _symbolOffset;
 
-    ParseResult
-    performWork(const ParsingTask& task);
+        bool
+        _isInCBlock = false;
 
-    void
-    seek(const BaseScanner::Location& location);
+        Scanner*
+        _scanner;
 
-    static
-    thread_local
-    List<Symbol*>*
-    symbols;
+        std::map<std::string, SourceFile*>&
+        _files;
 
-    DomainDeclarationMap
-    domainDeclarationMap;
+        DomainDeclaration*
+        _currentDomain = nullptr;
 
-private:
+        instruction::InstructionParser*
+        _instructionParser = nullptr;
 
-    static
-    thread_local
-    fs::path*
-    _currentDirectory;
+        Compiler*
+        _compiler;
 
-    static
-    thread_local
-    const char*
-    _lastStatementLocationStart;
+        TypeAssignment*
+        parseType();
 
-    static
-    thread_local
-    const char*
-    _lastStatementLocationEnd;
+        Syntax*
+        parseFunctionLevelStatement();
 
-    static
-    thread_local
-    std::uint64_t
-    _symbolOffset;
+        Syntax*
+        parseFileLevelDeclarations();
 
-    bool
-    _isInCBlock = false;
+        Syntax*
+        parseModuleLevelStatement();
 
-    Scanner*
-    _scanner;
+        FunctionDeclaration*
+        parseFunctionDeclaration();
 
-    std::map<std::string, SourceFile*>&
-    _files;
+    //    FunctionMetadata*
+    //    parseFunctionMetadata();
 
-    ast::DomainDeclaration*
-    _currentDomain = nullptr;
+        static
+        bool
+        isFunctionMetadataKeyword(Token token);
 
-    instruction::InstructionParser*
-    _instructionParser = nullptr;
+        VariableDeclaration*
+        parseVariableDeclaration();
 
-    Compiler*
-    _compiler;
+        CallExpression*
+        parseCallExpressionOnName();
 
-    TypeAssignment*
-    parseType();
+        ArgumentList*
+        parseArgumentListOnOpenParen();
 
-    Syntax*
-    parseFunctionLevelStatement();
+        ParameterListResult
+        parseParameterList();
 
-    Syntax*
-    parseFileLevelDeclarations();
+        ParameterListResult
+        parseParameterListonOpenParen();
 
-    Syntax*
-    parseModuleLevelStatement();
+        InterfaceDeclaration*
+        parseInterfaceDeclaration();
 
-    FunctionDeclaration*
-    parseFunctionDeclaration();
+        EnumDeclaration*
+        parseEnumDeclaration();
 
-//    FunctionMetadata*
-//    parseFunctionMetadata();
+        AssemblyBlock*
+        parseAssemblyBlock();
 
-    static
-    bool
-    isFunctionMetadataKeyword(Token token);
+        DeclarationMetadata*
+        parseDeclarationMetadata();
 
-    VariableDeclaration*
-    parseVariableDeclaration();
+        Tuple*
+        parseTuple();
 
-    CallExpression*
-    parseCallExpressionOnName();
+    //    DomainAccessUsage*
+    //    parseDomainAccessUsageOnIdentifier();
 
-    ArgumentList*
-    parseArgumentListOnOpenParen();
+    //    ModuleDeclaration*
+    //    parseModuleDeclaration();
 
-    ParameterListResult
-    parseParameterList();
+        UsingStatement*
+        parseUsingStatement();
 
-    ParameterListResult
-    parseParameterListonOpenParen();
+        UsageClause*
+        parseUsageClauseOnOpenBrace();
 
-    InterfaceDeclaration*
-    parseInterfaceDeclaration();
+        ParameterDeclaration*
+        parseParameterOnIdentifier();
 
-    EnumDeclaration*
-    parseEnumDeclaration();
+        Expression*
+        parsePropertyAccessOrCallExpression();
 
-    AssemblyBlock*
-    parseAssemblyBlock();
+        Expression*
+        createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek);
 
-    DeclarationMetadata*
-    parseDeclarationMetadata();
+        Expression*
+        parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
 
-    Tuple*
-    parseTuple();
+        AddressOfExpression*
+        parseAddressOfExpression();
 
-//    DomainAccessUsage*
-//    parseDomainAccessUsageOnIdentifier();
+        ClassDeclaration*
+        parseObjectDeclaration();
 
-//    ModuleDeclaration*
-//    parseModuleDeclaration();
+        PropertyDeclaration*
+        parsePropertyDeclarationOnIdentifier(Name* name);
 
-    UsingStatement*
-    parseUsingStatement();
+        ConstructorDeclaration*
+        parseConstructorDeclaration();
 
-    UsageClause*
-    parseUsageClauseOnOpenBrace();
+        Name*
+        parseName();
 
-    ParameterDeclaration*
-    parseParameterOnIdentifier();
+        StatementBlock*
+        parseStatementBlock();
 
-    Expression*
-    parsePropertyAccessOrCallExpression();
+        StatementBlock*
+        parseFunctionBodyOnOpenBrace();
 
-    Expression*
-    createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek);
+        Expression*
+        parseExpressionOnToken(Token token);
 
-    Expression*
-    parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
+        DomainDeclaration*
+        parseDomainDeclaration();
 
-    AddressOfExpression*
-    parseAddressOfExpression();
+        Syntax* // Block or Declaration
+        parseDomainLevelStatements();
 
-    ClassDeclaration*
-    parseObjectDeclaration();
+        AccessabilityLabel*
+        parseAccessabilityLabel(AccessibilityType);
 
-    PropertyDeclaration*
-    parsePropertyDeclarationOnIdentifier(Name* name);
+        DeclarationBlock*
+        parseDeclarationBlock();
 
-    ConstructorDeclaration*
-    parseConstructorDeclaration();
+        void
+        addSymbolToSourceFile(Syntax* statement, SourceFile* sourceFile);
 
-    Name*
-    parseName();
+        List<CallExpression*>*
+        parseInitializationList();
 
-    StatementBlock*
-    parseStatementBlock();
+        Expression*
+        parseExpression();
 
-    StatementBlock*
-    parseFunctionBodyOnOpenBrace();
+        Expression*
+        parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPrecedence);
 
-    Expression*
-    parseExpressionOnToken(Token token);
+        unsigned int
+        getOperatorPrecedence(Token token) const;
 
-    DomainDeclaration*
-    parseDomainDeclaration();
+        bool isBinaryOperator(Token token) const;
 
-    Syntax* // Block or Declaration
-    parseDomainLevelStatements();
+        ExternCBlock*
+        parseExternCBlock();
 
-    AccessabilityLabel*
-    parseAccessabilityLabel(AccessibilityType);
+        List<Declaration*>
+        parseExternCBlockLevelDeclarations();
 
-    DeclarationBlock*
-    parseDeclarationBlock();
+        ArrayLiteral*
+        parseArrayLiteral();
 
-    void
-    addSymbolToSourceFile(Syntax* statement, SourceFile* sourceFile);
+        AssemblyBody*
+        parseAssemblyBody();
 
-    List<CallExpression*>*
-    parseInitializationList();
+        Token
+        peekNextToken(bool includeWhitespaceToken);
 
-    Expression*
-    parseExpression();
+        Token
+        takeNextToken();
 
-    Expression*
-    parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPrecedence);
+        Token
+        takeNextToken(bool includeWhitespaceToken);
 
-    unsigned int
-    getOperatorPrecedence(Token token) const;
+        Punctuation*
+        createPunctuation(PunctuationType type);
 
-    bool isBinaryOperator(Token token) const;
+        void
+        skipNextToken();
 
-    ExternCBlock*
-    parseExternCBlock();
+        template<typename T>
+        T*
+        createSyntax(SyntaxKind kind);
 
-    List<Declaration*>
-    parseExternCBlockLevelDeclarations();
+        template<typename T>
+        T*
+        createDeclaration(const SyntaxKind kind);
 
-    ArrayLiteral*
-    parseArrayLiteral();
+        template<typename T>
+        T*
+        createTypeDeclaration(SyntaxKind kind);
 
-    AssemblyBody*
-    parseAssemblyBody();
+        template<typename T>
+        T*
+        createBlock(SyntaxKind kind);
 
-    Token
-    peekNextToken();
+        template<typename T>
+        T*
+        createNamedExpression(SyntaxKind kind);
 
-    Token
-    takeNextToken();
+        template<typename T>
+        void
+        finishSyntax(T* syntax);
 
-    Punctuation*
-    createPunctuation(PunctuationType type);
+        template<typename T>
+        void
+        finishDeclaration(T* declaration);
 
-    void
-    skipNextToken();
+        template<typename T>
+        void
+        finishTypeDeclaration(T* declaration);
 
-    template<typename T>
-    T*
-    createSyntax(SyntaxKind kind);
+        void
+        expectToken(Token expected);
 
-    template<typename T>
-    T*
-    createDeclaration(const SyntaxKind kind);
+        void
+        assertToken(Token target, Token expected);
 
-    template<typename T>
-    T*
-    createTypeDeclaration(SyntaxKind kind);
+        Utf8StringView
+        getTokenValue();
 
-    template<typename T>
-    T*
-    createBlock(SyntaxKind kind);
+        Name*
+        createName();
 
-    template<typename T>
-    T*
-    createNamedExpression(SyntaxKind kind);
+        Utf8String
+        getParameterDisplay(ParameterDeclaration* parameter);
 
-    template<typename T>
-    void
-    finishSyntax(T* syntax);
+        void
+        addSymbol(Declaration* definition);
 
-    template<typename T>
-    void
-    finishDeclaration(T* declaration);
+        static
+        void
+        addTypeSymbol(Declaration* declaration);
 
-    template<typename T>
-    void
-    finishTypeDeclaration(T* declaration);
+        IfStatement*
+        parseIfStatement();
 
-    void
-    expectToken(Token expected);
+        BooleanLiteral*
+        createBooleanLiteral(bool value);
 
-    void
-    assertToken(Token target, Token expected);
+        BinaryOperatorKind
+        getBinaryOperatorKind(Token token);
 
-    Utf8StringView
-    getTokenValue();
+        ReturnStatement*
+        parseReturnStatement();
 
-    Name*
-    createName();
+        uint64_t
+        parseDecimalLiteral(const DecimalLiteral* decimalLiteral, uint64_t maxLimit) const;
 
-    Utf8String
-    getParameterDisplay(ParameterDeclaration* parameter);
+        uint64_t
+        parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, uint64_t maxLimit) const;
 
-    void
-    addSymbol(Declaration* definition);
+        uint64_t
+        getIntegerMaxLimitFromToken(Token token);
 
-    static
-    void
-    addTypeSymbol(Declaration* declaration);
+        bool
+        isIntegerSuffix(Token token);
 
-    IfStatement*
-    parseIfStatement();
+        Expression*
+        createIntegerLiteral(Token& token);
 
-    BooleanLiteral*
-    createBooleanLiteral(bool value);
-
-    BinaryOperatorKind
-    getBinaryOperatorKind(Token token);
-
-    ReturnStatement*
-    parseReturnStatement();
-
-    unsigned int
-    getInteger(IntegerLiteral* integerLiteral);
-};
-
-
+        unsigned int
+        getDigitsLength(const char* end, const char* start) const;
+    };
 }
 
 

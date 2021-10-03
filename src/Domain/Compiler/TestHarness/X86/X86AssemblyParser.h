@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include "X86Types.h"
-#include "../AssemblyParser.h"
+#include "Domain/Compiler/TestHarness/AssemblyParser.h"
 #include "Foundation/List.h"
 
 

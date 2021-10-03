@@ -57,7 +57,7 @@ public:
         T&
         operator * () const
         {
-            return (*currentItem).value;
+            return (*currentItem).immediateValue;
         }
 
         const Iterator&

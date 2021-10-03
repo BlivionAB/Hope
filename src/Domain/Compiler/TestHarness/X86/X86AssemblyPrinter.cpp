@@ -117,7 +117,7 @@ X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& inst
     }
     else if (auto iz = std::get_if<Iz>(operand))
     {
-        _tw.writeImmediateValue(iz->offset);
+        _tw.writeSignedImmediateValue(iz->offset);
     }
     else if (auto jv = std::get_if<Jv>(operand))
     {
@@ -130,7 +130,7 @@ X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& inst
     }
     else if (auto ib = std::get_if<Ib*>(operand))
     {
-        _tw.writeImmediateValue((*ib)->offset);
+        _tw.writeSignedImmediateValue((*ib)->offset);
     }
     else if (auto mem = std::get_if<MemoryAddress32>(operand))
     {
@@ -249,7 +249,7 @@ X86AssemblyPrinter::writeLongDisplacement(LongDisplacement* displacement, const 
         auto allZero = disp[0] == 0 && disp[1] == 0 && disp[2] == 0 && disp[3] == 0;
         if (!allZero)
         {
-            _tw.writeSignedHex(displacement->displacement);
+            _tw.writeSignedHexValue(displacement->displacement);
         }
         auto sib = (*sibDisplacement);
         _tw.write("(");
@@ -289,7 +289,7 @@ X86AssemblyPrinter::writeByteDisplacement(ByteDisplacement* displacement, const 
     auto disp = displacement->displacement;
     if (disp)
     {
-        _tw.writeDisplacement(displacement->displacement);
+        _tw.writeSignedHexValue(displacement->displacement);
     }
     _tw.write("(");
     if (auto sibDisplacement = std::get_if<SibDisplacement*>(&displacement->base))

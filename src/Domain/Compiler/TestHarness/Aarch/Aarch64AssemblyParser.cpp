@@ -1,12 +1,15 @@
 #include "Aarch64AssemblyParser.h"
-#include "AarchTypes.h"
+#include "Aarch64Instructions.h"
 #include <Domain/Compiler/Instruction/Assembly/Aarch/AArch64Encodings.h>
+#include <Foundation/Bit.h>
 
 namespace elet::domain::compiler::test::aarch
 {
 
 
+using namespace elet::foundation;
 using namespace elet::domain::compiler::instruction::output;
+
 
 void
 Aarch64AssemblyParser::parse(List<OneOfInstruction>& instructions, List<uint8_t>& output, size_t offset, size_t size)
@@ -34,6 +37,10 @@ Aarch64AssemblyParser::parse(List<OneOfInstruction>& instructions, List<uint8_t>
             continue;
         }
         if (tryParse24Instructions(instruction, dw))
+        {
+            continue;
+        }
+        if (tryParse23Instructions(instruction, dw))
         {
             continue;
         }
@@ -148,6 +155,76 @@ Aarch64AssemblyParser::tryParse24Instructions(Instruction* instruction, uint32_t
     return false;
 }
 
+
+bool
+Aarch64AssemblyParser::tryParse23Instructions(Instruction* instruction, uint32_t dw)
+{
+    uint32_t kind23 = dw & Aarch64Instruction::Mask23;
+
+    switch (kind23)
+    {
+        case Aarch64Instruction::OrrImmediate:
+            parseOrrInstruction(reinterpret_cast<OrrImmediateInstruction*>(instruction), dw);
+            return true;
+        case Aarch64Instruction::Movz:
+            parseMovzInstruction(reinterpret_cast<MovzInstruction*>(instruction), dw);
+            return true;
+        case Aarch64Instruction::Movn:
+            parseMovnInstruction(reinterpret_cast<MovnInstruction*>(instruction), dw);
+            return true;
+        case Aarch64Instruction::Movk:
+            parseMovkInstruction(reinterpret_cast<MovkInstruction*>(instruction), dw);
+            return true;
+    }
+    return false;
+}
+
+
+void
+Aarch64AssemblyParser::parseOrrInstruction(OrrImmediateInstruction* orrInstruction, uint32_t dw)
+{
+    orrInstruction->kind = Aarch64Instruction::OrrImmediate;
+    orrInstruction->rd = Rd(dw);
+    orrInstruction->rn = Rn(dw);
+    if (sf(dw))
+    {
+        orrInstruction->immediateValue = decodeBitmaskImmediate(dw, RegistrySize::_64);
+    }
+    else
+    {
+        orrInstruction->immediateValue = decodeBitmaskImmediate(dw, RegistrySize::_32);
+    }
+}
+
+
+uint64_t
+Aarch64AssemblyParser::decodeBitmaskImmediate(uint32_t dw, RegistrySize registrySize)
+{
+    uint32_t N = (dw >> 22) & 1;
+    uint32_t immr = (dw >> 16) & 0x3f;
+    uint32_t imms = (dw >> 10) & 0x3f;
+
+    int bitIndex = 31 - Bit::countLeadingZeroes((N << 6) | (~imms & 0x3f));
+    unsigned int elementSize = (1 << bitIndex);
+    unsigned int R = immr & (elementSize - 1);
+    unsigned int S = imms & (elementSize - 1);
+
+    uint64_t pattern = (1ULL << (S + 1)) - 1;
+    for (unsigned int i = 0; i < R; ++i)
+    {
+        pattern |= Bit::rotateRight(pattern, elementSize);
+    }
+
+    while (elementSize != registrySize)
+    {
+        pattern |= (pattern << elementSize);
+        elementSize *= 2;
+    }
+
+    return pattern;
+}
+
+
 bool
 Aarch64AssemblyParser::tryParse22Instructions(Instruction* instruction, uint32_t dw)
 {
@@ -243,33 +320,47 @@ Aarch64AssemblyParser::tryParse21Instructions(Instruction* instruction, uint32_t
 
     switch (kind21)
     {
-        case Movz32:
-            parseMovImmediateInstruction(instruction, dw);
-            return true;
-        case Mov64:
-            parseMovInstruction(instruction, dw);
+        case Aarch64Instruction::Movz:
+            parseMovzInstruction(reinterpret_cast<MovzInstruction*>(instruction), dw);
             return true;
     }
 
     return false;
 }
 
-void
-Aarch64AssemblyParser::parseMovInstruction(Instruction* instruction, uint32_t dw)
-{
-    MovInstruction* movz = reinterpret_cast<MovInstruction*>(instruction);
-    movz->kind = Mov64;
-    movz->rd = Rd(dw);
-    movz->rm = Rm(dw);
-}
 
 void
-Aarch64AssemblyParser::parseMovImmediateInstruction(Instruction* instruction, uint32_t dw)
+Aarch64AssemblyParser::parseMovzInstruction(MovzInstruction* movz, uint32_t dw)
 {
-    MovWideImmediateInstruction* movz = reinterpret_cast<MovWideImmediateInstruction*>(instruction);
-    movz->kind = Movz32;
+    movz->kind = Aarch64Instruction::Movz;
+    movz->is64Bit = sf(dw);
     movz->rd = Rd(dw);
     movz->imm16 = uimm16(dw);
+    movz->immediateValue = uimm16(dw) << getLeftShiftFromHv(dw);
+}
+
+
+void
+Aarch64AssemblyParser::parseMovnInstruction(MovnInstruction* movn, uint32_t dw)
+{
+    movn->kind = Aarch64Instruction::Movn;
+    movn->is64Bit = sf(dw);
+    movn->rd = Rd(dw);
+    movn->hw = static_cast<Hw>(hw(dw));
+    movn->imm16 = uimm16(dw);
+    uint64_t result = (0ULL) | ~(static_cast<uint64_t>(uimm16(dw)) << getLeftShiftFromHv(dw));
+    movn->immediateValue = ~result;
+}
+
+
+void
+Aarch64AssemblyParser::parseMovkInstruction(MovkInstruction* movk, uint32_t dw)
+{
+    movk->kind = Aarch64Instruction::Movk;
+    movk->rd = Rd(dw);
+    movk->hw = static_cast<Hw>(hw(dw));
+    movk->imm16 = uimm16(dw);
+    movk->immediateValue = static_cast<uint64_t>(uimm16(dw)) << getLeftShiftFromHv(dw);
 }
 
 
@@ -293,6 +384,7 @@ Aarch64AssemblyParser::getByte(Instruction* instruction)
     instruction->bytes.add(result);
     return result;
 }
+
 
 Register
 Aarch64AssemblyParser::Rn(uint32_t dw)
@@ -318,7 +410,7 @@ Aarch64AssemblyParser::Rt(uint32_t dw)
 Register
 Aarch64AssemblyParser::Rd(uint32_t dw)
 {
-    return static_cast<Register>((dw & Aarch64Instruction::RtMask) >> 0);
+    return static_cast<Register>((dw & Aarch64Instruction::RdMask) >> 0);
 }
 
 
@@ -377,6 +469,7 @@ Aarch64AssemblyParser::parseAdrInstruction(Instruction* instruction, uint32_t dw
     adrp->immhilo = immhilo(dw);
 }
 
+
 uint32_t
 Aarch64AssemblyParser::immhilo(uint32_t dw)
 {
@@ -394,6 +487,27 @@ Aarch64AssemblyParser::parseUdfInstruction(Instruction* instruction, uint32_t dw
     UdfInstruction* udf = reinterpret_cast<UdfInstruction*>(instruction);
     udf->kind = Aarch64Instruction::Udf;
     udf->imm16 = dw & MASK(16, 0);
+}
+
+
+bool
+Aarch64AssemblyParser::sf(uint32_t dw)
+{
+    return Aarch64Instruction::sf & dw;
+}
+
+
+uint32_t
+Aarch64AssemblyParser::hw(uint32_t dw)
+{
+    return (Aarch64Instruction::HwMask & dw) >> 21;
+}
+
+
+uint32_t
+Aarch64AssemblyParser::getLeftShiftFromHv(uint32_t dw)
+{
+    return (((0b11 << 21) & dw) >> 21) * 16;
 }
 
 

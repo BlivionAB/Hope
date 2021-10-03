@@ -36,7 +36,7 @@ BaselineWriter::writeFunctionRoutine(FunctionRoutine* routine)
     for (const auto& parameter : routine->parameters)
     {
         _tw->write("Par");
-        _tw->writeUint(parameter->size);
+        _tw->writeUint(parameter->allocationSize);
         _tw->space();
         _tw->write("P");
         _tw->writeUint(parameterIndex);

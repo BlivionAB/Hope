@@ -25,7 +25,7 @@ StashIRPrinter::writeFunctionRoutine(output::FunctionRoutine* function)
     _tw.write("(");
     for (const output::ParameterDeclaration* parameterDeclaration : function->parameters)
     {
-        _tw.write(parameterDeclaration->size);
+        _tw.write(static_cast<int>(parameterDeclaration->allocationSize));
     }
     _tw.write("):");
     _tw.newline();
@@ -66,6 +66,9 @@ StashIRPrinter::writeInstruction(const output::Instruction* instruction, output:
         case output::InstructionKind::MoveRegister:
             writeMoveRegisterInstruction(reinterpret_cast<const output::MoveRegisterInstruction*>(instruction));
             break;
+        case output::InstructionKind::MoveImmediate:
+            writeMoveImmediateInstruction(reinterpret_cast<const output::MoveImmediateInstruction*>(instruction));
+            break;
         case output::InstructionKind::Return:
             _tw.write("Ret");
             break;
@@ -76,6 +79,16 @@ StashIRPrinter::writeInstruction(const output::Instruction* instruction, output:
             throw std::runtime_error("Unknown instruction");
     }
     _tw.newline();
+}
+
+
+void
+StashIRPrinter::writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction)
+{
+    _tw.write("Mov ");
+    writeOperandRegister(moveImmediateInstruction->destination);
+    _tw.write(", #");
+    _tw.writeUnsignedHexValue(moveImmediateInstruction->value);
 }
 
 
@@ -105,7 +118,7 @@ StashIRPrinter::writeLoadInstruction(const output::LoadInstruction* loadInstruct
     _tw.write("Ldr ");
     writeOperandRegister(loadInstruction->destination);
     _tw.write(", [Sp + #");
-    _tw.write(-loadInstruction->stackOffset - loadInstruction->size);
+    _tw.write(-loadInstruction->stackOffset - static_cast<int>(loadInstruction->allocationSize));
     _tw.write("]");
 }
 
@@ -146,28 +159,9 @@ void
 StashIRPrinter::writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction)
 {
     _tw.write("Str [Sp + #");
-    _tw.write(-storeImmediateInstruction->stackOffset - storeImmediateInstruction->size);
+    _tw.write(-storeImmediateInstruction->stackOffset - static_cast<int>(storeImmediateInstruction->allocationSize));
     _tw.write("], ");
-    output::ImmediateValue value = storeImmediateInstruction->value;
-    if (std::holds_alternative<int32_t>(value))
-    {
-        _tw.write(std::get<int32_t>(value));
-    }
-    else
-    {
-        _tw.write(std::get<int64_t>(value));
-    }
-}
-
-void
-StashIRPrinter::writeOperation(output::Operation* operation)
-{
-    switch (operation->kind)
-    {
-        case output::OperationKind::ImmediateToMemory:
-            _tw.write("Store");
-            break;
-    }
+    _tw.writeSignedImmediateValue(storeImmediateInstruction->value);
 }
 
 

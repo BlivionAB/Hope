@@ -1,13 +1,11 @@
-#include <gtest/gtest.h>
-#include "../Compiler.h"
-#include "./CompilerTestHarness.h"
+#include "FunctionFixture.h"
 
 
 namespace elet::domain::compiler::test
 {
 
 
-TEST_F(CompileFixture, ExternalFunction)
+TEST_F(FunctionFixture, ExternalFunction)
 {
     project.setEntrySourceFile("main.l1",
         "domain Common::Console\n"
@@ -41,7 +39,7 @@ TEST_F(CompileFixture, ExternalFunction)
         "}");
 
     EXPECT_TRUE(testProject({
-        .baselineName = "external-function",
+        .baselineName = "ExternalFunction",
         .targets = {
             CompilationTarget::MachO_x86_64,
             CompilationTarget::MachO_Aarch64,
@@ -50,40 +48,6 @@ TEST_F(CompileFixture, ExternalFunction)
     }));
 }
 
-
-
-TEST_F(CompileFixture, Return_BinaryExpression_Variable)
-{
-    testMainFunction(
-        "var x = 1 + 2;\n"
-        "var y = 1 + 2;\n"
-        "return x + y;");
-
-    EXPECT_TRUE(testProject({
-        .baselineName = "return-binary_expression-variable",
-        .targets = {
-            CompilationTarget::StashIR,
-            CompilationTarget::MachO_x86_64
-        },
-        .optimizationLevel = OptimizationLevel::_1,
-    }));
-}
-
-
-TEST_F(CompileFixture, Return_BinaryExpresison_ImmediateValue)
-{
-    testMainFunction(
-        "return 1 + 2;");
-
-    EXPECT_TRUE(testProject({
-        .baselineName = "return-binary_expression-immediate_value",
-        .targets = {
-            //            CompilationTarget::StashIR,
-            CompilationTarget::MachO_x86_64
-        },
-        .optimizationLevel = OptimizationLevel::_1,
-    }));
-}
 
 }
 

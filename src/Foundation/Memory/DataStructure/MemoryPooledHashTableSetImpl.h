@@ -22,7 +22,7 @@ MemoryPooledHashTableSet<T, tableSize, H>::add(T value)
     HashValueNode<T>* prev = nullptr;
     HashValueNode<T>* item = table[hash];
 
-    while (item != nullptr && (*item->value) != (*value))
+    while (item != nullptr && (*item->immediateValue) != (*value))
     {
         prev = item;
         item = item->next;
@@ -52,7 +52,7 @@ MemoryPooledHashTableSet<T, tableSize, H>::has(T value) const
 
     while (item != nullptr)
     {
-        if (item->value == value)
+        if (item->immediateValue == value)
         {
             return true;
         }

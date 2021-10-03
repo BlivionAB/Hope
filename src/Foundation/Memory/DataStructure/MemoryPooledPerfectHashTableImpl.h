@@ -166,7 +166,7 @@ MemoryPooledPerfectHashTable<T>::tryGeneratePerfectHashAlgorithm()
      *
      *      1) group size descending order
      *
-     *      2) ASCII value ascending order
+     *      2) ASCII immediateValue ascending order
      *
      *      Example of sorted key signature groups):
      *
@@ -211,8 +211,8 @@ MemoryPooledPerfectHashTable<T>::tryGeneratePerfectHashAlgorithm()
      *           ---
      *
      *   2) Assign the associated values* of each character in the order calculated above
-     *      by the previous largest hash plus one, starting with hash value of zero. Stop
-     *      when the hash value exceeds or is equal to the index of key signatures plus
+     *      by the previous largest hash plus one, starting with hash immediateValue of zero. Stop
+     *      when the hash immediateValue exceeds or is equal to the index of key signatures plus
      *      one.
      *
      *                   hash     hash     hash
@@ -227,11 +227,11 @@ MemoryPooledPerfectHashTable<T>::tryGeneratePerfectHashAlgorithm()
      *
      * Footnotes:
      *
-     *   * Key signature of a key is the value of predefined indices in the key. The
+     *   * Key signature of a key is the immediateValue of predefined indices in the key. The
      *     signatures are unique for each key. A key 'hello' with key indices 1 and 2
      *     have the key signatures 'e' and 'l'.
      *
-     *   * Associated value is the "value" in the character to value mapping in the
+     *   * Associated immediateValue is the "immediateValue" in the character to immediateValue mapping in the
      *     lookup table.
      */
     List<IntersectionChar*> intersectionChars;

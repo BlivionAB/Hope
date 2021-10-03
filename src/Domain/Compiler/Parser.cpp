@@ -145,7 +145,7 @@ Parser::parseDeclarationBlock()
 Syntax*
 Parser::parseDomainLevelStatements()
 {
-    Token token = _scanner->takeNextToken();
+    Token token = _scanner->takeNextToken(false);
     switch (token)
     {
         case Token::UsingKeyword:
@@ -190,7 +190,7 @@ Parser::parseDomainLevelStatements()
 Syntax*
 Parser::parseFileLevelDeclarations()
 {
-    Token token = _scanner->takeNextToken();
+    Token token = _scanner->takeNextToken(false);
     switch (token)
     {
         case Token::DomainKeyword:
@@ -217,7 +217,7 @@ Parser::parseFileLevelDeclarations()
 Syntax*
 Parser::parseModuleLevelStatement()
 {
-    Token token = _scanner->takeNextToken();
+    Token token = _scanner->takeNextToken(false);
     switch (token)
     {
         case Token::ClassKeyword:
@@ -241,7 +241,7 @@ Parser::parseModuleLevelStatement()
 Syntax*
 Parser::parseFunctionLevelStatement()
 {
-    Token token = _scanner->takeNextToken();
+    Token token = _scanner->takeNextToken(false);
     switch (token)
     {
         case Token::VarKeyword:
@@ -254,7 +254,7 @@ Parser::parseFunctionLevelStatement()
             return parseIfStatement();
         case Token::Identifier:
         {
-            Token peek = peekNextToken();
+            Token peek = peekNextToken(false);
             switch (peek)
             {
                 case Token::OpenParen:
@@ -367,12 +367,12 @@ Parser::parseVariableDeclaration()
 {
     VariableDeclaration* variableDeclaration = createDeclaration<VariableDeclaration>(SyntaxKind::VariableDeclaration);
     variableDeclaration->name = parseName();
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
     if (peek == Token::Colon)
     {
         skipNextToken();
         variableDeclaration->type = parseType();
-        peek = peekNextToken();
+        peek = peekNextToken(false);
     }
     if (peek == Token::Equal)
     {
@@ -450,7 +450,7 @@ Parser::parseStatementBlock()
 {
     StatementBlock* body = createBlock<StatementBlock>(SyntaxKind::FunctionBody);
     List<Syntax*> statements;
-    while (peekNextToken() != Token::CloseBrace)
+    while (peekNextToken(false) != Token::CloseBrace)
     {
         Syntax* statement = parseFunctionLevelStatement();
         if (!statement)
@@ -545,7 +545,7 @@ Parser::getTokenValue()
 void
 Parser::expectToken(Token expected)
 {
-    Token result = _scanner->takeNextToken();
+    Token result = _scanner->takeNextToken(false);
     assertToken(result, expected);
 }
 
@@ -560,16 +560,23 @@ Parser::assertToken(Token target, Token expected)
 
 
 Token
-Parser::peekNextToken()
+Parser::peekNextToken(bool includeWhitespaceToken)
 {
-    return _scanner->peekNextToken();
+    return _scanner->peekNextToken(false);
 }
 
 
 Token
 Parser::takeNextToken()
 {
-    return _scanner->takeNextToken();
+    return _scanner->takeNextToken(false);
+}
+
+
+Token
+Parser::takeNextToken(bool includeWhitespaceToken)
+{
+    return _scanner->takeNextToken(includeWhitespaceToken);
 }
 
 
@@ -577,7 +584,7 @@ TypeAssignment*
 Parser::parseType()
 {
     TypeAssignment* typeAssignment = createSyntax<TypeAssignment>(SyntaxKind::Type);
-    Token token = _scanner->takeNextToken();
+    Token token = _scanner->takeNextToken(false);
     switch (token) {
         case Token::IntKeyword:
             typeAssignment->type = TypeKind::Int;
@@ -604,7 +611,7 @@ Parser::parseType()
     typeAssignment->name = createName();
     while (true)
     {
-        Token peek = peekNextToken();
+        Token peek = peekNextToken(false);
         if (peek == Token::Asterisk)
         {
             if (typeAssignment->isLiteral)
@@ -685,7 +692,7 @@ Parser::parseExpression()
 {
     Token token = takeNextToken();
     Expression* expr = parseExpressionOnToken(token);
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
 
     // Given binary expressions A [*] B [*] C:
     // * Parse A and B and then check if after B has a binary operator.
@@ -710,7 +717,7 @@ Parser::parseExpression()
             binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
             binaryExpression->right = parseRightHandSideOfBinaryExpression(precedence);
             leftExpression = binaryExpression;
-            peek = peekNextToken();
+            peek = peekNextToken(false);
         }
         return leftExpression;
     }
@@ -723,7 +730,7 @@ Parser::parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPreced
 {
     Token token = takeNextToken();
     Expression* expression = parseExpressionOnToken(token);
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
     if (isBinaryOperator(peek))
     {
         unsigned int nextOperatorPrecedence = getOperatorPrecedence(peek);
@@ -755,13 +762,9 @@ Parser::parseExpressionOnToken(Token token)
             stringLiteral->stringEnd = stringLiteral->end - 1;
             return stringLiteral;
         }
-        case Token::IntegerLiteral:
-        {
-            IntegerLiteral* integer = createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
-            finishSyntax(integer);
-            integer->value = getInteger(integer);
-            return integer;
-        }
+        case Token::HexadecimalLiteral:
+        case Token::DecimalLiteral:
+            return createIntegerLiteral(token);
         case Token::TrueKeyword:
             return createBooleanLiteral(true);
         case Token::FalseKeyword:
@@ -776,6 +779,52 @@ Parser::parseExpressionOnToken(Token token)
     throw UnexpectedExpression();
 }
 
+Expression*
+Parser::createIntegerLiteral(Token& token)
+{
+    IntegerLiteral* integerLiteral = createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
+    switch (token)
+    {
+        case Token::DecimalLiteral:
+        {
+            DecimalLiteral* decimalLiteral = createSyntax<DecimalLiteral>(SyntaxKind::DecimalLiteral);
+            finishSyntax(decimalLiteral);
+            integerLiteral->digits = decimalLiteral;
+            break;
+        }
+        case Token::HexadecimalLiteral:
+        {
+            HexadecimalLiteral* hexadecimalLiteral = createSyntax<HexadecimalLiteral>(SyntaxKind::HexadecimalLiteral);
+            finishSyntax(hexadecimalLiteral);
+            integerLiteral->digits = hexadecimalLiteral;
+            break;
+        }
+    }
+    Token suffixPeek = peekNextToken(true);
+    if (isIntegerSuffix(suffixPeek))
+    {
+        takeNextToken();
+        integerLiteral->suffix = createSyntax<IntegerSuffix>(SyntaxKind::IntegerSuffix);
+        integerLiteral->suffix->type = suffixPeek;
+    }
+    else
+    {
+        integerLiteral->suffix = nullptr;
+    }
+    switch (token)
+    {
+        case Token::DecimalLiteral:
+            integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek));
+            break;
+        case Token::HexadecimalLiteral:
+            integerLiteral->value = parseHexadecimalLiteral(std::get<HexadecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek));
+            break;
+    }
+    finishSyntax(integerLiteral);
+    return integerLiteral;
+}
+
+
 BooleanLiteral*
 Parser::createBooleanLiteral(bool value)
 {
@@ -789,7 +838,7 @@ Tuple*
 Parser::parseTuple()
 {
     Tuple* tuple = createSyntax<Tuple>(SyntaxKind::Tuple);
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
     while (true)
     {
         if (peek == Token::CloseParen)
@@ -800,11 +849,11 @@ Parser::parseTuple()
 
         Expression* expression = parseExpression();
         tuple->values.add(expression);
-        peek = peekNextToken();
+        peek = peekNextToken(false);
         if (peek == Token::Comma)
         {
             skipNextToken();
-            peek = peekNextToken();
+            peek = peekNextToken(false);
         }
     }
     finishSyntax(tuple);
@@ -859,7 +908,7 @@ Expression*
 Parser::parsePropertyAccessOrCallExpression()
 {
     expectToken(Token::Identifier);
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
     return createPropertyAccessExpressionOrCallExpressionFromPeek(peek);
 }
 
@@ -890,7 +939,7 @@ Parser::createPropertyAccessExpressionOrCallExpressionFromPeek(Token peek)
 void
 Parser::skipNextToken()
 {
-    _scanner->takeNextToken();
+    _scanner->takeNextToken(false);
 }
 
 
@@ -1026,7 +1075,7 @@ Parser::parsePropertyDeclarationOnIdentifier(Name* name)
     }
     PropertyDeclaration* property = createSyntax<PropertyDeclaration>(SyntaxKind::PropertyDeclaration);
     property->name = name;
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
     if (peek == Token::OpenParen)
     {
         auto result = parseParameterList();;
@@ -1058,7 +1107,7 @@ Parser::parseEnumDeclaration()
     while (true)
     {
         Token token = takeNextToken();
-        if (token == Scanner::Token::CloseBrace)
+        if (token == Token::CloseBrace)
         {
             break;
         }
@@ -1136,7 +1185,7 @@ Parser::parseDomainDeclaration()
 
     setAccessMap:
     std::size_t last = _currentDomain->names.size() - 1;
-    ast::DomainDeclarationMap* currentAccessMap = &domainDeclarationMap;
+    DomainDeclarationMap* currentAccessMap = &domainDeclarationMap;
     for (int i = 0; i <= last; i++)
     {
         auto name = _currentDomain->names[i];
@@ -1145,7 +1194,7 @@ Parser::parseDomainDeclaration()
             currentAccessMap->insert({ name->name, &_currentDomain->block->symbols });
             break;
         }
-        ast::DomainDeclarationMap* newAccessMap = new ast::DomainDeclarationMap();
+        DomainDeclarationMap* newAccessMap = new DomainDeclarationMap();
         currentAccessMap->insert({ name->name, newAccessMap });
         currentAccessMap = newAccessMap;
     }
@@ -1188,7 +1237,7 @@ Parser::parseDeclarationMetadata()
 Expression*
 Parser::parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier()
 {
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
     if (peek == Token::DoubleColon)
     {
         ModuleAccessExpression* moduleAccessExpression = createSyntax<ModuleAccessExpression>(SyntaxKind::ModuleAccessExpression);
@@ -1210,7 +1259,7 @@ ArrayLiteral*
 Parser::parseArrayLiteral()
 {
     auto arrayLiteral = createSyntax<ArrayLiteral>(SyntaxKind::ArrayLiteral);
-    Token peek = peekNextToken();
+    Token peek = peekNextToken(false);
     while (true)
     {
         if (peek == Token::CloseBracket)
@@ -1220,11 +1269,11 @@ Parser::parseArrayLiteral()
         }
         Expression* expression = parseExpression();
         arrayLiteral->values.add(expression);
-        peek = peekNextToken();
+        peek = peekNextToken(false);
         if (peek == Token::Comma)
         {
             skipNextToken();
-            peek = peekNextToken();
+            peek = peekNextToken(false);
         }
     }
     finishSyntax(arrayLiteral);
@@ -1426,16 +1475,68 @@ Parser::isBinaryOperator(Token token) const
 }
 
 
-unsigned int
-Parser::getInteger(IntegerLiteral* integerLiteral)
+uint64_t
+Parser::parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, uint64_t maxLimit) const
 {
-    const char* cursor = integerLiteral->end - 1;
-    unsigned int exponent = (cursor - integerLiteral->start) / 8;
-    unsigned int result = 0;
-    unsigned int leftOfResult = UINT64_MAX;
+    const char* cursor = hexadecimalLiteral->end - 1;
+    const char* start = hexadecimalLiteral->start + 2;
+    uint64_t exponent = 0;
+    uint64_t result = 0;
+    uint64_t leftOfMaxLimit = maxLimit;
+    while (true)
+    {
+        unsigned char character = cursor[0];
+        uint64_t positionValue;
+        if (character >= '0' && character <= '9')
+        {
+            positionValue = character - '0';
+        }
+        else if (character >= 'a' && character <= 'f')
+        {
+            positionValue = (character - 'a') + 10;
+        }
+        else if (character == '_')
+        {
+            cursor--;
+            continue;
+        }
+        else
+        {
+            throw std::runtime_error("Unknown character in hexadecimal literal.");
+        }
+        uint64_t f = positionValue * std::pow(16ui64, exponent);
+        if (f > leftOfMaxLimit)
+        {
+            throw IntegerOverflowError();
+        }
+        result += f;
+        leftOfMaxLimit -= f;
+        if (cursor == start)
+        {
+            break;
+        }
+        cursor--;
+        exponent++;
+    }
+    return result;
+}
+
+
+uint64_t
+Parser::parseDecimalLiteral(const DecimalLiteral* decimalLiteral, uint64_t maxLimit) const
+{
+    const char* cursor = decimalLiteral->end - 1;
+    unsigned int exponent = getDigitsLength(decimalLiteral->end - 1, decimalLiteral->start);;
+    uint64_t result = 0;
+    uint64_t leftOfResult = maxLimit;
     while (true)
     {
         unsigned int s = cursor[0] - '0';
+        if (s == '_')
+        {
+            cursor--;
+            continue;
+        }
         unsigned int f = s * std::pow(10, exponent);
         if (f >= leftOfResult)
         {
@@ -1443,13 +1544,70 @@ Parser::getInteger(IntegerLiteral* integerLiteral)
         }
         result += f;
         leftOfResult -= f;
-        if (cursor == integerLiteral->start)
+        if (cursor == decimalLiteral->start)
         {
             break;
         }
         cursor--;
+        exponent++;
     }
     return result;
+}
+
+
+unsigned int
+Parser::getDigitsLength(const char* end, const char* start) const
+{
+    int length = 0;
+    while (true)
+    {
+        if (end[0] == '_')
+        {
+            end--;
+            continue;
+        }
+        if (end == start)
+        {
+            break;
+        }
+        end--;
+        length++;
+    }
+    return length;
+}
+
+
+uint64_t
+Parser::getIntegerMaxLimitFromToken(Token token)
+{
+    switch (token)
+    {
+        case Token::U8Keyword:
+            return UINT8_MAX;
+        case Token::U16Keyword:
+            return UINT16_MAX;
+        case Token::U32Keyword:
+            return UINT32_MAX;
+        case Token::U64Keyword:
+            return UINT64_MAX;
+        case Token::S8Keyword:
+            return INT8_MAX;
+        case Token::S16Keyword:
+            return INT16_MAX;
+        case Token::S32Keyword:
+            return INT32_MAX;
+        case Token::S64Keyword:
+            return INT64_MAX;
+        default:
+            return UINT64_MAX;
+    }
+}
+
+
+bool
+Parser::isIntegerSuffix(Token token)
+{
+    return token >= Token::U8Keyword && token <= Token::S64Keyword;
 }
 
 

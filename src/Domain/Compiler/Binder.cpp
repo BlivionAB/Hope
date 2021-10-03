@@ -2,17 +2,17 @@
 #include "Exceptions.h"
 #include <variant>
 
-namespace elet::domain::compiler
+namespace elet::domain::compiler::ast
 {
 
 
 thread_local
-ast::FunctionDeclaration*
+FunctionDeclaration*
 Binder::_currentFunctionDeclaration = nullptr;
 
 
 
-ast::DomainDeclaration*
+DomainDeclaration*
 Binder::startDomainDeclaration = nullptr;
 
 
@@ -24,20 +24,20 @@ Binder::Binder():
 
 
 void
-Binder::performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDeclarationMap)
+Binder::performWork(BindingWork& work, const DomainDeclarationMap* domainDeclarationMap)
 {
     _domainDeclarationMap = domainDeclarationMap;
 
     switch (work.declaration->kind)
     {
-        case ast::SyntaxKind::DomainDeclaration:
-            bindDomainDeclaration(reinterpret_cast<ast::DomainDeclaration*>(work.declaration));
+        case SyntaxKind::DomainDeclaration:
+            bindDomainDeclaration(reinterpret_cast<DomainDeclaration*>(work.declaration));
             break;
-        case ast::SyntaxKind::UsingStatement:
-            bindUsingStatement(reinterpret_cast<ast::UsingStatement*>(work.declaration));
+        case SyntaxKind::UsingStatement:
+            bindUsingStatement(reinterpret_cast<UsingStatement*>(work.declaration));
             break;
-        case ast::SyntaxKind::FunctionDeclaration:
-            bindFunctionDeclaration(reinterpret_cast<ast::FunctionDeclaration*>(work.declaration));
+        case SyntaxKind::FunctionDeclaration:
+            bindFunctionDeclaration(reinterpret_cast<FunctionDeclaration*>(work.declaration));
             break;
         default:
             throw UnknownDeclaration();
@@ -46,18 +46,18 @@ Binder::performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDe
 
 
 void
-Binder::bindDomainDeclaration(ast::DomainDeclaration* domain)
+Binder::bindDomainDeclaration(DomainDeclaration* domain)
 {
     if (domain->implementsClause)
     {
         if (domain->implementsClause->name == "IConsoleApplication")
         {
             startDomainDeclaration = domain;
-            static auto consoleAppInterface = new ast::type::Interface();
-            static auto onApplicationStart = new ast::type::Signature();
+            static auto consoleAppInterface = new type::Interface();
+            static auto onApplicationStart = new type::Signature();
             onApplicationStart->isStartFunction = true;
             onApplicationStart->name = "OnApplicationStart";
-            onApplicationStart->type = new ast::type::Type(ast::type::TypeKind::Void);
+            onApplicationStart->type = new type::Type(type::TypeKind::Void);
             consoleAppInterface->signatures.add(onApplicationStart);
             domain->implements = consoleAppInterface;
         }
@@ -66,11 +66,11 @@ Binder::bindDomainDeclaration(ast::DomainDeclaration* domain)
     {
         switch (decl->kind)
         {
-            case ast::SyntaxKind::UsingStatement:
-                bindUsingStatement(reinterpret_cast<ast::UsingStatement*>(decl));
+            case SyntaxKind::UsingStatement:
+                bindUsingStatement(reinterpret_cast<UsingStatement*>(decl));
                 break;
-            case ast::SyntaxKind::FunctionDeclaration:
-                bindFunctionDeclaration(reinterpret_cast<ast::FunctionDeclaration*>(decl));
+            case SyntaxKind::FunctionDeclaration:
+                bindFunctionDeclaration(reinterpret_cast<FunctionDeclaration*>(decl));
                 break;
             default:;
         }
@@ -79,7 +79,7 @@ Binder::bindDomainDeclaration(ast::DomainDeclaration* domain)
 
 
 void
-Binder::bindUsingStatement(ast::UsingStatement* usingStatement)
+Binder::bindUsingStatement(UsingStatement* usingStatement)
 {
     auto declarationMap = getDomainDeclarations(usingStatement->domains, 0, _domainDeclarationMap);
     for (const auto& name : usingStatement->usageClause->names)
@@ -87,26 +87,26 @@ Binder::bindUsingStatement(ast::UsingStatement* usingStatement)
         auto it = declarationMap->find(name->name);
         if (it != declarationMap->end())
         {
-            usingStatement->domain->usages.insert({ name->name, reinterpret_cast<ast::Declaration*>(it->second) });
+            usingStatement->domain->usages.insert({ name->name, reinterpret_cast<Declaration*>(it->second) });
         }
     }
 }
 
 
-std::map<Utf8StringView, ast::Declaration*>*
-Binder::getDomainDeclarations(const List<ast::Name*>& domains, unsigned int domainIndex, const ast::DomainDeclarationMap* domainDeclarationMap)
+std::map<Utf8StringView, Declaration*>*
+Binder::getDomainDeclarations(const List<Name*>& domains, unsigned int domainIndex, const DomainDeclarationMap* domainDeclarationMap)
 {
     auto domain = domains[domainIndex];
     auto result = domainDeclarationMap->find(domain->name);
     if (result != domainDeclarationMap->end())
     {
-        if (auto declarationMap = std::get_if<std::map<Utf8StringView, ast::Declaration*>*>(&result->second))
+        if (auto declarationMap = std::get_if<std::map<Utf8StringView, Declaration*>*>(&result->second))
         {
             return *declarationMap;
         }
         else
         {
-            return getDomainDeclarations(domains, domainIndex + 1, reinterpret_cast<ast::DomainDeclarationMap*>(std::get<void*>(result->second)));
+            return getDomainDeclarations(domains, domainIndex + 1, reinterpret_cast<DomainDeclarationMap*>(std::get<void*>(result->second)));
         }
     }
 
@@ -115,10 +115,10 @@ Binder::getDomainDeclarations(const List<ast::Name*>& domains, unsigned int doma
 
 
 void
-Binder::bindFunctionDeclaration(ast::FunctionDeclaration* declaration)
+Binder::bindFunctionDeclaration(FunctionDeclaration* declaration)
 {
     _currentFunctionDeclaration = declaration;
-    for (ast::ParameterDeclaration* parameterDeclaration : declaration->parameterList->parameters)
+    for (ParameterDeclaration* parameterDeclaration : declaration->parameterList->parameters)
     {
         declaration->body->symbols[parameterDeclaration->name->name] = parameterDeclaration;
     }
@@ -127,24 +127,24 @@ Binder::bindFunctionDeclaration(ast::FunctionDeclaration* declaration)
 
 
 void
-Binder::bindStatementBlock(ast::StatementBlock* block)
+Binder::bindStatementBlock(StatementBlock* block)
 {
-    for (ast::Syntax* statement : block->statements)
+    for (Syntax* statement : block->statements)
     {
         switch (statement->kind)
         {
-            case ast::SyntaxKind::VariableDeclaration:
-                bindVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement));
+            case SyntaxKind::VariableDeclaration:
+                bindVariableDeclaration(reinterpret_cast<VariableDeclaration*>(statement));
                 break;
-            case ast::SyntaxKind::CallExpression:
-                bindCallExpression(reinterpret_cast<ast::CallExpression*>(statement));
+            case SyntaxKind::CallExpression:
+                bindCallExpression(reinterpret_cast<CallExpression*>(statement));
                 break;
-            case ast::SyntaxKind::IfStatement:
-                bindIfStatement(reinterpret_cast<ast::IfStatement*>(statement));
+            case SyntaxKind::IfStatement:
+                bindIfStatement(reinterpret_cast<IfStatement*>(statement));
                 break;
-            case ast::SyntaxKind::ReturnStatement:
+            case SyntaxKind::ReturnStatement:
             {
-                ast::ReturnStatement* returnStatement = reinterpret_cast<ast::ReturnStatement*>(statement);
+                ReturnStatement* returnStatement = reinterpret_cast<ReturnStatement*>(statement);
                 bindExpression(returnStatement->expression);
                 break;
             }
@@ -155,7 +155,7 @@ Binder::bindStatementBlock(ast::StatementBlock* block)
 }
 
 void
-Binder::bindIfStatement(const ast::IfStatement* ifStatement)
+Binder::bindIfStatement(const IfStatement* ifStatement)
 {
     bindExpression(ifStatement->condition);
     bindStatementBlock(ifStatement->body);
@@ -163,7 +163,7 @@ Binder::bindIfStatement(const ast::IfStatement* ifStatement)
 
 
 void
-Binder::bindVariableDeclaration(ast::VariableDeclaration* variableDeclaration)
+Binder::bindVariableDeclaration(VariableDeclaration* variableDeclaration)
 {
     _currentFunctionDeclaration->body->symbols[variableDeclaration->name->name] = variableDeclaration;
     bindExpression(variableDeclaration->expression);
@@ -171,7 +171,7 @@ Binder::bindVariableDeclaration(ast::VariableDeclaration* variableDeclaration)
 
 
 void
-Binder::bindCallExpression(ast::CallExpression* callExpression)
+Binder::bindCallExpression(CallExpression* callExpression)
 {
     for (auto expr : callExpression->argumentList->arguments)
     {
@@ -197,15 +197,17 @@ Binder::bindCallExpression(ast::CallExpression* callExpression)
 
 
 void
-Binder::bindExpression(ast::Expression* expression)
+Binder::bindExpression(Expression* expression)
 {
     switch (expression->kind)
     {
-        case ast::SyntaxKind::BinaryExpression:
-            bindBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression));
+        case SyntaxKind::IntegerLiteral:
             break;
-        case ast::SyntaxKind::PropertyExpression:
-            bindPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression));
+        case SyntaxKind::BinaryExpression:
+            bindBinaryExpression(reinterpret_cast<BinaryExpression*>(expression));
+            break;
+        case SyntaxKind::PropertyExpression:
+            bindPropertyExpression(reinterpret_cast<PropertyExpression*>(expression));
             break;
         default:;
     }
@@ -213,7 +215,7 @@ Binder::bindExpression(ast::Expression* expression)
 
 
 void
-Binder::bindBinaryExpression(ast::BinaryExpression* binaryExpression)
+Binder::bindBinaryExpression(BinaryExpression* binaryExpression)
 {
     bindExpression(binaryExpression->left);
     bindExpression(binaryExpression->right);
@@ -221,7 +223,7 @@ Binder::bindBinaryExpression(ast::BinaryExpression* binaryExpression)
 
 
 void
-Binder::bindPropertyExpression(ast::PropertyExpression* property)
+Binder::bindPropertyExpression(PropertyExpression* property)
 {
     auto declaration = _currentFunctionDeclaration->body->symbols[property->name->name];
     if (declaration)

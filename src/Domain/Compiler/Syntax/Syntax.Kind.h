@@ -27,9 +27,6 @@ namespace elet::domain::compiler::ast
         ParameterDeclaration,
         Type,
         ArgumentList,
-        StringLiteral,
-        BooleanLiteral,
-        IntegerLiteral,
         Tuple,
         NamedUsage,
         WildcardUsage,
@@ -45,6 +42,12 @@ namespace elet::domain::compiler::ast
         ReturnStatement,
 
         // Expressions
+        StringLiteral,
+        BooleanLiteral,
+        IntegerLiteral,
+        DecimalLiteral,
+        HexadecimalLiteral,
+        IntegerSuffix,
         LengthOfExpression,
         AddressOfExpression,
         BinaryExpression,

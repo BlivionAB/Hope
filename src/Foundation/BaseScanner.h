@@ -98,13 +98,13 @@ protected:
     std::stack<Location>
     _savedLocations;
 
-    std::size_t
+    size_t
     _position = 0;
 
-    std::size_t
+    size_t
     _line = 1;
 
-    std::size_t
+    size_t
     _column = 1;
 
     Utf8StringView

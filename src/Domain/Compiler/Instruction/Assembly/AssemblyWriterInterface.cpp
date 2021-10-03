@@ -94,7 +94,7 @@ AssemblyWriterInterface::getStackSizeFromFunctionParameters(const FunctionRoutin
         auto parameter = routine->parameters[i];
         if (i < _callingConvention.registers.size())
         {
-            stackOffset += parameter->size;
+            stackOffset += static_cast<int>(parameter->allocationSize);
         }
     }
     uint64_t rest = stackOffset % 16;
@@ -143,6 +143,9 @@ AssemblyWriterInterface::writeFunctionInstructions(FunctionRoutine* function)
                 break;
             case InstructionKind::StoreRegister:
                 writeStoreRegisterInstruction(reinterpret_cast<StoreRegisterInstruction*>(instruction), function);
+                break;
+            case InstructionKind::MoveImmediate:
+                writeMoveImmediateInstruction(reinterpret_cast<MoveImmediateInstruction*>(instruction), function);
                 break;
             case InstructionKind::MoveRegister:
                 writeMoveRegisterInstruction(reinterpret_cast<MoveRegisterInstruction*>(instruction), function);
@@ -253,6 +256,13 @@ void
 AssemblyWriterInterface::writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function)
 {
     throw std::runtime_error("Not implemented \"writeReturnInstruction\" method.");
+}
+
+
+void
+AssemblyWriterInterface::writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function)
+{
+    throw std::runtime_error("Not implemented \"writeMoveImmediateInstruction\" method.");
 }
 
 

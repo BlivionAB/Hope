@@ -8,6 +8,7 @@
 namespace elet::domain::compiler::instruction::output
 {
 
+
 class Aarch64Writer final : public AssemblyWriterInterface
 {
 
@@ -47,6 +48,9 @@ public:
 
     void
     writeFunctionEpilogue(FunctionRoutine* function) override;
+
+    void
+    writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function) override;
 
     void
     writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function) override;
@@ -122,6 +126,9 @@ private:
     void
     writeB(int32_t offset);
 
+    uint32_t
+    hw(uint32_t leftShift) const;
+
     void
     writeInstructionsPadding(uint64_t i);
 
@@ -136,6 +143,19 @@ private:
 
     int
     getAarch64RegisterFromOperandRegister(OperandRegister operandRegister) const;
+
+    bool
+    moveWideIsPreferred(uint8_t sf, uint8_t N, uint8_t imms, uint8_t immr) const;
+
+    bool
+    processLogicalImmediate(uint64_t imm, RegisterBitSize registerSize, uint32_t& encoding);
+
+    void
+    writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function);
+
+    void
+    writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, RegisterBitSize registerSize,
+                                    FunctionRoutine* function);
 };
 
 }

@@ -5,10 +5,10 @@
 #include <Foundation/Utf8String.h>
 #include <Foundation/List.h>
 #include <Domain/Compiler/Instruction/ObjectFileWriter/MachoFileWriter.h>
-#include "./X86/X86AssemblyParser.h"
-#include "./X86/X86AssemblyPrinter.h"
-#include "./Aarch/Aarch64AssemblyParser.h"
-#include "./Aarch/Aarch64AssemblyPrinter.h"
+#include "Domain/Compiler/TestHarness/X86/X86AssemblyParser.h"
+#include "Domain/Compiler/TestHarness/X86/X86AssemblyPrinter.h"
+#include "Domain/Compiler/TestHarness/Aarch/Aarch64AssemblyParser.h"
+#include "Domain/Compiler/TestHarness/Aarch/Aarch64AssemblyPrinter.h"
 #include "./BaselinePrinter.h"
 
 

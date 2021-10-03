@@ -2,11 +2,18 @@
 #define ELET_AARCH64ASSEMBLYPARSER_H
 
 
-#include "../AssemblyParser.h"
-#include "AarchTypes.h"
+#include "Domain/Compiler/TestHarness/AssemblyParser.h"
+#include "Aarch64Instructions.h"
 
 namespace elet::domain::compiler::test::aarch
 {
+
+
+enum RegistrySize
+{
+   _64 = 64,
+   _32 = 32,
+};
 
 
 class Aarch64AssemblyParser : public AssemblyParser
@@ -52,11 +59,17 @@ private:
     int32_t
     imm26(uint32_t dw);
 
-    void
-    parseMovImmediateInstruction(Instruction* instruction, uint32_t dw);
+    bool
+    sf(uint32_t dw);
+
+    uint32_t
+    hw(uint32_t dw);
+
+    uint32_t
+    getLeftShiftFromHv(uint32_t dw);
 
     void
-    parseMovInstruction(Instruction* instruction, uint32_t dw);
+    parseMovzInstruction(MovzInstruction* instruction, uint32_t dw);
 
     bool
     tryParse21Instructions(Instruction* instruction, uint32_t dw);
@@ -96,6 +109,21 @@ private:
 
     void
     parseBrInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    tryParse23Instructions(Instruction* instruction, uint32_t dw);
+
+    void
+    parseOrrInstruction(OrrImmediateInstruction* orrInstruction, uint32_t dw);
+
+    uint64_t
+    decodeBitmaskImmediate(uint32_t dw, RegistrySize registrySize);
+
+    void
+    parseMovnInstruction(MovnInstruction* movInstruction, uint32_t dw);
+
+    void
+    parseMovkInstruction(MovkInstruction* movk, uint32_t dw);
 };
 
 

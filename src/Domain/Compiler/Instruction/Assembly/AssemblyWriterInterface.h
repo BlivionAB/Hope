@@ -8,10 +8,10 @@ namespace elet::domain::compiler
 {
     struct Symbol;
 }
-namespace elet::domain::compiler::instruction
-{
-    struct FunctionRoutine;
-}
+//namespace elet::domain::compiler::instruction
+//{
+//    struct FunctionRoutine;
+//}
 
 namespace elet::domain::compiler::instruction::output
 {
@@ -67,11 +67,15 @@ public:
 
     virtual
     void
-    writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function);
+    writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function);
 
     virtual
     void
-    writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function);
+    writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function);
+
+    virtual
+    void
+    writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function);
 
     virtual
     void
@@ -84,7 +88,6 @@ public:
     virtual
     void
     writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
-
 
     virtual
     void

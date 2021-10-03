@@ -2,7 +2,7 @@
 #define ELET_CHECKER_H
 
 #include <map>
-#include <fmt/format.h>
+#include <format>
 #include <Foundation/Utf8StringView.h>
 #include "Binder.h"
 #include "Syntax/Syntax.h"
@@ -10,140 +10,106 @@
 
 using namespace elet::foundation;
 
-namespace elet::domain::compiler
+namespace elet::domain::compiler::ast
 {
-
-
-class Binder;
-
-
-namespace ast
-{
+    class Binder;
     struct Declaration;
     struct FunctionDeclaration;
     struct CallExpression;
     struct PropertyExpression;
-}
-
-#define TYPE_CHAR       (std::uint8_t)0x1
-#define TYPE_INT8      (std::uint8_t)0x2
-#define TYPE_INT16     (std::uint8_t)0x3
-#define TYPE_INT32     (std::uint8_t)0x4
-#define TYPE_INT64     (std::uint8_t)0x5
-#define TYPE_UINT8      (std::uint8_t)0x6
-#define TYPE_UINT16     (std::uint8_t)0x7
-#define TYPE_UINT32     (std::uint8_t)0x8
-#define TYPE_UINT64     (std::uint8_t)0x9
-#define TYPE_CUSTOM     (std::uint8_t)0xa
 
 
-struct Diagnostic
-{
-    Utf8String
-    message;
+    class Checker
+    {
+    public:
 
-    template<typename... Args>
-    explicit Diagnostic(const char* message):
-        message(message)
-    { }
+        Checker(const Binder* _binder);
 
-    template<typename... Args>
-    explicit Diagnostic(const char* message, Args... args):
-        message(fmt::format(message, args...).c_str())
-    { }
-};
+        void
+        checkUsingStatement(const UsingStatement* usingStatement);
 
+        void
+        checkTopLevelDeclaration(Declaration* declaration);
 
-class Checker
-{
-public:
+        void
+        checkFunctionDeclaration(FunctionDeclaration* functionDeclaration);
 
-    Checker(const Binder* _binder);
+        void
+        checkCallExpression(const CallExpression* callExpression);
 
-    void
-    checkUsingStatement(const ast::UsingStatement* usingStatement);
+        void
+        checkDomainDeclaration(const DomainDeclaration* domain);
 
-    void
-    checkTopLevelDeclaration(ast::Declaration* declaration);
+        List<FunctionDeclaration*>
+        startFunctions;
 
-    void
-    checkFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration);
+    private:
 
-    void
-    checkCallExpression(const ast::CallExpression* callExpression);
+        static
+        void
+        resolveTypeFromFunctionDeclaration(FunctionDeclaration* functionDeclaration);
 
-    void
-    checkDomainDeclaration(const ast::DomainDeclaration* domain);
+        static
+        bool
+        isTypeEqualToType(const type::Type* target, const type::Type* source);
 
-    List<ast::FunctionDeclaration*>
-    startFunctions;
+        void
+        addDiagnostic(Diagnostic* diagnostic);
 
-private:
+        List<Diagnostic*>
+        _diagnostics;
 
-    static
-    void
-    resolveTypeFromFunctionDeclaration(ast::FunctionDeclaration* functionDeclaration);
+        const SourceFile*
+        _sourceFile;
 
-    static
-    bool
-    isTypeEqualToType(const ast::type::Type* target, const ast::type::Type* source);
+        const Binder*
+        _binder;
 
-    void
-    addDiagnostic(Diagnostic* diagnostic);
+        FunctionDeclaration*
+        getDeclarationFromSignature(type::Signature* const& signature, const DomainDeclaration* domain) const;
 
-    List<Diagnostic*>
-    _diagnostics;
+        void
+        checkFunctionSignature(const type::Signature* target, const type::Signature* source);
 
-    const ast::SourceFile*
-    _sourceFile;
+        Type*
+        checkExpression(Expression* expression);
 
-    const Binder*
-    _binder;
+        Type*
+        checkPropertyExpression(PropertyExpression* propertyExpression);
 
-    ast::FunctionDeclaration*
-    getDeclarationFromSignature(ast::type::Signature* const& signature, const ast::DomainDeclaration* domain) const;
+        type::Type*
+        resolveTypeFromDeclaration(Declaration* declaration);
 
-    void
-    checkFunctionSignature(const ast::type::Signature* target, const ast::type::Signature* source);
+        type::Type*
+        resolveTypeFromExpression(Expression* expression);
 
-    void
-    checkExpression(ast::Expression* expression);
+        void
+        checkVariableDeclaration(VariableDeclaration* variable);
 
-    void
-    checkPropertyExpression(ast::PropertyExpression* propertyExpression);
+        Type*
+        getCommonRealType(Type* type1, Type* type2);
 
-    ast::type::Type*
-    resolveTypeFromDeclaration(ast::Declaration* declaration);
+        unsigned int
+        getConversionRanking(Type* pType);
 
-    ast::type::Type*
-    resolveTypeFromExpression(ast::Expression* expression);
+        Type*
+        getMaxType(Type* type1, Type* type2);
 
-    void
-    checkVariableDeclaration(ast::VariableDeclaration* variable);
+        uint64_t
+        getMaxTypeDomain(Type* type);
 
-    ast::Type*
-    inferTypeFromExpression(ast::Expression* expression);
+        Type*
+        getUnsignedCounterPart(Type* signedType);
 
-    ast::Type*
-    getCommonRealType(ast::Type* type1, ast::Type* type2);
+        Type*
+        getTypeFromIntegerLiteral(IntegerLiteral* integerLiteral);
 
-    unsigned int
-    getConversionRanking(ast::Type* pType);
+        Type*
+        checkBinaryExpression(BinaryExpression* binaryExpression);
 
-    ast::Type*
-    getMaxType(ast::Type* type1, ast::Type* type2);
-
-    uint64_t
-    getMaxTypeDomain(ast::Type* type);
-
-    ast::Type*
-    getUnsignedCounterPart(ast::Type* signedType);
-
-    ast::Type*
-    getTypeFromIntegerLiteral(ast::IntegerLiteral* integerLiteral);
-};
-
-
+        Type*
+        resolveTypeOfIntegerLiteral(IntegerLiteral* integerLiteral);
+    };
 }
 
 

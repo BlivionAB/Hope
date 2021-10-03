@@ -37,9 +37,6 @@ private:
     writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction);
 
     void
-    writeOperation(output::Operation* operation);
-
-    void
     writeLoadInstruction(const output::LoadInstruction* loadInstruction);
 
     void
@@ -56,6 +53,10 @@ private:
 
     void
     writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction);
+
+    void
+    writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction);
+
 };
 
 

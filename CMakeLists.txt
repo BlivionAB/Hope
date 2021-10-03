@@ -4,14 +4,12 @@ project(Elet)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(third_party/googletest)
-add_subdirectory(third_party/fmt)
 
 include_directories(
     src
     third_party/googletest/googletest/include
     third_party/googletest/googlemock/include
 )
-
 
 file(GLOB FOUNDATION_SRC ${CMAKE_SOURCE_DIR}/src/Foundation/*)
 file(GLOB FOUNDATION_TEST ${CMAKE_SOURCE_DIR}/src/Foundation/Tests/* ${CMAKE_SOURCE_DIR}/src/Foundation/Tests/**/*)
@@ -28,13 +26,14 @@ file(GLOB DOMAIN_SRC
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/x86/OpCode/*)
 
 file(GLOB DOMAIN_TEST
-    ${CMAKE_SOURCE_DIR}/src/Domain/Tests/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Tests/**/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/X86/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Aarch/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/TextDiff/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/TextDiff/Tests/*)
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/**/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Expression/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Function/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/X86/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/Aarch/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/Tests/*)
 
 message(STATUS ${DOMAIN_SRC})
 
@@ -44,8 +43,7 @@ add_executable(
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
-    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.cpp src/Domain/Compiler/Tests/Aarch/Aarch64AssemblyPrinter.h src/Domain/Compiler/Syntax/Syntax.Statement.h src/Domain/Compiler/Tests/StashIrPrinter.cpp src/Domain/Compiler/Tests/StashIrPrinter.h src/Domain/Compiler/Instruction/Instruction.Arithmetic.h)
+    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Expression/IntegerLiteralTest.cpp src/Domain/Compiler/CompilerTypes.h)
 
-set(LIBS fmt)
 set(TEST_LIBS gtest gmock)
-target_link_libraries(unittest ${TEST_LIBS} ${LIBS})
+target_link_libraries(unittest ${TEST_LIBS})

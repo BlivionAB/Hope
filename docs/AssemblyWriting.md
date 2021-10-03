@@ -14,7 +14,7 @@ struct Constant
 struct String : Constant
 {
     char*
-    value;
+    immediateValue;
 };
 ```
 * Write code

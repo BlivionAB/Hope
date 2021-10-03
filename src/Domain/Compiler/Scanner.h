@@ -4,243 +4,195 @@
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/HashTableMap.h>
 #include <Foundation/BaseScanner.h>
+#include "Syntax/Syntax.h"
 #include <stack>
 
-using namespace elet::foundation;
-
-#define TREAT_STRING_KEYWORD_AS_NAME (std::uint8_t)0x1
-
-class Scanner : public elet::foundation::BaseScanner
+namespace elet::domain::compiler::ast
 {
-public:
-    explicit Scanner(const Utf8StringView& source);
+    using namespace elet::foundation;
 
-    enum class Token : std::size_t
+    #define TREAT_STRING_KEYWORD_AS_NAME (std::uint8_t)0x1
+
+    class Scanner : public elet::foundation::BaseScanner
     {
-        Unknown,
-
-        Identifier,
-
-        // Keywords
-        UsingKeyword,
-        ImplementsKeyword,
-        EnumKeyword,
-        ReturnKeyword,
-        IfKeyword,
-        ElseKeyword,
-        WhenKeyword,
-        ForKeyword,
-        WhileKeyword,
-        CancelKeyword,
-        ObserveKeyword,
-        OnKeyword,
-        FromKeyword,
-        TrueKeyword,
-        FalseKeyword,
-
-        // Declarations
-        AssemblyKeyword,
-        FunctionKeyword,
-        VarKeyword,
-        DomainKeyword,
-        ClassKeyword,
-        InterfaceKeyword,
-        ExternKeyword,
-
-        Ampersand,
-        OpenParen,
-        CloseParen,
-        OpenBrace,
-        CloseBrace,
-        OpenBracket,
-        CloseBracket,
-        Equal,
-        EqualEqual,
-        LessThan,
-        GreaterThan,
-        LessThanEqual,
-        GreaterThanEqual,
-        Comma,
-        Colon,
-        DoubleColon,
-        SemiColon,
-        Asterisk,
-        Dot,
-        DoubleQuote,
-        SingleQuote,
+    public:
+        explicit Scanner(const Utf8StringView& source);
 
 
-        AmpersandAmpersand,
-        PipePipe,
-        Plus,
-        Minus,
+        enum class IntegerLiteralType
+            {
+            Decimal = 10,
+            Hexadecimal = 16,
+            Binary = 2,
+            };
 
-        BinaryOperationStart = AmpersandAmpersand,
-        BinaryOperationEnd = Minus,
 
-        // Types
-        VoidKeyword,
-        IntKeyword,
-        UnsignedIntKeyword,
-        CharKeyword,
-        StringKeyword,
-        F32Keyword,
-        F64Keyword,
-        USizeKeyword,
-        LiteralKeyword,
+        enum class IntegerSuffix
+        {
+            None,
+            u8,
+            u16,
+            u32,
+            u64,
+            s8,
+            s16,
+            s32,
+            s64,
+        };
 
-        // Modifiers
-        ContextKeyword,
-        TypesKeyword,
-        ParamsKeyword,
-        AsyncKeyword,
-        PublicKeyword,
-        PrivateKeyword,
-        StaticKeyword,
+        Token
+        peekNextToken(bool includeWhitespaceToken);
 
-        // Operators
-        LengthOfKeyword,
-        SizeOfKeyword,
+        Token
+        takeNextToken(bool includeWhitespaceToken);
 
-        StringLiteral,
-        FloatLiteral,
-        IntegerLiteral,
+        Utf8StringView
+        getTokenValue() const;
 
-        EndOfFile,
+        void
+        setFlag(std::uint8_t stage);
+
+        void
+        resetFlags();
+
+    private:
+
+        Token
+        scanString();
+
+        Token
+        getTokenFromString(const Utf8StringView& string) const;
+
+        std::uint8_t
+        _stage;
+
+        IntegerLiteralType
+        _currentIntegerLiteralType;
+
+        Scanner::IntegerSuffix
+        _currentIntegerSuffix;
+
+        Token
+        scanDigits();
+
+        Token
+        scanHexadecimalDigits();
+
+        Token
+        scanWhitespace();
     };
 
-    Token
-    peekNextToken();
 
-    Token
-    takeNextToken();
+    const HashTableMap<const char*, Token> eletStringToToken =
+    {
+        // Declarations
+        { "domain", Token::DomainKeyword },
+        { "fn", Token::FunctionKeyword },
+        { "class", Token::ClassKeyword },
+        { "interface", Token::InterfaceKeyword },
+        { "extern", Token::ExternKeyword },
+        { "enum", Token::EnumKeyword },
+        { "var", Token::VarKeyword },
+        { "assembly", Token::AssemblyKeyword },
 
-    Utf8StringView
-    getTokenValue() const;
+        // Modifiers / Metadata / Clauses
+        { "static", Token::StaticKeyword },
+        { "public", Token::PublicKeyword },
+        { "private", Token::PrivateKeyword },
+        { "types", Token::TypesKeyword },
+        { "params", Token::ParamsKeyword },
+        { "context", Token::ContextKeyword },
+        { "implements", Token::ImplementsKeyword },
+        { "from", Token::FromKeyword },
 
-    void
-    setFlag(std::uint8_t stage);
+        // Control flows
+        { "if", Token::IfKeyword },
+        { "else", Token::ElseKeyword },
+        { "for", Token::ForKeyword },
+        { "while", Token::WhileKeyword },
+        { "return", Token::ReturnKeyword },
 
-    void
-    resetFlags();
+        // Operators
+        { "lengthof", Token::LengthOfKeyword },
+        { "u8", Token::U8Keyword },
+        { "u16", Token::U16Keyword },
+        { "u32", Token::U32Keyword },
+        { "u64", Token::U64Keyword },
+        { "s8", Token::S8Keyword },
+        { "s16", Token::S16Keyword },
+        { "s32", Token::S32Keyword },
+        { "s64", Token::S64Keyword },
 
-private:
+        // Types
+        { "int", Token::IntKeyword },
+        { "uint", Token::UnsignedIntKeyword },
+        { "usize", Token::USizeKeyword },
+        { "char", Token::CharKeyword },
+        { "string", Token::StringKeyword },
+        { "void", Token::VoidKeyword },
+        { "literal", Token::LiteralKeyword, },
 
-    Token
-    scanString();
+        { "true", Token::TrueKeyword },
+        { "false", Token::FalseKeyword },
 
-    Token
-    getTokenFromString(const Utf8StringView& string) const;
+        // Statements
+        { "using", Token::UsingKeyword },
+    };
 
-    std::uint8_t
-    _stage;
 
-    Token
-    scanDigits();
-};
-
-using Token = Scanner::Token;
-const HashTableMap<const char*, Token> eletStringToToken =
-{
+    const HashTableMap<Token, const char*> eletTokenToString =
+    {
     // Declarations
-    { "domain", Token::DomainKeyword },
-    { "fn", Token::FunctionKeyword },
-    { "class", Token::ClassKeyword },
-    { "interface", Token::InterfaceKeyword },
-    { "extern", Token::ExternKeyword },
-    { "enum", Token::EnumKeyword },
-    { "var", Token::VarKeyword },
-    { "assembly", Token::AssemblyKeyword },
+        { Token::DomainKeyword, "domain"},
+        { Token::FunctionKeyword, "fn" },
+        { Token::ClassKeyword, "class"},
+        { Token::InterfaceKeyword, "interface" },
+        { Token::ExternKeyword, "extern" },
+        { Token::AssemblyKeyword, "assembly" },
+        { Token::EnumKeyword, "enum" },
+        { Token::VarKeyword, "var" },
 
-    // Modifiers / Metadata / Clauses
-    { "static", Token::StaticKeyword },
-    { "public", Token::PublicKeyword },
-    { "private", Token::PrivateKeyword },
-    { "types", Token::TypesKeyword },
-    { "params", Token::ParamsKeyword },
-    { "context", Token::ContextKeyword },
-    { "implements", Token::ImplementsKeyword },
-    { "from", Token::FromKeyword },
+        // Modifiers / Metadata / Clauses
+        { Token::StaticKeyword, "static" },
+        { Token::PublicKeyword, "public" },
+        { Token::PublicKeyword, "private" },
+        { Token::ContextKeyword, "context" },
+        { Token::TypesKeyword, "types" },
+        { Token::ParamsKeyword, "params" },
+        { Token::ImplementsKeyword, "implements" },
+        { Token::FromKeyword, "from" },
 
-    // Control flows
-    { "if", Token::IfKeyword },
-    { "else", Token::ElseKeyword },
-    { "for", Token::ForKeyword },
-    { "while", Token::WhileKeyword },
-    { "return", Token::ReturnKeyword },
+        // Control flows
+        { Token::IfKeyword, "if" },
+        { Token::ElseKeyword, "else" },
+        { Token::ForKeyword, "for" },
+        { Token::WhileKeyword, "while" },
+        { Token::ReturnKeyword, "return" },
 
-    // Operators
-    { "lengthof", Token::LengthOfKeyword },
+        // Statements
+        { Token::UsingKeyword, "using" },
 
-    // Types
-    { "int", Token::IntKeyword },
-    { "uint", Token::UnsignedIntKeyword },
-    { "usize", Token::USizeKeyword },
-    { "char", Token::CharKeyword },
-    { "string", Token::StringKeyword },
-    { "void", Token::VoidKeyword },
-    { "literal", Token::LiteralKeyword, },
+        // Operators
+        { Token::LengthOfKeyword, "lengthof" },
 
-    { "true", Token::TrueKeyword },
-    { "false", Token::FalseKeyword },
-
-    // Statements
-    { "using", Token::UsingKeyword },
-};
+        // Types
+        { Token::IntKeyword, "int" },
+        { Token::UnsignedIntKeyword, "uint" },
+        { Token::USizeKeyword, "usize" },
+        { Token::CharKeyword,  "char" },
+        { Token::StringKeyword, "string" },
+        { Token::VoidKeyword, "void" },
+        { Token::LiteralKeyword, "literal" },
 
 
-const HashTableMap<Token, const char*> eletTokenToString =
-{
-    // Declarations
-    { Token::DomainKeyword, "domain"},
-    { Token::FunctionKeyword, "fn" },
-    { Token::ClassKeyword, "class"},
-    { Token::InterfaceKeyword, "interface" },
-    { Token::ExternKeyword, "extern" },
-    { Token::AssemblyKeyword, "assembly" },
-    { Token::EnumKeyword, "enum" },
-    { Token::VarKeyword, "var" },
+        { Token::TrueKeyword,  "true" },
+        { Token::FalseKeyword, "false" },
 
-    // Modifiers / Metadata / Clauses
-    { Token::StaticKeyword, "static" },
-    { Token::PublicKeyword, "public" },
-    { Token::PublicKeyword, "private" },
-    { Token::ContextKeyword, "context" },
-    { Token::TypesKeyword, "types" },
-    { Token::ParamsKeyword, "params" },
-    { Token::ImplementsKeyword, "implements" },
-    { Token::FromKeyword, "from" },
-
-    // Control flows
-    { Token::IfKeyword, "if" },
-    { Token::ElseKeyword, "else" },
-    { Token::ForKeyword, "for" },
-    { Token::WhileKeyword, "while" },
-    { Token::ReturnKeyword, "return" },
-
-    // Statements
-    { Token::UsingKeyword, "using" },
-
-    // Operators
-    { Token::LengthOfKeyword, "lengthof" },
-
-    // Types
-    { Token::IntKeyword, "int" },
-    { Token::UnsignedIntKeyword, "uint" },
-    { Token::USizeKeyword, "usize" },
-    { Token::CharKeyword,  "char" },
-    { Token::StringKeyword, "string" },
-    { Token::VoidKeyword, "void" },
-    { Token::LiteralKeyword, "literal" },
-
-
-    { Token::TrueKeyword,  "true" },
-    { Token::FalseKeyword, "false" },
-
-    // For errors only
-    { Token::Identifier, "identifier" },
-    { Token::DoubleColon, "::" },
-    { Token::SemiColon, ";" },
+        // For errors only
+        { Token::Identifier, "identifier" },
+        { Token::DoubleColon, "::" },
+        { Token::SemiColon, ";" },
+    };
 };
 
 #endif //ELET_SCANNER_H

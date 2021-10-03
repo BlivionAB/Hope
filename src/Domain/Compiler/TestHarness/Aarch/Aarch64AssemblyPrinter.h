@@ -2,8 +2,8 @@
 #define ELET_AARCH64ASSEMBLYPRINTER_H
 
 
-#include "../BaselinePrinter.h"
-#include "./AarchTypes.h"
+#include "Domain/Compiler/TestHarness/BaselinePrinter.h"
+#include "./Aarch64Instructions.h"
 
 
 namespace elet::domain::compiler::test::aarch
@@ -23,10 +23,7 @@ public:
     writeDataProcessImmediateInstruction(const DataProcessImmediateInstruction* instruction);
 
     void
-    writeGeneralPurposeRegister32(Register reg);
-
-    void
-    writeGeneralPurposeRegister64(Register reg);
+    writeGeneralPurposeRegister(Register reg, const Instruction* instruction);
 
     void
     writeByteInstruction(const Instruction* instruction);
@@ -38,10 +35,7 @@ public:
     writeBl(const BlInstruction* pInstruction);
 
     void
-    writeMovImmediate(const MovWideImmediateInstruction* instruction);
-
-    void
-    writeMov(const MovInstruction* pInstruction);
+    writeMovImmediate(const MovzInstruction* instruction);
 
     void
     writeLoadStoreInstruction(const LoadStoreInstruction* instruction);
@@ -69,6 +63,18 @@ public:
 
     void
     writeBr(const BrInstruction* instruction);
+
+    void
+    writeOrrImmediate(const OrrImmediateInstruction* instruction);
+
+    void
+    writeMovn(const MovnInstruction* instruction);
+
+    void
+    writeMovk(const MovkInstruction* instruction);
+
+    void
+    writeHw(const MovkInstruction* movInstruction);
 };
 
 }

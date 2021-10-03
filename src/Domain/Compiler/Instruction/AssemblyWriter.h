@@ -15,36 +15,33 @@ namespace elet::domain::compiler
 
 namespace elet::domain::compiler::instruction::output
 {
-
-struct FunctionRoutine;
-struct AssemblyWriterInterface;
-
-
-class AssemblyWriter
-{
-
-public:
-
-    AssemblyWriter(AssemblyTarget target);
-
-    void
-    writeStartRoutine(FunctionRoutine* routine);
-
-private:
-
-    AssemblyTarget
-    _target;
-
-    static
-    thread_local
-    std::uint64_t
-    _symbolOffset;
-
-    AssemblyWriterInterface*
-    _assemblyWriter;
-};
+    struct FunctionRoutine;
+    struct AssemblyWriterInterface;
 
 
+    class AssemblyWriter
+    {
+
+    public:
+
+        AssemblyWriter(compiler::AssemblyTarget target);
+
+        void
+        writeStartRoutine(FunctionRoutine* routine);
+
+    private:
+
+        compiler::AssemblyTarget
+        _target;
+
+        static
+        thread_local
+        std::uint64_t
+        _symbolOffset;
+
+        AssemblyWriterInterface*
+        _assemblyWriter;
+    };
 }
 
 

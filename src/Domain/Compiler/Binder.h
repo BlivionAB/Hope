@@ -9,117 +9,109 @@
 #include "Domain/Compiler/Instruction/Instruction.h"
 
 
-namespace elet::domain::compiler
-{
-
-namespace ast
-{
-    struct Declaration;
-    struct DomainDeclaration;
-    struct PropertyExpression;
-    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, ast::Declaration*>*, void*>> DomainDeclarationMap;
-}
-
-namespace instruction::output
+namespace elet::domain::compiler::instruction::output
 {
     struct Operand;
     struct Parameter;
 }
 
 
-using namespace instruction;
-using namespace foundation;
-
-
-struct BindingWork
+namespace elet::domain::compiler::ast
 {
-    ast::Syntax*
-    declaration;
-
-    BindingWork(ast::Syntax* declaration):
-        declaration(declaration)
-    { }
-};
+    using namespace instruction;
+    using namespace foundation;
 
 
-class Binder
-{
+    struct BindingWork
+    {
+        Syntax*
+        declaration;
 
-public:
-
-    Binder();
-
-    void
-    performWork(BindingWork& work, const ast::DomainDeclarationMap* domainDeclarationMap);
-
-    void
-    bindFunctionDeclaration(ast::FunctionDeclaration* declaration);
-
-    using SymbolMap = std::map<Utf8StringView, ast::Declaration*>;
-
-    static
-    ast::DomainDeclaration*
-    startDomainDeclaration;
-
-    static
-    ast::InterfaceDeclaration*
-    startDomainInterfaceDeclaration;
-
-private:
-
-    void
-    bindDomainDeclaration(ast::DomainDeclaration* domain);
-
-    static
-    void
-    bindExpression(ast::Expression* expression);
-
-    void
-    bindUsingStatement(ast::UsingStatement* usingStatement);
-
-    std::map<Utf8StringView, ast::Declaration*>*
-    getDomainDeclarations(const List<ast::Name*>& domains, unsigned int domainIndex, const ast::DomainDeclarationMap* domainDeclarationMap);
-
-    static
-    void
-    bindPropertyExpression(ast::PropertyExpression* property);
-
-    void
-    bindCallExpression(ast::CallExpression* callExpression);
-
-    const ast::DomainDeclarationMap*
-    _domainDeclarationMap;
-
-    const std::map<Utf8StringView, ast::Declaration*>
-    _usages;
-
-//    static
-//    thread_local
-//    std::map<Utf8StringView, ast::UsingStatement*>*
-//    _importSymbols;
-
-    static
-    thread_local
-    ast::FunctionDeclaration*
-    _currentFunctionDeclaration;
-
-    List<ast::Expression*>
-    _forwardedReferences;
-
-    void
-    bindStatementBlock(ast::StatementBlock* block);
-
-    void
-    bindVariableDeclaration(ast::VariableDeclaration* variableDeclaration);
-
-    void
-    bindIfStatement(const ast::IfStatement* ifStatement);
-
-    static void
-    bindBinaryExpression(ast::BinaryExpression* binaryExpression);
-};
+        BindingWork(Syntax* declaration):
+            declaration(declaration)
+        { }
+    };
 
 
+    typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, Declaration*>*, void*>> DomainDeclarationMap;
+
+
+    class Binder
+    {
+
+    public:
+
+        Binder();
+
+        void
+        performWork(BindingWork& work, const DomainDeclarationMap* domainDeclarationMap);
+
+        void
+        bindFunctionDeclaration(FunctionDeclaration* declaration);
+
+        using SymbolMap = std::map<Utf8StringView, Declaration*>;
+
+        static
+        DomainDeclaration*
+        startDomainDeclaration;
+
+        static
+        InterfaceDeclaration*
+        startDomainInterfaceDeclaration;
+
+    private:
+
+        void
+        bindDomainDeclaration(DomainDeclaration* domain);
+
+        static
+        void
+        bindExpression(Expression* expression);
+
+        void
+        bindUsingStatement(UsingStatement* usingStatement);
+
+        std::map<Utf8StringView, Declaration*>*
+        getDomainDeclarations(const List<Name*>& domains, unsigned int domainIndex, const DomainDeclarationMap* domainDeclarationMap);
+
+        static
+        void
+        bindPropertyExpression(PropertyExpression* property);
+
+        void
+        bindCallExpression(CallExpression* callExpression);
+
+        const DomainDeclarationMap*
+        _domainDeclarationMap;
+
+        const std::map<Utf8StringView, Declaration*>
+        _usages;
+
+    //    static
+    //    thread_local
+    //    std::map<Utf8StringView, UsingStatement*>*
+    //    _importSymbols;
+
+        static
+        thread_local
+        FunctionDeclaration*
+        _currentFunctionDeclaration;
+
+        List<Expression*>
+        _forwardedReferences;
+
+        void
+        bindStatementBlock(StatementBlock* block);
+
+        void
+        bindVariableDeclaration(VariableDeclaration* variableDeclaration);
+
+        void
+        bindIfStatement(const IfStatement* ifStatement);
+
+        static void
+        bindBinaryExpression(BinaryExpression* binaryExpression);
+    };
 }
 
 

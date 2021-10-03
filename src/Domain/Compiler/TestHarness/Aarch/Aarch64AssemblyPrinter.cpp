@@ -16,40 +16,46 @@ Aarch64AssemblyPrinter::writeInstructions(const List<OneOfInstruction>& instruct
         _tw.tab();
         switch (instruction->kind)
         {
-            case Adr:
+            case Aarch64Instruction::Adr:
                 writeAdrInstruction(reinterpret_cast<const AdrInstruction*>(instruction));
                 break;
-            case Adrp:
+            case Aarch64Instruction::Adrp:
                 writeAdrpInstruction(reinterpret_cast<const AdrpInstruction*>(instruction));
                 break;
-            case Ldr32:
-            case Ldr64:
+            case Aarch64Instruction::Ldr32:
+            case Aarch64Instruction::Ldr64:
                 writeLdr(reinterpret_cast<const LdrInstruction*>(instruction));
                 break;
-            case StrImmediateBaseOffset64:
-            case LdrImmediateBaseOffset64:
+            case Aarch64Instruction::StrImmediateBaseOffset64:
+            case Aarch64Instruction::LdrImmediateBaseOffset64:
                 writeLoadStoreInstruction(reinterpret_cast<const LoadStoreInstruction*>(instruction));
                 break;
-            case StpPreIndex64:
-            case StpBaseOffset64:
-            case LdpPostIndex64:
-            case LdpBaseOffset64:
+            case Aarch64Instruction::StpPreIndex64:
+            case Aarch64Instruction::StpBaseOffset64:
+            case Aarch64Instruction::LdpPostIndex64:
+            case Aarch64Instruction::LdpBaseOffset64:
                 writeLoadStorePairInstruction(reinterpret_cast<const LoadStorePairInstruction*>(instruction));
                 break;
-            case AddImmediate64:
-            case SubImmediate64:
+            case Aarch64Instruction::AddImmediate64:
+            case Aarch64Instruction::SubImmediate64:
                 writeDataProcessImmediateInstruction(reinterpret_cast<const DataProcessImmediateInstruction*>(instruction));
                 break;
-            case Movz32:
-                writeMovImmediate(reinterpret_cast<const MovWideImmediateInstruction*>(instruction));
+            case Aarch64Instruction::OrrImmediate:
+                writeOrrImmediate(reinterpret_cast<const OrrImmediateInstruction*>(instruction));
                 break;
-            case Mov64:
-                writeMov(reinterpret_cast<const MovInstruction*>(instruction));
+            case Aarch64Instruction::Movz:
+                writeMovImmediate(reinterpret_cast<const MovzInstruction*>(instruction));
                 break;
-            case B:
+            case Aarch64Instruction::Movn:
+                writeMovn(reinterpret_cast<const MovnInstruction*>(instruction));
+                break;
+            case Aarch64Instruction::Movk:
+                writeMovk(reinterpret_cast<const MovkInstruction*>(instruction));
+                break;
+            case Aarch64Instruction::B:
                 writeB(reinterpret_cast<const BInstruction*>(instruction));
                 break;
-            case Bl:
+            case Aarch64Instruction::Bl:
                 writeBl(reinterpret_cast<const BlInstruction*>(instruction));
                 break;
             case Br:
@@ -76,9 +82,9 @@ void
 Aarch64AssemblyPrinter::writeAdrInstruction(const AdrInstruction* instruction)
 {
     _tw.write("adr ");
-    writeGeneralPurposeRegister64(instruction->rd);
+    writeGeneralPurposeRegister(instruction->rd, instruction);
     _tw.write(", ");
-    _tw.writeDisplacement(instruction->immhilo);
+    _tw.writeSignedHexValue(instruction->immhilo);
 }
 
 
@@ -86,29 +92,19 @@ void
 Aarch64AssemblyPrinter::writeAdrpInstruction(const AdrpInstruction* instruction)
 {
     _tw.write("adrp ");
-    writeGeneralPurposeRegister64(instruction->rd);
+    writeGeneralPurposeRegister(instruction->rd, instruction);
     _tw.write(", ");
-    _tw.writeDisplacement(instruction->immhilo);
+    _tw.writeSignedHexValue(instruction->immhilo);
 }
 
 
 void
-Aarch64AssemblyPrinter::writeMov(const MovInstruction* instruction)
-{
-    _tw.write("mov ");
-    writeGeneralPurposeRegister64(instruction->rd);
-    _tw.write(", ");
-    writeGeneralPurposeRegister64(instruction->rm);
-}
-
-
-void
-Aarch64AssemblyPrinter::writeMovImmediate(const MovWideImmediateInstruction* instruction)
+Aarch64AssemblyPrinter::writeMovImmediate(const MovzInstruction* instruction)
 {
     _tw.write("movz ");
-    writeGeneralPurposeRegister32(instruction->rd);
+    writeGeneralPurposeRegister(instruction->rd, instruction);
     _tw.write(", #");
-    _tw.writeDisplacement(instruction->imm16);
+    _tw.writeSignedHexValue(instruction->immediateValue);
 }
 
 
@@ -126,11 +122,12 @@ Aarch64AssemblyPrinter::writeLoadStoreInstruction(const LoadStoreInstruction* in
         default:
             throw std::runtime_error("Unknown load store instruction.");
     }
-    writeGeneralPurposeRegister64(instruction->rt);
+    writeGeneralPurposeRegister(instruction->rt, instruction);
     _tw.write(", [");
-    writeGeneralPurposeRegister64(instruction->rn);
+    writeGeneralPurposeRegister(instruction->rn, instruction);
     writeIndexedAddressSuffix(instruction->addressMode, instruction->imm12);
 }
+
 
 void
 Aarch64AssemblyPrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset)
@@ -139,17 +136,17 @@ Aarch64AssemblyPrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16
     {
         case AddressMode::PreIndex:
             _tw.write(", #");
-            _tw.writeDisplacement(offset);
+            _tw.writeSignedHexValue(offset);
             _tw.write("]!");
             break;
         case AddressMode::BaseOffset:
             _tw.write(", #");
-            _tw.writeDisplacement(offset);
+            _tw.writeSignedHexValue(offset);
             _tw.write("]");
             break;
         case AddressMode::PostIndex:
             _tw.write("], #");
-            _tw.writeDisplacement(offset);
+            _tw.writeSignedHexValue(offset);
             break;
         default:
             throw std::runtime_error("Unknown address mode.");
@@ -176,113 +173,84 @@ Aarch64AssemblyPrinter::writeLoadStorePairInstruction(const LoadStorePairInstruc
         default:
             throw std::runtime_error("Unknown load store instruction.");
     }
-    writeGeneralPurposeRegister64(instruction->rt);
+    writeGeneralPurposeRegister(instruction->rt, instruction);
     _tw.write(", ");
-    writeGeneralPurposeRegister64(instruction->rt2);
+    writeGeneralPurposeRegister(instruction->rt2, instruction);
     _tw.write(", ");
     _tw.write("[");
-    writeGeneralPurposeRegister64(instruction->rn);
+    writeGeneralPurposeRegister(instruction->rn, instruction);
     writeIndexedAddressSuffix(instruction->addressMode, instruction->imm7);
 }
 
 
 void
-Aarch64AssemblyPrinter::writeGeneralPurposeRegister32(Register reg)
+Aarch64AssemblyPrinter::writeGeneralPurposeRegister(Register reg, const Instruction* instruction)
 {
-    switch (reg)
+    if (reg >= Register::r0 && reg <= Register::r28)
     {
-        case Register::r0:
-            _tw.write("w0");
-            break;
-        case Register::r1:
-            _tw.write("w1");
-            break;
-        case Register::r2:
-            _tw.write("w2");
-            break;
-        case Register::r3:
-            _tw.write("w3");
-            break;
-        case Register::r4:
-            _tw.write("w4");
-            break;
-        case Register::r5:
-            _tw.write("w5");
-            break;
-        case Register::r6:
-            _tw.write("w6");
-            break;
-        case Register::r7:
-            _tw.write("w7");
-            break;
-        case Register::r8:
-            _tw.write("w8");
-            break;
-        case Register::fp:
-            _tw.write("fp");
-            break;
-        case Register::lr:
-            _tw.write("lr");
-            break;
-        case Register::sp:
-            _tw.write("sp");
-            break;
-        default:
-            std::cout << "Helloword" << std::endl;
-            throw std::runtime_error("Unknown general purpose register.");
+        if (instruction->is64Bit)
+        {
+            _tw.write("x");
+        }
+        else
+        {
+            _tw.write("w");
+        }
+        switch (reg)
+        {
+            case Register::r0:
+                _tw.write("0");
+                break;
+            case Register::r1:
+                _tw.write("1");
+                break;
+            case Register::r2:
+                _tw.write("2");
+                break;
+            case Register::r3:
+                _tw.write("3");
+                break;
+            case Register::r4:
+                _tw.write("4");
+                break;
+            case Register::r5:
+                _tw.write("5");
+                break;
+            case Register::r6:
+                _tw.write("6");
+                break;
+            case Register::r7:
+                _tw.write("7");
+                break;
+            case Register::r8:
+                _tw.write("8");
+                break;
+            case Register::r16:
+                _tw.write("16");
+                break;
+            case Register::r17:
+                _tw.write("17");
+                break;
+            default:
+                throw std::runtime_error("Unknown general purpose register.");
+        }
     }
-}
-
-
-void
-Aarch64AssemblyPrinter::writeGeneralPurposeRegister64(Register reg)
-{
-    switch (reg)
+    else
     {
-        case Register::r0:
-            _tw.write("x0");
-            break;
-        case Register::r1:
-            _tw.write("x1");
-            break;
-        case Register::r2:
-            _tw.write("x2");
-            break;
-        case Register::r3:
-            _tw.write("x3");
-            break;
-        case Register::r4:
-            _tw.write("x4");
-            break;
-        case Register::r5:
-            _tw.write("x5");
-            break;
-        case Register::r6:
-            _tw.write("x6");
-            break;
-        case Register::r7:
-            _tw.write("x7");
-            break;
-        case Register::r8:
-            _tw.write("x8");
-            break;
-        case Register::r16:
-            _tw.write("x16");
-            break;
-        case Register::r17:
-            _tw.write("x17");
-            break;
-        case Register::fp:
-            _tw.write("fp");
-            break;
-        case Register::lr:
-            _tw.write("lr");
-            break;
-        case Register::sp:
-            _tw.write("sp");
-            break;
-        default:
-            throw std::runtime_error("Unknown general purpose register.");
+        switch (reg)
+        {
+            case Register::fp:
+                _tw.write("fp");
+                break;
+            case Register::lr:
+                _tw.write("lr");
+                break;
+            case Register::sp:
+                _tw.write("sp");
+                break;
+            default:
+                throw std::runtime_error("Unknown general purpose register.");
+        }
     }
 }
 
@@ -303,7 +271,7 @@ Aarch64AssemblyPrinter::writeBranchExceptionSyscallInstruction(const BrInstructi
     if (instruction->kind == Aarch64Instruction::Ret)
     {
         _tw.write("ret ");
-        writeGeneralPurposeRegister64(instruction->rn);
+        writeGeneralPurposeRegister(instruction->rn, instruction);
     }
 }
 
@@ -346,11 +314,11 @@ Aarch64AssemblyPrinter::writeDataProcessImmediateInstruction(const DataProcessIm
         default:
             throw std::runtime_error("Unknown instruction");
     }
-    writeGeneralPurposeRegister64(instruction->rd);
+    writeGeneralPurposeRegister(instruction->rd, instruction);
     _tw.write(", ");
-    writeGeneralPurposeRegister64(instruction->rn);
+    writeGeneralPurposeRegister(instruction->rn, instruction);
     _tw.write(", ");
-    _tw.writeDisplacement(instruction->imm12);
+    _tw.writeSignedImmediateValue(instruction->imm12);
 }
 
 
@@ -365,9 +333,9 @@ void
 Aarch64AssemblyPrinter::writeLdr(const LdrInstruction* instruction)
 {
     _tw.write("ldr ");
-    writeGeneralPurposeRegister64(instruction->rt);
+    writeGeneralPurposeRegister(instruction->rt, instruction);
     _tw.write(", ");
-    _tw.writeDisplacement(instruction->imm19);
+    _tw.writeSignedImmediateValue(instruction->imm19);
 }
 
 
@@ -399,7 +367,7 @@ void
 Aarch64AssemblyPrinter::writeUdf(const UdfInstruction* instruction)
 {
     _tw.write("udf ");
-    _tw.writeImmediateValue(instruction->imm16);
+    _tw.writeSignedImmediateValue(instruction->imm16);
 }
 
 
@@ -407,7 +375,69 @@ void
 Aarch64AssemblyPrinter::writeBr(const BrInstruction* instruction)
 {
     _tw.write("br ");
-    writeGeneralPurposeRegister64(instruction->rn);
+    writeGeneralPurposeRegister(instruction->rn, instruction);
+}
+
+void
+Aarch64AssemblyPrinter::writeOrrImmediate(const OrrImmediateInstruction* instruction)
+{
+    if (instruction->rn == Aarch64Register::r31)
+    {
+        _tw.write("mov ");
+        writeGeneralPurposeRegister(instruction->rd, instruction);
+        _tw.write(", ");
+        _tw.writeSignedImmediateValue(instruction->immediateValue);
+    }
+    else
+    {
+        throw std::runtime_error("Have not implemented instruction instruction yet.");
+    }
+}
+
+
+void
+Aarch64AssemblyPrinter::writeMovn(const MovnInstruction* instruction)
+{
+    _tw.write("instruction");
+    writeGeneralPurposeRegister(instruction->rd, instruction);
+    _tw.write(", ");
+    _tw.writeSignedImmediateValue(instruction->immediateValue);
+}
+
+
+void
+Aarch64AssemblyPrinter::writeMovk(const MovkInstruction* instruction)
+{
+    _tw.write("movk ");
+    writeGeneralPurposeRegister(instruction->rd, instruction);
+    _tw.write(", ");
+    _tw.writeSignedImmediateValue(instruction->immediateValue);
+    writeHw(instruction);
+}
+
+
+void
+Aarch64AssemblyPrinter::writeHw(const MovkInstruction* movInstruction)
+{
+    if (movInstruction->hw == Hw::_0)
+    {
+        return;
+    }
+    _tw.write(", lsl #");
+    switch (movInstruction->hw)
+    {
+        case Hw::_16:
+            _tw.write("16");
+            break;
+        case Hw::_32:
+            _tw.write("32");
+            break;
+        case Hw::_48:
+            _tw.write("48");
+            break;
+        default:
+            throw std::runtime_error("Unknown hw case.");
+    }
 }
 
 

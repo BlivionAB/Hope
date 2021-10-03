@@ -34,7 +34,7 @@ X86_64Writer::writeFunctionPrologue(FunctionRoutine* function)
 void
 X86_64Writer::writeFunctionEpilogue(FunctionRoutine* function)
 {
-    if (function->inferReturn0)
+    if (function->inferReturnZero)
     {
         bw->writeInstructionsInFunction(
             {
@@ -53,8 +53,6 @@ X86_64Writer::writeFunctionEpilogue(FunctionRoutine* function)
             OneByteOpCode::Ret,
         },
         function);
-
-
 }
 
 
@@ -148,8 +146,8 @@ X86_64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* storeImm
 {
     bw->writeByte(OneByteOpCode::Mov_Ev_Iz);
     bw->writeByte(ModBits::Mod1 | RmBits::Rm5);
-    bw->writeByte(-storeImmediateInstruction->stackOffset - storeImmediateInstruction->size);
-    bw->writeDoubleWord(std::get<int32_t>(storeImmediateInstruction->value));
+    bw->writeByte(-storeImmediateInstruction->stackOffset - static_cast<int>(storeImmediateInstruction->allocationSize));
+    bw->writeDoubleWord(storeImmediateInstruction->value);
     function->codeSize += 7;
 }
 
@@ -352,7 +350,7 @@ X86_64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRou
         return;
     }
 
-    if (loadInstruction->size == ast::type::TypeSize::Quad)
+    if (loadInstruction->allocationSize == RegisterSize::Quad)
     {
         bw->writeInstructionsInFunction({ OpCodePrefix::RexMagic | OpCodePrefix::RexW , OneByteOpCode::Mov_Gv_Ev }, function);
     }
@@ -391,7 +389,7 @@ X86_64Writer::writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister opera
 void
 X86_64Writer::writeModRmAndStackOffset(LoadInstruction* loadInstruction, FunctionRoutine* function)
 {
-    writeEbpReferenceBytes(loadInstruction->stackOffset + loadInstruction->size, loadInstruction->destination, function);
+    writeEbpReferenceBytes(loadInstruction->stackOffset + static_cast<int>(loadInstruction->allocationSize), loadInstruction->destination, function);
 }
 
 
@@ -517,6 +515,18 @@ X86_64Writer::getRmBitsFromOperandRegister(OperandRegister operandRegister)
 }
 
 
+
+void
+X86_64Writer::writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function)
+{
+    bw->writeInstructionsInFunction({
+        OneByteOpCode::Mov_Ev_Iz,
+        static_cast<uint8_t>(ModBits::Mod3 | getRegisterBitsFromOperandRegister(moveImmediateInstruction->destination))
+    }, function);
+    bw->writeDoubleWordInFunction(moveImmediateInstruction->value, function);
+}
+
+
 void
 X86_64Writer::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function)
 {
@@ -538,6 +548,7 @@ X86_64Writer::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressIns
         throw std::runtime_error("Does not support constants other than strings.");
     }
 }
+
 
 void
 X86_64Writer::writeInstructionsPadding(FunctionRoutine* function)

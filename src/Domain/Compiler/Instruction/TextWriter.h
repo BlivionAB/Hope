@@ -49,10 +49,16 @@ public:
     writeLine(const Utf8StringView& text);
 
     void
-    writeImmediateValue(uint64_t integer);
+    writeSignedImmediateValue(uint64_t integer);
 
     void
-    writeDisplacement(int32_t n);
+    writeSignedHexValue(int64_t n);
+
+    void
+    writeSignedHexValue(std::array<uint8_t, 4> integer);
+
+    void
+    writeUnsignedHexValue(uint64_t n);
 
     void
     writeByteHex(uint8_t integer);
@@ -74,12 +80,6 @@ public:
 
     void
     writeAddress64(uint64_t address);
-
-    void
-    writeByteWithHexPrefix(uint8_t integer);
-
-    void
-    writeSignedHex(std::array<uint8_t, 4> integer);
 
     void
     space();

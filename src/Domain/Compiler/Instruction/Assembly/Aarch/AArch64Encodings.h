@@ -16,9 +16,12 @@ enum Aarch64Register : uint32_t
     r7 = 7,
     r8 = 8,
     r16 = 16,
-    fp = 29,
-    lr = 30,
-    sp = 31,
+    r29 = 29,
+    r30 = 30,
+    r31 = 31,
+    fp = r29,
+    lr = r30,
+    sp = r31,
 };
 
 
@@ -42,12 +45,13 @@ enum Aarch64Instruction : uint32_t
     Mask16 = MASK(0, 16),
     Mask21 = MASK(0, 21),
     Mask22 = MASK(0, 22),
-    Mask23 = MASK(0, 23),
+    Mask23 = MASK(1, 23),
     Mask24 = MASK(0, 23),
     Mask25 = MASK(0, 25),
     Mask26 = MASK(0, 26),
     AdrMask = static_cast<uint32_t>(0b10011111) << 24,
     AdrpMask = AdrMask,
+    HwMask = static_cast<uint32_t>(0b11) << 21,
 
     // Load & Stores
     Ldr64 = static_cast<uint32_t>(0b01011000) << 24,
@@ -64,9 +68,15 @@ enum Aarch64Instruction : uint32_t
     Adrp = static_cast<uint32_t>(0b10010000) << 24,
     AddImmediate64 = static_cast<uint32_t>(0b1001000100) << 22,
     SubImmediate64 = static_cast<uint32_t>(0b1101000100) << 22,
+    OrrImmediate = static_cast<uint32_t>(0b01100100) << 23,
 
-    Movz32 = static_cast<uint32_t>(0b01010010100) << 21,
-    Mov64 = static_cast<uint32_t>(0b10101010000) << 21,
+    Movz = static_cast<uint32_t>(0b010100101) << 23,
+    MovBitmaskImmediate = OrrImmediate,
+    Movk = static_cast<uint32_t>(0b011100101) << 23,
+    Movn = static_cast<uint32_t>(0b000100101) << 23,
+
+    sf = static_cast<uint32_t>(1) << 31,
+
     Ret = static_cast<uint32_t>(0xd65f03c0) << 0,
     Bl = static_cast<uint32_t>(0b100101) << 26,
     B = static_cast<uint32_t>(0b000101) << 26,

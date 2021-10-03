@@ -159,29 +159,29 @@ TextWriter::space()
     _column += 1;
 }
 
-void
-TextWriter::writeByteWithHexPrefix(uint8_t integer)
-{
-    write("0x");
-    writeByteHex(integer);
-}
-
 
 void
-TextWriter::writeDisplacement(int32_t n)
+TextWriter::writeSignedHexValue(int64_t n)
 {
     if (n < 0)
     {
         write("-");
         n = ~n + 1;
     }
+    writeUnsignedHexValue(n);
+}
+
+
+void
+TextWriter::writeUnsignedHexValue(uint64_t n)
+{
     write("0x");
     static const char* digits = "0123456789abcdef";
     bool hasWrittenDigit = false;
-    for (int i = 7; i >= 0; --i)
+    for (int i = 15; i >= 0; --i)
     {
-        unsigned int s = std::pow(16, i);
-        unsigned int r = n / s;
+        uint64_t s = pow(16, i);
+        uint64_t r = n / s;
         if (r != 0 || hasWrittenDigit)
         {
             hasWrittenDigit = true;
@@ -200,15 +200,15 @@ TextWriter::writeDisplacement(int32_t n)
 
 
 void
-TextWriter::writeImmediateValue(uint64_t integer)
+TextWriter::writeSignedImmediateValue(uint64_t integer)
 {
-    write("$");
-    writeDisplacement(integer);
+    write("#");
+    writeSignedHexValue(integer);
 }
 
 
 void
-TextWriter::writeSignedHex(std::array<uint8_t, 4> integer)
+TextWriter::writeSignedHexValue(std::array<uint8_t, 4> integer)
 {
     bool isSigned = (integer[3] & 0b10000000);
     if (isSigned)
@@ -228,7 +228,7 @@ TextWriter::writeSignedHex(std::array<uint8_t, 4> integer)
             n += (integer[i] << (i * 8));
         }
     }
-    writeDisplacement(n);
+    writeSignedHexValue(n);
 }
 
 

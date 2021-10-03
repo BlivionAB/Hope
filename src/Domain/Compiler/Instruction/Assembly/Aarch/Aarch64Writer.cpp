@@ -1,9 +1,13 @@
 #include "Aarch64Writer.h"
 #include "AArch64Encodings.h"
 #include <cassert>
+#include <Foundation/Bit.h>
 
 namespace elet::domain::compiler::instruction::output
 {
+
+
+using namespace elet::foundation;
 
 
 Aarch64Writer::Aarch64Writer(List<uint8_t>* output):
@@ -133,12 +137,12 @@ Aarch64Writer::writeCallInstruction(CallInstruction* callInstruction, FunctionRo
 //    {
 //        auto reg = _callingConvention.registers[i];
 //
-//        if (auto parameter = std::get_if<ParameterDeclaration*>(&argument->value))
+//        if (auto parameter = std::get_if<ParameterDeclaration*>(&argument->immediateValue))
 //        {
 //            bw->writeDoubleWord(Aarch64Instruction::LdrImmediateBaseOffset64 | uimm12((parentRoutine->stackSize - (*parameter)->stackOffset) / 8) | Rn(Aarch64Register::sp) | Rt(reg));
 //            size += 4;
 //        }
-//        else if (auto string = std::get_if<String*>(&argument->value))
+//        else if (auto string = std::get_if<String*>(&argument->immediateValue))
 //        {
 //            (*string)->relocationAddress.value1 = _offset;
 //            bw->writeDoubleWord(Aarch64Instruction::Adrp | immhilo(0) | Rd(Aarch64Register::r0));
@@ -187,9 +191,9 @@ Aarch64Writer::writeFunctionPrologue(FunctionRoutine* function)
 void
 Aarch64Writer::writeFunctionEpilogue(FunctionRoutine* function)
 {
-    if (function->isStartFunction)
+    if (function->inferReturnZero)
     {
-        bw->writeDoubleWordInFunction(Aarch64Instruction::Movz32 | Rd(Aarch64Register::r0) | uimm16(0), function);
+        bw->writeDoubleWordInFunction(Aarch64Instruction::Movz | Rd(Aarch64Register::r0) | uimm16(0), function);
     }
     if (function->stackSize == 16)
     {
@@ -308,6 +312,135 @@ Aarch64Writer::writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16
 
 
 void
+Aarch64Writer::writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function)
+{
+    Aarch64Register rd = static_cast<Aarch64Register>(Rd(getAarch64RegisterFromOperandRegister(moveImmediateInstruction->destination)));
+    uint64_t value = moveImmediateInstruction->value;
+    if (value <= UINT16_MAX)
+    {
+        return bw->writeDoubleWordInFunction(Aarch64Instruction::Movz | uimm16(value) | rd, function);
+    }
+    else if (value <= UINT32_MAX)
+    {
+        return writeNegatedOrRegularShiftMoves(value, rd, RegisterBitSize::Dword, function);
+    }
+    else if (value <= UINT64_MAX)
+    {
+        return writeNegatedOrRegularShiftMoves(value, rd, RegisterBitSize::Quad, function);
+    }
+    throw std::runtime_error("Cannot process immediate immediateValue in writeMoveImmediateInstruction.");
+}
+
+
+void
+Aarch64Writer::writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, RegisterBitSize registerSize, FunctionRoutine* function)
+{
+    uint32_t logicalBitmask = 0;
+    bool hasLogicalImmediate = processLogicalImmediate(value, registerSize, logicalBitmask);
+    if (hasLogicalImmediate)
+    {
+        uint32_t instruction = Aarch64Instruction::MovBitmaskImmediate | logicalBitmask | Rn(Aarch64Register::r31) | rd;
+        if (registerSize == RegisterBitSize::Quad)
+        {
+            instruction |= Aarch64Instruction::sf;
+        }
+        bw->writeDoubleWordInFunction(instruction, function);
+        return;
+    }
+    unsigned int sequenceOffset = 0;
+    bool hasSequenceOfOnes = false;
+    for (int i = 0; i < static_cast<int>(registerSize); i += 16)
+    {
+        if ((0xffff << i) & value == 0xffff)
+        {
+            hasSequenceOfOnes = true;
+            continue;
+        }
+        if (hasSequenceOfOnes)
+        {
+            uint32_t elementValue = ((0xffff << i) & value) >> i;
+            if (elementValue != 0xffff)
+            {
+                sequenceOffset = i;
+                break;
+            }
+        }
+    }
+    if (hasSequenceOfOnes)
+    {
+        uint32_t elementValue = ~(((0xffff << sequenceOffset) & value) >> sequenceOffset);
+        bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movn | hw(sequenceOffset) | uimm16(elementValue) | rd, function);
+        for (int i = 0; i < static_cast<int>(registerSize); i += 16)
+        {
+            if (i == sequenceOffset)
+            {
+                continue;
+            }
+            elementValue = ((0xffff << i) & value) >> i;
+            if (elementValue != 0xffff)
+            {
+                bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movk | uimm16(elementValue) | hw(i) | rd, function);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < static_cast<int>(registerSize); i += 16)
+        {
+            uint32_t elementValue = ((0xffff << i) & value) >> i;
+            if (elementValue != 0)
+            {
+                sequenceOffset = i;
+                break;
+            }
+        }
+        uint32_t elementValue = ((0xffff << sequenceOffset) & value) >> sequenceOffset;
+        bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movz | hw(sequenceOffset) | uimm16(elementValue) | rd, function);
+        for (int i = 0; i < static_cast<int>(registerSize); i += 16)
+        {
+            if (i == sequenceOffset)
+            {
+                continue;
+            }
+            uint64_t elementValue = ((0xffff << i) & value) >> i;
+            if (elementValue != 0)
+            {
+                bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movk | uimm16(elementValue) | hw(i) | rd, function);
+            }
+        }
+    }
+}
+
+
+uint32_t
+Aarch64Writer::hw(uint32_t leftShift) const
+{
+    uint32_t hw;
+    if (leftShift == 0)
+    {
+        hw = 0;
+    }
+    else if (leftShift == 16)
+    {
+        hw = 1;
+    }
+    else if (leftShift == 32)
+    {
+        hw = 2;
+    }
+    else if (leftShift == 48)
+    {
+        hw = 3;
+    }
+    else
+    {
+        throw std::runtime_error("getLeftShiftFromHv only support 16, 32, 48 values.");
+    }
+    return hw << 21;
+}
+
+
+void
 Aarch64Writer::relocateCStrings(uint64_t textSegmentStartOffset)
 {
     for (const auto& string : _strings)
@@ -419,6 +552,8 @@ Aarch64Writer::getAarch64RegisterFromOperandRegister(OperandRegister operandRegi
 {
     switch (operandRegister)
     {
+        case OperandRegister::Return:
+            return Aarch64Register::r0;
         case OperandRegister::Arg0:
             return Aarch64Register::r0;
         case OperandRegister::Arg1:
@@ -429,6 +564,111 @@ Aarch64Writer::getAarch64RegisterFromOperandRegister(OperandRegister operandRegi
             return Aarch64Register::r3;
         default:
             throw std::runtime_error("Cannot get aarch64 register.");
+    }
+}
+
+
+bool
+Aarch64Writer::moveWideIsPreferred(uint8_t sf, uint8_t immN, uint8_t imms, uint8_t immr) const
+{
+    uint8_t S = imms;
+    uint8_t R = immr;
+    uint8_t width = sf == 1 ? 64 : 32;
+
+    if (sf == 1 && immN != 1)
+    {
+        return false;
+    }
+    if (sf == 0 && !(immN == 0 && (imms & 0b00100000)))
+    {
+        return false;
+    }
+    if (S < 16)
+    {
+        return (-R % 16) <= (15 - S);
+    }
+    if (S >= width - 15)
+    {
+        return (R % 16) <= (S - (width - S));
+    }
+    return false;
+}
+
+
+bool
+Aarch64Writer::processLogicalImmediate(uint64_t imm, RegisterBitSize registerSize, uint32_t& encoding)
+{
+    // Ensures that it is not only zero bit pattern or only one bit pattern.
+    if (imm == 0ULL || imm == ~0ULL)
+    {
+        return false;
+    }
+    if ((registerSize != RegisterBitSize::Quad) && (imm >> static_cast<int>(registerSize) != 0 || imm == (~0ULL >> (static_cast<int>(RegisterBitSize::Quad) - static_cast<int>(registerSize)))))
+    {
+        return false;
+    }
+
+    // Decide on element elementSize
+    unsigned int elementSize = static_cast<int>(registerSize);
+    do
+    {
+        elementSize /= 2;
+        uint64_t mask = (1ULL << elementSize) - 1;
+
+        if ((imm & mask) != ((imm >> elementSize) & mask))
+        {
+            elementSize *= 2;
+            break;
+        }
+    }
+    while (elementSize > 2);
+
+    // Determine the rotation
+    uint32_t trailingOnesCount;
+    uint32_t trailingZeroesCount;
+    uint64_t mask = ((uint64_t)-1ULL) >> (static_cast<int>(RegisterBitSize::Quad) - elementSize);
+    imm &= mask;
+
+    if (Bit::isShiftedMask64(imm))
+    {
+        trailingZeroesCount = Bit::countTrailingZeroes(imm);
+        trailingOnesCount = Bit::countTrailingOnes(imm >> trailingZeroesCount);
+    }
+    else
+    {
+        imm |= ~mask;
+        if (!Bit::isShiftedMask64(~imm))
+        {
+            return false;
+        }
+        uint32_t leadingOnesCount = Bit::countLeadingOnes(imm);
+        trailingZeroesCount = static_cast<int>(RegisterBitSize::Quad) - leadingOnesCount;
+        trailingOnesCount = leadingOnesCount + Bit::countTrailingOnes(imm) - (static_cast<int>(RegisterBitSize::Quad) - elementSize);
+    }
+
+    uint64_t immr = (elementSize - trailingZeroesCount) & (elementSize - 1);
+    uint64_t Nimms = ~(elementSize - 1) << 1;
+    Nimms |= (trailingOnesCount - 1);
+    uint64_t N = ((Nimms >> 6) & 1) ^ 1;
+    encoding = (N << 22) | (immr << 16) | ((Nimms & 0x3f) << 10);
+    return true;
+}
+
+
+void
+Aarch64Writer::writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function)
+{
+    if (value <= UINT32_MAX)
+    {
+        bw->writeInstructionInFunction(instruction, function);
+    }
+    else if (value <= UINT64_MAX)
+    {
+        bw->writeInstructionInFunction(Aarch64Instruction::sf | instruction, function);
+    }
+    else
+    {
+        throw std::runtime_error("Value is too large in writeInstruction.");
     }
 }
 

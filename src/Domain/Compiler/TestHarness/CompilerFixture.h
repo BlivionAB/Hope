@@ -1,5 +1,5 @@
-#ifndef ELET_COMPILERTESTHARNESS_H
-#define ELET_COMPILERTESTHARNESS_H
+#ifndef ELET_COMPILERFIXTURE_H
+#define ELET_COMPILERFIXTURE_H
 
 
 #include <gmock/gmock.h>
@@ -8,10 +8,10 @@
 #include "CompilerBaselineParser.h"
 #include <Foundation/File.h>
 #include <filesystem>
-#include "./TextDiff/MyersDiff.h"
-#include "./TextDiff/DiffPrinter.h"
-#include "../../../unittest.h"
-#include "./StashIrPrinter.h"
+#include "Domain/Compiler/TestHarness/TextDiff/MyersDiff.h"
+#include "Domain/Compiler/TestHarness/TextDiff/DiffPrinter.h"
+#include "unittest.h"
+#include "StashIrPrinter.h"
 
 
 
@@ -188,13 +188,21 @@ class CompileFixture : public ::testing::Test
 {
 protected:
 
+    virtual
+    std::filesystem::path
+    localTestPath()
+    {
+        throw std::runtime_error("You have not specified test path.");
+    }
+
+
     void SetUp()
     {
 
     }
 
     fs::path
-    currentPath = "src/Domain/Compiler/Tests/__Baselines__";
+    testFolderPath = "src/Domain/Compiler/Tests/";
 
     TestProject
     project;
@@ -244,6 +252,7 @@ protected:
         return CompilerOptions(assemblyTarget, objectFileTarget);
     }
 
+
     testing::AssertionResult
     testProject(TestProjectOptions options)
     {
@@ -290,19 +299,19 @@ protected:
     {
         if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
         {
-            return "stash-ir";
+            return "StashIr";
         }
         switch (compilerOptions.objectFileTarget)
         {
             case ObjectFileTarget::MachO:
             {
-                std::string result = "macho";
+                std::string result = "MachO";
                 switch (compilerOptions.assemblyTarget)
                 {
                     case AssemblyTarget::Aarch64:
-                        return result + "-aarch64";
+                        return result + "-Aarch64";
                     case AssemblyTarget::x86_64:
-                        return result + "-x86_64";
+                        return result + "-X86_64";
                 }
                 break;
             }
@@ -332,7 +341,7 @@ protected:
     {
         DiffPrinter printer;
         MyersDiff differ;
-        fs::path basm = fs::current_path() / ".." / currentPath / (options.baselineName + "-" + getArchitecture(compilerOptions) + ".basm");
+        fs::path basm = fs::current_path() / ".." / testFolderPath / localTestPath() / "__Baselines__" / (options.baselineName + "-" + getArchitecture(compilerOptions) + ".basm");
         fs::path baselineFolder = basm.parent_path();
         if (!fs::exists(baselineFolder))
         {
@@ -395,4 +404,4 @@ protected:
 
 }
 
-#endif //ELET_COMPILERTESTHARNESS_H
+#endif //ELET_COMPILERFIXTURE_H

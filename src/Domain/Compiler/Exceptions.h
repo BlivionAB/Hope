@@ -3,10 +3,13 @@
 
 #include "Scanner.h"
 #include <Foundation/Utf8String.h>
-#include <fmt/format.h>
+#include <format>
 #include "Scanner.h"
 namespace elet::domain::compiler
 {
+
+
+using namespace elet::domain::compiler::ast;
 
 
 struct CompilerError : std::exception
@@ -16,7 +19,7 @@ struct CompilerError : std::exception
 
     template<typename... Args>
     explicit CompilerError(const char* message, Args... args):
-        message(fmt::format(message, args...).c_str())
+        message(std::format(message, args...).c_str())
     { }
 };
 
