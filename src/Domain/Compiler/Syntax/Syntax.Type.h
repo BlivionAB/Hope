@@ -15,39 +15,17 @@ namespace elet::domain::compiler::ast::type
     struct Struct;
 
 
-    enum class TypeKind
+    enum class IntegerLimit : uint64_t
     {
-        // Integer types, ranked after the conversion ranking
-        U8,
-        S8,
-        U16,
-        S16,
-        U32,
-        S32,
-        U64,
-        S64,
-        Char,
-        UInt,
-        Int,
+        U8Max = UINT8_MAX,
+        U16Max = UINT16_MAX,
+        U32Max = UINT32_MAX,
+        U64Max = UINT64_MAX,
 
-        USize,
-        Pointer,
-        F32,
-        F64,
-        Void,
-        Custom,
-        Length,
-    };
-
-
-    enum TypeSizeBounds : uint64_t
-    {
-        UInt8Max = UINT8_MAX,
-        UInt16Max = UINT16_MAX,
-        UInt32Max = UINT32_MAX,
-        Int32Max = INT32_MAX,
-        Int64Max = INT64_MAX,
-        UInt64Max = UINT64_MAX,
+        S8Max = INT8_MAX,
+        S16Max = INT16_MAX,
+        S32Max = INT32_MAX,
+        S64Max = INT64_MAX,
     };
 
 

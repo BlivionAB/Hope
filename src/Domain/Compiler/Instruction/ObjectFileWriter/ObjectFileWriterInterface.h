@@ -6,11 +6,6 @@
 #include <Domain/Compiler/Compiler.h>
 
 
-namespace elet::domain::compiler
-{
-    struct Symbol;
-}
-
 namespace elet::domain::compiler::instruction::output
 {
 
@@ -30,7 +25,7 @@ struct AssemblySegments
     std::size_t
     cstringSize;
 
-    List<Symbol*>*
+    List<ast::Symbol*>*
     symbols;
 
     std::size_t

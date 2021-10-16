@@ -9,14 +9,12 @@
 #include <cstdint>
 #include <Domain/Compiler/Compiler.h>
 
-#define TYPE_SIZE_64 8
 
 using namespace elet::domain::compiler::instruction;
 
 
 namespace elet::domain::compiler
 {
-    struct Symbol;
     struct CompilerOptions;
 
     namespace ast
@@ -145,9 +143,6 @@ namespace elet::domain::compiler::instruction
 
         CompilerOptions&
         _compilerOptions;
-
-        std::size_t
-        _pointerSize = TYPE_SIZE_64;
 
         List<output::String*>
         _cstrings;

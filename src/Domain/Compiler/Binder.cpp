@@ -40,7 +40,7 @@ Binder::performWork(BindingWork& work, const DomainDeclarationMap* domainDeclara
             bindFunctionDeclaration(reinterpret_cast<FunctionDeclaration*>(work.declaration));
             break;
         default:
-            throw UnknownDeclaration();
+            throw std::runtime_error("Unknown declaration.");
     }
 }
 
@@ -57,7 +57,7 @@ Binder::bindDomainDeclaration(DomainDeclaration* domain)
             static auto onApplicationStart = new type::Signature();
             onApplicationStart->isStartFunction = true;
             onApplicationStart->name = "OnApplicationStart";
-            onApplicationStart->type = new type::Type(type::TypeKind::Void);
+            onApplicationStart->type = new type::Type(TypeKind::Void);
             consoleAppInterface->signatures.add(onApplicationStart);
             domain->implements = consoleAppInterface;
         }
@@ -110,7 +110,7 @@ Binder::getDomainDeclarations(const List<Name*>& domains, unsigned int domainInd
         }
     }
 
-    throw UndefinedDomainAccessError();
+    throw std::runtime_error("Undefined domain access error.");
 }
 
 
@@ -149,7 +149,7 @@ Binder::bindStatementBlock(StatementBlock* block)
                 break;
             }
             default:
-                throw UnknownBindingStatement();
+                throw std::runtime_error("Unknown binding statement.");
         }
     }
 }

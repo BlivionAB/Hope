@@ -20,11 +20,11 @@ namespace elet::domain::compiler::ast
 
 
         enum class IntegerLiteralType
-            {
+        {
             Decimal = 10,
             Hexadecimal = 16,
             Binary = 2,
-            };
+        };
 
 
         enum class IntegerSuffix

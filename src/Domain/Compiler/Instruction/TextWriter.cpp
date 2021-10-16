@@ -178,6 +178,7 @@ TextWriter::writeUnsignedHexValue(uint64_t n)
     write("0x");
     static const char* digits = "0123456789abcdef";
     bool hasWrittenDigit = false;
+    int writeDigitsCount = 0;
     for (int i = 15; i >= 0; --i)
     {
         uint64_t s = pow(16, i);
@@ -185,7 +186,12 @@ TextWriter::writeUnsignedHexValue(uint64_t n)
         if (r != 0 || hasWrittenDigit)
         {
             hasWrittenDigit = true;
+            if (writeDigitsCount != 0 && writeDigitsCount % 4 == 0)
+            {
+                write("_");
+            }
             write(digits[r]);
+            writeDigitsCount++;
             if (r != 0)
             {
                 n -= r * s;

@@ -1,4 +1,5 @@
 #include "Checker.h"
+#include "Exceptions.h"
 
 
 namespace elet::domain::compiler::ast
@@ -65,18 +66,25 @@ Checker::checkFunctionDeclaration(FunctionDeclaration* functionDeclaration)
     resolveTypeFromFunctionDeclaration(functionDeclaration);
     for (Syntax* statement : functionDeclaration->body->statements)
     {
-        switch (statement->kind)
+        try
         {
-            case SyntaxKind::CallExpression:
-                checkCallExpression(reinterpret_cast<CallExpression*>(statement));
-                break;
-            case SyntaxKind::VariableDeclaration:
-                checkVariableDeclaration(reinterpret_cast<VariableDeclaration*>(statement));
-                break;
-            case SyntaxKind::ReturnStatement:
-                checkExpression(reinterpret_cast<ReturnStatement*>(statement)->expression);
-                break;
-            default:;
+            switch (statement->kind)
+            {
+                case SyntaxKind::CallExpression:
+                    checkCallExpression(reinterpret_cast<CallExpression*>(statement));
+                    break;
+                case SyntaxKind::VariableDeclaration:
+                    checkVariableDeclaration(reinterpret_cast<VariableDeclaration*>(statement));
+                    break;
+                case SyntaxKind::ReturnStatement:
+                    checkExpression(reinterpret_cast<ReturnStatement*>(statement)->expression);
+                    break;
+                    default:;
+            }
+        }
+        catch (error::TypeCheckError* typeCheckException)
+        {
+
         }
     }
 }
@@ -110,17 +118,43 @@ Checker::checkBinaryExpression(BinaryExpression* binaryExpression)
 Type*
 Checker::getTypeFromIntegerLiteral(IntegerLiteral* integerLiteral)
 {
-    if (integerLiteral->value <= TypeSizeBounds::Int32Max)
+    if (std::holds_alternative<DecimalLiteral*>(integerLiteral->digits))
     {
-        return new Type(TypeKind::S32);
+        if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S32Max))
+        {
+            return new Type(TypeKind::S32);
+        }
+        else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S64Max))
+        {
+            return new Type(TypeKind::S64);
+        }
+        addDiagnostic(new Diagnostic("Integer literal value exceeds int64 max."));
     }
-    else if (integerLiteral->value <= TypeSizeBounds::Int64Max)
+    else
     {
-        return new Type(TypeKind::S64);
+        if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S32Max))
+        {
+            return new Type(TypeKind::S32);
+        }
+        else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U32Max))
+        {
+            return new Type(TypeKind::U32);
+        }
+        if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S64Max))
+        {
+            return new Type(TypeKind::S64);
+        }
+        else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U64Max))
+        {
+            if (integerLiteral->isNegative)
+            {
+                throw new error::IntegerOverflowMaxLimitError(
+                    std::get<HexadecimalLiteral*>(integerLiteral->digits),
+                    TypeKind::S64, integerLiteral->value);
+            }
+            return new Type(TypeKind::U64);
+        }
     }
-
-    // TODO: Fix this function to correspond to integer literal sepc of cpp
-    throw std::runtime_error("Cannot convert digits immediateValue.");
 }
 
 
@@ -183,13 +217,13 @@ Checker::getMaxTypeDomain(Type* type)
     switch (type->kind)
     {
         case TypeKind::U8:
-            return TypeSizeBounds::UInt8Max;
+            return static_cast<uint64_t>(IntegerLimit::U8Max);
         case TypeKind::U16:
-            return TypeSizeBounds::UInt16Max;
+            return static_cast<uint64_t>(IntegerLimit::U16Max);
         case TypeKind::U32:
-            return TypeSizeBounds::UInt32Max;
+            return static_cast<uint64_t>(IntegerLimit::U32Max);
         case TypeKind::U64:
-            return TypeSizeBounds::UInt64Max;
+            return static_cast<uint64_t>(IntegerLimit::U64Max);
         default:
             throw std::runtime_error("Cannot get max domain of type");
     }

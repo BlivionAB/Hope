@@ -43,7 +43,7 @@ add_executable(
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
-    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Expression/IntegerLiteralTest.cpp src/Domain/Compiler/CompilerTypes.h)
+    ${DOMAIN_TEST} src/Domain/Compiler/Parser.Impl.h)
 
 set(TEST_LIBS gtest gmock)
 target_link_libraries(unittest ${TEST_LIBS})

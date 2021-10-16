@@ -12,12 +12,6 @@
 #include "Syntax.Type.h"
 
 
-namespace elet::domain::compiler
-{
-    struct Symbol;
-}
-
-
 namespace elet::domain::compiler::instruction::output
 {
     struct Instruction;
@@ -39,6 +33,32 @@ namespace elet::domain::compiler::ast
     struct Declaration;
     struct CallExpression;
     using NameToDeclarationMap = std::map<Utf8StringView, Declaration*>;
+
+
+
+    struct Symbol
+    {
+        std::uint32_t
+        index = 0;
+
+        const
+        Utf8StringView
+        identifier;
+
+        Utf8StringView
+        name;
+
+        Utf8StringView
+        externalSymbol;
+
+        std::uint32_t
+        textOffset;
+
+        Symbol(std::uint32_t textOffset, const Utf8StringView name):
+            textOffset(textOffset),
+            name(name)
+        { }
+    };
 
 
     enum class Token : std::size_t
@@ -154,6 +174,7 @@ namespace elet::domain::compiler::ast
         symbols;
     };
 
+
     struct Syntax
     {
         SyntaxKind
@@ -167,6 +188,12 @@ namespace elet::domain::compiler::ast
 
         char*
         end;
+    };
+
+
+    struct ErrorNode : Syntax
+    {
+
     };
 
 
@@ -376,6 +403,9 @@ namespace elet::domain::compiler::ast
 
         IntegerSuffix*
         suffix;
+
+        bool
+        isNegative = false;
 
         int
         underscoresCount = 0;

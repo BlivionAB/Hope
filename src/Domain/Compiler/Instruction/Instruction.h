@@ -653,7 +653,7 @@ namespace elet::domain::compiler::instruction::output
         std::uint32_t
         textOffset;
 
-        Symbol*
+        ast::Symbol*
         symbol;
 
         RelocationOperand(OperandKind kind):

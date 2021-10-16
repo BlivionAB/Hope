@@ -1,152 +1,115 @@
 #ifndef ELET_EXCEPTIONS_H
 #define ELET_EXCEPTIONS_H
 
+
 #include "Scanner.h"
 #include <Foundation/Utf8String.h>
 #include <format>
 #include "Scanner.h"
-namespace elet::domain::compiler
+
+
+namespace elet::domain::compiler::ast::error
 {
+    struct UnexpectedEndOfFile
+    {
+
+    };
 
 
-using namespace elet::domain::compiler::ast;
+    struct CompileError : std::exception
+    {
+        const
+        Syntax*
+        syntax;
+
+        Utf8String
+        message;
+
+        template<typename... Args>
+        explicit CompileError(const Syntax* syntax, const char* message, Args... args):
+            syntax(syntax),
+            message(std::format(message, args...).c_str())
+        { }
+
+        explicit CompileError(const Syntax* syntax, std::string message):
+            syntax(syntax),
+            message(message.c_str())
+        { }
+    };
 
 
-struct CompilerError : std::exception
-{
-    Utf8String
-    message;
-
-    template<typename... Args>
-    explicit CompilerError(const char* message, Args... args):
-        message(std::format(message, args...).c_str())
-    { }
-};
+    struct SyntaxError : CompileError
+    {
+        template<typename... Args>
+        SyntaxError(const Syntax* syntax, const char* message, Args... args):
+            CompileError(syntax, message, args...)
+        { }
+    };
 
 
-struct ExpectedTokenError : CompilerError
-{
-    ExpectedTokenError(Token expected, Utf8StringView result):
-        CompilerError("Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), result.toString())
-    { }
-};
+    struct TypeCheckError : CompileError
+    {
+        template<typename... Args>
+        TypeCheckError(const Syntax* syntax, std::string message):
+            CompileError(syntax, message)
+        { }
+
+        template<typename... Args>
+        TypeCheckError(const Syntax* syntax, const char* message, Args... args):
+            CompileError(syntax, message, args...)
+        { }
+    };
 
 
-struct OnlyExternCBlocksAllowedError : CompilerError
-{
-    OnlyExternCBlocksAllowedError():
-        CompilerError("Only extern C blocks are allowed")
-    { }
-};
+    struct IntegerOverflowMaxLimitError : TypeCheckError
+    {
+        IntegerOverflowMaxLimitError(const Syntax* syntax, TypeKind type, uint64_t result):
+            TypeCheckError(syntax, formatIntegerOverflowError(type, result))
+        { }
 
-struct UnknownTypeError
-{
-    Utf8String
-    feedback;
-
-    explicit UnknownTypeError(Utf8String feedback = "Unknown type"):
-        feedback(feedback)
-    { }
-};
-
-struct UnexpectedEndOfModule : CompilerError
-{
-    UnexpectedEndOfModule():
-        CompilerError("Unexpected end of module.")
-    { }
-};
-
+        static
+        std::string
+        formatIntegerOverflowError(TypeKind type, uint64_t result)
+        {
+            std::string typeName;
+            switch (type)
+            {
+                case TypeKind::S64:
+                    typeName = "s64";
+                    break;
+                default:
+                    throw std::runtime_error("No implemented type in formatIntegerOverflowError.");
+            }
+            return std::format("Integer value exceeds the max limit of '{1}'.", typeName);
+        }
+    };
 
 
-struct UnexpectedExpression : CompilerError
-{
-    UnexpectedExpression():
-        CompilerError("Expected expression, instead got .")
-    { }
-};
+    struct ExpectedTokenError : SyntaxError
+    {
+        ExpectedTokenError(const Syntax* syntax, Token expected, Utf8StringView result):
+            SyntaxError(syntax, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), result.toString())
+        { }
+    };
 
 
-struct UnexpectedModuleAccessUsage : CompilerError
-{
-    UnexpectedModuleAccessUsage():
-        CompilerError("Expected 'identifier', '{' or '*'.")
-    { }
-};
+    struct OnlyExternCBlocksAllowedError : CompileError
+    {
+        OnlyExternCBlocksAllowedError(const Syntax* syntax):
+            CompileError(syntax, "Only extern C blocks are allowed")
+        { }
+    };
 
 
-struct UnexpectedEndOfFile : CompilerError
-{
-    UnexpectedEndOfFile():
-        CompilerError("Unexptected end of file.")
-    { }
-};
+    struct UnknownTypeError
+    {
+        Utf8String
+        feedback;
 
-
-struct UndefinedDomainAccessError : CompilerError
-{
-    UndefinedDomainAccessError():
-        CompilerError("Could not get access domain.")
-    { }
-};
-
-
-struct UnknownFileLevelStatement : CompilerError
-{
-    UnknownFileLevelStatement():
-        CompilerError("Unknown file level statement.")
-    { }
-};
-
-
-struct UnknownDeclaration : CompilerError
-{
-    UnknownDeclaration():
-        CompilerError("Cannot recognize declaration.")
-    { }
-};
-
-
-struct UnknownPrimitiveType : CompilerError
-{
-    UnknownPrimitiveType():
-        CompilerError("Cannot recognize declaration.")
-    { }
-};
-
-
-struct UnknownExpressionForBinding : CompilerError
-{
-    UnknownExpressionForBinding():
-        CompilerError("Unknown expression for binding.")
-    { }
-};
-
-
-struct UnknownBindingStatement : CompilerError
-{
-    UnknownBindingStatement():
-        CompilerError("Cannot recognize binding statement.")
-    { }
-};
-
-
-
-struct UnknownLocalStatement : CompilerError
-{
-    UnknownLocalStatement():
-        CompilerError("Cannot recognize binding statement.")
-    { }
-};
-
-
-struct IntegerOverflowError : CompilerError
-{
-    IntegerOverflowError():
-        CompilerError("Integer is overflowing the max (18446744073709551615)")
-    { }
-};
-
-
+        explicit UnknownTypeError(Utf8String feedback = "Unknown type"):
+            feedback(feedback)
+        { }
+    };
 }
 
 

@@ -8,6 +8,8 @@ namespace elet::domain::compiler::ast
     enum class SyntaxKind : uint8_t
     {
         Unknown,
+        ErrorNode,
+
         AssemblyBlock,
         AssemblyBody,
         ArrayLiteral,

@@ -47,10 +47,13 @@ struct TestProjectOptions
     targets;
 
     std::optional<bool>
+    printResolutionTypes;
+
+    std::optional<bool>
     writeExecutable;
 
     std::optional<bool>
-    updateBaselines;
+    acceptBaselines;
 
     std::optional<OptimizationLevel>
     optimizationLevel;
@@ -357,7 +360,7 @@ protected:
         auto diffs = differ.diffText(baseline, result, isDiffing);
         if (isDiffing)
         {
-            if (options.updateBaselines)
+            if (options.acceptBaselines)
             {
                 File::write(basm, result);
             }

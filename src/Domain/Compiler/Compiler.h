@@ -59,111 +59,10 @@ namespace elet::domain::compiler
     };
 
 
-    struct ParsingTask
-    {
-        const char*
-        sourceStart;
-
-        const char*
-        sourceEnd;
-
-        const fs::path*
-        sourceDirectory;
-
-        ast::SourceFile*
-        sourceFile;
-
-        bool
-        isEndOfFile;
-
-        ParsingTask(
-            const char*
-            start,
-
-            const char*
-            end,
-
-            const fs::path*
-            directory,
-
-            ast::SourceFile*
-            file,
-
-            bool
-            endOfFile
-        ):
-            sourceStart(start),
-            sourceEnd(end),
-            sourceDirectory(directory),
-            sourceFile(file),
-            isEndOfFile(endOfFile)
-        { }
-    };
-
-
-    struct PendingParsingTask
-    {
-        const char*
-        pendingBlock;
-
-        ParsingTask*
-        task;
-
-        PendingParsingTask(const char* pendingBlock, ParsingTask* task):
-            pendingBlock(pendingBlock),
-            task(task)
-        { }
-    };
-
-
-    struct RelativeRelocationTask
-    {
-        output::FunctionRoutine*
-        routine;
-
-        std::uint64_t
-        offset;
-
-        output::RelocationOperand*
-        relocation;
-
-        RelativeRelocationTask(output::FunctionRoutine* routine, std::uint64_t offset, output::RelocationOperand* relocation):
-            routine(routine),
-            offset(offset),
-            relocation(relocation)
-        { }
-    };
-
-
     enum class SymbolSectionIndex : std::uint8_t
     {
         Text,
         Const,
-    };
-
-
-    struct Symbol
-    {
-        std::uint32_t
-        index = 0;
-
-        const
-        Utf8StringView
-        identifier;
-
-        Utf8StringView
-        name;
-
-        Utf8StringView
-        externalSymbol;
-
-        std::uint32_t
-        textOffset;
-
-        Symbol(std::uint32_t textOffset, const Utf8StringView name):
-            textOffset(textOffset),
-            name(name)
-        { }
     };
 
 
@@ -320,10 +219,10 @@ namespace elet::domain::compiler
         const char*
         _source;
 
-        std::queue<ParsingTask>
+        std::queue<ast::ParsingTask>
         _parsingWork;
 
-        std::queue<PendingParsingTask>
+        std::queue<ast::PendingParsingTask>
         _pendingParsingWork;
 
         std::mutex
@@ -395,13 +294,13 @@ namespace elet::domain::compiler
         List<Utf8StringView*>
         _cstrings;
 
-        List<Symbol*>
+        List<ast::Symbol*>
         _symbols;
 
         std::uint32_t
         _symbolIndex = 0;
 
-        std::multimap<Utf8StringView, Symbol*>
+        std::multimap<Utf8StringView, ast::Symbol*>
         _symbolMap;
 
         std::uint64_t

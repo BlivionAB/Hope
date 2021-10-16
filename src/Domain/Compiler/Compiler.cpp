@@ -12,7 +12,7 @@ namespace elet::domain::compiler
     Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions options):
         _fileStreamReader(fileStreamReader),
         _options(options),
-        _parser(new ast::Parser(this)),
+        _parser(new ast::Parser(this->files)),
         _binder(new ast::Binder()),
         _checker(new ast::Checker(_binder))
     {
@@ -142,7 +142,7 @@ namespace elet::domain::compiler
     void
     Compiler::acceptParsingWork()
     {
-        _parser->symbols = new List<Symbol*>();
+        _parser->symbols = new List<ast::Symbol*>();
         while (_compilationStage == CompilationStage::Parsing)
         {
             std::unique_lock<std::mutex> lock(_parsingWorkMutex);
@@ -157,7 +157,7 @@ namespace elet::domain::compiler
             if (!_parsingWork.empty())
             {
                 _pendingParsingTasks++;
-                ParsingTask task = _parsingWork.front();
+                ast::ParsingTask task = _parsingWork.front();
                 _parsingWork.pop();
                 lock.unlock();
                 auto result = _parser->performWork(task);
@@ -190,7 +190,7 @@ namespace elet::domain::compiler
         {
             std::unique_lock symbolOffsetWorkLock(_symbolOffsetWorkMutex);
             std::uint64_t thisThreadTotalOffset = 1;
-            for (Symbol* symbol : *_parser->symbols)
+            for (ast::Symbol* symbol : *_parser->symbols)
             {
                 thisThreadTotalOffset += symbol->identifier.size() + 1;
                 symbol->textOffset += _symbolSectionOffset;

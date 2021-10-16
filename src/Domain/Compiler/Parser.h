@@ -5,8 +5,8 @@
 #include <Foundation/HashTableMap.h>
 #include <Domain/Compiler/Syntax/Syntax.Statement.h>
 #include "Scanner.h"
-#include "Compiler.h"
 #include "Syntax/Syntax.h"
+#include "Exceptions.h"
 #include "Domain/Compiler/Instruction/Parser.h"
 
 
@@ -15,10 +15,6 @@ namespace fs = std::filesystem;
 
 namespace elet::domain::compiler
 {
-    class Compiler;
-    struct ParsingTask;
-
-
     namespace instruction
     {
         class InstructionParser;
@@ -62,10 +58,73 @@ namespace elet::domain::compiler::ast
     struct AccessabilityLabel;
     struct DomainDeclaration;
     struct PropertyDeclaration;
+    class ParserError;
     enum class PunctuationType;
     enum class AccessibilityType;
     enum class SyntaxKind : std::uint8_t;
 
+
+    namespace error
+    {
+        struct SyntaxError;
+    }
+
+
+    struct ParsingTask
+    {
+        const char*
+        sourceStart;
+
+        const char*
+        sourceEnd;
+
+        const fs::path*
+        sourceDirectory;
+
+        ast::SourceFile*
+        sourceFile;
+
+        bool
+        isEndOfFile;
+
+        ParsingTask(
+            const char*
+            start,
+
+            const char*
+            end,
+
+            const fs::path*
+            directory,
+
+            ast::SourceFile*
+            file,
+
+            bool
+            endOfFile
+        ):
+            sourceStart(start),
+            sourceEnd(end),
+            sourceDirectory(directory),
+            sourceFile(file),
+            isEndOfFile(endOfFile)
+        { }
+    };
+
+
+    struct PendingParsingTask
+    {
+        const char*
+        pendingBlock;
+
+        ParsingTask*
+        task;
+
+        PendingParsingTask(const char* pendingBlock, ParsingTask* task):
+            pendingBlock(pendingBlock),
+            task(task)
+        { }
+    };
 
     struct ParseResult
     {
@@ -90,11 +149,11 @@ namespace elet::domain::compiler::ast
     typedef std::map<Utf8StringView, std::variant<std::map<Utf8StringView, Declaration*>*, void*>> DomainDeclarationMap;
 
 
-    class Parser
+    class Parser final
     {
     public:
 
-        Parser(Compiler* compiler);
+        Parser(std::map<std::string, ast::SourceFile*>& files);
 
         ParseResult
         performWork(const ParsingTask& task);
@@ -110,7 +169,21 @@ namespace elet::domain::compiler::ast
         DomainDeclarationMap
         domainDeclarationMap;
 
+        template<typename T>
+        T*
+        createSyntax(SyntaxKind kind);
+
+        template<typename T>
+        void
+        finishSyntax(T* syntax);
+
+        Utf8StringView
+        getTokenValue();
+
     private:
+
+        ParserError*
+        _error;
 
         static
         thread_local
@@ -147,9 +220,6 @@ namespace elet::domain::compiler::ast
         instruction::InstructionParser*
         _instructionParser = nullptr;
 
-        Compiler*
-        _compiler;
-
         TypeAssignment*
         parseType();
 
@@ -158,9 +228,6 @@ namespace elet::domain::compiler::ast
 
         Syntax*
         parseFileLevelDeclarations();
-
-        Syntax*
-        parseModuleLevelStatement();
 
         FunctionDeclaration*
         parseFunctionDeclaration();
@@ -308,10 +375,6 @@ namespace elet::domain::compiler::ast
 
         template<typename T>
         T*
-        createSyntax(SyntaxKind kind);
-
-        template<typename T>
-        T*
         createDeclaration(const SyntaxKind kind);
 
         template<typename T>
@@ -328,10 +391,6 @@ namespace elet::domain::compiler::ast
 
         template<typename T>
         void
-        finishSyntax(T* syntax);
-
-        template<typename T>
-        void
         finishDeclaration(T* declaration);
 
         template<typename T>
@@ -343,9 +402,6 @@ namespace elet::domain::compiler::ast
 
         void
         assertToken(Token target, Token expected);
-
-        Utf8StringView
-        getTokenValue();
 
         Name*
         createName();
@@ -373,24 +429,30 @@ namespace elet::domain::compiler::ast
         parseReturnStatement();
 
         uint64_t
-        parseDecimalLiteral(const DecimalLiteral* decimalLiteral, uint64_t maxLimit) const;
+        parseDecimalLiteral(const DecimalLiteral* decimalLiteral, IntegerLimit maxLimit) const;
 
         uint64_t
-        parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, uint64_t maxLimit) const;
+        parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, IntegerLimit maxLimit) const;
 
-        uint64_t
+        IntegerLimit
         getIntegerMaxLimitFromToken(Token token);
 
         bool
         isIntegerSuffix(Token token);
 
-        Expression*
+        IntegerLiteral*
         createIntegerLiteral(Token& token);
 
         unsigned int
         getDigitsLength(const char* end, const char* start) const;
+
+        IntegerLiteral*
+        createNegativeIntegerLiteral();
     };
 }
+
+#include "Parser.Impl.h"
+#include "ParserError.h"
 
 
 #endif //ELET_PARSER_H

@@ -1,6 +1,7 @@
 #include "Transformer.h"
 #include "Domain/Compiler/Exceptions.h"
 #include "Instruction.h"
+#include "Domain/Compiler/Syntax/Syntax.Type.h"
 
 namespace elet::domain::compiler::instruction
 {
@@ -30,7 +31,7 @@ Transformer::transform(ast::Declaration* declaration)
     }
     else
     {
-        throw UnknownDeclaration();
+        throw std::runtime_error("TEMP: Unknown declaration.");
     }
 }
 
@@ -101,7 +102,7 @@ Transformer::transformLocalStatements(List<ast::Syntax*>& statements, uint64_t& 
                 transformReturnStatement(reinterpret_cast<ast::ReturnStatement*>(statement), stackOffset);
                 break;
             default:
-                throw UnknownLocalStatement();
+                throw std::runtime_error("TEMP: Unknown local statement.");
         }
     }
     return list;

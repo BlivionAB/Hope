@@ -5,7 +5,6 @@
 #include <map>
 #include <Foundation/Utf8StringView.h>
 #include "Syntax/Syntax.h"
-#include "Parser.h"
 #include "Domain/Compiler/Instruction/Instruction.h"
 
 

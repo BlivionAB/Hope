@@ -4,10 +4,6 @@
 #include <Domain/Compiler/Instruction/Instruction.h>
 #include <Domain/Compiler/Instruction/ByteWriter.h>
 
-namespace elet::domain::compiler
-{
-    struct Symbol;
-}
 //namespace elet::domain::compiler::instruction
 //{
 //    struct FunctionRoutine;

@@ -18,7 +18,7 @@ TEST_F(ExpressionFixture, Return_BinaryExpression_Variable)
             CompilationTarget::StashIR,
             CompilationTarget::MachO_x86_64
         },
-        .updateBaselines = true,
+        .acceptBaselines = true,
     }));
 }
 

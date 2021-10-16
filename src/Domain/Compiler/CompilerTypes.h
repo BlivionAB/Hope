@@ -3,10 +3,40 @@
 
 
 #include <format>
+#include <filesystem>
+#include "Syntax/Syntax.h"
+
+
+namespace fs = std::filesystem;
 
 
 namespace elet::domain::compiler
 {
+    enum class TypeKind
+    {
+        // Integer types, ranked after the conversion ranking
+        U8,
+        S8,
+        U16,
+        S16,
+        U32,
+        S32,
+        U64,
+        S64,
+        Char,
+        UInt,
+        Int,
+
+        USize,
+        Pointer,
+        F32,
+        F64,
+        Void,
+        Custom,
+        Length,
+    };
+
+
     enum class RegisterSize
     {
         None,
