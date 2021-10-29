@@ -217,7 +217,7 @@ protected:
     void
     testMainFunction(Utf8String source)
     {
-        project.setEntrySourceFile("main.l1",
+        project.setEntrySourceFile("main.hs",
             Utf8String() + "domain Common::MyApplication implements IConsoleApplication\n"
             "{\n"
             "\n"
@@ -267,6 +267,7 @@ protected:
         return result;
     }
 
+
     void
     compileTarget(const CompilationTarget target, const TestProjectOptions& options, testing::AssertionResult& result)
     {
@@ -277,22 +278,30 @@ protected:
         compiler.compileFile(project.getEntryFile());
         compiler.endWorkers();
 
-        if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
+        Utf8String compileErrors = compiler.printCompileErrors();
+        if (compileErrors.size() != 0)
         {
-            std::queue<output::FunctionRoutine*> output = compiler.getStashIR();
-            checkStashIRBaseline(output, options, compilerOptions, result);
+            checkBaseline(compileErrors, options, compilerOptions, result, "error");
         }
         else
         {
-            List<uint8_t>& output = compiler.getOutput();
-            switch (compilerOptions.assemblyTarget)
+            if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
             {
-                case AssemblyTarget::x86_64:
-                    checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
-                    break;
-                case AssemblyTarget::Aarch64:
-                    checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, compilerOptions, output,result);
-                    break;
+                std::queue<output::FunctionRoutine*> output = compiler.getStashIR();
+                checkStashIRBaseline(output, options, compilerOptions, result);
+            }
+            else
+            {
+                List<uint8_t>& output = compiler.getOutput();
+                switch (compilerOptions.assemblyTarget)
+                {
+                    case AssemblyTarget::x86_64:
+                        checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
+                        break;
+                    case AssemblyTarget::Aarch64:
+                        checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, compilerOptions, output,result);
+                        break;
+                }
             }
         }
     }
@@ -335,16 +344,16 @@ protected:
 
         baselineParser.parse();
         Utf8String textSection = baselineParser.serializeTextSegment();
-        checkBaseline(textSection, options, compilerOptions, result);
+        checkBaseline(textSection, options, compilerOptions, result, "basm");
     }
 
 
     void
-    checkBaseline(Utf8String& result, const TestProjectOptions& options, const CompilerOptions& compilerOptions, testing::AssertionResult& testResult)
+    checkBaseline(Utf8String& result, const TestProjectOptions& options, const CompilerOptions& compilerOptions, testing::AssertionResult& testResult, std::string suffix)
     {
         DiffPrinter printer;
         MyersDiff differ;
-        fs::path basm = fs::current_path() / ".." / testFolderPath / localTestPath() / "__Baselines__" / (options.baselineName + "-" + getArchitecture(compilerOptions) + ".basm");
+        fs::path basm = fs::current_path() / ".." / testFolderPath / localTestPath() / "__Baselines__" / (options.baselineName + "-" + getArchitecture(compilerOptions) + "." + suffix);
         fs::path baselineFolder = basm.parent_path();
         if (!fs::exists(baselineFolder))
         {
@@ -400,7 +409,7 @@ protected:
     checkStashIRBaseline(std::queue<output::FunctionRoutine*>& output, const TestProjectOptions& options, const CompilerOptions& compilerOptions, testing::AssertionResult& result)
     {
         Utf8String baselineOutput = stashIRPrinter.writeFunctionRoutines(output);
-        checkBaseline(baselineOutput, options, compilerOptions, result);
+        checkBaseline(baselineOutput, options, compilerOptions, result, "basm");
     }
 };
 

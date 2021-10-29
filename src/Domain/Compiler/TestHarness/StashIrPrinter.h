@@ -4,7 +4,7 @@
 
 #include <queue>
 #include <Domain/Compiler/Instruction/Instruction.h>
-#include <Domain/Compiler/Instruction/TextWriter.h>
+#include <Foundation/TextWriter.h>
 
 
 using namespace elet::domain::compiler::instruction;

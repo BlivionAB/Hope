@@ -14,6 +14,8 @@ namespace elet::domain::compiler
 {
     enum class TypeKind
     {
+        Error,
+
         // Integer types, ranked after the conversion ranking
         U8,
         S8,

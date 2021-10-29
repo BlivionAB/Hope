@@ -22,7 +22,7 @@ namespace elet::domain::compiler::ast
     void
     Parser::finishSyntax(T* syntax)
     {
-        syntax->end = _scanner->getPosition();
+        syntax->end = _scanner->getPositionAddress();
     }
 
 

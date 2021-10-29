@@ -7,7 +7,7 @@
 #include <Foundation/Utf8String.h>
 #include <Domain/Compiler/Instruction/AssemblyWriter.h>
 #include "Domain/Compiler/Instruction/Instruction.h"
-#include "Domain/Compiler/Instruction/TextWriter.h"
+#include "Foundation/TextWriter.h"
 
 
 namespace elet::domain::compiler::instruction::output

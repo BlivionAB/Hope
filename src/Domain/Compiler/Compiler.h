@@ -16,6 +16,8 @@
 #include "Domain/Compiler/Instruction/AssemblyWriter.h"
 #include "Domain/Compiler/Instruction/ObjectFileWriter.h"
 #include "CompilerTypes.h"
+#include "ErrorWriter.h"
+#include "Exceptions.h"
 #include <Foundation/FileReader.h>
 
 
@@ -43,6 +45,7 @@ namespace elet::domain::compiler
         class Binder;
         class Checker;
         class Parser;
+        class ErrorWriter;
         struct BindingWork;
     }
 
@@ -108,6 +111,9 @@ namespace elet::domain::compiler
         List<uint8_t>&
         getOutput();
 
+        Utf8String
+        printCompileErrors();
+
     private:
 
         void
@@ -130,6 +136,9 @@ namespace elet::domain::compiler
 
         void
         pushBindingWork(const List<ast::Syntax*> statements);
+
+        ast::ErrorWriter
+        _errorPrinter;
 
         List<Diagnostic>
         _diagnostics;
@@ -170,6 +179,12 @@ namespace elet::domain::compiler
         std::vector<std::thread>
         _workers;
 
+        List<ast::error::SyntaxError*>
+        _syntaxErrors;
+
+        List<ast::error::LexicalError*>
+        _lexicalErrors;
+
         AssemblyTarget
         _assemblyTarget;
 
@@ -192,6 +207,8 @@ namespace elet::domain::compiler
             Checking,
             Transformation,
             Writing,
+
+            Error,
         }
         _compilationStage;
 
@@ -219,7 +236,7 @@ namespace elet::domain::compiler
         const char*
         _source;
 
-        std::queue<ast::ParsingTask>
+        std::queue<ast::SourceFile*>
         _parsingWork;
 
         std::queue<ast::PendingParsingTask>
@@ -280,9 +297,6 @@ namespace elet::domain::compiler
         _outputFile;
 
         unsigned int
-        _pendingParsingFiles = 0;
-
-        unsigned int
         _pendingParsingTasks = 0;
 
         std::map<Utf8StringView, ast::SourceFile*>
@@ -316,6 +330,7 @@ namespace elet::domain::compiler
         _relocationWorkMutex;
     };
 }
+
 
 
 #endif //ELET_COMPILER_H

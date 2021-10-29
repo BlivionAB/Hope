@@ -15,7 +15,7 @@ public:
 
     Utf8StringView(const Utf8String& string);
 
-    Utf8StringView(const char* value, const char* end);
+    Utf8StringView(const char* start, const char* end);
 
     Utf8StringView(const char* string);
 
@@ -42,7 +42,7 @@ public:
         operator ++ ();
 
         const char*
-        getPosition() const;
+        getPositionAddress() const;
 
         void
         setPosition(const char* position);

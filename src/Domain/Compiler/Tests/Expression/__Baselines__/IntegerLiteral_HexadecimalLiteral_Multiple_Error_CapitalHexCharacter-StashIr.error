@@ -1,0 +1,30 @@
+error: Hexadecimal literal must consist of at least one hexadecimal character.
+--> main.hs:8:16
+  | 
+8 | var a: int = 0xF;
+  |                ^
+error: Hexadecimal literal must consist of at least one hexadecimal character.
+--> main.hs:9:16
+  | 
+9 | var b: int = 0xE;
+  |                ^
+error: Hexadecimal literal must consist of at least one hexadecimal character.
+--> main.hs:10:16
+   | 
+10 | var c: int = 0xD;
+   |                ^
+error: Hexadecimal literal must consist of at least one hexadecimal character.
+--> main.hs:11:16
+   | 
+11 | var d: int = 0xC;
+   |                ^
+error: Hexadecimal literal must consist of at least one hexadecimal character.
+--> main.hs:12:16
+   | 
+12 | var e: int = 0xB;
+   |                ^
+error: Hexadecimal literal must consist of at least one hexadecimal character.
+--> main.hs:13:16
+   | 
+13 | var f: int = 0xA;    }
+   |                ^

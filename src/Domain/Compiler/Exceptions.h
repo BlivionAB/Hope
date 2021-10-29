@@ -5,7 +5,6 @@
 #include "Scanner.h"
 #include <Foundation/Utf8String.h>
 #include <format>
-#include "Scanner.h"
 
 
 namespace elet::domain::compiler::ast::error
@@ -16,24 +15,51 @@ namespace elet::domain::compiler::ast::error
     };
 
 
-    struct CompileError : std::exception
+    struct CompileError
     {
         const
         Syntax*
         syntax;
 
+        const
+        ast::SourceFile*
+        sourceFile;
+
         Utf8String
         message;
 
         template<typename... Args>
-        explicit CompileError(const Syntax* syntax, const char* message, Args... args):
+        explicit CompileError(const Syntax* syntax, const ast::SourceFile* sourceFile, const char* message, Args... args):
             syntax(syntax),
+            sourceFile(sourceFile),
             message(std::format(message, args...).c_str())
         { }
 
-        explicit CompileError(const Syntax* syntax, std::string message):
+        explicit CompileError(const Syntax* syntax, const ast::SourceFile* sourceFile, std::string message):
             syntax(syntax),
+            sourceFile(sourceFile),
             message(message.c_str())
+        { }
+    };
+
+
+    struct LexicalError
+    {
+        const char*
+        positionAddress;
+
+        const
+        ast::SourceFile*
+        sourceFile;
+
+        Utf8String
+        message;
+
+        template<typename... Args>
+        explicit LexicalError(const ast::SourceFile* sourceFile, const char* position, const char* message, Args... args):
+            sourceFile(sourceFile),
+            positionAddress(position),
+            message(std::format(message, args...).c_str())
         { }
     };
 
@@ -41,8 +67,8 @@ namespace elet::domain::compiler::ast::error
     struct SyntaxError : CompileError
     {
         template<typename... Args>
-        SyntaxError(const Syntax* syntax, const char* message, Args... args):
-            CompileError(syntax, message, args...)
+        SyntaxError(const Syntax* syntax, const ast::SourceFile* sourceFile, const char* message, Args... args):
+            CompileError(syntax, sourceFile, message, args...)
         { }
     };
 
@@ -50,21 +76,21 @@ namespace elet::domain::compiler::ast::error
     struct TypeCheckError : CompileError
     {
         template<typename... Args>
-        TypeCheckError(const Syntax* syntax, std::string message):
-            CompileError(syntax, message)
+        TypeCheckError(const Syntax* syntax, const ast::SourceFile* sourceFile, std::string message):
+            CompileError(syntax, sourceFile, message)
         { }
 
         template<typename... Args>
-        TypeCheckError(const Syntax* syntax, const char* message, Args... args):
-            CompileError(syntax, message, args...)
+        TypeCheckError(const Syntax* syntax, const ast::SourceFile* sourceFile, const char* message, Args... args):
+            CompileError(syntax, sourceFile, message, args...)
         { }
     };
 
 
     struct IntegerOverflowMaxLimitError : TypeCheckError
     {
-        IntegerOverflowMaxLimitError(const Syntax* syntax, TypeKind type, uint64_t result):
-            TypeCheckError(syntax, formatIntegerOverflowError(type, result))
+        IntegerOverflowMaxLimitError(const Syntax* syntax, const ast::SourceFile* sourceFile, TypeKind type, uint64_t result):
+            TypeCheckError(syntax, sourceFile, formatIntegerOverflowError(type, result))
         { }
 
         static
@@ -87,16 +113,16 @@ namespace elet::domain::compiler::ast::error
 
     struct ExpectedTokenError : SyntaxError
     {
-        ExpectedTokenError(const Syntax* syntax, Token expected, Utf8StringView result):
-            SyntaxError(syntax, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), result.toString())
+        ExpectedTokenError(const Syntax* syntax, const ast::SourceFile* sourceFile, Token expected, Utf8StringView result):
+            SyntaxError(syntax, sourceFile, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), result.toString())
         { }
     };
 
 
     struct OnlyExternCBlocksAllowedError : CompileError
     {
-        OnlyExternCBlocksAllowedError(const Syntax* syntax):
-            CompileError(syntax, "Only extern C blocks are allowed")
+        OnlyExternCBlocksAllowedError(const Syntax* syntax, const ast::SourceFile* sourceFile):
+            CompileError(syntax, sourceFile, "Only extern C blocks are allowed")
         { }
     };
 

@@ -11,7 +11,7 @@ namespace elet::foundation
 class BaseScanner
 {
 public:
-    explicit BaseScanner(const Utf8StringView& source);
+    explicit BaseScanner(const Utf8StringView source);
 
 
     struct Location
@@ -57,8 +57,11 @@ public:
 
     using Character = Utf8String::Character;
 
-    char*
+    size_t
     getPosition() const;
+
+    char*
+    getPositionAddress() const;
 
     char*
     getStartPosition() const;
@@ -93,6 +96,21 @@ public:
     std::size_t
     getHexadecimalValue() const;
 
+    void
+    scanToNextSemicolon();
+
+    void
+    scanRestOfLine();
+
+    Character
+    getCharacter() const;
+
+    void
+    increment();
+
+    bool
+    isNewline(Character character) const;
+
 protected:
 
     std::stack<Location>
@@ -120,12 +138,6 @@ protected:
     _startMemoryLocationOfToken = nullptr;
 
     void
-    increment();
-
-    Character
-    getCharacter() const;
-
-    void
     setTokenStartPosition();
 
     bool
@@ -133,12 +145,6 @@ protected:
 
     bool
     isIdentifierPart(Character character) const;
-
-    bool
-    isNewline(Character character) const;
-
-    void
-    scanRestOfLine();
 };
 
 }

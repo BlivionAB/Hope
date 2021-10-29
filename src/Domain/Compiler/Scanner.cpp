@@ -1,12 +1,15 @@
 #include "Scanner.h"
+#include "Exceptions.h"
+
 
 namespace elet::domain::compiler::ast
 {
     using namespace elet::foundation;
 
 
-    Scanner::Scanner(const Utf8StringView& source):
-    BaseScanner(source)
+    Scanner::Scanner(const SourceFile* sourceFile):
+        BaseScanner(Utf8StringView(sourceFile->start, sourceFile->end)),
+        _sourceFile(sourceFile)
     {
 
     }
@@ -127,7 +130,7 @@ namespace elet::domain::compiler::ast
     Utf8StringView
     Scanner::getTokenValue() const
     {
-        return _source.slice(_startMemoryLocationOfToken, _sourceIterator.getPosition());
+        return _source.slice(_startMemoryLocationOfToken, _sourceIterator.getPositionAddress());
     }
 
 
@@ -191,17 +194,29 @@ namespace elet::domain::compiler::ast
     Scanner::scanHexadecimalDigits()
     {
         increment();
+        bool hasAtLeastOneHexCharacter = false;
         while (true)
         {
             Character character = getCharacter();
             if ((character >= Character::_0 && character <= Character::_9)
-                || (character >= Character::a && character <= Character::f)
-                || character == Character::_)
+                || (character >= Character::a && character <= Character::f))
+            {
+                hasAtLeastOneHexCharacter = true;
+                increment();
+                continue;
+            }
+            else if (character == Character::_)
             {
                 increment();
                 continue;
             }
             break;
+        }
+        if (!hasAtLeastOneHexCharacter)
+        {
+            const char* positionAddress = getPositionAddress();
+            scanToNextSemicolon();
+            throw new error::LexicalError(_sourceFile, positionAddress, "Hexadecimal literal must consist of at least one hexadecimal character.");
         }
         return Token::HexadecimalLiteral;
     }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <mutex>
 #include "Instruction/ObjectFileWriter/MachoFileWriter.h"
+#include "ErrorWriter.h"
 
 using namespace elet::domain::compiler::instruction::output;
 
@@ -14,6 +15,7 @@ namespace elet::domain::compiler
         _options(options),
         _parser(new ast::Parser(this->files)),
         _binder(new ast::Binder()),
+        _errorPrinter(),
         _checker(new ast::Checker(_binder))
     {
         _transformer = new instruction::Transformer(_dataMutex, options);
@@ -30,30 +32,26 @@ namespace elet::domain::compiler
         {
             return;
         }
-        ast::SourceFile* compilerFile = new ast::SourceFile();
-        files.insert(std::pair(fileString, compilerFile));
-        _pendingParsingFiles++;
         static const std::size_t BUFFER_SIZE = 16*1024;
         _fileStreamReader.openFile(file);
-        size_t bufferSize = _fileStreamReader.getFileSize();
-        _source = new char[bufferSize];
+        size_t fileSize = _fileStreamReader.getFileSize();
+        _source = new char[fileSize];
+        ast::SourceFile* sourceFile = new ast::SourceFile(fileString.c_str(), _source, _source);
+        files.insert(std::pair(fileString, sourceFile));
+        sourceFile->start = _source;
         _readCursor = const_cast<char*>(_source);
         fs::path currentDirectory(file);
         while (size_t bytesRead = _fileStreamReader.readChunk(_readCursor, BUFFER_SIZE))
         {
-            bool isEndOfFile = false;
-            if (bytesRead < BUFFER_SIZE)
-            {
-                isEndOfFile = _reachedEndOfFile = true;
-            }
             char* endCursor = &_readCursor[bytesRead];
-            _parsingWork.emplace(_readCursor, endCursor, &currentDirectory, compilerFile, isEndOfFile);
-            _parsingWorkCondition.notify_one();
-            _readCursor = endCursor;
-            if (_reachedEndOfFile)
+            if (bytesRead == fileSize)
             {
+                sourceFile->end = endCursor;
+                _parsingWork.push(sourceFile);
+                _parsingWorkCondition.notify_one();
                 break;
             }
+            _readCursor = endCursor;
         }
     }
 
@@ -106,6 +104,7 @@ namespace elet::domain::compiler
         }
     }
 
+
     void
     Compiler::endWorkers()
     {
@@ -148,7 +147,7 @@ namespace elet::domain::compiler
             std::unique_lock<std::mutex> lock(_parsingWorkMutex);
             _parsingWorkCondition.wait(lock, [&]
             {
-                return !_parsingWork.empty() || !_pendingParsingWork.empty() || (_pendingParsingFiles == 0 && _pendingParsingTasks == 0);
+                return !_parsingWork.empty() || !_pendingParsingWork.empty() || (_pendingParsingTasks == 0);
             });
             if (_compilationStage != CompilationStage::Parsing)
             {
@@ -157,28 +156,26 @@ namespace elet::domain::compiler
             if (!_parsingWork.empty())
             {
                 _pendingParsingTasks++;
-                ast::ParsingTask task = _parsingWork.front();
+                ast::SourceFile* sourceFile = _parsingWork.front();
                 _parsingWork.pop();
                 lock.unlock();
-                auto result = _parser->performWork(task);
-                if (result.pendingParsingTask)
+                auto result = _parser->performWork(sourceFile);
+                if (!result.syntaxErrors.isEmpty())
                 {
-                    if (!task.isEndOfFile)
-                    {
-                        _pendingParsingWork.emplace(task.sourceEnd, result.pendingParsingTask);
-                    }
+                    _syntaxErrors.add(result.syntaxErrors);
+                    _compilationStage = CompilationStage::Error;
+                    return;
                 }
-                else
+                if (!result.lexicalErrors.isEmpty())
                 {
-                    if (task.isEndOfFile)
-                    {
-                        _pendingParsingFiles--;
-                    }
+                    _lexicalErrors.add(result.lexicalErrors);
+                    _compilationStage = CompilationStage::Error;
+                    return;
                 }
                 pushBindingWork(result.statements);
                 _pendingParsingTasks--;
                 // Break early, instead of waiting for condition, that might not fire.
-                if (_pendingParsingFiles == 0 && _pendingParsingTasks == 0)
+                if (_pendingParsingTasks == 0)
                 {
                     _compilationStage = CompilationStage::Binding;
                     _parsingWorkCondition.notify_all();
@@ -279,6 +276,12 @@ namespace elet::domain::compiler
             {
                 auto declaration = reinterpret_cast<ast::Declaration*>(statement);
                 _checker->checkTopLevelDeclaration(declaration);
+                if (!_checker->errors.isEmpty())
+                {
+                    _syntaxErrors.add(_checker->errors);
+                    _compilationStage = CompilationStage::Error;
+                    return;
+                }
                 if (declaration->kind == ast::SyntaxKind::DomainDeclaration)
                 {
                     auto domain = reinterpret_cast<ast::DomainDeclaration*>(declaration);
@@ -388,5 +391,14 @@ namespace elet::domain::compiler
     Compiler::getOutput()
     {
         return _objectFileWriter->getOutput();
+    }
+
+
+    Utf8String
+    Compiler::printCompileErrors()
+    {
+        _errorPrinter.printCompileErrors(_syntaxErrors);
+        _errorPrinter.printLexicalErrors(_lexicalErrors);
+        return _errorPrinter.toString();
     }
 }

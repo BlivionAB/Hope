@@ -167,11 +167,26 @@ namespace elet::domain::compiler::ast
 
     struct SourceFile
     {
+        const char*
+        start;
+
+        const char*
+        end;
+
+        fs::path
+        file;
+
         NameToDeclarationMap
         declarations;
 
         std::multimap<Utf8StringView, Declaration*>
         symbols;
+
+        SourceFile(fs::path file, const char* start, const char* end):
+            file(file),
+            start(start),
+            end(end)
+        { }
     };
 
 
@@ -188,6 +203,12 @@ namespace elet::domain::compiler::ast
 
         char*
         end;
+    };
+
+
+    struct EndOfFile : Syntax
+    {
+
     };
 
 

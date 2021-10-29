@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <Foundation/List.h>
-#include <Domain/Compiler/Instruction/TextWriter.h>
+#include <Foundation/TextWriter.h>
 
 
 namespace elet::domain::compiler::test
@@ -12,7 +12,6 @@ namespace elet::domain::compiler::test
 
 
 using namespace elet::foundation;
-using namespace elet::domain::compiler::instruction;
 
 
 class AssemblyParser

@@ -7,6 +7,7 @@ namespace elet::domain::compiler::ast
 {
     enum class SyntaxKind : uint8_t
     {
+        EndOfFile,
         Unknown,
         ErrorNode,
 

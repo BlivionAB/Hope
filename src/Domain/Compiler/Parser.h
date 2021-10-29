@@ -72,42 +72,21 @@ namespace elet::domain::compiler::ast
 
     struct ParsingTask
     {
-        const char*
-        sourceStart;
-
-        const char*
-        sourceEnd;
-
-        const fs::path*
-        sourceDirectory;
-
         ast::SourceFile*
         sourceFile;
 
-        bool
-        isEndOfFile;
+//        bool
+//        isEndOfFile;
 
         ParsingTask(
-            const char*
-            start,
-
-            const char*
-            end,
-
-            const fs::path*
-            directory,
-
             ast::SourceFile*
-            file,
+            sourceFile
 
-            bool
-            endOfFile
+//            bool
+//            endOfFile
         ):
-            sourceStart(start),
-            sourceEnd(end),
-            sourceDirectory(directory),
-            sourceFile(file),
-            isEndOfFile(endOfFile)
+            sourceFile(sourceFile)
+//            isEndOfFile(endOfFile)
         { }
     };
 
@@ -131,8 +110,11 @@ namespace elet::domain::compiler::ast
         List<Syntax*>
         statements;
 
-        ParsingTask*
-        pendingParsingTask;
+        List<error::SyntaxError*>
+        syntaxErrors;
+
+        List<error::LexicalError*>
+        lexicalErrors;
     };
 
 
@@ -153,10 +135,12 @@ namespace elet::domain::compiler::ast
     {
     public:
 
-        Parser(std::map<std::string, ast::SourceFile*>& files);
+        friend class ParserError;
+
+        Parser(std::map<std::string, SourceFile*>& files);
 
         ParseResult
-        performWork(const ParsingTask& task);
+        performWork(SourceFile* sourceFile);
 
         void
         seek(const BaseScanner::Location& location);
@@ -185,15 +169,20 @@ namespace elet::domain::compiler::ast
         ParserError*
         _error;
 
-        static
-        thread_local
-        fs::path*
-        _currentDirectory;
+        const
+        SourceFile*
+        _sourceFile;
 
-        static
-        thread_local
-        const char*
-        _lastStatementLocationStart;
+        List<error::SyntaxError*>
+        _syntaxErrors;
+
+        List<error::LexicalError*>
+        _lexicalErrors;
+
+//        static
+//        thread_local
+//        fs::path*
+//        _currentDirectory;
 
         static
         thread_local
@@ -232,8 +221,8 @@ namespace elet::domain::compiler::ast
         FunctionDeclaration*
         parseFunctionDeclaration();
 
-    //    FunctionMetadata*
-    //    parseFunctionMetadata();
+        void
+        skipToNextSemicolon();
 
         static
         bool
@@ -434,8 +423,11 @@ namespace elet::domain::compiler::ast
         uint64_t
         parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, IntegerLimit maxLimit) const;
 
+        std::string
+        toStringFromIntegerLimit(IntegerLimit limit) const;
+
         IntegerLimit
-        getIntegerMaxLimitFromToken(Token token);
+        getIntegerMaxLimitFromToken(Token token, IntegerLimit defaultLimit) const;
 
         bool
         isIntegerSuffix(Token token);

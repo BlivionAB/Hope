@@ -7,7 +7,7 @@ namespace elet::domain::compiler::test
 
 TEST_F(FunctionFixture, ExternalFunction)
 {
-    project.setEntrySourceFile("main.l1",
+    project.setEntrySourceFile("main.hs",
         "domain Common::Console\n"
         "{\n"
         "\n"

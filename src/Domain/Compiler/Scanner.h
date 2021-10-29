@@ -16,7 +16,7 @@ namespace elet::domain::compiler::ast
     class Scanner : public elet::foundation::BaseScanner
     {
     public:
-        explicit Scanner(const Utf8StringView& source);
+        explicit Scanner(const SourceFile* source);
 
 
         enum class IntegerLiteralType
@@ -63,6 +63,10 @@ namespace elet::domain::compiler::ast
         Token
         getTokenFromString(const Utf8StringView& string) const;
 
+        const
+        ast::SourceFile*
+        _sourceFile;
+
         std::uint8_t
         _stage;
 
@@ -71,6 +75,9 @@ namespace elet::domain::compiler::ast
 
         Scanner::IntegerSuffix
         _currentIntegerSuffix;
+
+        Utf8StringView
+        _sourceString;
 
         Token
         scanDigits();
@@ -192,6 +199,10 @@ namespace elet::domain::compiler::ast
         { Token::Identifier, "identifier" },
         { Token::DoubleColon, "::" },
         { Token::SemiColon, ";" },
+        { Token::OpenBrace, "{" },
+        { Token::CloseBrace, "}" },
+        { Token::OpenBracket, "[" },
+        { Token::CloseBracket, "]" },
     };
 };
 

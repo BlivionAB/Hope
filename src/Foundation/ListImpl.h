@@ -252,6 +252,7 @@ List<T>::isEmpty() const
     return _cursor == _items;
 }
 
+
 template<typename T>
 template<typename TType>
 TType

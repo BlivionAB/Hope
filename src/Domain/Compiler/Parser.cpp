@@ -10,16 +10,6 @@ namespace fs = std::filesystem;
 namespace elet::domain::compiler::ast
 {
     thread_local
-    fs::path*
-    Parser::_currentDirectory = nullptr;
-
-
-    thread_local
-    const char*
-    Parser::_lastStatementLocationStart = nullptr;
-
-
-    thread_local
     const char*
     Parser::_lastStatementLocationEnd = nullptr;
 
@@ -44,15 +34,15 @@ namespace elet::domain::compiler::ast
 
 
     ParseResult
-    Parser::performWork(const ParsingTask& task)
+    Parser::performWork(SourceFile* sourceFile)
     {
-        _lastStatementLocationStart = const_cast<char*>(task.sourceStart);
-        Utf8StringView sourceContent(task.sourceStart, task.sourceEnd);
-        Scanner scanner(sourceContent);
-        _currentDirectory = const_cast<fs::path*>(task.sourceDirectory);
+        _sourceFile = sourceFile;
+//        Utf8StringView sourceContent(task.sourceStart, task.sourceEnd);
+        Scanner scanner(sourceFile);
+//        _currentDirectory = const_cast<fs::path*>(task.sourceDirectory);
         _scanner = &scanner;
         List<Syntax*> statements;
-        ParsingTask* pendingParsingTask = nullptr;
+//        ParsingTask* pendingParsingTask = nullptr;
         while (true)
         {
             try
@@ -62,16 +52,15 @@ namespace elet::domain::compiler::ast
                 {
                     break;
                 }
-                addSymbolToSourceFile(statement, task.sourceFile);
-                _lastStatementLocationStart = statement->end;
+                addSymbolToSourceFile(statement, sourceFile);
                 statements.add(statement);
             }
             catch (error::UnexpectedEndOfFile &ex)
             {
-                pendingParsingTask = new ParsingTask(_lastStatementLocationStart, _lastStatementLocationEnd, _currentDirectory, task.sourceFile, task.isEndOfFile);
+
             }
         }
-        return { statements, pendingParsingTask };
+        return { statements, _syntaxErrors, _lexicalErrors };
     }
 
 
@@ -80,7 +69,7 @@ namespace elet::domain::compiler::ast
     {
         if (statement->labels & LABEL__DECLARATION)
         {
-            auto declaration = reinterpret_cast<Declaration*>(statement);
+            Declaration* declaration = reinterpret_cast<Declaration*>(statement);
             if (declaration->kind == SyntaxKind::DomainDeclaration)
             {
                 auto domain = reinterpret_cast<DomainDeclaration*>(declaration);
@@ -92,8 +81,8 @@ namespace elet::domain::compiler::ast
             if (declaration->symbol)
             {
                 sourceFile->symbols.insert({ declaration->symbol->name, declaration });
-                declaration->sourceFile = sourceFile;
             }
+            declaration->sourceFile = sourceFile;
         }
     }
 
@@ -136,7 +125,6 @@ namespace elet::domain::compiler::ast
                 default:;
             }
             block->declarations.add(statement);
-            _lastStatementLocationStart = statement->end;
         }
         return block;
     }
@@ -181,7 +169,7 @@ namespace elet::domain::compiler::ast
             case Token::CloseBrace:
                 return nullptr;
             default:
-                throw _error->createSyntaxError("Unknown domain-level statement.");
+                throw _error->throwSyntaxError("Unknown domain-level statement.");
         }
     }
 
@@ -208,7 +196,7 @@ namespace elet::domain::compiler::ast
             case Token::CloseBrace:
                 return nullptr;
             default:
-                throw _error->createSyntaxError("Unknown file-level statement.");
+                _error->throwSyntaxError("Unknown file-level statement.");
         }
     }
 
@@ -249,18 +237,23 @@ namespace elet::domain::compiler::ast
                                 return propertyAccessExpression;
                             }
                     }
-                    throw _error->createSyntaxError("Single variable expressions are disallowed.");
+                    _error->throwSyntaxError("Single variable expressions are disallowed.");
                 }
                 case Token::EndOfFile:
-                    return nullptr;
+                    return createSyntax<EndOfFile>(SyntaxKind::EndOfFile);
                 default:
-                    throw _error->createSyntaxError("");
+                    _error->throwSyntaxError("");
             }
         }
         catch (error::SyntaxError* syntaxError)
         {
-            std::cout << syntaxError->message << std::endl;
+            _syntaxErrors.add(syntaxError);
         }
+        catch (error::LexicalError* lexicalError)
+        {
+            _lexicalErrors.add(lexicalError);
+        }
+        return nullptr;
     }
 
 
@@ -273,7 +266,7 @@ namespace elet::domain::compiler::ast
         Token token = takeNextToken();
         if (token != Token::OpenParen)
         {
-            _error->createExpectedTokenError(Token::DoubleQuote);
+            throw _error->createExpectedTokenError(Token::DoubleQuote);
         }
         auto parameterListResult = parseParameterListonOpenParen();
         functionDeclaration->parameterList = parameterListResult.parameterList;
@@ -297,11 +290,11 @@ namespace elet::domain::compiler::ast
         }
         else if (token != Token::OpenBrace)
         {
-            _error->createExpectedTokenError(Token::OpenBrace);
+            throw _error->createExpectedTokenError(Token::OpenBrace);
         }
         functionDeclaration->body = parseFunctionBodyOnOpenBrace();
 
-        finishDeclaration:
+    finishDeclaration:
         finishDeclaration(functionDeclaration);
         functionDeclaration->domain = _currentDomain;
         return functionDeclaration;
@@ -435,7 +428,13 @@ namespace elet::domain::compiler::ast
         while (peekNextToken(false) != Token::CloseBrace)
         {
             Syntax* statement = parseFunctionLevelStatement();
+
+            // Null means it encounters errors but should continue.
             if (!statement)
+            {
+                continue;
+            }
+            if (statement->kind == SyntaxKind::EndOfFile)
             {
                 break;
             }
@@ -474,7 +473,7 @@ namespace elet::domain::compiler::ast
     {
         if (target != expected)
         {
-            throw error::ExpectedTokenError(_error->createErrorNodeOnCurrentToken(), target, getTokenValue());
+            throw new error::SyntaxError(_error->createErrorNodeOnCurrentToken(), _sourceFile, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), getTokenValue().toString());
         }
     }
 
@@ -526,7 +525,7 @@ namespace elet::domain::compiler::ast
                 typeAssignment->type = TypeKind::Custom;
                 break;
             default:
-                throw _error->createSyntaxError("Expected type annotation.");
+                throw _error->throwSyntaxError("Expected type annotation.");
         }
         typeAssignment->name = createName();
         while (true)
@@ -698,7 +697,7 @@ namespace elet::domain::compiler::ast
             case Token::Identifier:
                 return parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
         }
-        throw _error->createSyntaxError("Expected expression.");
+        throw _error->throwSyntaxError("Expected expression.");
     }
 
 
@@ -754,10 +753,10 @@ namespace elet::domain::compiler::ast
         switch (token)
         {
             case Token::DecimalLiteral:
-                integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek));
+                integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek, IntegerLimit::S32Max));
                 break;
             case Token::HexadecimalLiteral:
-                integerLiteral->value = parseHexadecimalLiteral(std::get<HexadecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek));
+                integerLiteral->value = parseHexadecimalLiteral(std::get<HexadecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek, IntegerLimit::U64Max));
                 break;
         }
         finishSyntax(integerLiteral);
@@ -1090,7 +1089,7 @@ namespace elet::domain::compiler::ast
                 _error->createExpectedTokenError(Token::Identifier);
             }
             _currentDomain->names.add(createName());
-            char *end = _scanner->getPosition();
+            char *end = _scanner->getPositionAddress();
             token = takeNextToken();
             if (token == Token::SemiColon)
             {
@@ -1123,7 +1122,7 @@ namespace elet::domain::compiler::ast
             token = takeNextToken();
         }
 
-        setAccessMap:
+    setAccessMap:
         std::size_t last = _currentDomain->names.size() - 1;
         DomainDeclarationMap* currentAccessMap = &domainDeclarationMap;
         for (int i = 0; i <= last; i++)
@@ -1301,7 +1300,7 @@ namespace elet::domain::compiler::ast
         expectToken(Token::StringLiteral);
         if (getTokenValue() != "\"C\"")
         {
-            throw _error->createSyntaxError("Onyl C language API is allowed.");
+            throw _error->throwSyntaxError("Onyl C language API is allowed.");
         }
         expectToken(Token::OpenBrace);
         block->declarations = parseExternCBlockLevelDeclarations();
@@ -1429,7 +1428,10 @@ namespace elet::domain::compiler::ast
             uint64_t f = positionValue * std::pow(16ui64, exponent);
             if (f > leftOfMaxLimit)
             {
-                throw _error->createSyntaxError(hexadecimalLiteral, "Integer literal has exceeded its max limit '{0}'.", static_cast<uint64_t>(maxLimit));
+                _error->throwSyntaxError(
+                    hexadecimalLiteral,
+                    "Integer literal has exceeded its max limit of {0}({1}).",
+                    toStringFromIntegerLimit(maxLimit), static_cast<uint64_t>(maxLimit));
             }
             result += f;
             leftOfMaxLimit -= f;
@@ -1448,9 +1450,9 @@ namespace elet::domain::compiler::ast
     Parser::parseDecimalLiteral(const DecimalLiteral* decimalLiteral, IntegerLimit maxLimit) const
     {
         const char* cursor = decimalLiteral->end - 1;
-        unsigned int exponent = getDigitsLength(decimalLiteral->end - 1, decimalLiteral->start);;
+        unsigned int exponent = 0;
         uint64_t result = 0;
-        uint64_t leftOfResult = static_cast<uint64_t>(maxLimit);
+        uint64_t leftOfMaxLimit = static_cast<uint64_t>(maxLimit);
         while (true)
         {
             unsigned int s = cursor[0] - '0';
@@ -1460,12 +1462,15 @@ namespace elet::domain::compiler::ast
                 continue;
             }
             unsigned int f = s * std::pow(10, exponent);
-            if (f >= leftOfResult)
+            if (f > leftOfMaxLimit)
             {
-                throw _error->createSyntaxError(decimalLiteral, "Integer literal has exceeded its max limit.");
+                _error->throwSyntaxError(
+                    decimalLiteral,
+                    "Integer literal has exceeded its max limit of {0}({1}).",
+                    toStringFromIntegerLimit(maxLimit), static_cast<uint64_t>(maxLimit));
             }
             result += f;
-            leftOfResult -= f;
+            leftOfMaxLimit -= f;
             if (cursor == decimalLiteral->start)
             {
                 break;
@@ -1499,8 +1504,11 @@ namespace elet::domain::compiler::ast
     }
 
 
+
+
+
     IntegerLimit
-    Parser::getIntegerMaxLimitFromToken(Token token)
+    Parser::getIntegerMaxLimitFromToken(Token token, IntegerLimit defaultLimit) const
     {
         switch (token)
         {
@@ -1520,8 +1528,35 @@ namespace elet::domain::compiler::ast
                 return IntegerLimit::S32Max;
             case Token::S64Keyword:
                 return IntegerLimit::S64Max;
+            default:
+                return defaultLimit;
         }
-        assert(true && "Unknown integer token");
+    }
+
+
+    std::string
+    Parser::toStringFromIntegerLimit(IntegerLimit limit) const
+    {
+        switch (limit)
+        {
+            case IntegerLimit::U8Max:
+                return "u8";
+            case IntegerLimit::U16Max:
+                return "u16";
+            case IntegerLimit::U32Max:
+                return "u32";
+            case IntegerLimit::U64Max:
+                return "u64";
+
+            case IntegerLimit::S8Max:
+                return "s8";
+            case IntegerLimit::S16Max:
+                return "s16";
+            case IntegerLimit::S32Max:
+                return "s32";
+            case IntegerLimit::S64Max:
+                return "s64";
+        }
     }
 
 
@@ -1529,5 +1564,17 @@ namespace elet::domain::compiler::ast
     Parser::isIntegerSuffix(Token token)
     {
         return token >= Token::U8Keyword && token <= Token::S64Keyword;
+    }
+
+
+    void
+    Parser::skipToNextSemicolon()
+    {
+        Token token;
+        do
+        {
+            token = takeNextToken();
+        }
+        while(token != Token::SemiColon && token != Token::EndOfFile);
     }
 }

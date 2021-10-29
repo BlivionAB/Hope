@@ -23,6 +23,7 @@ namespace elet::domain::compiler::ast
     ParserError::createExpectedTokenError(Token token)
     {
         return new error::SyntaxError(createErrorNodeOnCurrentToken(),
+            _parser->_sourceFile,
             "Expected '{0}', instead got '{1}'.",
             eletTokenToString.get(token),
             _parser->getTokenValue().toString());

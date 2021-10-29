@@ -173,7 +173,7 @@ InstructionScanner::getRegisterCount() const
 Utf8StringView
 InstructionScanner::getAssemblyReferenceValue() const
 {
-    return _source.slice(_startMemoryLocationOfToken + 1, _sourceIterator.getPosition()).toString();
+    return _source.slice(_startMemoryLocationOfToken + 1, _sourceIterator.getPositionAddress()).toString();
 }
 
 

@@ -18,11 +18,11 @@ namespace elet::domain::compiler::ast
 
         template<typename... Args>
         error::SyntaxError*
-        createSyntaxError(Utf8String message, Args... args);
+        throwSyntaxError(Utf8String message, Args... args);
 
         template<typename... Args>
         error::SyntaxError*
-        createSyntaxError(const Syntax* syntax, Utf8String message, Args... args);
+        throwSyntaxError(const Syntax* syntax, Utf8String message, Args... args);
 
         ErrorNode*
         createErrorNodeOnCurrentToken();

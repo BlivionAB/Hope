@@ -4,50 +4,44 @@
 
 #include <unordered_map>
 #include "./MyersDiff.h"
-#include <Domain/Compiler/Instruction/TextWriter.h>
+#include <Foundation/TextWriter.h>
 
 namespace elet::domain::compiler::test
 {
+    enum class TerminalColor
+    {
+        Red,
+        Green,
+    };
 
-using namespace elet::domain::compiler::instruction;
+    class DiffPrinter
+    {
 
+    public:
 
-enum class TerminalColor
-{
-    Red,
-    Green,
-};
+        DiffPrinter();
 
-class DiffPrinter
-{
+        std::string
+        print(const List <Edit>& diffs);
 
-public:
-
-    DiffPrinter();
-
-    std::string
-    print(const List <Edit>& diffs);
-
-    std::string
-    print(const List <Edit>& diffs, bool printTerminalColors);
+        std::string
+        print(const List <Edit>& diffs, bool printTerminalColors);
 
 
-private:
+    private:
 
-    void
-    writeTerminalColor(TerminalColor color);
+        void
+        writeTerminalColor(TerminalColor color);
 
-    void
-    writeTerminalColorReset();
+        void
+        writeTerminalColorReset();
 
-    bool
-    _writeTerminalColors;
+        bool
+        _writeTerminalColors;
 
-    TextWriter
-    _tw;
-};
-
-
+        TextWriter
+        _tw;
+    };
 }
 
 

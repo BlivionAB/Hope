@@ -9,7 +9,7 @@
 #include "X86Types.h"
 #include "X86AssemblyParser.h"
 #include "Domain/Compiler/TestHarness/BaselinePrinter.h"
-#include "Domain/Compiler/Instruction/TextWriter.h"
+#include "Foundation/TextWriter.h"
 
 namespace elet::domain::compiler::test::x86
 {

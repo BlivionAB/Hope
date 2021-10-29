@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <Foundation/Utf8String.h>
-#include <Domain/Compiler/Instruction/TextWriter.h>
+#include <Foundation/TextWriter.h>
 #include <map>
 
 
@@ -13,7 +13,6 @@ namespace elet::domain::compiler::test
 
 
 using namespace elet::foundation;
-using namespace elet::domain::compiler::instruction;
 
 template<typename TOneOfInstruction>
 class BaselinePrinter

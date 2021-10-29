@@ -1,14 +1,18 @@
 #ifndef ELET_CHECKER_H
 #define ELET_CHECKER_H
 
+
 #include <map>
 #include <format>
 #include <Foundation/Utf8StringView.h>
 #include "Binder.h"
 #include "Syntax/Syntax.h"
 #include "Syntax/Syntax.Type.h"
+#include "Exceptions.h"
+
 
 using namespace elet::foundation;
+
 
 namespace elet::domain::compiler::ast
 {
@@ -42,6 +46,9 @@ namespace elet::domain::compiler::ast
 
         List<FunctionDeclaration*>
         startFunctions;
+
+        List<error::SyntaxError*>
+        errors;
 
     private:
 
@@ -109,6 +116,16 @@ namespace elet::domain::compiler::ast
 
         Type*
         resolveTypeOfIntegerLiteral(IntegerLiteral* integerLiteral);
+
+        template<typename... Args>
+        void
+        addError(const Syntax* syntax, const char* message, Args... args);
+
+        void
+        checkReturnStatement(ReturnStatement* returnStatement, FunctionDeclaration* functionDeclaration);
+
+        void
+        checkTypeAssignability(Type* target, Type* reference);
     };
 }
 
