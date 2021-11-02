@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <Foundation/Utf8String.h>
 #include <Foundation/Utf8StringView.h>
-#include <Foundation/BaseScanner.h>
+#include <Foundation/TextScanner.h>
 #include <Foundation/HashTableMap.h>
 
 using namespace elet::foundation;
@@ -12,7 +12,7 @@ using namespace elet::foundation;
 namespace elet::domain::compiler::instruction
 {
 
-class InstructionScanner : public BaseScanner
+class InstructionScanner : public TextScanner
 {
 
 public:

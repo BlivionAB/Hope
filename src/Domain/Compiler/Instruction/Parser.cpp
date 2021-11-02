@@ -20,13 +20,13 @@ InstructionParser::takeNextToken()
 
 
 void
-InstructionParser::seek(const BaseScanner::Location& location)
+InstructionParser::seek(const TextScanner::Location& location)
 {
     _scanner.seek(location);
 }
 
 
-BaseScanner::Location
+TextScanner::Location
 InstructionParser::getLocation() const
 {
     return _scanner.getLocation();

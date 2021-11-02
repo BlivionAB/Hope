@@ -8,7 +8,7 @@ namespace elet::domain::compiler::ast
 
 
     Scanner::Scanner(const SourceFile* sourceFile):
-        BaseScanner(Utf8StringView(sourceFile->start, sourceFile->end)),
+        TextScanner(Utf8StringView(sourceFile->start, sourceFile->end)),
         _sourceFile(sourceFile)
     {
 
@@ -49,7 +49,7 @@ namespace elet::domain::compiler::ast
                     {
                         return scanHexadecimalDigits();
                     }
-                    return scanDigits();
+                    return scanDecimalDigits();
                 }
                 case Character::Comma:
                     return Token::Comma;
@@ -173,7 +173,7 @@ namespace elet::domain::compiler::ast
 
 
     Token
-    Scanner::scanDigits()
+    Scanner::scanDecimalDigits()
     {
         while (true)
         {

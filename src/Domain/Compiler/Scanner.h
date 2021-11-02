@@ -3,7 +3,7 @@
 
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/HashTableMap.h>
-#include <Foundation/BaseScanner.h>
+#include <Foundation/TextScanner.h>
 #include "Syntax/Syntax.h"
 #include <stack>
 
@@ -13,7 +13,7 @@ namespace elet::domain::compiler::ast
 
     #define TREAT_STRING_KEYWORD_AS_NAME (std::uint8_t)0x1
 
-    class Scanner : public elet::foundation::BaseScanner
+    class Scanner : public elet::foundation::TextScanner
     {
     public:
         explicit Scanner(const SourceFile* source);
@@ -80,7 +80,7 @@ namespace elet::domain::compiler::ast
         _sourceString;
 
         Token
-        scanDigits();
+        scanDecimalDigits();
 
         Token
         scanHexadecimalDigits();

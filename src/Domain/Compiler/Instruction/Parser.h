@@ -31,12 +31,12 @@ public:
     explicit InstructionParser(const Utf8StringView& source);
 
     void
-    seek(const BaseScanner::Location& location);
+    seek(const TextScanner::Location& location);
 
     List<output::Instruction*>*
     parse();
 
-    BaseScanner::Location
+    TextScanner::Location
     getLocation() const;
 
 private:

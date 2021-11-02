@@ -80,7 +80,8 @@ namespace elet::domain::compiler::ast
             }
             if (declaration->symbol)
             {
-                sourceFile->symbols.insert({ declaration->symbol->name, declaration });
+//                sourceFile->symbols.insert({ declaration->symbol->name, declaration });
+                sourceFile->declarations.insert({ declaration->symbol->name, declaration });
             }
             declaration->sourceFile = sourceFile;
         }
@@ -473,7 +474,10 @@ namespace elet::domain::compiler::ast
     {
         if (target != expected)
         {
-            throw new error::SyntaxError(_error->createErrorNodeOnCurrentToken(), _sourceFile, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), getTokenValue().toString());
+            ErrorNode* errorNode = _error->createErrorNodeOnCurrentToken();
+            const char* tokenValue = getTokenValue().toString();
+            _scanner->scanToNextSemicolon();
+            throw new error::SyntaxError(errorNode, _sourceFile, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), tokenValue);
         }
     }
 
@@ -753,10 +757,10 @@ namespace elet::domain::compiler::ast
         switch (token)
         {
             case Token::DecimalLiteral:
-                integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek, IntegerLimit::S32Max));
+                integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits));
                 break;
             case Token::HexadecimalLiteral:
-                integerLiteral->value = parseHexadecimalLiteral(std::get<HexadecimalLiteral*>(integerLiteral->digits), getIntegerMaxLimitFromToken(suffixPeek, IntegerLimit::U64Max));
+                integerLiteral->value = parseHexadecimalLiteral(std::get<HexadecimalLiteral*>(integerLiteral->digits));
                 break;
         }
         finishSyntax(integerLiteral);
@@ -1238,7 +1242,7 @@ namespace elet::domain::compiler::ast
 
 
     void
-    Parser::seek(const BaseScanner::Location& location)
+    Parser::seek(const TextScanner::Location& location)
     {
         _scanner->seek(location);
     }
@@ -1397,13 +1401,13 @@ namespace elet::domain::compiler::ast
 
 
     uint64_t
-    Parser::parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, IntegerLimit maxLimit) const
+    Parser::parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral) const
     {
         const char* cursor = hexadecimalLiteral->end - 1;
         const char* start = hexadecimalLiteral->start + 2;
         uint64_t exponent = 0;
         uint64_t result = 0;
-        uint64_t leftOfMaxLimit = static_cast<uint64_t>(maxLimit);
+        uint64_t leftOfMaxLimit = UINT64_MAX;
         while (true)
         {
             unsigned char character = cursor[0];
@@ -1430,8 +1434,7 @@ namespace elet::domain::compiler::ast
             {
                 _error->throwSyntaxError(
                     hexadecimalLiteral,
-                    "Integer literal has exceeded its max limit of {0}({1}).",
-                    toStringFromIntegerLimit(maxLimit), static_cast<uint64_t>(maxLimit));
+                    "Integer literal has exceeded its max limit of U64_MAX.");
             }
             result += f;
             leftOfMaxLimit -= f;
@@ -1447,27 +1450,27 @@ namespace elet::domain::compiler::ast
 
 
     uint64_t
-    Parser::parseDecimalLiteral(const DecimalLiteral* decimalLiteral, IntegerLimit maxLimit) const
+    Parser::parseDecimalLiteral(const DecimalLiteral* decimalLiteral) const
     {
         const char* cursor = decimalLiteral->end - 1;
         unsigned int exponent = 0;
         uint64_t result = 0;
-        uint64_t leftOfMaxLimit = static_cast<uint64_t>(maxLimit);
+        uint64_t leftOfMaxLimit = UINT64_MAX;
         while (true)
         {
-            unsigned int s = cursor[0] - '0';
-            if (s == '_')
+            char character = cursor[0];
+            if (character == '_')
             {
                 cursor--;
                 continue;
             }
+            unsigned int s = character - '0';
             unsigned int f = s * std::pow(10, exponent);
             if (f > leftOfMaxLimit)
             {
                 _error->throwSyntaxError(
                     decimalLiteral,
-                    "Integer literal has exceeded its max limit of {0}({1}).",
-                    toStringFromIntegerLimit(maxLimit), static_cast<uint64_t>(maxLimit));
+                    "Integer literal has exceeded its max limit of U64_MAX.");
             }
             result += f;
             leftOfMaxLimit -= f;

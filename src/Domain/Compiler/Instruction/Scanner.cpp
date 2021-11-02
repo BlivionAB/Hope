@@ -9,7 +9,7 @@ using InstructionToken = InstructionScanner::InstructionToken;
 
 
 InstructionScanner::InstructionScanner(const Utf8StringView &source):
-    elet::foundation::BaseScanner(source)
+    elet::foundation::TextScanner(source)
 {
 
 }

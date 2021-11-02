@@ -38,7 +38,7 @@ namespace elet::domain::compiler::ast
             case SyntaxKind::PropertyExpression:
                 return checkPropertyExpression(reinterpret_cast<PropertyExpression*>(expression));
             case SyntaxKind::IntegerLiteral:
-                return resolveTypeOfIntegerLiteral(reinterpret_cast<IntegerLiteral*>(expression));
+                return checkIntegerLiteral(reinterpret_cast<IntegerLiteral*>(expression));
             default:;
         }
     }
@@ -96,9 +96,41 @@ namespace elet::domain::compiler::ast
 
 
     Type*
-    Checker::resolveTypeOfIntegerLiteral(IntegerLiteral* integerLiteral)
+    Checker::checkIntegerLiteral(IntegerLiteral* integerLiteral)
     {
-        return integerLiteral->resolvedType = getTypeFromIntegerLiteral(integerLiteral);
+        integerLiteral->resolvedType = getTypeFromIntegerLiteral(integerLiteral);
+        if (integerLiteral->isNegative)
+        {
+            if (integerLiteral->resolvedType->kind == TypeKind::S32)
+            {
+                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max) + 1)
+                {
+                    addError(integerLiteral, "Negative value exceeds min limit of s32.");
+                }
+                else if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max) + 1)
+                {
+                    addError(integerLiteral, "Negative value exceeds min limit of s64.");
+                }
+            }
+        }
+        else
+        {
+            if (integerLiteral->resolvedType->kind == TypeKind::S32)
+            {
+                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max))
+                {
+                    addError(integerLiteral, "Negative value exceeds max limit of s32.");
+                }
+            }
+            if (integerLiteral->resolvedType->kind == TypeKind::S64)
+            {
+                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max))
+                {
+                    addError(integerLiteral, "Negative value exceeds max limit of s32.");
+                }
+            }
+        }
+        return integerLiteral->resolvedType;
     }
 
 
@@ -118,13 +150,27 @@ namespace elet::domain::compiler::ast
     {
         if (std::holds_alternative<DecimalLiteral*>(integerLiteral->digits))
         {
-            if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S32Max))
+            if (integerLiteral->isNegative)
             {
-                return new Type(TypeKind::S32);
+                if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S32Max) + 1)
+                {
+                    return new Type(TypeKind::S32);
+                }
+                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S64Max) + 1)
+                {
+                    return new Type(TypeKind::S64);
+                }
             }
-            else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S64Max))
+            else
             {
-                return new Type(TypeKind::S64);
+                if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S32Max))
+                {
+                    return new Type(TypeKind::S32);
+                }
+                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S64Max))
+                {
+                    return new Type(TypeKind::S64);
+                }
             }
             addDiagnostic(new Diagnostic("Integer literal value exceeds int64 max."));
         }

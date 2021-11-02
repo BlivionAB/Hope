@@ -115,7 +115,7 @@ namespace elet::domain::compiler::ast
         checkBinaryExpression(BinaryExpression* binaryExpression);
 
         Type*
-        resolveTypeOfIntegerLiteral(IntegerLiteral* integerLiteral);
+        checkIntegerLiteral(IntegerLiteral* integerLiteral);
 
         template<typename... Args>
         void

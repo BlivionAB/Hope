@@ -1,5 +1,5 @@
-#ifndef ELET_BASESCANNER_H
-#define ELET_BASESCANNER_H
+#ifndef ELET_TEXTSCANNER_H
+#define ELET_TEXTSCANNER_H
 #include <cstddef>
 #include <Foundation/Utf8String.h>
 #include <Foundation/Utf8StringView.h>
@@ -8,10 +8,10 @@
 namespace elet::foundation
 {
 
-class BaseScanner
+class TextScanner
 {
 public:
-    explicit BaseScanner(const Utf8StringView source);
+    explicit TextScanner(const Utf8StringView source);
 
 
     struct Location
@@ -89,6 +89,9 @@ public:
 
     bool
     isHexDigit(Character character) const;
+
+    void
+    scanToPositionAddress(const char* positionAddress);
 
     std::size_t
     getDecimalValue() const;

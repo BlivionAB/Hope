@@ -1,8 +1,8 @@
-#include "BaseScanner.h"
+#include "TextScanner.h"
 
 namespace elet::foundation
 {
-    BaseScanner::BaseScanner(const Utf8StringView source) :
+    TextScanner::TextScanner(const Utf8StringView source) :
         _source(source),
         _sourceIterator(source.begin()),
         _endIterator(source.end())
@@ -12,35 +12,43 @@ namespace elet::foundation
 
 
     void
-    BaseScanner::setTokenStartPosition()
+    TextScanner::setTokenStartPosition()
     {
         _startMemoryLocationOfToken = _sourceIterator.getPositionAddress();
     }
 
 
-    BaseScanner::Character
-    BaseScanner::getCharacter() const
+    TextScanner::Character
+    TextScanner::getCharacter() const
     {
         return static_cast<Character>(*_sourceIterator);
     }
 
     void
-    BaseScanner::increment() {
+    TextScanner::increment()
+    {
         ++_sourceIterator;
+        Character character = getCharacter();
         ++_position;
+        if (isNewline(character))
+        {
+            _column = 1;
+            _line++;
+            return;
+        }
         _column++;
     }
 
 
     Utf8StringView
-    BaseScanner::getTokenValue() const
+    TextScanner::getTokenValue() const
     {
         return _source.slice(_startMemoryLocationOfToken, _sourceIterator.getPositionAddress()).toString();
     }
 
 
     bool
-    BaseScanner::isIdentifierStart(BaseScanner::Character character) const
+    TextScanner::isIdentifierStart(TextScanner::Character character) const
     {
         return (character >= Character::A && character <= Character::Z) ||
                (character >= Character::a && character <= Character::z) ||
@@ -49,7 +57,7 @@ namespace elet::foundation
 
 
     bool
-    BaseScanner::isIdentifierPart(BaseScanner::Character character) const
+    TextScanner::isIdentifierPart(TextScanner::Character character) const
     {
         return (character >= Character::a && character <= Character::z) ||
                (character >= Character::A && character <= Character::Z) ||
@@ -59,28 +67,28 @@ namespace elet::foundation
 
 
     size_t
-    BaseScanner::getPosition() const
+    TextScanner::getPosition() const
     {
         return _position;
     }
 
 
     char*
-    BaseScanner::getPositionAddress() const
+    TextScanner::getPositionAddress() const
     {
         return const_cast<char *>(_sourceIterator.value);
     }
 
 
     char*
-    BaseScanner::getStartPosition() const
+    TextScanner::getStartPosition() const
     {
         return const_cast<char *>(_startMemoryLocationOfToken);
     }
 
 
     void
-    BaseScanner::saveCurrentLocation()
+    TextScanner::saveCurrentLocation()
     {
         _savedLocations.emplace(
             _position,
@@ -93,14 +101,14 @@ namespace elet::foundation
 
 
     Utf8StringView&
-    BaseScanner::getSource()
+    TextScanner::getSource()
     {
         return _source;
     }
 
 
     void
-    BaseScanner::revertToSavedLocation()
+    TextScanner::revertToSavedLocation()
     {
         Location location = _savedLocations.top();
         seek(location);
@@ -108,7 +116,7 @@ namespace elet::foundation
 
 
     void
-    BaseScanner::seek(const Location &location)
+    TextScanner::seek(const Location &location)
     {
         _line = location.line;
         _column = location.column;
@@ -118,10 +126,10 @@ namespace elet::foundation
     }
 
 
-    BaseScanner::Location
-    BaseScanner::getLocation() const
+    TextScanner::Location
+    TextScanner::getLocation() const
     {
-        return BaseScanner::Location(
+        return TextScanner::Location(
             _position,
             _line,
             _column,
@@ -132,21 +140,21 @@ namespace elet::foundation
 
 
     bool
-    BaseScanner::isDigit(Character character) const
+    TextScanner::isDigit(Character character) const
     {
         return character >= Character::_0 && character <= Character::_9;
     }
 
 
     bool
-    BaseScanner::isHexDigit(Character character) const
+    TextScanner::isHexDigit(Character character) const
     {
         return character >= Character::_0 && character <= Character::_9 || character >= Character::a && character <= Character::f;
     }
 
 
     void
-    BaseScanner::scanRestOfLine()
+    TextScanner::scanRestOfLine()
     {
         while (!isNewline(getCharacter()))
         {
@@ -156,7 +164,7 @@ namespace elet::foundation
 
 
     void
-    BaseScanner::scanToNextSemicolon()
+    TextScanner::scanToNextSemicolon()
     {
         while (getCharacter() != Character::Semicolon)
         {
@@ -167,14 +175,14 @@ namespace elet::foundation
 
 
     bool
-    BaseScanner::isNewline(BaseScanner::Character character) const
+    TextScanner::isNewline(TextScanner::Character character) const
     {
         return character == Character::Newline || character == Character::CarriageReturn;
     }
 
 
     std::size_t
-    BaseScanner::getDecimalValue() const
+    TextScanner::getDecimalValue() const
     {
         Utf8StringView token = getTokenValue();
         std::size_t lastIndex = token.size() - 1;
@@ -192,7 +200,7 @@ namespace elet::foundation
 
 
     std::size_t
-    BaseScanner::getHexadecimalValue() const
+    TextScanner::getHexadecimalValue() const
     {
         Utf8StringView token = getTokenValue();
         std::size_t lastIndex = token.size() - 1;
@@ -215,5 +223,15 @@ namespace elet::foundation
             exponent *= 16;
         }
         return result;
+    }
+
+
+    void
+    TextScanner::scanToPositionAddress(const char* positionAddress)
+    {
+        while (getPositionAddress() != positionAddress)
+        {
+            increment();
+        }
     }
 }

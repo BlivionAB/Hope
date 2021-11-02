@@ -25,6 +25,7 @@ namespace elet::domain::compiler::ast::type
         S8Max = INT8_MAX,
         S16Max = INT16_MAX,
         S32Max = INT32_MAX,
+        S32Min = static_cast<uint64_t>(INT32_MIN),
         S64Max = INT64_MAX,
     };
 

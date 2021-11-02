@@ -143,7 +143,7 @@ namespace elet::domain::compiler::ast
         performWork(SourceFile* sourceFile);
 
         void
-        seek(const BaseScanner::Location& location);
+        seek(const TextScanner::Location& location);
 
         static
         thread_local
@@ -418,10 +418,10 @@ namespace elet::domain::compiler::ast
         parseReturnStatement();
 
         uint64_t
-        parseDecimalLiteral(const DecimalLiteral* decimalLiteral, IntegerLimit maxLimit) const;
+        parseDecimalLiteral(const DecimalLiteral* decimalLiteral) const;
 
         uint64_t
-        parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, IntegerLimit maxLimit) const;
+        parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral) const;
 
         std::string
         toStringFromIntegerLimit(IntegerLimit limit) const;

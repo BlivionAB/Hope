@@ -34,7 +34,7 @@ namespace elet::domain::compiler::ast
     ErrorWriter::writeLexicalError(const error::LexicalError* lexicalError)
     {
         Utf8StringView source(lexicalError->sourceFile->start, lexicalError->sourceFile->end);
-        BaseScanner scanner(source);
+        TextScanner scanner(source);
         _scanner = &scanner;
         unsigned int line = 1;
         unsigned int column = 1;
@@ -83,7 +83,7 @@ namespace elet::domain::compiler::ast
     ErrorWriter::writeSyntaxError(const error::SyntaxError* syntaxError)
     {
         Utf8StringView source(syntaxError->sourceFile->start, syntaxError->sourceFile->end);
-        BaseScanner scanner(source);
+        TextScanner scanner(source);
         _scanner = &scanner;
         unsigned int line = 1;
         unsigned int column = 1;

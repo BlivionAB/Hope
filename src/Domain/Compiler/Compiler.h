@@ -114,6 +114,9 @@ namespace elet::domain::compiler
         Utf8String
         printCompileErrors();
 
+        List<ast::SourceFile*>
+        getSourceFiles();
+
     private:
 
         void
@@ -166,6 +169,9 @@ namespace elet::domain::compiler
 
         std::queue<output::FunctionRoutine*>
         _routines;
+
+        List<ast::SourceFile*>
+        _sourceFiles;
 
         List<Utf8StringView*>
         _data;

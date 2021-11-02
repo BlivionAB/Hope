@@ -12,53 +12,47 @@ using namespace elet::domain::compiler::instruction;
 
 namespace elet::domain::compiler::test
 {
+    class StashIRPrinter
+    {
+    public:
 
+        Utf8String
+        writeFunctionRoutines(std::queue<output::FunctionRoutine*>& instructions);
 
-class StashIRPrinter
-{
+        void
+        writeFunctionRoutine(output::FunctionRoutine* function);
 
-public:
+    private:
 
-    Utf8String
-    writeFunctionRoutines(std::queue<output::FunctionRoutine*>& instructions);
+        TextWriter
+        _tw;
 
-    void
-    writeFunctionRoutine(output::FunctionRoutine* function);
+        void
+        writeInstruction(const output::Instruction* instruction, output::FunctionRoutine* function);
 
-private:
+        void
+        writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction);
 
-    TextWriter
-    _tw;
+        void
+        writeLoadInstruction(const output::LoadInstruction* loadInstruction);
 
-    void
-    writeInstruction(const output::Instruction* instruction, output::FunctionRoutine* function);
+        void
+        writeOperandRegister(output::OperandRegister operandRegister);
 
-    void
-    writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction);
+        void
+        writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction);
 
-    void
-    writeLoadInstruction(const output::LoadInstruction* loadInstruction);
+        void
+        writeMoveAddressInstruction(const output::MoveAddressInstruction* moveAddressInstruction);
 
-    void
-    writeOperandRegister(output::OperandRegister operandRegister);
+        void
+        writeCallInstruction(const output::CallInstruction* callInstruction, output::FunctionRoutine* function);
 
-    void
-    writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction);
+        void
+        writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction);
 
-    void
-    writeMoveAddressInstruction(const output::MoveAddressInstruction* moveAddressInstruction);
-
-    void
-    writeCallInstruction(const output::CallInstruction* callInstruction, output::FunctionRoutine* function);
-
-    void
-    writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction);
-
-    void
-    writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction);
-
-};
-
-
+        void
+        writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction);
+    };
 }
 #endif //ELET_STASHIRPRINTER_H

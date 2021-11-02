@@ -47,6 +47,10 @@ namespace elet::domain::compiler
             if (bytesRead == fileSize)
             {
                 sourceFile->end = endCursor;
+
+                // Add source files in order to render type baselines
+                _sourceFiles.add(sourceFile);
+
                 _parsingWork.push(sourceFile);
                 _parsingWorkCondition.notify_one();
                 break;
@@ -351,6 +355,8 @@ namespace elet::domain::compiler
     //        std::cout << "Transform declaration->kind " << (int)declaration->kind << std::endl;
     //        _display_mutex.unlock();
             output::FunctionRoutine* routine = _transformer->transform(declaration);
+
+            // TEMP: All declarations are right now functions.
             if (routine->isStartFunction)
             {
                 _routines.push(routine);
@@ -400,5 +406,12 @@ namespace elet::domain::compiler
         _errorPrinter.printCompileErrors(_syntaxErrors);
         _errorPrinter.printLexicalErrors(_lexicalErrors);
         return _errorPrinter.toString();
+    }
+
+
+    List<ast::SourceFile*>
+    Compiler::getSourceFiles()
+    {
+        return _sourceFiles;
     }
 }

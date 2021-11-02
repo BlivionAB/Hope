@@ -3,7 +3,7 @@
 
 namespace elet::domain::compiler::test
 {
-    TEST_F(ExpressionFixture, Return_BinaryExpression_Variable)
+    TEST_F(ExpressionFixture, BinaryExpression_Variable_2Terms)
     {
         testMainFunction(
             "var x = 1 + 2;\n"
@@ -11,21 +11,37 @@ namespace elet::domain::compiler::test
             "return x + y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "Return_BinaryExpression_Variable",
+            .baselineName = "BinaryExpression_Variable_2Terms",
             .targets = {
-                CompilationTarget::StashIR,
-                CompilationTarget::MachO_x86_64
+                CompilationTarget::StashIR
             },
         }));
     }
 
 
-    TEST_F(ExpressionFixture, Return_BinaryExpresison_ImmediateValue_LowerThan16Bit)
+    TEST_F(ExpressionFixture, BinaryExpression_Variable_3Terms)
+    {
+        testMainFunction(
+            "var x = 1;\n"
+            "var y = 2;\n"
+            "var z = 3;\n"
+            "return x + y + z;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "BinaryExpression_Variable_3Terms",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, BinaryExpresison_ImmediateValue_LowerThan16Bit)
     {
         testMainFunction("return 1 + 2;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "Return_BinaryExpresison_ImmediateValue_LowerThan16Bit",
+            .baselineName = "BinaryExpresison_ImmediateValue_LowerThan16Bit",
             .targets = {
                 CompilationTarget::StashIR,
                 CompilationTarget::MachO_x86_64,
@@ -35,12 +51,12 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, Return_BinaryExpresison_ImmediateValue_LargerThan16Bit_BitmaskImmediate_2x32)
+    TEST_F(ExpressionFixture, BinaryExpresison_ImmediateValue_LargerThan16Bit_BitmaskImmediate_2x32)
     {
         testMainFunction("return 65536 + 1;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "Return_BinaryExpresison_ImmediateValue_LargerThan16Bit_BitmaskImmediate2_x32",
+            .baselineName = "BinaryExpresison_ImmediateValue_LargerThan16Bit_BitmaskImmediate_2x32",
             .targets = {
                 CompilationTarget::MachO_Aarch64
             },
@@ -48,25 +64,12 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, Return_BinaryExpresison_ImmediateValue_LargerThan16Bit_MovzMovk)
+    TEST_F(ExpressionFixture, BinaryExpresison_ImmediateValue_LargerThan16Bit_MovzMovk)
     {
         testMainFunction("return 65536 + 2;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "Return_BinaryExpresison_ImmediateValue_LargerThan16Bit_MovzMovk",
-            .targets = {
-                CompilationTarget::MachO_Aarch64
-            },
-        }));
-    }
-
-
-    TEST_F(ExpressionFixture, Return_BinaryExpresison_ImmediateValue_LargerThan16Bit_NonBitmaskImmediate)
-    {
-        testMainFunction("return 65536 + 2;");
-
-        EXPECT_TRUE(testProject({
-            .baselineName = "return-binary_expression-immediate_value",
+            .baselineName = "BinaryExpresison_ImmediateValue_LargerThan16Bit_MovzMovk",
             .targets = {
                 CompilationTarget::MachO_Aarch64
             },

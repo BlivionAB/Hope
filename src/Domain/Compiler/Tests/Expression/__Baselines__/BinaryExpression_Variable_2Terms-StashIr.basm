@@ -1,0 +1,8 @@
+_main():
+    Str [Sp + #-4], #0x3
+    Str [Sp + #-8], #0x3
+    Ldr OpLeft, [Sp + #-4]
+    Ldr OpRight, [Sp + #-8]
+    Add OpLeft, OpLeft, OpRight
+    Mov OpRet, OpLeft
+

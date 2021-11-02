@@ -20,12 +20,13 @@ namespace elet::domain::compiler::ast
     struct DomainDeclaration;
     struct InterfaceDeclaration;
 
+
     struct Declaration : Syntax
     {
         Name*
         name;
 
-        std::size_t
+        size_t
         offset;
 
         Symbol*

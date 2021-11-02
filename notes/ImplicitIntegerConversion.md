@@ -11,3 +11,7 @@
       counterpart of the signed destination's type.
 
 Conversion Ranking
+
+
+Default implicit integer literal type follows the conventions set in CPP.
+https://en.cppreference.com/w/cpp/language/integer_literal

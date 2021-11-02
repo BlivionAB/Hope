@@ -43,7 +43,7 @@ add_executable(
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
-    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Expression/IntegerLiteral_Decimal_Test.cpp)
+    ${DOMAIN_TEST} src/Domain/Compiler/Tests/Expression/IntegerLiteral_Decimal_Test.cpp src/Domain/Compiler/TestHarness/TypeBaselinePrinter.cpp src/Domain/Compiler/TestHarness/TypeBaselinePrinter.h)
 
 set(TEST_LIBS gtest gmock)
 target_link_libraries(unittest ${TEST_LIBS})

@@ -48,7 +48,7 @@ namespace elet::domain::compiler::ast
         TextWriter
         _tw;
 
-        BaseScanner*
+        TextScanner*
         _scanner;
 
         const char*
