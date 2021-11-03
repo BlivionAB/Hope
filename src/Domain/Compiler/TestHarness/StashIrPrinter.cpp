@@ -116,7 +116,7 @@ namespace elet::domain::compiler::test
         _tw.write("Ldr ");
         writeOperandRegister(loadInstruction->destination);
         _tw.write(", [Sp + #");
-        _tw.write(-loadInstruction->stackOffset - static_cast<int>(loadInstruction->allocationSize));
+        _tw.write(-static_cast<int64_t>(loadInstruction->stackOffset) - static_cast<int64_t>(loadInstruction->allocationSize));
         _tw.write("]");
     }
 
@@ -157,7 +157,7 @@ namespace elet::domain::compiler::test
     StashIRPrinter::writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction)
     {
         _tw.write("Str [Sp + #");
-        _tw.write(-storeImmediateInstruction->stackOffset - static_cast<int>(storeImmediateInstruction->allocationSize));
+        _tw.write(-static_cast<int64_t>(storeImmediateInstruction->stackOffset) - static_cast<int64_t>(storeImmediateInstruction->allocationSize));
         _tw.write("], ");
         _tw.writeSignedImmediateValue(storeImmediateInstruction->value);
     }

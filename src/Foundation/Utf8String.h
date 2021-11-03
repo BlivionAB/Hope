@@ -126,7 +126,7 @@ public:
         Ampersand = 0x26,             // &
         Asterisk = 0x2A,              // *
         At = 0x40,                    // @
-        Backslash = 0x5C,             // \
+        BackwardSlash = 0x5C,         // \
         Backtick = 0x60,              // `
         Pipe = 0x7C,                   // |
         Caret = 0x5E,                 // ^
@@ -153,7 +153,7 @@ public:
         Question = 0x3F,              // ?
         Semicolon = 0x3B,             // ;
         SingleQuote = 0x27,           // '
-        Slash = 0x2F,                 // /
+        ForwardSlash = 0x2F,          // /
         Tilde = 0x7E,                 // ~
         Underscore = 0x5F,            // _
 

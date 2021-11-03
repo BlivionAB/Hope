@@ -302,11 +302,11 @@ namespace elet::foundation
         if (integer < 0)
         {
             write("-");
-            writeFixedIntegerSize(static_cast<uint64_t>(integer * -1), 32);
+            writeDecimal(static_cast<uint64_t>(integer * -1));
         }
         else
         {
-            writeFixedIntegerSize(static_cast<uint64_t>(integer), 32);
+            writeDecimal(static_cast<uint64_t>(integer));
         }
     }
 
@@ -317,11 +317,11 @@ namespace elet::foundation
         if (integer < 0)
         {
             write("-");
-            writeFixedIntegerSize(static_cast<uint64_t>(integer * -1), 64);
+            writeDecimal(static_cast<uint64_t>(integer * -1));
         }
         else
         {
-            writeFixedIntegerSize(static_cast<uint64_t>(integer), 64);
+            writeDecimal(static_cast<uint64_t>(integer));
         }
     }
 
@@ -329,26 +329,27 @@ namespace elet::foundation
     void
     TextWriter::write(uint64_t integer)
     {
-        writeFixedIntegerSize(integer, 64);
+        writeDecimal(integer);
     }
 
 
     void
-    TextWriter::writeFixedIntegerSize(uint64_t integer, int bitSize)
+    TextWriter::writeDecimal(uint64_t integer)
     {
         int rest = integer;
         bool hasSeenNonZeroInt = false;
-        while (bitSize >= 0)
+        int baseSize = 19;
+        while (baseSize >= 0)
         {
-            int base = pow(10, bitSize);
-            int result = rest / base;
+            uint64_t base = pow(10, baseSize);
+            uint64_t result = rest / base;
             if (result != 0 || hasSeenNonZeroInt)
             {
-                write(std::to_string(result).c_str());
+                writeCharacter(result + '0');
                 hasSeenNonZeroInt = true;
             }
             rest = rest % base;
-            --bitSize;
+            --baseSize;
         }
         if (!hasSeenNonZeroInt)
         {

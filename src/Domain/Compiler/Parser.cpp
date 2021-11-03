@@ -662,7 +662,27 @@ namespace elet::domain::compiler::ast
                 BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
                 binaryExpression->left = expression;
                 binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
-                binaryExpression->right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
+
+                Expression* right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
+                bool nextNextHasHigherOperatorPrecedence = false;
+                if (right->kind == SyntaxKind::BinaryExpression)
+                {
+                    peek = peekNextToken(false);
+                    unsigned int nextNextOperatorPrecedence = getOperatorPrecedence(peek);
+                    if (nextNextOperatorPrecedence > previousOperatorPrecedence)
+                    {
+                        BinaryExpression* nextBinaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
+                        nextBinaryExpression->left = right;
+                        nextBinaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+                        nextBinaryExpression->right = parseRightHandSideOfBinaryExpression(nextNextOperatorPrecedence);
+                        binaryExpression->right = nextBinaryExpression;
+                        nextNextHasHigherOperatorPrecedence = true;
+                    }
+                }
+                if (!nextNextHasHigherOperatorPrecedence)
+                {
+                    binaryExpression->right = right;
+                }
                 return binaryExpression;
             }
         }
@@ -1387,6 +1407,9 @@ namespace elet::domain::compiler::ast
             case Token::Minus:
             case Token::Plus:
                 return 1;
+            case Token::Asterisk:
+            case Token::ForwardSlash:
+                return 2;
             default:
                 throw std::runtime_error("Unknown operator token.");
         }

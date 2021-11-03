@@ -71,7 +71,7 @@ namespace elet::foundation
         write(int64_t integer);
 
         void
-        writeFixedIntegerSize(uint64_t integer, int bitSize);
+        writeDecimal(uint64_t integer);
 
         void
         write(uint64_t integer);

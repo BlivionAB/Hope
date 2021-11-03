@@ -55,6 +55,10 @@ namespace elet::domain::compiler::ast
                     return Token::Comma;
                 case Character::Asterisk:
                     return Token::Asterisk;
+                case Character::ForwardSlash:
+                    return Token::ForwardSlash;
+                case Character::BackwardSlash:
+                    return Token::BackwardSlash;
                 case Character::SingleQuote:
                     return Token::SingleQuote;
                 case Character::DoubleQuote:

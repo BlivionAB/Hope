@@ -1,0 +1,5 @@
+error: Expected ';', instead got 'g2'.
+--> main.hs:8:10
+  | 
+8 | return -1g2;    
+  |          ^^

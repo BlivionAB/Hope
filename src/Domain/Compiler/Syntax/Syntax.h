@@ -111,19 +111,21 @@ namespace elet::domain::compiler::ast
         Colon,
         DoubleColon,
         SemiColon,
-        Asterisk,
         Dot,
         DoubleQuote,
         SingleQuote,
+        BackwardSlash,
 
 
         AmpersandAmpersand,
         PipePipe,
         Plus,
         Minus,
+        ForwardSlash,
+        Asterisk,
 
         BinaryOperationStart = AmpersandAmpersand,
-        BinaryOperationEnd = Minus,
+        BinaryOperationEnd = Asterisk,
 
         // Types
         VoidKeyword,
@@ -453,6 +455,8 @@ namespace elet::domain::compiler::ast
         Or,
         Equal,
         Plus,
+        Multiply,
+        Divide,
     };
 
 

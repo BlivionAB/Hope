@@ -41,8 +41,8 @@ InstructionScanner::takeNextToken()
                 return InstructionToken::Plus;
             case Character::Minus:
                 return InstructionToken::Minus;
-            case Character::Slash:
-                if (getCharacter() == Character::Slash)
+            case Character::ForwardSlash:
+                if (getCharacter() == Character::ForwardSlash)
                 {
                     increment();
                     scanRestOfLine();
