@@ -659,9 +659,12 @@ namespace elet::domain::compiler::ast
             unsigned int nextOperatorPrecedence = getOperatorPrecedence(peek);
             if (nextOperatorPrecedence > previousOperatorPrecedence)
             {
+                takeNextToken();
+
                 BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
                 binaryExpression->left = expression;
                 binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+                binaryExpression->operatorPrecedence = nextOperatorPrecedence;
 
                 Expression* right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
                 bool nextNextHasHigherOperatorPrecedence = false;
@@ -674,6 +677,7 @@ namespace elet::domain::compiler::ast
                         BinaryExpression* nextBinaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
                         nextBinaryExpression->left = right;
                         nextBinaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+                        nextBinaryExpression->operatorPrecedence = nextNextOperatorPrecedence;
                         nextBinaryExpression->right = parseRightHandSideOfBinaryExpression(nextNextOperatorPrecedence);
                         binaryExpression->right = nextBinaryExpression;
                         nextNextHasHigherOperatorPrecedence = true;
@@ -1380,10 +1384,22 @@ namespace elet::domain::compiler::ast
                 return BinaryOperatorKind::And;
             case Token::PipePipe:
                 return BinaryOperatorKind::Or;
+            case Token::Ampersand:
+                return BinaryOperatorKind::BitwiseAnd;
+            case Token::Caret:
+                return BinaryOperatorKind::BitwiseXor;
+            case Token::Pipe:
+                return BinaryOperatorKind::BitwiseOr;
             case Token::EqualEqual:
                 return BinaryOperatorKind::Equal;
             case Token::Plus:
                 return BinaryOperatorKind::Plus;
+            case Token::Minus:
+                return BinaryOperatorKind::Minus;
+            case Token::Asterisk:
+                return BinaryOperatorKind::Multiply;
+            case Token::ForwardSlash:
+                return BinaryOperatorKind::Divide;
             default:
                 throw std::runtime_error("Unknown binary operator.");
         }
@@ -1399,7 +1415,7 @@ namespace elet::domain::compiler::ast
     }
 
 
-    unsigned int
+    uint8_t
     Parser::getOperatorPrecedence(Token token) const
     {
         switch (token)
@@ -1410,6 +1426,12 @@ namespace elet::domain::compiler::ast
             case Token::Asterisk:
             case Token::ForwardSlash:
                 return 2;
+            case Token::Pipe:
+                return 3;
+            case Token::Caret:
+                return 4;
+            case Token::Ampersand:
+                return 5;
             default:
                 throw std::runtime_error("Unknown operator token.");
         }

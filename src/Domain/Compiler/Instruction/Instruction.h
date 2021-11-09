@@ -55,8 +55,9 @@ namespace elet::domain::compiler::instruction::output
     enum class OperandRegister
     {
         Return,
-        Left,
-        Right,
+        Scratch0,
+        Scratch1,
+        Scratch2,
         FramePointer,
         StackPointer,
         LinkRegister,
@@ -79,6 +80,10 @@ namespace elet::domain::compiler::instruction::output
         StoreRegister,
         AddRegister,
         AddImmediate,
+        MultiplyRegister,
+        AndRegister,
+        XorRegister,
+        OrRegister,
         SubtractImmediate,
         Call,
         MoveImmediate,

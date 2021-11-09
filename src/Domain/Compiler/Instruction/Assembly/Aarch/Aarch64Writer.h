@@ -7,157 +7,153 @@
 
 namespace elet::domain::compiler::instruction::output
 {
+    class Aarch64Writer final : public AssemblyWriterInterface
+    {
 
+    public:
 
-class Aarch64Writer final : public AssemblyWriterInterface
-{
+        Aarch64Writer(List<uint8_t>* output);
 
-public:
+        void
+        writeTextSection(FunctionRoutine* routine) override;
 
-    Aarch64Writer(List<uint8_t>* output);
+        void
+        writeStubs() override;
 
-    void
-    writeTextSection(FunctionRoutine* routine) override;
+        void
+        writeStubHelper() override;
 
-    void
-    writeStubs() override;
+        void
+        writeCStringSection() override;
 
-    void
-    writeStubHelper() override;
+        void
+        relocateCStrings(uint64_t textSegmentStartOffset) override;
 
-    void
-    writeCStringSection() override;
+        void
+        relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine) override;
 
-    void
-    relocateCStrings(uint64_t textSegmentStartOffset) override;
+        void
+        relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) override;
 
-    void
-    relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine) override;
+        void
+        relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) override;
 
-    void
-    relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) override;
+        void
+        relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
 
-    void
-    relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) override;
+        void
+        writeFunctionPrologue(FunctionRoutine* function) override;
 
-    void
-    relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
+        void
+        writeFunctionEpilogue(FunctionRoutine* function) override;
 
-    void
-    writeFunctionPrologue(FunctionRoutine* function) override;
+        void
+        writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function) override;
 
-    void
-    writeFunctionEpilogue(FunctionRoutine* function) override;
+        void
+        writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function) override;
 
-    void
-    writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function) override;
+        void
+        writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
 
-    void
-    writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function) override;
+    private:
 
-    void
-    writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
+    //    void
+    //    writeFunctionPrologue(FunctionRoutine* function) override;
+    //
+    //    void
+    //    writeFunctionEpilogue(FunctionRoutine* routine) override;
+    //
+    //    void
+    //    writeStartFunctionEpilogue(FunctionRoutine* function) override;
 
-private:
+    //    void
+    //    writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine) override;
 
-//    void
-//    writeFunctionPrologue(FunctionRoutine* function) override;
-//
-//    void
-//    writeFunctionEpilogue(FunctionRoutine* routine) override;
-//
-//    void
-//    writeStartFunctionEpilogue(FunctionRoutine* function) override;
+        void
+        writeFunctionRelocationAddresses(FunctionRoutine* routine);
 
-//    void
-//    writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine) override;
+        void
+        writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function);
 
-    void
-    writeFunctionRelocationAddresses(FunctionRoutine* routine);
+        void
+        writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function);
 
-    void
-    writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function);
+        void
+        writeInstructionsPadding(FunctionRoutine* function) override;
 
-    void
-    writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function);
+        void
+        writeBr(Aarch64Register rn);
 
-    void
-    writeInstructionsPadding(FunctionRoutine* function) override;
+        uint32_t
+        Rd(uint32_t reg) const;
 
-    void
-    writeBr(Aarch64Register rn);
+        uint32_t
+        Rt(uint32_t reg) const;
 
-    uint32_t
-    Rd(uint32_t reg) const;
+        uint32_t
+        Rn(uint32_t reg) const;
 
-    uint32_t
-    Rt(uint32_t reg) const;
+        uint32_t
+        Rt2(uint32_t reg) const;
 
-    uint32_t
-    Rn(uint32_t reg) const;
+        uint32_t
+        Rm(uint8_t reg) const;
 
-    uint32_t
-    Rt2(uint32_t reg) const;
+        uint32_t
+        uimm6(uint8_t value) const;
 
-    uint32_t
-    Rm(uint8_t reg) const;
+        uint32_t
+        uimm12(uint16_t value) const;
 
-    uint32_t
-    uimm6(uint8_t value) const;
+        uint32_t
+        uimm16(uint16_t value) const;
 
-    uint32_t
-    uimm12(uint16_t value) const;
+        uint32_t
+        simm7(int8_t value) const;
 
-    uint32_t
-    uimm16(uint16_t value) const;
+        uint32_t
+        simm19(int32_t value) const;
 
-    uint32_t
-    simm7(int8_t value) const;
+        uint32_t
+        simm26(int32_t value) const;
 
-    uint32_t
-    simm19(int32_t value) const;
+        uint32_t
+        immhilo(int32_t value) const;
 
-    uint32_t
-    simm26(int32_t value) const;
+        void
+        writeB(int32_t offset);
 
-    uint32_t
-    immhilo(int32_t value) const;
+        uint32_t
+        hw(uint32_t leftShift) const;
 
-    void
-    writeB(int32_t offset);
+        void
+        writeInstructionsPadding(uint64_t i);
 
-    uint32_t
-    hw(uint32_t leftShift) const;
+        void
+        writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
 
-    void
-    writeInstructionsPadding(uint64_t i);
+        void
+        writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
 
-    void
-    writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
+        void
+        writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* function) override;
 
-    void
-    writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
+        int
+        getAarch64RegisterFromOperandRegister(OperandRegister operandRegister) const;
 
-    void
-    writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* function) override;
+        bool
+        moveWideIsPreferred(uint8_t sf, uint8_t N, uint8_t imms, uint8_t immr) const;
 
-    int
-    getAarch64RegisterFromOperandRegister(OperandRegister operandRegister) const;
+        bool
+        processLogicalImmediate(uint64_t imm, RegisterBitSize registerSize, uint32_t& encoding);
 
-    bool
-    moveWideIsPreferred(uint8_t sf, uint8_t N, uint8_t imms, uint8_t immr) const;
+        void
+        writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function);
 
-    bool
-    processLogicalImmediate(uint64_t imm, RegisterBitSize registerSize, uint32_t& encoding);
-
-    void
-    writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function);
-
-    void
-    writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, RegisterBitSize registerSize,
-                                    FunctionRoutine* function);
-};
-
+        void
+        writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, RegisterBitSize registerSize, FunctionRoutine* function);
+    };
 }
 
 #endif //ELET_AARCH64WRITER_H

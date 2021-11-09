@@ -156,6 +156,10 @@ namespace elet::domain::compiler::instruction
         std::mutex&
         _dataMutex;
 
+        uint8_t
+        _scratchRegisterIndex = 0;
+
+
         std::stack<output::InternalRoutine*>
         _currentRoutineStack;
 
@@ -172,33 +176,22 @@ namespace elet::domain::compiler::instruction
         addInstruction(output::Instruction* instruction);
 
         output::CanonicalExpression
-        transformExpression(ast::Expression* expression, uint64_t& stackOffset, output::OperandRegister operandRegister, RegisterSize& registerSize);
-
-        bool
-        isImmediateValueExpression(ast::Expression* expression);
+        transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize);
 
         uint64_t
-        transformImmediateBinaryExpression(ast::BinaryExpression* binaryExpression);
+        transformImmediateToImmediateBinaryExpression(ast::BinaryExpression* binaryExpression);
 
-        output::ScratchRegister*
-        transformImmediateToMemoryExpression(output::ScratchRegister* left, output::ImmediateValue right, ast::BinaryOperatorKind _operator);
-
-        output::ImmediateValue
-        transformToUint(ast::IntegerLiteral* expression);
+        output::OperandRegister
+        transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryOperatorKind binaryOperatorKind);
 
         void
         transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset);
 
         output::OperandRegister
-        transformPropertyExpression(ast::PropertyExpression* propertyExpression,
-                                    output::OperandRegister operandRegister,
-                                    RegisterSize& registerSize);
+        transformPropertyExpression(ast::PropertyExpression* propertyExpression, RegisterSize& registerSize);
 
-        bool
-        isAddressValueExpression(ast::Expression* expression);
-
-        void
-        transformMemoryToMemoryBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind);
+        output::OperandRegister
+        transformRegisterToRegisterBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, output::OperandRegister target, output::OperandRegister value);
 
         output::CanonicalExpression
         transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset,
@@ -209,6 +202,10 @@ namespace elet::domain::compiler::instruction
 
         uint64_t
         getAlignedStackSizeFromStackOffset(uint64_t offset);
+
+
+        output::OperandRegister
+        borrowScratchRegister();
     };
 
 

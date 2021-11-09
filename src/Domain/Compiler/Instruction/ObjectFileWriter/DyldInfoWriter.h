@@ -10,46 +10,42 @@
 
 namespace elet::domain::compiler::instruction::output
 {
+    using namespace elet::foundation;
 
+    class MachoFileWriter;
+    class ExportInfoWriter;
 
-using namespace elet::foundation;
+    class DyldInfoWriter
+    {
+    public:
 
-class MachoFileWriter;
-class ExportInfoWriter;
+        DyldInfoWriter(MachoFileWriter* _machoWriter);
 
-class DyldInfoWriter
-{
-public:
+        void
+        write();
 
-    DyldInfoWriter(MachoFileWriter* _machoWriter);
+    private:
 
-    void
-    write();
+        ByteWriter*
+        _bw;
 
-private:
+        MachoFileWriter*
+        _machoWriter;
 
-    ByteWriter*
-    _bw;
+        ExportInfoWriter*
+        _exportInfoWriter;
 
-    MachoFileWriter*
-    _machoWriter;
+        void
+        writeRebaseInfo();
 
-    ExportInfoWriter*
-    _exportInfoWriter;
+        void
+        writeBindingInfo();
 
-    void
-    writeRebaseInfo();
+        void
+        writeLazyBindingInfo();
 
-    void
-    writeBindingInfo();
-
-    void
-    writeLazyBindingInfo();
-
-    void
-    writeExportInfo();
-};
-
-
+        void
+        writeExportInfo();
+    };
 }
 #endif //ELET_DYLDINFOWRITER_H

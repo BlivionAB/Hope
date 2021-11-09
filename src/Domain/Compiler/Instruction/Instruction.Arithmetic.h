@@ -7,10 +7,64 @@
 
 namespace elet::domain::compiler::instruction::output
 {
-    struct AddRegisterInstruction : Instruction
+    struct OperationInstruction : Instruction
     {
-        AddRegisterInstruction():
-            Instruction(InstructionKind::AddRegister)
+
+        OperandRegister
+        destination;
+
+        OperandRegister
+        target;
+
+        OperandRegister
+        value;
+
+        OperationInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, OperandRegister value):
+            Instruction(operandKind),
+            destination(destination),
+            target(target),
+            value(value)
+        { }
+    };
+
+
+    struct AddRegisterInstruction : OperationInstruction
+    {
+        AddRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
+            OperationInstruction(InstructionKind::AddRegister, destination, target, value)
+        { }
+    };
+
+
+    struct MultiplyRegisterInstruction : OperationInstruction
+    {
+        MultiplyRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
+            OperationInstruction(InstructionKind::MultiplyRegister, destination, target, value)
+        { }
+    };
+
+
+    struct AndRegisterInstruction : OperationInstruction
+    {
+        AndRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
+            OperationInstruction(InstructionKind::AndRegister, destination, target, value)
+        { }
+    };
+
+
+    struct XorRegisterInstruction : OperationInstruction
+    {
+        XorRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
+            OperationInstruction(InstructionKind::XorRegister, destination, target, value)
+        { }
+    };
+
+
+
+    struct OrRegisterInstruction : OperationInstruction
+    {
+        OrRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
+            OperationInstruction(InstructionKind::OrRegister, destination, target, value)
         { }
     };
 

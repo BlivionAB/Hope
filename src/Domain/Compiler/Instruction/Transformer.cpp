@@ -109,7 +109,8 @@ namespace elet::domain::compiler::instruction
     Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset)
     {
         RegisterSize registerSize;
-        output::CanonicalExpression expression = transformExpression(returnStatement->expression, stackOffset, output::OperandRegister::Left, registerSize);
+        output::CanonicalExpression expression = transformExpression(returnStatement->expression, stackOffset,
+                                                                     registerSize);
         if (std::holds_alternative<uint64_t>(expression))
         {
             uint64_t immediateValue = std::get<uint64_t>(expression);
@@ -117,7 +118,7 @@ namespace elet::domain::compiler::instruction
         }
         else if (std::holds_alternative<output::OperandRegister>(expression))
         {
-            addInstruction(new output::MoveRegisterInstruction(output::OperandRegister::Return, output::OperandRegister::Left));
+            addInstruction(new output::MoveRegisterInstruction(output::OperandRegister::Return, output::OperandRegister::Scratch0));
         }
         else
         {
@@ -130,7 +131,8 @@ namespace elet::domain::compiler::instruction
     Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset)
     {
         RegisterSize registerSize;
-        output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset, output::OperandRegister::Left, registerSize);
+        output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset,
+                                                                              registerSize);
         if (std::holds_alternative<uint64_t>(canonicalExpression))
         {
             output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(std::get<uint64_t>(canonicalExpression), stackOffset, registerSize);
@@ -139,7 +141,7 @@ namespace elet::domain::compiler::instruction
         }
         else
         {
-            output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(output::OperandRegister::Left, stackOffset, registerSize);
+            output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(output::OperandRegister::Scratch0, stackOffset, registerSize);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
@@ -147,7 +149,7 @@ namespace elet::domain::compiler::instruction
 
 
     output::CanonicalExpression
-    Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, output::OperandRegister operandRegister, RegisterSize& registerSize)
+    Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize)
     {
         switch (expression->kind)
         {
@@ -194,38 +196,30 @@ namespace elet::domain::compiler::instruction
                 }
             }
             case ast::SyntaxKind::PropertyExpression:
-                return transformPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression), operandRegister, registerSize);
+                return transformPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression),registerSize);
             default:
                 throw std::runtime_error("Unknown expression for transformation.");
         }
     }
 
 
-    bool
-    Transformer::isAddressValueExpression(ast::Expression* expression)
+    output::OperandRegister
+    Transformer::transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryOperatorKind binaryOperatorKind)
     {
-        return !isImmediateValueExpression(expression);
-    }
+        _scratchRegisterIndex--;
+        output::OperandRegister scratchRegister = borrowScratchRegister();
+        switch (binaryOperatorKind)
+        {
+            case ast::BinaryOperatorKind::Plus:
 
-
-    output::ImmediateValue
-    Transformer::transformToUint(ast::IntegerLiteral* integer)
-    {
-        return integer->value;
-    }
-
-
-    output::ScratchRegister*
-    Transformer::transformImmediateToMemoryExpression(output::ScratchRegister* left, output::ImmediateValue right, ast::BinaryOperatorKind _operator)
-    {
-    //    auto scratchRegister = new ScratchRegister();
-    //    scratchRegister->operation = new ImmediateToMemoryOperation(left, right, _operator);
-        return nullptr;
+                break;
+        }
+        return scratchRegister;
     }
 
 
     uint64_t
-    Transformer::transformImmediateBinaryExpression(ast::BinaryExpression* binaryExpression)
+    Transformer::transformImmediateToImmediateBinaryExpression(ast::BinaryExpression* binaryExpression)
     {
         switch (binaryExpression->binaryOperatorKind)
         {
@@ -362,25 +356,18 @@ namespace elet::domain::compiler::instruction
     }
 
 
-    bool
-    Transformer::isImmediateValueExpression(ast::Expression* expression)
+    output::OperandRegister
+    Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression, RegisterSize& registerSize)
     {
-        return expression->kind == ast::SyntaxKind::IntegerLiteral;
+        output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
+        output::LoadInstruction* loadInstruction = new output::LoadInstruction(borrowScratchRegister(), referenceInstruction->stackOffset, referenceInstruction->allocationSize);
+        addInstruction(loadInstruction);
+        return loadInstruction->destination;
     }
 
 
     output::OperandRegister
-    Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression, output::OperandRegister operandRegister, RegisterSize& registerSize)
-    {
-        output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
-        output::LoadInstruction* loadInstruction = new output::LoadInstruction(operandRegister, referenceInstruction->stackOffset, referenceInstruction->allocationSize);
-        addInstruction(loadInstruction);
-        return output::OperandRegister::Left;
-    }
-
-
-    void
-    Transformer::transformMemoryToMemoryBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind)
+    Transformer::transformRegisterToRegisterBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, output::OperandRegister target, output::OperandRegister value)
     {
         // Str [Sp + 0], 3
         // Str [Sp + 4], 3
@@ -391,45 +378,134 @@ namespace elet::domain::compiler::instruction
         //
         // A catch in x86. It supports directly mem to register addition. So, it should take the previous move's memory
         // address and apply it on the operation.
+
+
+        // Decrease scratch register index, since we should leave them back after usage
+        _scratchRegisterIndex -= 2;
+
+        output::OperandRegister destination = borrowScratchRegister();
         switch (binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
-                addInstruction(new output::AddRegisterInstruction());
+                addInstruction(new output::AddRegisterInstruction(destination, target, value));
+                break;
+            case ast::BinaryOperatorKind::Multiply:
+                addInstruction(new output::MultiplyRegisterInstruction(destination, target, value));
+                break;
+            case ast::BinaryOperatorKind::BitwiseAnd:
+                addInstruction(new output::AndRegisterInstruction(destination, target, value));
+                break;
+            case ast::BinaryOperatorKind::BitwiseXor:
+                addInstruction(new output::XorRegisterInstruction(destination, target, value));
+                break;
+            case ast::BinaryOperatorKind::BitwiseOr:
+                addInstruction(new output::OrRegisterInstruction(destination, target, value));
                 break;
             default:
                 throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
         }
+        return destination;
     }
 
 
     output::CanonicalExpression
     Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset, RegisterSize& registerSize)
     {
-        // memory * immediate
-        //   immediate * memory (it's cummutative)
-        // immediate * immediate
-        // memory * memory
-        auto left = transformExpression(binaryExpression->left, stackOffset, output::OperandRegister::Left, registerSize);
-        if (std::holds_alternative<uint64_t>(left))
+        // (1) if both hand-sides are binary expressions evaluate both. left first.
+        // (2) Continue (1) until you find a binary expression without binary expression.
+        // (3) Transform binary expression by storing them in registers an add instruction that operate on them.
+
+        // Case: x * y + z * v:
+        // ldr x1, x // Mark x1 as busy
+        // ldr x2, y // Mark x2 as busy
+        // mul x1, x1, x2 // Mark x2 as available
+        // ldr x2, z // Mark x2 as busy
+        // ldr x3, v // Mark x3 as busy
+        // mul x2, x2, x3 // Mark x3 as available
+        // add x1, x1, x2 // Mark x2 as available
+        //
+        //
+        // Case x * y + z * v + x * y:
+        // ldr x1, x // Mark x1 as busy
+        // ldr x2, y // Mark x2 as busy
+        // mul x1, x1, x2 // Mark x2 as available
+        // ldr x2, z // Mark x2 as busy
+        // ldr x3, v // Mark x3 as busy
+        // mul x2, x2, x3 // Mark x3 as available
+        // add x1, x1, x2 // Mark x2 as available
+        // ldr x2, x // Mark x2 as busy
+        // ldr x3, y // Mark x3 as busy
+        // mul x2, x2, x3 // Mark x3 as available
+        // add x1, x1, x2 // Mark x2 as available
+        //
+        //
+        // Case x ^ y & z | v:
+        // ldr x1, y // Mark x1 as busy
+        // ldr x2, z // Mark x2 as busy
+        // and x1, x1, x2 // Mark x2 as available
+        // ldr x2, x // Mark x2 as busy
+        // xor x1, x1, x2 // Mark x2 as available
+        // ldr x2, v // Mark x2 as busy
+        // or x1, x1, x2 // Mark x2 as available
+        //
+
+        output::CanonicalExpression leftOutput;
+        output::CanonicalExpression rightOutput;
+
+        // Transform binary expressions first and then regular expressions.
+        if (binaryExpression->left->kind == ast::SyntaxKind::BinaryExpression)
         {
-            auto right = transformExpression(binaryExpression->right, stackOffset, output::OperandRegister::Left, registerSize);
-            if (std::holds_alternative<uint64_t>(right))
+            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize);
+        }
+        if (binaryExpression->right->kind == ast::SyntaxKind::BinaryExpression)
+        {
+            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize);
+        }
+        if (std::holds_alternative<std::monostate>(leftOutput))
+        {
+            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize);
+        }
+        if (std::holds_alternative<std::monostate>(rightOutput))
+        {
+            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize);
+        }
+
+        if (std::holds_alternative<output::OperandRegister>(leftOutput) && std::holds_alternative<output::OperandRegister>(rightOutput))
+        {
+            output::OperandRegister target = std::get<output::OperandRegister>(leftOutput);
+            output::OperandRegister value = std::get<output::OperandRegister>(rightOutput);
+
+            // Make operand registers have an ascending order
+            if (target < value)
             {
-                return transformImmediateBinaryExpression(binaryExpression);
+                return transformRegisterToRegisterBinaryExpression(binaryExpression->binaryOperatorKind, target, value);
             }
-
-            // rhs is memory here
-    //        return transformImmediateToMemoryExpression(std::get<output::ScratchRegister*>(right), transformToUint(reinterpret_cast<ast::DecimalLiteral*>(binaryExpression->left)), binaryExpression->binaryOperatorKind);
+            else
+            {
+                return transformRegisterToRegisterBinaryExpression(binaryExpression->binaryOperatorKind, value, target);
+            }
         }
-        // lhs is memory from here
-
-        else if (isAddressValueExpression(binaryExpression->right))
+        else if (std::holds_alternative<uint64_t>(leftOutput) && std::holds_alternative<uint64_t>(rightOutput))
         {
-            transformExpression(binaryExpression->right, stackOffset, output::OperandRegister::Right, registerSize);
-            transformMemoryToMemoryBinaryExpression(binaryExpression->binaryOperatorKind);
+            return transformImmediateToImmediateBinaryExpression(binaryExpression);
         }
-        //            return transformImmediateToMemoryExpression(transformExpression(binaryExpression->left), transformToUint(reinterpret_cast<ast::DecimalLiteral*>(binaryExpression->right)), binaryExpression->binaryOperatorKind);
-        return output::OperandRegister::Left;
+        else if (std::holds_alternative<output::OperandRegister>(leftOutput))
+        {
+            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(leftOutput), std::get<uint64_t>(rightOutput), binaryExpression->binaryOperatorKind);
+        }
+        else // if (std::holds_alternative<output::OperandRegister>(rightOutput))
+        {
+            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(rightOutput), std::get<uint64_t>(leftOutput), binaryExpression->binaryOperatorKind);
+        }
+    }
+
+
+    output::OperandRegister
+    Transformer::borrowScratchRegister()
+    {
+        uint8_t scratchRegister = static_cast<uint8_t>(output::OperandRegister::Scratch0) + _scratchRegisterIndex;
+        _scratchRegisterIndex++;
+        return static_cast<output::OperandRegister>(scratchRegister);
     }
 
 

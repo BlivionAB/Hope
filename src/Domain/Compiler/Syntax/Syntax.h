@@ -94,7 +94,6 @@ namespace elet::domain::compiler::ast
         InterfaceKeyword,
         ExternKeyword,
 
-        Ampersand,
         OpenParen,
         CloseParen,
         OpenBrace,
@@ -123,9 +122,12 @@ namespace elet::domain::compiler::ast
         Minus,
         ForwardSlash,
         Asterisk,
+        Ampersand,
+        Pipe,
+        Caret,
 
         BinaryOperationStart = AmpersandAmpersand,
-        BinaryOperationEnd = Asterisk,
+        BinaryOperationEnd = Caret,
 
         // Types
         VoidKeyword,
@@ -455,8 +457,13 @@ namespace elet::domain::compiler::ast
         Or,
         Equal,
         Plus,
+        Minus,
         Multiply,
         Divide,
+
+        BitwiseAnd,
+        BitwiseXor,
+        BitwiseOr,
     };
 
 
@@ -473,6 +480,9 @@ namespace elet::domain::compiler::ast
 
         Expression*
         right;
+
+        uint8_t
+        operatorPrecedence;
     };
 
 

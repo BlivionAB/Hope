@@ -36,21 +36,67 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_HigherPostPrecedence)
+    TEST_F(ExpressionFixture, BinaryExpression_Variable_LowerPrecedenceHigherPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
-            "return x + y * z / f *2 r +2 g;");
-
-        // Take z / f first
-        // then y * pv
-        // then pv * r
-        // then x + pv
+            "return x + y * z;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_HigherPostPrecedence",
+            .baselineName = "BinaryExpression_Variable_LowerPrecedenceHigherPrecedence",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, BinaryExpression_Variable_LowerPrecedence_HigherPrecedence_HigherThanFirstPrecedence)
+    {
+        testMainFunction(
+            "var x = 1;\n"
+            "var y = 2;\n"
+            "var z = 3;\n"
+            "return x | y & z ^ x;"); // Note: the precedence order from high to low is &, ^, |.
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "BinaryExpression_Variable_LowerPrecedence_HigherPrecedence_HigherThanFirstPrecedence",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, BinaryExpression_Variable_LowerPrecedenceHigherPrecedenceLowerPrecedence)
+    {
+        testMainFunction(
+            "var x = 1;\n"
+            "var y = 2;\n"
+            "var z = 3;\n"
+            "return x + y * z + x;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "BinaryExpression_Variable_LowerPrecedenceHigherPrecedenceLowerPrecedence",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, BinaryExpression_Variable_HigherPrecedenceLowerPrecedenceHigherPrecedence)
+    {
+        testMainFunction(
+            "var x = 1;\n"
+            "var y = 2;\n"
+            "var z = 3;\n"
+            "return x * y + z * x;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "BinaryExpression_Variable_HigherPrecedenceLowerPrecedenceHigherPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             },

@@ -9,45 +9,39 @@
 
 namespace elet::domain::compiler::instruction::output
 {
+    class DyldInfoWriter;
+    class MachoFileWriter;
 
 
-class DyldInfoWriter;
-class MachoFileWriter;
+    class ExportInfoWriter
+    {
 
+    public:
 
+        ExportInfoWriter(MachoFileWriter* machoWriter);
 
+        void
+        write();
 
-class ExportInfoWriter
-{
+    private:
 
-public:
+        MachoFileWriter*
+        _machoFileWriter;
 
-    ExportInfoWriter(MachoFileWriter* machoWriter);
+        ByteWriter*
+        _bw;
 
-    void
-    write();
+        ExportTrieNode*
+        createTrieTreeFromExports();
 
-private:
+        void
+        writeExports(const List<ExportTrieNode*>& orderedNodes);
 
-    MachoFileWriter*
-    _machoFileWriter;
+        Utf8String
+        getSymbolStringFromNode(const SparseExportTrieNode* pNode);
 
-    ByteWriter*
-    _bw;
-
-    ExportTrieNode*
-    createTrieTreeFromExports();
-
-    void
-    writeExports(const List<ExportTrieNode*>& orderedNodes);
-
-    Utf8String
-    getSymbolStringFromNode(const SparseExportTrieNode* pNode);
-
-    void
-    setOffsetInNodes(List<ExportTrieNode*>& orderedNodes) const;
-};
-
-
+        void
+        setOffsetInNodes(List<ExportTrieNode*>& orderedNodes) const;
+    };
 }
 #endif //ELET_EXPORTINFOWRITER_H

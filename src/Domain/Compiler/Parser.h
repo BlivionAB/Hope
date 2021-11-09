@@ -330,7 +330,7 @@ namespace elet::domain::compiler::ast
         Expression*
         parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPrecedence);
 
-        unsigned int
+        uint8_t
         getOperatorPrecedence(Token token) const;
 
         bool isBinaryOperator(Token token) const;

@@ -87,11 +87,20 @@ namespace elet::domain::compiler::ast
                 case Character::CloseBrace:
                     return Token::CloseBrace;
                 case Character::Ampersand:
+                    if (getCharacter() == Character::Ampersand)
+                    {
+                        increment();
+                        return Token::AmpersandAmpersand;
+                    }
                     return Token::Ampersand;
                 case Character::Plus:
                     return Token::Plus;
                 case Character::Minus:
                     return Token::Minus;
+                case Character::Caret:
+                    return Token::Caret;
+                case Character::Pipe:
+                    return Token::Pipe;
                 case Character::Equal:
                     if (getCharacter() == Character::Equal)
                     {

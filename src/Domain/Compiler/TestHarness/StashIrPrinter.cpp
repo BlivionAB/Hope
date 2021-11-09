@@ -70,8 +70,21 @@ namespace elet::domain::compiler::test
             case output::InstructionKind::Return:
                 _tw.write("Ret");
                 break;
+            case output::InstructionKind::MultiplyRegister:
+                writeOperation("Mul", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+                break;
             case output::InstructionKind::AddRegister:
-                _tw.write("Add OpLeft, OpLeft, OpRight");
+                writeOperation("Add", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+                break;
+
+            case output::InstructionKind::OrRegister:
+                writeOperation("Or", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+                break;
+            case output::InstructionKind::XorRegister:
+                writeOperation("Xor", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+                break;
+            case output::InstructionKind::AndRegister:
+                writeOperation("And", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
                 break;
             default:
                 throw std::runtime_error("Unknown instruction");
@@ -129,11 +142,14 @@ namespace elet::domain::compiler::test
             case output::OperandRegister::Return:
                 _tw.write("OpRet");
                 break;
-            case output::OperandRegister::Left:
-                _tw.write("OpLeft");
+            case output::OperandRegister::Scratch0:
+                _tw.write("X0");
                 break;
-            case output::OperandRegister::Right:
-                _tw.write("OpRight");
+            case output::OperandRegister::Scratch1:
+                _tw.write("X1");
+                break;
+            case output::OperandRegister::Scratch2:
+                _tw.write("X2");
                 break;
             case output::OperandRegister::Arg0:
                 _tw.write("Arg0");
@@ -190,5 +206,25 @@ namespace elet::domain::compiler::test
         {
             throw std::runtime_error("Unknown RoutineKind in writeCallInstruction.");
         }
+    }
+
+
+    void
+    StashIRPrinter::writeOperation(Utf8String operationString, const output::MultiplyRegisterInstruction* multiplyRegisterInstruction)
+    {
+        _tw.write(operationString);
+        _tw.write(" ");
+        writeOperationRegisters(multiplyRegisterInstruction);
+    }
+
+
+    void
+    StashIRPrinter::writeOperationRegisters(const output::OperationInstruction* operationInstruction)
+    {
+        writeOperandRegister(operationInstruction->destination);
+        _tw.write(", ");
+        writeOperandRegister(operationInstruction->target);
+        _tw.write(", ");
+        writeOperandRegister(operationInstruction->value);
     }
 }
