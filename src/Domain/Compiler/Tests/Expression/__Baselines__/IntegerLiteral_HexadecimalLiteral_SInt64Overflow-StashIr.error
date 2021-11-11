@@ -1,0 +1,5 @@
+error: Negative value cannot exceed S64_Max
+--> main.hs:8:9
+  | 
+8 | return -0xffff_ffff_ffff_ffff;    
+  |         ^^^^^^^^^^^^^^^^^^^^^

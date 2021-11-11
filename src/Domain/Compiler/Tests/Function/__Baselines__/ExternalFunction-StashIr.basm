@@ -1,0 +1,9 @@
+_main():
+    Mov Arg0, ["Hello World!"]
+    Call WriteLine
+
+WriteLine():
+    Str [Sp + 0], Arg0
+    Ldr Arg0, [Sp + #-8]
+    Call _puts
+
