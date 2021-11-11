@@ -160,6 +160,8 @@ namespace elet::domain::compiler::ast
                 {
                     return new Type(TypeKind::S64);
                 }
+                addError(integerLiteral, "Decimal literal cannot exceed S64_Min");
+                return new Type(TypeKind::Error);
             }
             else
             {
@@ -171,8 +173,9 @@ namespace elet::domain::compiler::ast
                 {
                     return new Type(TypeKind::S64);
                 }
+                addError(integerLiteral, "Decimal literal cannot exceed S64_Max");
+                return new Type(TypeKind::Error);
             }
-            addDiagnostic(new Diagnostic("Integer literal value exceeds int64 max."));
         }
         else
         {

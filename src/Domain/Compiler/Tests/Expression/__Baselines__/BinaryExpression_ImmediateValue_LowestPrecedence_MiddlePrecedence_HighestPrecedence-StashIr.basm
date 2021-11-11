@@ -1,0 +1,3 @@
+_main():
+    Mov OpRet, #0x3
+

@@ -1501,7 +1501,7 @@ namespace elet::domain::compiler::ast
     Parser::parseDecimalLiteral(const DecimalLiteral* decimalLiteral) const
     {
         const char* cursor = decimalLiteral->end - 1;
-        unsigned int exponent = 0;
+        uint64_t exponent = 0;
         uint64_t result = 0;
         uint64_t leftOfMaxLimit = UINT64_MAX;
         while (true)
@@ -1512,8 +1512,8 @@ namespace elet::domain::compiler::ast
                 cursor--;
                 continue;
             }
-            unsigned int s = character - '0';
-            unsigned int f = s * std::pow(10, exponent);
+            uint64_t s = character - '0';
+            uint64_t f = s * std::pow(10, exponent);
             if (f > leftOfMaxLimit)
             {
                 _error->throwSyntaxError(

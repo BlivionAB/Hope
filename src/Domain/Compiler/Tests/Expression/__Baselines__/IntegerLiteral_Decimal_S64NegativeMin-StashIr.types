@@ -1,0 +1,10 @@
+domain Common::MyApplication implements IConsoleApplication
+{
+
+public:
+
+    fn OnApplicationStart(): void
+    {
+return -9223372036854775808;    }
+        ~~~~~~~~~~~~~~~~~~~  s64
+}

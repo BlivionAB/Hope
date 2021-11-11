@@ -29,16 +29,84 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_Error_S32MaxOverflow)
+    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_S64NegativeMax)
     {
-        testMainFunction("return 2147483648;");
+        testMainFunction("return -2147483649;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "IntegerLiteral_Decimal_Error_S32MaxOverflow",
+            .baselineName = "IntegerLiteral_Decimal_S64NegativeMax",
             .targets = {
                 CompilationTarget::StashIR
             },
             .printTypeBaseline = true,
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_S64NegativeMin)
+    {
+        testMainFunction("return -9223372036854775808;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "IntegerLiteral_Decimal_S64NegativeMin",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+            .printTypeBaseline = true,
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_S64MinUnderflow)
+    {
+        testMainFunction("return -9223372036854775809;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "IntegerLiteral_Decimal_S64MinUnderflow",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_S64PositiveMin)
+    {
+        testMainFunction("return 2147483648;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "IntegerLiteral_Decimal_S64PositiveMin",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+            .printTypeBaseline = true,
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_S64Max)
+    {
+        testMainFunction("return 9223372036854775807;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "IntegerLiteral_Decimal_S64Max",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+            .printTypeBaseline = true,
+        }));
+    }
+
+
+    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_S64MaxOverflow)
+    {
+        testMainFunction("return 9223372036854775808;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "IntegerLiteral_Decimal_S64MaxOverflow",
+            .targets = {
+                CompilationTarget::StashIR
+            },
         }));
     }
 
