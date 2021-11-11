@@ -671,16 +671,19 @@ namespace elet::domain::compiler::ast
                 if (right->kind == SyntaxKind::BinaryExpression)
                 {
                     peek = peekNextToken(false);
-                    unsigned int nextNextOperatorPrecedence = getOperatorPrecedence(peek);
-                    if (nextNextOperatorPrecedence > previousOperatorPrecedence)
+                    if (isBinaryOperator(peek))
                     {
-                        BinaryExpression* nextBinaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
-                        nextBinaryExpression->left = right;
-                        nextBinaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
-                        nextBinaryExpression->operatorPrecedence = nextNextOperatorPrecedence;
-                        nextBinaryExpression->right = parseRightHandSideOfBinaryExpression(nextNextOperatorPrecedence);
-                        binaryExpression->right = nextBinaryExpression;
-                        nextNextHasHigherOperatorPrecedence = true;
+                        unsigned int nextNextOperatorPrecedence = getOperatorPrecedence(peek);
+                        if (nextNextOperatorPrecedence > previousOperatorPrecedence)
+                        {
+                            BinaryExpression* nextBinaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
+                            nextBinaryExpression->left = right;
+                            nextBinaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+                            nextBinaryExpression->operatorPrecedence = nextNextOperatorPrecedence;
+                            nextBinaryExpression->right = parseRightHandSideOfBinaryExpression(nextNextOperatorPrecedence);
+                            binaryExpression->right = nextBinaryExpression;
+                            nextNextHasHigherOperatorPrecedence = true;
+                        }
                     }
                 }
                 if (!nextNextHasHigherOperatorPrecedence)

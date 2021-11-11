@@ -24,7 +24,7 @@ namespace elet::domain::compiler::test
             .baselineName = "IntegerLiteral_Decimal_Negative",
             .targets = {
                 CompilationTarget::StashIR
-            },
+            }
         }));
     }
 

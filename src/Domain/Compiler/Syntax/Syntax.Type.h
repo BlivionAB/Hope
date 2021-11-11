@@ -72,6 +72,7 @@ namespace elet::domain::compiler::ast::type
                 case TypeKind::U64:
                     return RegisterSize::Quad;
                 case TypeKind::S32:
+                case TypeKind::U32:
                     return RegisterSize::Dword;
                 case TypeKind::U16:
                 case TypeKind::S16:

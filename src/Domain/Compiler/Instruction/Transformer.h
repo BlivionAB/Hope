@@ -52,9 +52,9 @@ namespace elet::domain::compiler::instruction
         struct InternalRoutine;
         struct FunctionRoutine;
         struct MoveRegisterInstruction;
-        typedef std::variant<uint8_t, uint16_t, uint32_t, uint64_t> ImmediateValue;
+        struct ImmediateValue;
         enum class OperandRegister;
-        typedef std::variant<std::monostate, OperandRegister, uint64_t> CanonicalExpression;
+        typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
     }
 
 
@@ -178,8 +178,8 @@ namespace elet::domain::compiler::instruction
         output::CanonicalExpression
         transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize);
 
-        uint64_t
-        transformImmediateToImmediateBinaryExpression(ast::BinaryExpression* binaryExpression);
+        output::ImmediateValue
+        transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right);
 
         output::OperandRegister
         transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryOperatorKind binaryOperatorKind);

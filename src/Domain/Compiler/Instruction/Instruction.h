@@ -31,8 +31,24 @@ namespace elet::domain::compiler::instruction::output
     struct String;
     struct SubtractImmediateInstruction;
     enum class OperandRegister;
-    typedef std::variant<uint8_t, uint16_t, uint32_t, uint64_t> ImmediateValue;
-    typedef std::variant<std::monostate, OperandRegister, uint64_t> CanonicalExpression;
+
+
+    struct ImmediateValue
+    {
+        TypeKind
+        type;
+
+        uint64_t
+        value;
+
+        ImmediateValue(TypeKind type, uint64_t value):
+            type(type),
+            value(value)
+        { }
+    };
+
+
+    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
     using namespace foundation;
 
 
@@ -530,7 +546,7 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    typedef std::variant<std::monostate, OperandRegister, uint64_t> CanonicalExpression;
+    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
 
 
     struct ImmediateToMemoryOperation : Operation

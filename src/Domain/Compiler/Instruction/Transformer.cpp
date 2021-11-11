@@ -109,11 +109,10 @@ namespace elet::domain::compiler::instruction
     Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset)
     {
         RegisterSize registerSize;
-        output::CanonicalExpression expression = transformExpression(returnStatement->expression, stackOffset,
-                                                                     registerSize);
-        if (std::holds_alternative<uint64_t>(expression))
+        output::CanonicalExpression expression = transformExpression(returnStatement->expression, stackOffset, registerSize);
+        if (std::holds_alternative<output::ImmediateValue>(expression))
         {
-            uint64_t immediateValue = std::get<uint64_t>(expression);
+            uint64_t immediateValue = std::get<output::ImmediateValue>(expression).value;
             addInstruction(new output::MoveImmediateInstruction(output::OperandRegister::Return, immediateValue, registerSize));
         }
         else if (std::holds_alternative<output::OperandRegister>(expression))
@@ -131,11 +130,10 @@ namespace elet::domain::compiler::instruction
     Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset)
     {
         RegisterSize registerSize;
-        output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset,
-                                                                              registerSize);
-        if (std::holds_alternative<uint64_t>(canonicalExpression))
+        output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset, registerSize);
+        if (std::holds_alternative<output::ImmediateValue>(canonicalExpression))
         {
-            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(std::get<uint64_t>(canonicalExpression), stackOffset, registerSize);
+            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(std::get<output::ImmediateValue>(canonicalExpression).value, stackOffset, registerSize);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
@@ -158,41 +156,14 @@ namespace elet::domain::compiler::instruction
             case ast::SyntaxKind::IntegerLiteral:
             {
                 ast::IntegerLiteral* integerLiteral = reinterpret_cast<ast::IntegerLiteral*>(expression);
-                switch (integerLiteral->resolvedType->kind)
+                registerSize = integerLiteral->resolvedType->size();
+                if (integerLiteral->isNegative)
                 {
-                    case TypeKind::U8:
-                        registerSize = RegisterSize::Byte;
-                        return static_cast<uint8_t>(integerLiteral->value);
-                    case TypeKind::U16:
-                        registerSize = RegisterSize::Word;
-                        return static_cast<uint16_t>(integerLiteral->value);
-                    case TypeKind::U32:
-                        registerSize = RegisterSize::Dword;
-                        return static_cast<uint32_t>(integerLiteral->value);
-                    case TypeKind::U64:
-                        registerSize = RegisterSize::Quad;
-                        return static_cast<uint64_t>(integerLiteral->value);
-                    case TypeKind::S8:
-                        registerSize = RegisterSize::Byte;
-                        return static_cast<uint8_t>(static_cast<int8_t>(integerLiteral->value));
-                    case TypeKind::S16:
-                        registerSize = RegisterSize::Word;
-                        return static_cast<uint16_t>(static_cast<int16_t>(integerLiteral->value));
-                    case TypeKind::S32:
-                        registerSize = RegisterSize::Dword;
-                        if (integerLiteral->isNegative)
-                        {
-                            return static_cast<uint32_t>(static_cast<int32_t>(-integerLiteral->value));
-                        }
-                        else
-                        {
-                            return static_cast<uint32_t>(static_cast<int32_t>(integerLiteral->value));
-                        }
-                    case TypeKind::S64:
-                        registerSize = RegisterSize::Quad;
-                        return static_cast<uint64_t>(static_cast<int64_t>(integerLiteral->value));
-                    default:
-                        throw std::runtime_error("Cannot resolve integer value.");
+                    return output::ImmediateValue(integerLiteral->resolvedType->kind, -integerLiteral->value);
+                }
+                else
+                {
+                    return output::ImmediateValue(integerLiteral->resolvedType->kind, integerLiteral->value);
                 }
             }
             case ast::SyntaxKind::PropertyExpression:
@@ -218,39 +189,112 @@ namespace elet::domain::compiler::instruction
     }
 
 
-    uint64_t
-    Transformer::transformImmediateToImmediateBinaryExpression(ast::BinaryExpression* binaryExpression)
+    output::ImmediateValue
+    Transformer::transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right)
     {
-        switch (binaryExpression->binaryOperatorKind)
+        output::ImmediateValue immediateValue(left.type, 0);
+        switch (binaryOperatorKind)
         {
+            case ast::BinaryOperatorKind::BitwiseAnd:
+                switch (left.type)
+                {
+                    case TypeKind::S32:
+                        immediateValue.value = static_cast<int32_t>(left.value) & static_cast<int32_t>(right.value);
+                        break;
+                    case TypeKind::S64:
+                        immediateValue.value = static_cast<int64_t>(left.value) & static_cast<int64_t>(right.value);
+                        break;
+                    case TypeKind::U32:
+                        immediateValue.value = static_cast<uint32_t>(left.value) & static_cast<uint32_t>(right.value);
+                        break;
+                    case TypeKind::U64:
+                        immediateValue.value = left.value & right.value;
+                        break;
+                    default:
+                        throw std::runtime_error("Unknown type kind for bitwise and.");
+                }
+                return immediateValue;
+
+            case ast::BinaryOperatorKind::BitwiseXor:
+                switch (left.type)
+                {
+                    case TypeKind::S32:
+                        immediateValue.value = static_cast<int32_t>(left.value) ^ static_cast<int32_t>(right.value);
+                        break;
+                    case TypeKind::S64:
+                        immediateValue.value = static_cast<int64_t>(left.value) ^ static_cast<int64_t>(right.value);
+                        break;
+                    case TypeKind::U32:
+                        immediateValue.value = static_cast<uint32_t>(left.value) ^ static_cast<uint32_t>(right.value);
+                        break;
+                    case TypeKind::U64:
+                        immediateValue.value = left.value ^ right.value;
+                        break;
+                    default:
+                        throw std::runtime_error("Unknown type kind for bitwise and.");
+                }
+                return immediateValue;
+            case ast::BinaryOperatorKind::BitwiseOr:
+                switch (left.type)
+                {
+                    case TypeKind::S32:
+                        immediateValue.value = static_cast<int32_t>(left.value) | static_cast<int32_t>(right.value);
+                        break;
+                    case TypeKind::S64:
+                        immediateValue.value = static_cast<int64_t>(left.value) | static_cast<int64_t>(right.value);
+                        break;
+                    case TypeKind::U32:
+                        immediateValue.value = static_cast<uint32_t>(left.value) | static_cast<uint32_t>(right.value);
+                        break;
+                    case TypeKind::U64:
+                        immediateValue.value = left.value | right.value;
+                        break;
+                    default:
+                        throw std::runtime_error("Unknown type kind for bitwise and.");
+                }
+                return immediateValue;
+            case ast::BinaryOperatorKind::Multiply:
+            {
+                switch (left.type)
+                {
+                    case TypeKind::S32:
+                        immediateValue.value = left.value * right.value;
+                        break;
+                    case TypeKind::S64:
+                        immediateValue.value = static_cast<uint64_t>(static_cast<int32_t>(left.value) * static_cast<int32_t>(right.value));
+                        break;
+                    case TypeKind::U32:
+                        immediateValue.value = static_cast<uint64_t>(left.value) * static_cast<uint64_t>(right.value);
+                        break;
+                    case TypeKind::U64:
+                        immediateValue.value = static_cast<uint32_t>(left.value) * static_cast<uint32_t>(right.value);
+                        break;
+                    default:
+                        throw std::runtime_error("Should not contain lower than 32bit ints.");
+                }
+                return immediateValue;
+            }
+
             case ast::BinaryOperatorKind::Plus:
             {
-                ast::IntegerLiteral* left = reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->left);
-                ast::IntegerLiteral* right = reinterpret_cast<ast::IntegerLiteral*>(binaryExpression->right);
-                if (left->resolvedType->sign() == ast::type::Signedness::Signed)
+                switch (left.type)
                 {
-                    switch (left->resolvedType->size())
-                    {
-                        case RegisterSize::Quad:
-                            return left->value + right->value;
-                        case RegisterSize::Dword:
-                            return static_cast<uint64_t>(static_cast<int32_t>(left->value) + static_cast<int32_t>(right->value));
-                        default:
-                            throw std::runtime_error("Should not contain lower than 32bit ints.");
-                    }
+                    case TypeKind::S32:
+                        immediateValue.value = left.value + right.value;
+                        break;
+                    case TypeKind::S64:
+                        immediateValue.value = static_cast<uint64_t>(static_cast<int32_t>(left.value) + static_cast<int32_t>(right.value));
+                        break;
+                    case TypeKind::U32:
+                        immediateValue.value = static_cast<uint64_t>(left.value) + static_cast<uint64_t>(right.value);
+                        break;
+                    case TypeKind::U64:
+                        immediateValue.value = static_cast<uint32_t>(left.value) + static_cast<uint32_t>(right.value);
+                        break;
+                    default:
+                        throw std::runtime_error("Should not contain lower than 32bit ints.");
                 }
-                else
-                {
-                    switch (left->resolvedType->size())
-                    {
-                        case RegisterSize::Quad:
-                            return static_cast<uint64_t>(left->value) + static_cast<uint64_t>(right->value);
-                        case RegisterSize::Dword:
-                            return static_cast<uint32_t>(left->value) + static_cast<uint32_t>(right->value);
-                        default:
-                            throw std::runtime_error("Should not contain lower than 32bit ints.");
-                    }
-                }
+                return immediateValue;
             }
             default:
                 throw std::runtime_error("Not implemented binary expression operator for immediate immediateValue.");
@@ -485,17 +529,17 @@ namespace elet::domain::compiler::instruction
                 return transformRegisterToRegisterBinaryExpression(binaryExpression->binaryOperatorKind, value, target);
             }
         }
-        else if (std::holds_alternative<uint64_t>(leftOutput) && std::holds_alternative<uint64_t>(rightOutput))
+        else if (std::holds_alternative<output::ImmediateValue>(leftOutput) && std::holds_alternative<output::ImmediateValue>(rightOutput))
         {
-            return transformImmediateToImmediateBinaryExpression(binaryExpression);
+            return transformImmediateToImmediateBinaryExpression(binaryExpression->binaryOperatorKind, std::get<output::ImmediateValue>(leftOutput), std::get<output::ImmediateValue>(rightOutput));
         }
         else if (std::holds_alternative<output::OperandRegister>(leftOutput))
         {
-            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(leftOutput), std::get<uint64_t>(rightOutput), binaryExpression->binaryOperatorKind);
+            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(leftOutput), std::get<output::ImmediateValue>(rightOutput).value, binaryExpression->binaryOperatorKind);
         }
         else // if (std::holds_alternative<output::OperandRegister>(rightOutput))
         {
-            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(rightOutput), std::get<uint64_t>(leftOutput), binaryExpression->binaryOperatorKind);
+            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(rightOutput), std::get<output::ImmediateValue>(leftOutput).value, binaryExpression->binaryOperatorKind);
         }
     }
 
