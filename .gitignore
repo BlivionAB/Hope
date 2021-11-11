@@ -11,3 +11,4 @@ release/
 **/src/Domain/Tests/Baselines/Current
 CMakeLists.txt.user
 bench/*/out
+/cmake-build-debug-visual-studio/
