@@ -204,8 +204,12 @@ namespace elet::domain::compiler::test
 
         }
 
-        fs::path
-        testFolderPath = "src/Domain/Compiler/Tests/";
+        virtual
+        std::filesystem::path
+        basePath()
+        {
+            return "src/Domain/Compiler/Tests/";
+        }
 
         TestProject
         project;
@@ -362,7 +366,7 @@ namespace elet::domain::compiler::test
         {
             DiffPrinter printer;
             MyersDiff differ;
-            fs::path basm = fs::current_path() / ".." / testFolderPath / localTestPath() / "__Baselines__" / (testOptions.baselineName + "-" + getArchitecture(compilerOptions) + "." + suffix);
+            fs::path basm = fs::current_path() / ".." / basePath() / localTestPath() / "__Baselines__" / (testOptions.baselineName + "-" + getArchitecture(compilerOptions) + "." + suffix);
             fs::path baselineFolder = basm.parent_path();
             if (!fs::exists(baselineFolder))
             {

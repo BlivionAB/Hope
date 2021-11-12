@@ -433,8 +433,14 @@ namespace elet::domain::compiler::instruction
             case ast::BinaryOperatorKind::Plus:
                 addInstruction(new output::AddRegisterInstruction(destination, target, value));
                 break;
+            case ast::BinaryOperatorKind::Minus:
+                addInstruction(new output::SubtractRegisterInstruction(destination, target, value));
+                break;
             case ast::BinaryOperatorKind::Multiply:
                 addInstruction(new output::MultiplyRegisterInstruction(destination, target, value));
+                break;
+            case ast::BinaryOperatorKind::Divide:
+                addInstruction(new output::DivideRegisterInstruction(destination, target, value));
                 break;
             case ast::BinaryOperatorKind::BitwiseAnd:
                 addInstruction(new output::AndRegisterInstruction(destination, target, value));

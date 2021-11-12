@@ -70,21 +70,26 @@ namespace elet::domain::compiler::test
             case output::InstructionKind::Return:
                 _tw.write("Ret");
                 break;
+            case output::InstructionKind::AddRegister:
+                writeOperation("Add", reinterpret_cast<const output::AddRegisterInstruction*>(instruction));
+                break;
+            case output::InstructionKind::SubtractRegister:
+                writeOperation("Sub", reinterpret_cast<const output::SubtractRegisterInstruction*>(instruction));
+                break;
             case output::InstructionKind::MultiplyRegister:
                 writeOperation("Mul", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::AddRegister:
-                writeOperation("Add", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+            case output::InstructionKind::DivideRegister:
+                writeOperation("Div", reinterpret_cast<const output::DivideRegisterInstruction*>(instruction));
                 break;
-
             case output::InstructionKind::OrRegister:
-                writeOperation("Or", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+                writeOperation("Or", reinterpret_cast<const output::OrRegisterInstruction*>(instruction));
                 break;
             case output::InstructionKind::XorRegister:
-                writeOperation("Xor", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+                writeOperation("Xor", reinterpret_cast<const output::XorRegisterInstruction*>(instruction));
                 break;
             case output::InstructionKind::AndRegister:
-                writeOperation("And", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+                writeOperation("And", reinterpret_cast<const output::AndRegisterInstruction*>(instruction));
                 break;
             default:
                 throw std::runtime_error("Unknown instruction");
@@ -210,11 +215,11 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeOperation(Utf8String operationString, const output::MultiplyRegisterInstruction* multiplyRegisterInstruction)
+    StashIRPrinter::writeOperation(Utf8String operationString, const output::OperationInstruction* operationInstruction)
     {
         _tw.write(operationString);
         _tw.write(" ");
-        writeOperationRegisters(multiplyRegisterInstruction);
+        writeOperationRegisters(operationInstruction);
     }
 
 

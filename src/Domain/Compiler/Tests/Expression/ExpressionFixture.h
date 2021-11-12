@@ -7,7 +7,6 @@
 
 namespace elet::domain::compiler::test
 {
-
     class ExpressionFixture : public CompileFixture
     {
         std::filesystem::path

@@ -55,8 +55,7 @@ namespace elet::domain::compiler::test
         writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction);
 
         void
-        writeOperation(Utf8String operationString,
-                       const output::MultiplyRegisterInstruction* multiplyRegisterInstruction);
+        writeOperation(Utf8String operationString, const output::OperationInstruction* operationInstruction);
 
         void
         writeOperationRegisters(const output::OperationInstruction* operationInstruction);

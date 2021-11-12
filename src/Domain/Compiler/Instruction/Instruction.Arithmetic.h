@@ -36,10 +36,26 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
+    struct SubtractRegisterInstruction : OperationInstruction
+    {
+        SubtractRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
+            OperationInstruction(InstructionKind::SubtractRegister, destination, target, value)
+        { }
+    };
+
+
     struct MultiplyRegisterInstruction : OperationInstruction
     {
         MultiplyRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
             OperationInstruction(InstructionKind::MultiplyRegister, destination, target, value)
+        { }
+    };
+
+
+    struct DivideRegisterInstruction : OperationInstruction
+    {
+        DivideRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
+            OperationInstruction(InstructionKind::DivideRegister, destination, target, value)
         { }
     };
 

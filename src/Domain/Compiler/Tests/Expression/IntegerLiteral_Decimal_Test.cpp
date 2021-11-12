@@ -16,6 +16,20 @@ namespace elet::domain::compiler::test
     }
 
 
+    TEST_F(ExpressionFixture, IntegerLiteral_Decimal_Zero)
+    {
+        testMainFunction("return 0;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "IntegerLiteral_Decimal_Zero",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+            .printTypeBaseline = true
+        }));
+    }
+
+
     TEST_F(ExpressionFixture, IntegerLiteral_Decimal_Negative)
     {
         testMainFunction("return -2147483648;");

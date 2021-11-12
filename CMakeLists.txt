@@ -33,9 +33,11 @@ file(GLOB DOMAIN_TEST
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/X86/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/Aarch/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/Tests/*)
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/Tests/*
 
-message(STATUS ${DOMAIN_SRC})
+    src/Domain/Compiler/Instruction/Assembly/X86/Tests/*)
+
+#message(STATUS ${DOMAIN_TEST})
 
 add_executable(
     unittest
@@ -43,7 +45,7 @@ add_executable(
     ${FOUNDATION_SRC}
     ${FOUNDATION_TEST}
     ${DOMAIN_SRC}
-    ${DOMAIN_TEST})
+    ${DOMAIN_TEST} )
 
 set(TEST_LIBS gtest gmock)
 target_link_libraries(unittest ${TEST_LIBS})
