@@ -13,6 +13,7 @@
 #include "Syntax/Syntax.h"
 #include "Domain/Compiler/Instruction/Instruction.h"
 #include "Domain/Compiler/Instruction/Transformer.h"
+#include "Domain/Compiler/Instruction/Optimizer.h"
 #include "Domain/Compiler/Instruction/AssemblyWriter.h"
 #include "Domain/Compiler/Instruction/ObjectFileWriter.h"
 #include "CompilerTypes.h"
@@ -135,6 +136,9 @@ namespace elet::domain::compiler
         acceptTransformationWork();
 
         void
+        acceptOptimizationWork();
+
+        void
         acceptAssemblyWritingWork();
 
         void
@@ -158,6 +162,9 @@ namespace elet::domain::compiler
         std::mutex
         _transformationWorkMutex;
 
+        std::mutex
+        _optimizationWorkMutex;
+
         std::queue<ast::Syntax*>
         _checkingWork;
 
@@ -166,6 +173,9 @@ namespace elet::domain::compiler
 
         std::queue<ast::BindingWork*>
         _bindingWork;
+
+        std::queue<output::FunctionRoutine*>
+        _optimizationWork;
 
         std::queue<output::FunctionRoutine*>
         _routines;
@@ -212,6 +222,7 @@ namespace elet::domain::compiler
             Binding,
             Checking,
             Transformation,
+            Optimization,
             Writing,
 
             Error,
@@ -235,6 +246,9 @@ namespace elet::domain::compiler
 
         unsigned int
         _pendingTransformationTasks = 0;
+
+        unsigned int
+        _pendingOptimizationTasks = 0;
 
         unsigned int
         _pendingBindingWork = 0;
@@ -277,6 +291,9 @@ namespace elet::domain::compiler
 
         instruction::Transformer*
         _transformer;
+
+        instruction::output::Optimizer*
+        _optimizer;
 
         ast::Binder*
         _binder;
@@ -334,6 +351,9 @@ namespace elet::domain::compiler
 
         std::mutex
         _relocationWorkMutex;
+
+        const output::Optimizer::Options
+        getOptimizerOptions(CompilerOptions options);
     };
 }
 

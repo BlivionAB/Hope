@@ -17,77 +17,72 @@ using namespace elet::foundation;
 
 namespace elet::domain::compiler::test
 {
+    using namespace elet::domain::compiler::test::aarch;
 
 
-using namespace elet::domain::compiler::test::aarch;
+    template<
+        typename TAssemblyParser,
+        typename TAssemblyPrinter,
+        typename TOneOfInstructions
+    >
+    class CompilerBaselineParser
+    {
 
+    public:
 
-template<
-    typename TAssemblyParser,
-    typename TAssemblyPrinter,
-    typename TOneOfInstructions
->
-class CompilerBaselineParser
-{
+        CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget);
 
-public:
+        void
+        parse();
 
-    CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget);
+        List<TOneOfInstructions>
+        textSectionInstructions;
 
-    void
-    parse();
+        List<TOneOfInstructions>
+        stubsSectionInstructions;
 
-    List<TOneOfInstructions>
-    textSectionInstructions;
+        List<TOneOfInstructions>
+        stubHelperSectionInstructions;
 
-    List<TOneOfInstructions>
-    stubsSectionInstructions;
+        Utf8String
+        serializeTextSegment();
 
-    List<TOneOfInstructions>
-    stubHelperSectionInstructions;
+    private:
 
-    Utf8String
-    serializeTextSegment();
+        void
+        parseSegment64();
 
-private:
+        List<uint8_t>&
+        _list;
 
-    void
-    parseSegment64();
+        uint64_t
+        _offset;
 
-    List<uint8_t>&
-    _list;
+        TAssemblyParser*
+        _parser;
 
-    uint64_t
-    _offset;
+        TAssemblyPrinter*
+        _baselinePrinter;
 
-    TAssemblyParser*
-    _parser;
+        AssemblyTarget
+        _assemblyTarget;
 
-    TAssemblyPrinter*
-    _baselinePrinter;
+        Aarch64AssemblyPrinter*
+        _aarch64BaselinePrinter;
 
-    AssemblyTarget
-    _assemblyTarget;
+        x86::X86AssemblyPrinter*
+        _x86BaselinePrinter;
 
-    Aarch64AssemblyPrinter*
-    _aarch64BaselinePrinter;
+        std::map<uint64_t, const char*>
+        _symbols;
 
-    x86::X86AssemblyPrinter*
-    _x86BaselinePrinter;
+        template<typename T = TOneOfInstructions>
+        void
+        parseTextSection(const Section64* section, List<T>& instructions);
 
-    std::map<uint64_t, const char*>
-    _symbols;
-
-    template<typename T = TOneOfInstructions>
-    void
-    parseTextSection(const Section64* section, List<T>& instructions);
-
-    void
-    parseSymbolTable(const SymtabCommand* command);
-};
-
-
-
+        void
+        parseSymbolTable(const SymtabCommand* command);
+    };
 }
 
 #include "CompilerBaselineParserImpl.h"

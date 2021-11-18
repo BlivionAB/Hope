@@ -8,6 +8,7 @@
 
 using namespace elet::domain::compiler::instruction::output;
 
+
 namespace elet::domain::compiler
 {
     Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions options):
@@ -19,6 +20,7 @@ namespace elet::domain::compiler
         _checker(new ast::Checker(_binder))
     {
         _transformer = new instruction::Transformer(_dataMutex, options);
+        _optimizer = new instruction::output::Optimizer(getOptimizerOptions(options));
         _objectFileWriter = new output::MachoFileWriter(options.assemblyTarget);
     }
 
@@ -72,6 +74,7 @@ namespace elet::domain::compiler
         acceptBindingWork();
         acceptCheckingWork();
         acceptTransformationWork();
+        acceptOptimizationWork();
         acceptAssemblyWritingWork();
         _display_mutex.lock();
     //    std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
@@ -359,9 +362,32 @@ namespace elet::domain::compiler
             // TEMP: All declarations are right now functions.
             if (routine->isStartFunction)
             {
-                _routines.push(routine);
+                _optimizationWork.push(routine);
             }
             _pendingTransformationTasks--;
+        }
+    }
+
+
+    void
+    Compiler::acceptOptimizationWork()
+    {
+        while (_compilationStage == CompilationStage::Optimization)
+        {
+            _optimizationWorkMutex.lock();
+            if (_optimizationWork.empty())
+            {
+                _optimizationWorkMutex.unlock();
+                if (_pendingTransformationTasks == 0)
+                {
+                    _compilationStage = CompilationStage::Writing;
+                    break;
+                }
+                continue;
+            }
+            _pendingOptimizationTasks++;
+            output::FunctionRoutine* functionRoutine = _optimizationWork.front();
+            _optimizer->optimizeRoutine(functionRoutine);
         }
     }
 
@@ -413,5 +439,16 @@ namespace elet::domain::compiler
     Compiler::getSourceFiles()
     {
         return _sourceFiles;
+    }
+
+
+    const output::Optimizer::Options
+    Compiler::getOptimizerOptions(CompilerOptions options)
+    {
+        if (options.assemblyTarget == AssemblyTarget::x86_64)
+        {
+            return { .assemblyHasMultiRegisterOperands = true };
+        }
+        return { .assemblyHasMultiRegisterOperands = false }
     }
 }

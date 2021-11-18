@@ -14,7 +14,23 @@ namespace elet::domain::compiler::instruction::output::test
             .baselineName = "X86_Operator_Add",
             .targets = {
                 CompilationTarget::MachO_x86_64
-            }
+            },
+        }));
+    }
+
+
+    TEST_F(X86Fixture, X86_Operator_Multiply)
+    {
+        testMainFunction(
+            "var x = 1 + 2;\n"
+            "var y = 1 + 2;\n"
+            "return x * y;");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "X86_Operator_Multiply",
+            .targets = {
+                CompilationTarget::MachO_x86_64
+            },
         }));
     }
 }
