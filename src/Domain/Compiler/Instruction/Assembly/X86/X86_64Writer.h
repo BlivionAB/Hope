@@ -109,6 +109,9 @@ private:
     writeAddImmediateInstruction(AddImmediateInstruction* addImmediateInstruction, FunctionRoutine* function) override;
 
     void
+    writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function) override;
+
+    void
     writeAddImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
 
     void

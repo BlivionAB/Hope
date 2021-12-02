@@ -95,6 +95,7 @@ namespace elet::domain::compiler::instruction::output
         StoreImmediate,
         StoreRegister,
         AddRegister,
+        AddRegisterAddress,
         AddImmediate,
         SubtractRegister,
         MultiplyRegister,
@@ -428,9 +429,9 @@ namespace elet::domain::compiler::instruction::output
         MemoryAllocation(InstructionKind kind, uint64_t& stackOffset, RegisterSize allocationSize):
             Instruction(kind, allocationSize),
             allocationSize(allocationSize),
-            stackOffset(stackOffset)
+            stackOffset(stackOffset + static_cast<uint64_t>(allocationSize))
         {
-            stackOffset += static_cast<int>(allocationSize);
+            stackOffset += static_cast<uint64_t>(allocationSize);
         }
     };
 

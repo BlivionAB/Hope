@@ -55,10 +55,10 @@ namespace elet::domain::compiler::test
         writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction);
 
         void
-        writeOperation(Utf8String operationString, const output::OperationInstruction* operationInstruction);
+        writeOperation(Utf8String operationString, const output::OperationRegisterInstruction* operationInstruction);
 
         void
-        writeOperationRegisters(const output::OperationInstruction* operationInstruction);
+        writeOperationRegisters(const output::OperationRegisterInstruction* operationInstruction);
     };
 }
 #endif //ELET_STASHIRPRINTER_H

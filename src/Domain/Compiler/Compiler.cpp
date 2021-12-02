@@ -336,7 +336,7 @@ namespace elet::domain::compiler
     //                std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
     //                std::cout << "begin writing work"<< std::endl;
     //                _display_mutex.unlock();
-                    _compilationStage = CompilationStage::Writing;
+                    _compilationStage = CompilationStage::Optimization;
                     break;
                 }
                 continue;
@@ -387,7 +387,10 @@ namespace elet::domain::compiler
             }
             _pendingOptimizationTasks++;
             output::FunctionRoutine* functionRoutine = _optimizationWork.front();
+            _optimizationWork.pop();
             _optimizer->optimizeRoutine(functionRoutine);
+            _routines.push(functionRoutine);
+            _optimizationWorkMutex.unlock();
         }
     }
 
@@ -449,6 +452,6 @@ namespace elet::domain::compiler
         {
             return { .assemblyHasMultiRegisterOperands = true };
         }
-        return { .assemblyHasMultiRegisterOperands = false }
+        return { .assemblyHasMultiRegisterOperands = false };
     }
 }

@@ -157,6 +157,9 @@ namespace elet::domain::compiler::instruction::output
                 case InstructionKind::AddImmediate:
                     writeAddImmediateInstruction(reinterpret_cast<AddImmediateInstruction*>(instruction), function);
                     break;
+                case InstructionKind::AddRegisterAddress:
+                    writeAddRegisterAddressInstruction(reinterpret_cast<AddRegisterAddressInstruction*>(instruction), function);
+                    break;
                 case InstructionKind::SubtractImmediate:
                     writeSubtractImmediateInstruction(reinterpret_cast<SubtractImmediateInstruction*>(instruction), function);
                     break;
@@ -171,13 +174,18 @@ namespace elet::domain::compiler::instruction::output
     }
 
 
+    void
+    AssemblyWriterInterface::writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeAddRegisterAddressInstruction\" method.");
+    }
+
 
     void
     AssemblyWriterInterface::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function)
     {
         throw std::runtime_error("Not implemented \"writeMoveAddressInstruction\" method.");
     }
-
 
 
     void

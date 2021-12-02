@@ -508,7 +508,7 @@ namespace elet::domain::compiler::instruction::output
     {
         bw->writeDoubleWordInFunction(
             Aarch64Instruction::StrImmediateBaseOffset64 |
-            uimm12((function->stackSize - storeRegisterInstruction->stackOffset - 8)) |
+            uimm12((function->stackSize - storeRegisterInstruction->stackOffset)) |
             Rn(Aarch64Register::sp) |
             Rt(getAarch64RegisterFromOperandRegister(storeRegisterInstruction->target)), function);
     }
@@ -540,7 +540,7 @@ namespace elet::domain::compiler::instruction::output
     {
         bw->writeDoubleWordInFunction(
             Aarch64Instruction::LdrImmediateBaseOffset64 |
-            uimm12((function->stackSize - loadInstruction->stackOffset - 8) / 8) |
+            uimm12((function->stackSize - loadInstruction->stackOffset) / 8) |
             Rn(Aarch64Register::sp) | Rt(getAarch64RegisterFromOperandRegister(loadInstruction->destination)), function);
     }
 

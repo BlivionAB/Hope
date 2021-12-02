@@ -7,9 +7,8 @@
 
 namespace elet::domain::compiler::instruction::output
 {
-    struct OperationInstruction : Instruction
+    struct OperationRegisterInstruction : Instruction
     {
-
         OperandRegister
         destination;
 
@@ -19,7 +18,7 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         value;
 
-        OperationInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, OperandRegister value):
+        OperationRegisterInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, OperandRegister value):
             Instruction(operandKind),
             destination(destination),
             target(target),
@@ -28,59 +27,91 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    struct AddRegisterInstruction : OperationInstruction
+    struct OperationRegisterAddressInstruction : Instruction
+    {
+        OperandRegister
+        destination;
+
+        OperandRegister
+        target;
+
+        uint64_t
+        value_stackOffset;
+
+        uint64_t
+        value_size;
+
+        OperationRegisterAddressInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, uint64_t value_stackOffset, uint64_t value_size):
+            Instruction(operandKind),
+            destination(destination),
+            target(target),
+            value_stackOffset(value_stackOffset),
+            value_size(value_size)
+        { }
+    };
+
+
+    struct AddRegisterInstruction : OperationRegisterInstruction
     {
         AddRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationInstruction(InstructionKind::AddRegister, destination, target, value)
+            OperationRegisterInstruction(InstructionKind::AddRegister, destination, target, value)
         { }
     };
 
 
-    struct SubtractRegisterInstruction : OperationInstruction
+    struct AddRegisterAddressInstruction : OperationRegisterAddressInstruction
+    {
+        AddRegisterAddressInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
+            OperationRegisterAddressInstruction(InstructionKind::AddRegisterAddress, destination, target, value_stackOffset, value_size)
+        { }
+    };
+
+
+    struct SubtractRegisterInstruction : OperationRegisterInstruction
     {
         SubtractRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationInstruction(InstructionKind::SubtractRegister, destination, target, value)
+            OperationRegisterInstruction(InstructionKind::SubtractRegister, destination, target, value)
         { }
     };
 
 
-    struct MultiplyRegisterInstruction : OperationInstruction
+    struct MultiplyRegisterInstruction : OperationRegisterInstruction
     {
         MultiplyRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationInstruction(InstructionKind::MultiplyRegister, destination, target, value)
+            OperationRegisterInstruction(InstructionKind::MultiplyRegister, destination, target, value)
         { }
     };
 
 
-    struct DivideRegisterInstruction : OperationInstruction
+    struct DivideRegisterInstruction : OperationRegisterInstruction
     {
         DivideRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationInstruction(InstructionKind::DivideRegister, destination, target, value)
+            OperationRegisterInstruction(InstructionKind::DivideRegister, destination, target, value)
         { }
     };
 
 
-    struct AndRegisterInstruction : OperationInstruction
+    struct AndRegisterInstruction : OperationRegisterInstruction
     {
         AndRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationInstruction(InstructionKind::AndRegister, destination, target, value)
+            OperationRegisterInstruction(InstructionKind::AndRegister, destination, target, value)
         { }
     };
 
 
-    struct XorRegisterInstruction : OperationInstruction
+    struct XorRegisterInstruction : OperationRegisterInstruction
     {
         XorRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationInstruction(InstructionKind::XorRegister, destination, target, value)
+            OperationRegisterInstruction(InstructionKind::XorRegister, destination, target, value)
         { }
     };
 
 
 
-    struct OrRegisterInstruction : OperationInstruction
+    struct OrRegisterInstruction : OperationRegisterInstruction
     {
         OrRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationInstruction(InstructionKind::OrRegister, destination, target, value)
+            OperationRegisterInstruction(InstructionKind::OrRegister, destination, target, value)
         { }
     };
 

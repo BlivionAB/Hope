@@ -17,7 +17,7 @@ WriteLine:
 0000000100003fa0  55                    pushq %rbp
 0000000100003fa1  4889e5                movq %rsp, %rbp
 0000000100003fa4  4883ec10              subq #0x10, %rsp
-0000000100003fa8  48897d00              movq %rdi, (%rbp)
+0000000100003fa8  48897df8              movq %rdi, -0x8(%rbp)
 0000000100003fac  488b7df8              movq -0x8(%rbp), %rdi
 0000000100003fb0  e80b000000            callq 0x0000000100003fc0
 0000000100003fb5  4883c410              addq #0x10, %rsp

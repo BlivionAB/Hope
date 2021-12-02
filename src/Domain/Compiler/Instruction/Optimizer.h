@@ -30,6 +30,12 @@ namespace elet::domain::compiler::instruction::output
 
         bool
         isOperationInstruction(const Instruction* instruction);
+
+        OperationRegisterAddressInstruction*
+        createOperationRegisterAddressInstructionFromOperationRegisterInstruction(const OperationRegisterInstruction* operationRegisterInstruction, const LoadInstruction* loadInstruction);
+
+        void
+        optimizeLoadOperationInstructions(FunctionRoutine* functionRoutine);
     };
 }
 

@@ -67,6 +67,10 @@ public:
 
     virtual
     void
+    writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function);
+
+    virtual
+    void
     writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function);
 
     virtual

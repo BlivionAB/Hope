@@ -112,7 +112,7 @@ namespace elet::domain::compiler::test
     StashIRPrinter::writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction)
     {
         _tw.write("Str ");
-        _tw.write("[Sp + ");
+        _tw.write("[Sp - ");
         _tw.write(storeRegisterInstruction->stackOffset);
         _tw.write("], ");
         writeOperandRegister(storeRegisterInstruction->target);
@@ -134,7 +134,7 @@ namespace elet::domain::compiler::test
         _tw.write("Ldr ");
         writeOperandRegister(loadInstruction->destination);
         _tw.write(", [Sp + #");
-        _tw.write(-static_cast<int64_t>(loadInstruction->stackOffset) - static_cast<int64_t>(loadInstruction->allocationSize));
+        _tw.write(-static_cast<int64_t>(loadInstruction->stackOffset));
         _tw.write("]");
     }
 
@@ -178,7 +178,7 @@ namespace elet::domain::compiler::test
     StashIRPrinter::writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction)
     {
         _tw.write("Str [Sp + #");
-        _tw.write(-static_cast<int64_t>(storeImmediateInstruction->stackOffset) - static_cast<int64_t>(storeImmediateInstruction->allocationSize));
+        _tw.write(-static_cast<int64_t>(storeImmediateInstruction->stackOffset));
         _tw.write("], ");
         _tw.writeSignedImmediateValue(storeImmediateInstruction->value);
     }
@@ -215,7 +215,7 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeOperation(Utf8String operationString, const output::OperationInstruction* operationInstruction)
+    StashIRPrinter::writeOperation(Utf8String operationString, const output::OperationRegisterInstruction* operationInstruction)
     {
         _tw.write(operationString);
         _tw.write(" ");
@@ -224,7 +224,7 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeOperationRegisters(const output::OperationInstruction* operationInstruction)
+    StashIRPrinter::writeOperationRegisters(const output::OperationRegisterInstruction* operationInstruction)
     {
         writeOperandRegister(operationInstruction->destination);
         _tw.write(", ");

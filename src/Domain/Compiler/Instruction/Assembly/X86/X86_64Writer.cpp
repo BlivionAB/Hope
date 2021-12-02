@@ -144,7 +144,7 @@ namespace elet::domain::compiler::instruction::output
     {
         bw->writeByte(OneByteOpCode::Mov_Ev_Iz);
         bw->writeByte(ModBits::Mod1 | RmBits::Rm5);
-        bw->writeByte(-storeImmediateInstruction->stackOffset - static_cast<int>(storeImmediateInstruction->allocationSize));
+        bw->writeByte(-storeImmediateInstruction->stackOffset);
         bw->writeDoubleWord(storeImmediateInstruction->value);
         function->codeSize += 7;
     }
@@ -368,14 +368,14 @@ namespace elet::domain::compiler::instruction::output
     {
         RegisterBits registerBits = getRegisterBitsFromOperandRegister(operandRegister);
         int64_t convertedStackOffset = static_cast<int64_t>(stackOffset);
-        if (convertedStackOffset <= INT8_MAX && convertedStackOffset >= INT8_MIN)
+        if (convertedStackOffset <= -INT8_MIN && convertedStackOffset >= -INT8_MAX)
         {
             bw->writeInstructionsInFunction({
                 static_cast<uint8_t>(ModBits::Mod1 | registerBits | RmBits::EbpPlusDisp8),
                 static_cast<uint8_t>(-convertedStackOffset)
             }, function);
         }
-        else if (convertedStackOffset <= INT32_MAX && convertedStackOffset >= INT32_MIN)
+        else if (convertedStackOffset <= -INT32_MIN && convertedStackOffset >= -INT32_MAX)
         {
             bw->writeInstructionInFunction(ModBits::Mod2 | registerBits | RmBits::EbpPlusDisp32, function);
             bw->writeDoubleWordInFunction(-convertedStackOffset, function);
@@ -390,7 +390,7 @@ namespace elet::domain::compiler::instruction::output
     void
     X86_64Writer::writeModRmAndStackOffset(LoadInstruction* loadInstruction, FunctionRoutine* function)
     {
-        writeEbpReferenceBytes(loadInstruction->stackOffset + static_cast<int>(loadInstruction->allocationSize), loadInstruction->destination, function);
+        writeEbpReferenceBytes(loadInstruction->stackOffset, loadInstruction->destination, function);
     }
 
 
@@ -398,6 +398,14 @@ namespace elet::domain::compiler::instruction::output
     X86_64Writer::writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
     {
         throw std::runtime_error("Not implemented");
+    }
+
+
+    void
+    X86_64Writer::writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function)
+    {
+        bw->writeInstructionInFunction(OneByteOpCode::Add_Gv_Ev, function);
+        writeEbpReferenceBytes(addRegisterAddressInstruction->value_stackOffset, addRegisterAddressInstruction->destination, function);
     }
 
 
@@ -411,7 +419,7 @@ namespace elet::domain::compiler::instruction::output
     void
     X86_64Writer::writeAddImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function)
     {
-        if (value <= UINT8_MAX)
+        if (value <= -INT8_MIN)
         {
             bw->writeInstructionsInFunction({
                 OpCodePrefix::RexMagic | OpCodePrefix::RexW,
