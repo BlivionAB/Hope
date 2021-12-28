@@ -59,6 +59,15 @@ namespace elet::domain::compiler
     };
 
 
+    enum class AssemblyTarget
+    {
+        Unknown,
+        x86_64,
+        Aarch64,
+        StashIR,
+    };
+
+
     struct Diagnostic
     {
         Utf8String
@@ -80,8 +89,7 @@ namespace elet::domain::compiler
         Unknown,
         StashIR,
         MachO,
-        Elf,
-        Coff,
+        Pe32,
     };
 }
 

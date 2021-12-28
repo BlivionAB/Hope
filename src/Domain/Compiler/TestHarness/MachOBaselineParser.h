@@ -1,5 +1,5 @@
-#ifndef ELET_COMPILERBASELINEPARSER_H
-#define ELET_COMPILERBASELINEPARSER_H
+#ifndef ELET_MACHOBASELINEPARSER_H
+#define ELET_MACHOBASELINEPARSER_H
 
 
 #include <Foundation/Utf8String.h>
@@ -10,6 +10,7 @@
 #include "Domain/Compiler/TestHarness/Aarch/Aarch64AssemblyParser.h"
 #include "Domain/Compiler/TestHarness/Aarch/Aarch64AssemblyPrinter.h"
 #include "./BaselinePrinter.h"
+#include "./ObjectFileBaselineParser.h"
 
 
 using namespace elet::foundation;
@@ -22,18 +23,18 @@ namespace elet::domain::compiler::test
 
     template<
         typename TAssemblyParser,
-        typename TAssemblyPrinter,
+        typename TAssemblyBaselinePrinter,
         typename TOneOfInstructions
     >
-    class CompilerBaselineParser
+    class MachOBaselineParser : public ObjectFileBaselineParser<TAssemblyParser, TAssemblyBaselinePrinter>
     {
 
     public:
 
-        CompilerBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget);
+        MachOBaselineParser(List<uint8_t>& list, AssemblyTarget assemblyTarget);
 
         void
-        parse();
+        parse() override;
 
         List<TOneOfInstructions>
         textSectionInstructions;
@@ -52,21 +53,6 @@ namespace elet::domain::compiler::test
         void
         parseSegment64();
 
-        List<uint8_t>&
-        _list;
-
-        uint64_t
-        _offset;
-
-        TAssemblyParser*
-        _parser;
-
-        TAssemblyPrinter*
-        _baselinePrinter;
-
-        AssemblyTarget
-        _assemblyTarget;
-
         Aarch64AssemblyPrinter*
         _aarch64BaselinePrinter;
 
@@ -78,13 +64,13 @@ namespace elet::domain::compiler::test
 
         template<typename T = TOneOfInstructions>
         void
-        parseTextSection(const Section64* section, List<T>& instructions);
+        parseTextSection(const macho::Section64* section, List<T>& instructions);
 
         void
-        parseSymbolTable(const SymtabCommand* command);
+        parseSymbolTable(const macho::SymtabCommand* command);
     };
 }
 
-#include "CompilerBaselineParserImpl.h"
+#include "MachOBaselineParserImpl.h"
 
-#endif //ELET_COMPILERBASELINEPARSER_H
+#endif //ELET_MACHOBASELINEPARSER_H

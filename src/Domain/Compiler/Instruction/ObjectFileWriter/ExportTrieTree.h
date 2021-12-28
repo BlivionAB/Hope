@@ -7,7 +7,7 @@
 #include "../Instruction.h"
 
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     const size_t ALPHABET_SIZE = 57; // From A to z in ASCII
 

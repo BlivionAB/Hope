@@ -4,6 +4,7 @@
 #include <vector>
 #include <mutex>
 #include "Instruction/ObjectFileWriter/MachoFileWriter.h"
+#include "Instruction/ObjectFileWriter/Pe32FileWriter.h"
 #include "ErrorWriter.h"
 
 using namespace elet::domain::compiler::instruction::output;
@@ -21,7 +22,24 @@ namespace elet::domain::compiler
     {
         _transformer = new instruction::Transformer(_dataMutex, options);
         _optimizer = new instruction::output::Optimizer(getOptimizerOptions(options));
-        _objectFileWriter = new output::MachoFileWriter(options.assemblyTarget);
+        _objectFileWriter = createObjectFileWriter(options);
+
+    }
+
+
+    output::ObjectFileWriter*
+    Compiler::createObjectFileWriter(CompilerOptions options)
+    {
+        switch (options.objectFileTarget)
+        {
+            case ObjectFileTarget::StashIR:
+            case ObjectFileTarget::MachO:
+                return new output::macho::MachoFileWriter(options.assemblyTarget);
+            case ObjectFileTarget::Pe32:
+                return new output::pe32::Pe32FileWriter(options.assemblyTarget);
+            default:
+                throw std::runtime_error("Unknown object file target.");
+        }
     }
 
 

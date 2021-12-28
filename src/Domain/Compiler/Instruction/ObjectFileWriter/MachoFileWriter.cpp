@@ -1,26 +1,13 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "cppcoreguidelines-avoid-magic-numbers"
-#pragma ide diagnostic ignored "cppcoreguidelines-pro-bounds-pointer-arithmetic"
 #include "MachoFileWriter.h"
 #include "DyldInfoWriter.h"
 #include "../Assembly/Aarch/Aarch64Writer.h"
 
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     MachoFileWriter::MachoFileWriter(AssemblyTarget assemblyTarget):
-        _assemblyTarget(assemblyTarget)
+        ObjectFileWriter(assemblyTarget)
     {
-        _bw = new ByteWriter(&output, &offset);
-        switch (assemblyTarget)
-        {
-            case AssemblyTarget::x86_64:
-                assemblyWriter = new X86_64Writer(&_text);
-                break;
-            case AssemblyTarget::Aarch64:
-                assemblyWriter = new Aarch64Writer(&_text);
-                break;
-        }
         _dyldInfoWriter = new DyldInfoWriter(this);
     }
 
@@ -29,7 +16,6 @@ namespace elet::domain::compiler::instruction::output
     MachoFileWriter::write(FunctionRoutine* startRoutine)
     {
         layoutTextSegment(startRoutine);
-        output.reserve(100 * 4096);
 
         writeHeader();
         writePageZeroSegmentCommand();
@@ -259,8 +245,9 @@ namespace elet::domain::compiler::instruction::output
             default:
                 throw std::runtime_error("Unknown assembly target.");
         }
-        MachHeader64 header {
-            .magic = MachoMagicValue::MACHO_MAGIC_64,
+        MachHeader64 header
+        {
+            .magic = static_cast<uint32_t>(MachoMagicValue::MACHO_MAGIC_64),
             .cpuType = cpuType,
             .cpuSubType = cpuSubType,
             .fileType = MH_EXECUTE,
@@ -269,7 +256,7 @@ namespace elet::domain::compiler::instruction::output
             .flags = MachoFlags::MH_NOUNDEFS | MachoFlags::MH_DYLDLINK | MachoFlags::MH_TWOLEVEL | MachoFlags::MH_PIE,
             .reserved = 0,
         };
-        _header = output.write(&header);
+        _header = output.write<MachHeader64>(&header);
         offset += sizeof(*_header);
     }
 
@@ -293,7 +280,7 @@ namespace elet::domain::compiler::instruction::output
     }
 
 
-    SegmentCommand64*
+    ContainerPtr<SegmentCommand64, uint8_t>
     MachoFileWriter::writeSegment(SegmentCommand64 segmentCommand)
     {
         offset += sizeof(SegmentCommand64);
@@ -303,8 +290,8 @@ namespace elet::domain::compiler::instruction::output
     }
 
 
-    Section64*
-    MachoFileWriter::writeSection(Section64 section, SegmentCommand64* segment)
+    ContainerPtr<Section64, uint8_t>
+    MachoFileWriter::writeSection(Section64 section, ContainerPtr<SegmentCommand64, uint8_t>& segment)
     {
         offset += sizeof(Section64);
         _header->sizeOfCommands += sizeof(Section64);
@@ -595,7 +582,7 @@ namespace elet::domain::compiler::instruction::output
     void
     MachoFileWriter::writeLoadDylibCommands()
     {
-        LoadDylibCommand* command = writeCommand<LoadDylibCommand>(LC_LOAD_DYLIB);
+        ContainerPtr<LoadDylibCommand, uint8_t> command = writeCommand<LoadDylibCommand>(LC_LOAD_DYLIB);
         command->name = 24; // Offset to string
         command->timestamp = 2; // unix timestamp clang compiles this to 2
         command->currentVersion = 0x050c3c01; // 1292.60.1
@@ -609,7 +596,7 @@ namespace elet::domain::compiler::instruction::output
 
 
     template<typename TCommand>
-    TCommand*
+    ContainerPtr<TCommand, uint8_t>
     MachoFileWriter::writeCommand(CommandType commandType)
     {
         TCommand command =
@@ -725,14 +712,14 @@ namespace elet::domain::compiler::instruction::output
         for (FunctionRoutine* functionRoutine : assemblyWriter->internalRoutines)
         {
             _bw->writeDoubleWordAtAddress(stringTableIndex, functionRoutine->stringTableIndexAddress);
-            _bw->writeString(functionRoutine->name);
+            _bw->writeStringWithNullCharEnd(functionRoutine->name);
             stringTableIndex += functionRoutine->name.size() + 1;
         }
         List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutines.concat(assemblyWriter->gotBoundRoutines);
         for (ExternalRoutine* externalRoutine : allRoutines)
         {
             _bw->writeDoubleWordAtAddress(stringTableIndex, externalRoutine->stringTableIndexAddress);
-            _bw->writeString(externalRoutine->name);
+            _bw->writeStringWithNullCharEnd(externalRoutine->name);
             stringTableIndex += externalRoutine->name.size() + 1;
         }
         symtabCommand->stringSize = offset - symtabCommand->stringOffset;
@@ -788,7 +775,7 @@ namespace elet::domain::compiler::instruction::output
 
     template<typename TCommand>
     void
-    MachoFileWriter::writeCommandPadding(TCommand* command)
+    MachoFileWriter::writeCommandPadding(ContainerPtr<TCommand, uint8_t>& command)
     {
         uint32_t rest = command->cmdSize % 8;
         if (rest != 0)
@@ -823,5 +810,3 @@ namespace elet::domain::compiler::instruction::output
         assemblyWriter->relocateCStrings(textSegmentStartOffset);
     }
 }
-
-#pragma clang diagnostic pop

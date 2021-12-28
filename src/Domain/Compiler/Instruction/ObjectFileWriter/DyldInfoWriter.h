@@ -8,7 +8,7 @@
 #include "ExportInfoWriter.h"
 
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     using namespace elet::foundation;
 

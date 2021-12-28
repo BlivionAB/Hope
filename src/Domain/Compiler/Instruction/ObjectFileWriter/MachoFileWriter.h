@@ -2,18 +2,18 @@
 #define ELET_BASELINEOBJECTFILEWRITER_H
 
 #include "../AssemblyWriter.h"
-#include "MachoFileWriter.h"
+#include "ObjectFileWriter.h"
 #include "DyldInfoWriter.h"
 
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     class DyldInfoWriter;
     // For reference: https://opensource.apple.com/source/xnu/xnu-4903.270.47/EXTERNAL_HEADERS/mach-o/loader.h.auto.html
     #define SEGMENT_SIZE 0x4000 // 8 byte alignemnt
 
 
-    enum MachoMagicValue : uint64_t
+    enum class MachoMagicValue : uint32_t
     {
         MACHO_MAGIC_64 = 0xfeedfacf,
     };
@@ -453,7 +453,7 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    class MachoFileWriter : public ObjectFileWriterInterface
+    class MachoFileWriter : public ObjectFileWriter
     {
 
     public:
@@ -466,22 +466,16 @@ namespace elet::domain::compiler::instruction::output
         uint64_t
         vmAddress = 0x0000000100000000;
 
-        uint64_t
-        offset = 0;
-
-        DyldInfoCommand*
+        ContainerPtr<DyldInfoCommand, uint8_t>
         dyldInfoCommand;
 
-        DysymTabCommand*
+        ContainerPtr<DysymTabCommand, uint8_t>
         dysymTabCommand;
 
-        SymtabCommand*
+        ContainerPtr<SymtabCommand, uint8_t>
         symtabCommand;
 
-        AssemblyWriterInterface*
-        assemblyWriter;
-
-        SegmentCommand64*
+        ContainerPtr<SegmentCommand64, uint8_t>
         linkEditSegment;
 
         uint64_t
@@ -492,20 +486,11 @@ namespace elet::domain::compiler::instruction::output
         uint64_t
         _undefinedExternalSymbolIndex = 0;
 
-        List<uint8_t>
-        _text;
-
         DyldInfoWriter*
         _dyldInfoWriter;
 
-        ByteWriter*
-        _bw;
-
-        MachHeader64*
+        ContainerPtr<MachHeader64, uint8_t>
         _header;
-
-        compiler::AssemblyTarget
-        _assemblyTarget;
 
         uint32_t
         _textOffset;
@@ -525,34 +510,34 @@ namespace elet::domain::compiler::instruction::output
         uint64_t
         _textSegmentStartVmAddress;
 
-        SegmentCommand64*
+        ContainerPtr<SegmentCommand64, uint8_t>
         _textSegment;
 
-        SegmentCommand64*
+        ContainerPtr<SegmentCommand64, uint8_t>
         _dataConstSegment;
 
-        SegmentCommand64*
+        ContainerPtr<SegmentCommand64, uint8_t>
         _dataSegment;
 
-        Section64*
+        ContainerPtr<Section64, uint8_t>
         _dataLaSymbolPtrSection;
 
-        Section64*
+        ContainerPtr<Section64, uint8_t>
         _dataSection;
 
-        Section64*
+        ContainerPtr<Section64, uint8_t>
         _dataConstGotSection;
 
-        Section64*
+        ContainerPtr<Section64, uint8_t>
         _textSection;
 
-        Section64*
+        ContainerPtr<Section64, uint8_t>
         _stubsSection;
 
-        Section64*
+        ContainerPtr<Section64, uint8_t>
         _stubHelperSection;
 
-        Section64*
+        ContainerPtr<Section64, uint8_t>
         _cstringSection;
 
         uint32_t
@@ -582,7 +567,7 @@ namespace elet::domain::compiler::instruction::output
         ExternalRoutine*
         _dyldStubBinderRoutine;
 
-        MainCommand*
+        ContainerPtr<MainCommand, uint8_t>
         _mainCommand;
 
         void
@@ -591,14 +576,14 @@ namespace elet::domain::compiler::instruction::output
         void
         layoutTextSegment(FunctionRoutine* startRoutine);
 
-        SegmentCommand64*
+        ContainerPtr<SegmentCommand64, uint8_t>
         writeSegment(SegmentCommand64 segmentCommand);
 
         void
         writePageZeroSegmentCommand();
 
-        Section64*
-        writeSection(Section64 section, SegmentCommand64* segment);
+        ContainerPtr<Section64, uint8_t>
+        writeSection(Section64 section, ContainerPtr<SegmentCommand64, uint8_t>& segment);
 
         void
         writePadding(uint32_t pad);
@@ -658,7 +643,7 @@ namespace elet::domain::compiler::instruction::output
         writeLoadDylibCommands();
 
         template<typename TCommand>
-        TCommand*
+        ContainerPtr<TCommand, uint8_t>
         writeCommand(CommandType commandType);
 
         void
@@ -672,7 +657,7 @@ namespace elet::domain::compiler::instruction::output
 
         template<typename TCommand>
         void
-        writeCommandPadding(TCommand* command);
+        writeCommandPadding(ContainerPtr<TCommand, uint8_t>& command);
 
         void
         writeMainCommand(FunctionRoutine* startRoutine);

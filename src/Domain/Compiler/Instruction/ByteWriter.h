@@ -28,7 +28,6 @@ public:
     void
     writeQuadWordAtAddress(uint64_t instruction, uint64_t);
 
-
     void
     writeDoubleWord(uint32_t instruction);
 
@@ -68,6 +67,9 @@ public:
 
     uint64_t
     writeString(const Utf8StringView& string);
+
+    uint64_t
+    writeStringWithNullCharEnd(const Utf8StringView& string);
 
     uint64_t
     writeUleb128(uint64_t value);

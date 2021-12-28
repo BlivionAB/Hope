@@ -2,7 +2,7 @@
 #include "ExportInfoWriter.h"
 
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     DyldInfoWriter::DyldInfoWriter(MachoFileWriter* machoWriter):
         _machoWriter(machoWriter),
@@ -94,7 +94,7 @@ namespace elet::domain::compiler::instruction::output
             offset += _bw->writeUleb128(offset);
             _bw->writeByte(BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 1);
             _bw->writeByte(BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM | 0);
-            offset += _bw->writeString(externalRoutine->name);
+            offset += _bw->writeStringWithNullCharEnd(externalRoutine->name);
             _bw->writeByte(BIND_OPCODE_DO_BIND);
             _bw->writeByte(BIND_OPCODE_DONE);
             offset += 5;

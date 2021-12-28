@@ -13,8 +13,9 @@ namespace elet::domain::compiler::instruction::output::test
         EXPECT_TRUE(testProject({
             .baselineName = "X86_Operator_Add",
             .targets = {
-                CompilationTarget::MachO_x86_64
+                CompilationTarget::Pe32_x86_64,
             },
+            .writeExecutable = true,
         }));
     }
 

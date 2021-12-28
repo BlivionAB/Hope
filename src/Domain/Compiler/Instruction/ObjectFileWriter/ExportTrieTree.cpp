@@ -1,7 +1,7 @@
 #include "ExportTrieTree.h"
 #include "../ByteWriter.h"
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     void
     ExportTrieNode::insertRoutine(FunctionRoutine* routine, uint64_t textStartOffset)

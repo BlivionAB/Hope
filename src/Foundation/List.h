@@ -6,191 +6,245 @@
 #include <functional>
 #include <optional>
 
-namespace elet::foundation {
-
-
-class Utf8String;
-
-
-template<typename T>
-class List
+namespace elet::foundation
 {
-public:
+    template<typename T>
+    class List;
 
-    class Iterator {
-        friend class List;
-    public:
+    template<typename T, typename TListItem>
+    struct ContainerPtr
+    {
+        size_t
+        index;
+
+        List<TListItem>*
+        list;
+
+        T*
+        operator ->() const
+        {
+            return reinterpret_cast<T*>(&(*list)[index]);
+        }
+
+
         T&
         operator *() const
         {
-            return *(value);
+            auto s = &(*list)[index];
+            return *(reinterpret_cast<T*>(&(*list)[index]));
         }
 
-        const Iterator&
-        operator ++ ()
+
+        ContainerPtr():
+            index(0),
+            list(nullptr)
         {
-            value++;
-            return *this;
+
         }
 
-        const Iterator&
-        peek() const
+
+        ContainerPtr(const ContainerPtr& other):
+            index(other.index),
+            list(other.list)
         {
-            return Iterator(value + 1);
+
         }
 
-        const Iterator&
-        next()
+
+        ContainerPtr(size_t index, List<TListItem>* list):
+            index(index),
+            list(list)
         {
-            value++;
-            return *this;
+
         }
-
-        bool
-        operator == (const Iterator &other) const
-        {
-            return value == other.value;
-        }
-
-        bool
-        operator != (const Iterator &other) const
-        {
-            return value != other.value;
-        }
-
-        Iterator(T* value):
-            value(value)
-        { }
-
-    private:
-
-        T*
-        value;
     };
 
 
-    List(const std::initializer_list<T>& items);
+    template<typename T>
+    class List
+    {
+    public:
 
-    List();
+        class Iterator {
+            friend class List;
+        public:
+            T&
+            operator *() const
+            {
+                return *(value);
+            }
 
-    List(const List& other);
+            const Iterator&
+            operator ++ ()
+            {
+                value++;
+                return *this;
+            }
 
-    ~List();
+            const Iterator&
+            peek() const
+            {
+                return Iterator(value + 1);
+            }
 
-    template<typename ... Args>
-    T*
-    emplace(const Args& ... args);
+            const Iterator&
+            next()
+            {
+                value++;
+                return *this;
+            }
 
-    template<typename ... Args>
-    void
-    unshiftEmplace(const Args& ... args);
+            bool
+            operator == (const Iterator &other) const
+            {
+                return value == other.value;
+            }
 
-    void
-    create(const T& item);
+            bool
+            operator != (const Iterator &other) const
+            {
+                return value != other.value;
+            }
 
-    void
-    create(const List<T>& item);
+            Iterator(T* value):
+                value(value)
+            { }
 
-    T*
-    cursor();
+        private:
 
-    template<typename B>
-    B*
-    write(B* batch);
+            T*
+            value;
+        };
 
-    void
-    add(const T& item);
 
-    void
-    add(const List<T>& item);
+        List(const std::initializer_list<T>& items);
 
-    void
-    add(const T&& item);
+        List();
 
-    void
-    remove(const T& item);
+        List(const List& other);
 
-    List<T>
-    concat(const List<T>& other) const;
+        ~List();
 
-    List<T>
-    slice(size_t index, size_t size);
+        template<typename ... Args>
+        T*
+        emplace(const Args& ... args);
 
-    List<T>
-    copy();
+        template<typename ... Args>
+        void
+        unshiftEmplace(const Args& ... args);
 
-    T&
-    operator [] (std::size_t index) const;
+        void
+        create(const T& item);
 
-    List<T>&
-    operator = (const List<T>& vector);
+        void
+        create(const List<T>& item);
 
-    std::size_t
-    size() const;
+        T*
+        cursor();
 
-    void
-    clear();
+        void
+        setCursor(T* cursor);
 
-    T&
-    last();
+        template<typename B>
+        ContainerPtr<B, T>
+        write(B* batch, size_t size);
 
-    Utf8String
-    join(Utf8String delimiter) const;
+        template<typename B>
+        ContainerPtr<B, T>
+        write(B* batch);
 
-    bool
-    isEmpty() const;
+        void
+        add(const T& item);
 
-    void
-    reserve(std::size_t capacity);
+        void
+        add(const List<T>& item);
 
-    void
-    sort(std::function<int(T &, T &)> comparator);
+        void
+        add(const T&& item);
 
-    template<typename TType = T>
-    TType
-    find(std::function<bool(T)> predicate, typename std::enable_if<std::is_pointer<TType>::value>::type* = 0) const;
+        void
+        remove(const T& item);
 
-    template<typename TType = T>
-    TType*
-    find(std::function<bool(T&)> predicate, typename std::enable_if<!std::is_pointer<TType>::value>::type* = 0) const;
+        List<T>
+        concat(const List<T>& other) const;
 
-    Iterator
-    begin() const;
+        List<T>
+        slice(size_t index, size_t size);
 
-    Iterator
-    end() const;
+        List<T>
+        copy();
 
-    bool
-    has(T key) const;
+        T&
+        operator [] (std::size_t index) const;
 
-    template<typename TNew>
-    List<TNew>
-    map(std::function<TNew (const T& item)> mapper) const;
+        List<T>&
+        operator = (const List<T>& vector);
 
-private:
+        std::size_t
+        size() const;
 
-    std::size_t
-    _capacity;
+        void
+        clear();
 
-    T*
-    _items;
+        T&
+        last();
 
-    T*
-    _cursor;
+        Utf8String
+        join(Utf8String delimiter) const;
 
-    void
-    swap(T *a, T *b);
+        bool
+        isEmpty() const;
 
-    int
-    partition(int low, int high, std::function<int(T &, T &)> comparator);
+        void
+        reserve(std::size_t capacity);
 
-    void
-    quickSort(int low, int high, std::function<int(T &, T &)> comparator);
+        void
+        sort(std::function<int(T &, T &)> comparator);
 
-    std::size_t
-    lastIndex();
-};
+        template<typename TType = T>
+        TType
+        find(std::function<bool(T)> predicate, typename std::enable_if<std::is_pointer<TType>::value>::type* = 0) const;
 
+        template<typename TType = T>
+        TType*
+        find(std::function<bool(T&)> predicate, typename std::enable_if<!std::is_pointer<TType>::value>::type* = 0) const;
+
+        Iterator
+        begin() const;
+
+        Iterator
+        end() const;
+
+        bool
+        has(T key) const;
+
+        template<typename TNew>
+        List<TNew>
+        map(std::function<TNew (const T& item)> mapper) const;
+
+    private:
+
+        std::size_t
+        _capacity;
+
+        T*
+        _items;
+
+        T*
+        _cursor;
+
+        void
+        swap(T *a, T *b);
+
+        int
+        partition(int low, int high, std::function<int(T &, T &)> comparator);
+
+        void
+        quickSort(int low, int high, std::function<int(T &, T &)> comparator);
+
+        std::size_t
+        lastIndex();
+    };
 }
 
 #include "ListImpl.h"

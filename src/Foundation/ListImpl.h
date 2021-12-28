@@ -437,20 +437,60 @@ namespace elet::foundation
         return _cursor;
     }
 
+    template<typename T>
+    void
+    List<T>::setCursor(T* cursor)
+    {
+        assert(_items >= _cursor && cursor <= _cursor && "Cursor must be in range of the current items.");
+        _cursor = cursor;
+    }
+
 
     template<typename T>
     template<typename B>
-    B*
+    ContainerPtr<B, T>
+    List<T>::write(B* batch, size_t size)
+    {
+        size_t futureSize = this->size() + size;
+        if (futureSize > _capacity)
+        {
+            if (futureSize < _capacity * 2)
+            {
+                reserve(_capacity * 2);
+            }
+            else
+            {
+                reserve(futureSize);
+            }
+        }
+        size_t index = _cursor - _items;
+        std::memcpy(_cursor, batch, size);
+        _cursor += size / sizeof(T);
+        return ContainerPtr<B, T>(index, this);
+    }
+
+
+    template<typename T>
+    template<typename B>
+    ContainerPtr<B, T>
     List<T>::write(B* batch)
     {
-        if (size() + sizeof(B) > _capacity)
+        size_t futureSize = size() + sizeof(B);
+        if (futureSize > _capacity)
         {
-            reserve(size() + sizeof(B));
+            if (futureSize < _capacity * 2)
+            {
+                reserve(_capacity * 2);
+            }
+            else
+            {
+                reserve(futureSize);
+            }
         }
-        auto startCursor = reinterpret_cast<B*>(_cursor);
+        size_t index = _cursor - _items;
         std::memcpy(_cursor, batch, sizeof(B));
         _cursor += sizeof(B) / sizeof(T);
-        return startCursor;
+        return ContainerPtr<B, T>(index, this);
     }
 
 

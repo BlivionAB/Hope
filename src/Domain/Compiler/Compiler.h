@@ -15,7 +15,6 @@
 #include "Domain/Compiler/Instruction/Transformer.h"
 #include "Domain/Compiler/Instruction/Optimizer.h"
 #include "Domain/Compiler/Instruction/AssemblyWriter.h"
-#include "Domain/Compiler/Instruction/ObjectFileWriter.h"
 #include "CompilerTypes.h"
 #include "ErrorWriter.h"
 #include "Exceptions.h"
@@ -28,7 +27,7 @@ namespace fs = std::filesystem;
 namespace elet::domain::compiler::instruction::output
 {
     class AssemblyWriter;
-    class ObjectFileWriterInterface;
+    class ObjectFileWriter;
     struct RelocationOperand;
     struct FunctionRoutine;
 }
@@ -52,15 +51,6 @@ namespace elet::domain::compiler
 
 
     using namespace elet::domain::compiler::instruction;
-
-
-    enum class AssemblyTarget
-    {
-        Unknown,
-        x86_64,
-        Aarch64,
-        StashIR,
-    };
 
 
     enum class SymbolSectionIndex : std::uint8_t
@@ -325,7 +315,7 @@ namespace elet::domain::compiler
         std::map<Utf8StringView, ast::SourceFile*>
         _urlToSymbolMap;
 
-        output::ObjectFileWriterInterface*
+        output::ObjectFileWriter*
         _objectFileWriter;
 
         List<Utf8StringView*>
@@ -354,6 +344,9 @@ namespace elet::domain::compiler
 
         const output::Optimizer::Options
         getOptimizerOptions(CompilerOptions options);
+
+        output::ObjectFileWriter*
+        createObjectFileWriter(CompilerOptions options);
     };
 }
 

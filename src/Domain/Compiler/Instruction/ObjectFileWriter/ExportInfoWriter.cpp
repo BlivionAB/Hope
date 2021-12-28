@@ -2,7 +2,7 @@
 #include "ExportTrieTree.h"
 #include <set>
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     ExportInfoWriter::ExportInfoWriter(
         MachoFileWriter* machoWriter):
@@ -88,7 +88,7 @@ namespace elet::domain::compiler::instruction::output
 
                 for (const ExportTrieEdge* edge : node->edges)
                 {
-                    _bw->writeString(edge->label);
+                    _bw->writeStringWithNullCharEnd(edge->label);
                     _bw->writeUleb128(edge->node->trieOffset);
                 }
             }

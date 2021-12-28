@@ -5,12 +5,11 @@
 #include <gmock/gmock.h>
 #include <fstream>
 #include <optional>
-#include "CompilerBaselineParser.h"
+#include "MachOBaselineParser.h"
 #include <Foundation/File.h>
 #include <filesystem>
 #include "Domain/Compiler/TestHarness/TextDiff/MyersDiff.h"
 #include "Domain/Compiler/TestHarness/TextDiff/DiffPrinter.h"
-#include "unittest.h"
 #include "StashIrPrinter.h"
 #include "TypeBaselinePrinter.h"
 
@@ -33,6 +32,7 @@ namespace elet::domain::compiler::test
     {
         MachO_x86_64,
         MachO_Aarch64,
+        Pe32_x86_64,
         StashIR,
     };
 
@@ -252,6 +252,10 @@ namespace elet::domain::compiler::test
                     assemblyTarget = AssemblyTarget::x86_64;
                     objectFileTarget = ObjectFileTarget::MachO;
                     break;
+                case CompilationTarget::Pe32_x86_64:
+                    assemblyTarget = AssemblyTarget::x86_64;
+                    objectFileTarget = ObjectFileTarget::Pe32;
+                    break;
                 case CompilationTarget::StashIR:
                     assemblyTarget = AssemblyTarget::StashIR;
                     objectFileTarget = ObjectFileTarget::StashIR;
@@ -349,12 +353,11 @@ namespace elet::domain::compiler::test
         void
         checkTextSegmentBaselines(const TestProjectOptions& options, const CompilerOptions& compilerOptions, List<uint8_t>& output, testing::AssertionResult& result)
         {
-            CompilerBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, compilerOptions.assemblyTarget);
             if (options.writeExecutable)
             {
-                writeOutput(output, options.baselineName + ".o");
+                writeOutput(output, options.baselineName + ".obj");
             }
-
+            MachOBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, compilerOptions.assemblyTarget);
             baselineParser.parse();
             Utf8String textSection = baselineParser.serializeTextSegment();
             checkBaseline(textSection, options, compilerOptions, result, "basm");
@@ -407,13 +410,24 @@ namespace elet::domain::compiler::test
         writeOutput(const List<uint8_t>& output, fs::path file) const
         {
             std::ofstream fileHandle;
-            const char* path = (fs::current_path() / file).string().c_str();
+            std::error_code ec;
+            fs::path outputFile = fs::current_path() / file;
+            if (fs::exists(outputFile))
+            {
+                fs::remove(outputFile, ec);
+                if (ec)
+                {
+                    std::cerr << ec.message() << std::endl;
+                    std::exit(1);
+                }
+            }
+            std::string outputFileString = outputFile.string();
+            const char* path = outputFileString.c_str();
             fileHandle.open(path, std::ios_base::binary);
             for (int i = 0; i < output.size(); ++i)
             {
                 fileHandle.write(reinterpret_cast<char*>(&output[i]), 1);
             }
-            std::cout << path << std::endl;
             fileHandle.close();
         }
 

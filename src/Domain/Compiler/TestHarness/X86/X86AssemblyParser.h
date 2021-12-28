@@ -10,55 +10,51 @@
 
 namespace elet::domain::compiler::test::x86
 {
+    using namespace elet::foundation;
 
 
-using namespace elet::foundation;
+    class X86AssemblyParser : public AssemblyParser
+    {
 
+    public:
 
-class X86AssemblyParser : public AssemblyParser
-{
+        X86AssemblyParser();
 
-public:
+        void
+        parse(List<Instruction>& instructions, List<std::uint8_t>& output, size_t offset, size_t size);
 
-    X86AssemblyParser();
+    private:
 
-    void
-    parse(List<Instruction>& instructions, List<std::uint8_t>& output, size_t offset, size_t size);
+        uint8_t
+        getByte(Instruction& instruction);
 
-private:
+        std::array<uint8_t, 4>
+        getDoubleWord(Instruction& instruction);
 
-    uint8_t
-    getByte(Instruction& instruction);
+        Ev*
+        createEv(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField);
 
-    std::array<uint8_t, 4>
-    getDoubleWord(Instruction& instruction);
+        Gv*
+        createGv(uint8_t opcode, bool isQuadWord);
 
-    Ev*
-    createEv(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField);
+        Register
+        mapDoubleWordRegisterIndex(uint8_t reg);
 
-    Gv*
-    createGv(uint8_t opcode, bool isQuadWord);
+        Register
+        mapQuadWordRegisterIndex(uint8_t reg);
 
-    Register
-    mapDoubleWordRegisterIndex(uint8_t reg);
+        MemoryAddress32
+        createMemoryAddress32(Instruction& instruction);
 
-    Register
-    mapQuadWordRegisterIndex(uint8_t reg);
+        void
+        parseOneByteOpCode(List<Instruction>& instructions, Instruction& instruction, uint8_t opcode);
 
-    MemoryAddress32
-    createMemoryAddress32(Instruction& instruction);
+        void
+        parseTwoByteOpCode(uint8_t opcode, Instruction& instruction);
 
-    void
-    parseOneByteOpCode(List<Instruction>& instructions, Instruction& instruction, uint8_t opcode);
-
-    void
-    parseTwoByteOpCode(uint8_t opcode, Instruction& instruction);
-
-    void
-    parseThreeByteOpCode(uint8_t opcode, Instruction& instruction, List <Instruction>& instructions);
-};
-
-
+        void
+        parseThreeByteOpCode(uint8_t opcode, Instruction& instruction, List <Instruction>& instructions);
+    };
 }
 
 

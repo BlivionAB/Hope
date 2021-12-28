@@ -7,7 +7,7 @@
 #include "ExportTrieTree.h"
 
 
-namespace elet::domain::compiler::instruction::output
+namespace elet::domain::compiler::instruction::output::macho
 {
     class DyldInfoWriter;
     class MachoFileWriter;
