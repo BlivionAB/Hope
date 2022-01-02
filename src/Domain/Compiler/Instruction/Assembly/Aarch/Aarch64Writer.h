@@ -58,6 +58,9 @@ namespace elet::domain::compiler::instruction::output
 
     private:
 
+        List<Aarch64Register>
+        _parameterRegisters;
+
     //    void
     //    writeFunctionPrologue(FunctionRoutine* function) override;
     //

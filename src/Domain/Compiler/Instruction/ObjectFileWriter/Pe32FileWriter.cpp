@@ -8,7 +8,7 @@ namespace elet::domain::compiler::instruction::output::pe32
     Pe32FileWriter::Pe32FileWriter(AssemblyTarget assemblyTarget):
         ObjectFileWriter(assemblyTarget)
     {
-
+        assemblyWriter->setCallingConvention(CallingConvention::MicrosoftX64);
     }
 
 
@@ -20,6 +20,7 @@ namespace elet::domain::compiler::instruction::output::pe32
         writeImageFileHeader();
         writeTextSectionHeader();
         writeDataSectionHeader();
+        writeRdataSectionHeader();
 //        writeBssSectionHeader();
         writeDrectveSectionHeader();
 
@@ -33,8 +34,56 @@ namespace elet::domain::compiler::instruction::output::pe32
     Pe32FileWriter::writeSections()
     {
         writeTextSection();
+        writeTextSectionRelocations();
         writeDataSection();
+        writeRdataSection();
         writeDrectveSection();
+    }
+
+
+    void
+    Pe32FileWriter::writeRdataSection()
+    {
+        _rdataSectionHeader->pointerToRawData = offset;
+        List<String*> stringList = assemblyWriter->getStrings();
+        uint32_t stringOffset = 0;
+        for (String* string : stringList)
+        {
+            string->relocationAddress.value2 = stringOffset;
+            _bw->writeStringWithNullCharEnd(string->value);
+            stringOffset += string->value.size() + 1;
+        }
+        _rdataSectionHeader->sizeOfRawData = offset - _rdataSectionHeader->pointerToRawData;
+    }
+
+
+    void
+    Pe32FileWriter::writeTextSectionRelocations()
+    {
+        _textSectionHeader->pointerToRelocations = offset;
+        uint16_t numberOfRelocations = 0;
+        List<String*> stringList = assemblyWriter->getStrings();
+        for (String* string : stringList)
+        {
+            _bw->writeDoubleWord(string->relocationAddress.offset);
+            string->relocationAddress.value1 = static_cast<uint32_t>(offset);
+            _bw->writeDoubleWord(0);
+            _bw->writeWord(static_cast<uint16_t>(ImageRelocationType::IMAGE_REL_AMD64_REL32));
+            numberOfRelocations++;
+        }
+
+        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutineList)
+        {
+            for (uint64_t relocationAddress : externalRoutine->relocationAddressList)
+            {
+                _bw->writeDoubleWord(relocationAddress);
+                externalRoutine->symbolTableIndexRelocationList.add(offset);
+                _bw->writeDoubleWord(0);
+                _bw->writeWord(static_cast<uint16_t>(ImageRelocationType::IMAGE_REL_AMD64_REL32));
+                numberOfRelocations++;
+            }
+        }
+        _textSectionHeader->numberOfRelocations = numberOfRelocations;
     }
 
 
@@ -42,9 +91,13 @@ namespace elet::domain::compiler::instruction::output::pe32
     Pe32FileWriter::writeDrectveSection()
     {
         _drectveSectionHeader->pointerToRawData = offset;
-        Utf8String directives = "   /FAILIFMISMATCH:\"_CRT_STDIO_ISO_WIDE_SPECIFIERS=0\" /DEFAULTLIB:\"MSVCRTD\" /DEFAULTLIB:\"OLDNAMES\"";
+
+        // This follows MSVC build of an object file:
+        Utf8String directives = "/FAILIFMISMATCH:\"_CRT_STDIO_ISO_WIDE_SPECIFIERS=0\" /DEFAULTLIB:\"MSVCRTD\" /DEFAULTLIB:\"OLDNAMES\"";
+
         _bw->writeString(directives);
         _drectveSectionHeader->sizeOfRawData = offset - _drectveSectionHeader->pointerToRawData;
+        _drectve = output.slice(_drectveSectionHeader->pointerToRawData, _drectveSectionHeader->sizeOfRawData);
     }
 
 
@@ -122,6 +175,31 @@ namespace elet::domain::compiler::instruction::output::pe32
                 | static_cast<uint32_t>(SectionFlag::IMAGE_SCN_MEM_READ)
         };
         _dataSectionHeader = output.write(&dataSectionHeader);
+        _imageFileHeader->numberOfSections += 1;
+        offset += sizeof(SectionHeader);
+    }
+
+
+    void
+    Pe32FileWriter::writeRdataSectionHeader()
+    {
+        SectionHeader dataSectionHeader =
+        {
+            .name = ".rdata",
+            .misc = 0,
+            .virtualAddress = 0,
+            .sizeOfRawData = 0,
+            .pointerToRawData = 0,
+            .pointerToRelocations = 0,
+            .pointerToLineNumbers = 0,
+            .numberOfRelocations = 0,
+            .numberOfLineNumbers = 0,
+            .characteristics = static_cast<uint32_t>(SectionFlag::IMAGE_SCN_CNT_INITIALIZED_DATA)
+                | static_cast<uint32_t>(SectionFlag::IMAGE_SCN_LNK_COMDAT)
+                | static_cast<uint32_t>(SectionFlag::IMAGE_SCN_ALIGN_1BYTES)
+                | static_cast<uint32_t>(SectionFlag::IMAGE_SCN_MEM_READ)
+        };
+        _rdataSectionHeader = output.write(&dataSectionHeader);
         _imageFileHeader->numberOfSections += 1;
         offset += sizeof(SectionHeader);
     }
@@ -206,9 +284,9 @@ namespace elet::domain::compiler::instruction::output::pe32
     Pe32FileWriter::writeDataSection()
     {
         _dataSectionHeader->pointerToRawData = offset;
-        // TODO: Add real data writing here.
-        _dataSectionHeader->sizeOfRawData = 0;
-        offset += 0;
+        output.add(_data);
+        _dataSectionHeader->sizeOfRawData = _data.size();
+        offset += _data.size();
     }
 
 
@@ -218,35 +296,87 @@ namespace elet::domain::compiler::instruction::output::pe32
         uint64_t symbolTableIndex = 0;
         _imageFileHeader->pointerToSymbolTable = offset;
         writeSectionSymbols(symbolTableIndex);
-//        for (FunctionRoutine* function : assemblyWriter->internalRoutines)
-//        {
-//            function->stringTableIndexAddress = offset;
-//
-//            ++symbolTableIndex;
-//        }
-        for (FunctionRoutine* internalRoutine : assemblyWriter->internalRoutines)
-        {
-            internalRoutine->stringTableIndexAddress = offset;
 
+        for (FunctionRoutine* internalRoutine : assemblyWriter->internalRoutineList)
+        {
+            bool shouldStoreStringInStringTable = internalRoutine->name.size() > 8;
+            if (shouldStoreStringInStringTable)
+            {
+                internalRoutine->stringTableIndexAddress = offset + 4;
+            }
             SymbolRecord sectionSymbol =
             {
                 .name = "",
-                .value = 0,
+                .value = static_cast<uint32_t>(internalRoutine->offset),
                 .sectionNumber = 1,
-                .type = 0x20 ,
+                .type = 0x20,
                 .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_EXTERNAL),
                 .numberOfAuxSymbols = 0,
             };
-            if (internalRoutine->isStartFunction)
+            if (!shouldStoreStringInStringTable)
             {
-                std::memcpy(&sectionSymbol.name, "main", 4);
-            }
-            else
-            {
-                const char* name = internalRoutine->name.toString();
-                std::memcpy(&sectionSymbol.name, name, internalRoutine->name.size());
+                std::memcpy(&sectionSymbol.name, internalRoutine->name.toString(), internalRoutine->name.size());
             }
             output.write<SymbolRecord>(&sectionSymbol, 18);
+            offset += 18;
+            ++symbolTableIndex;
+        }
+        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutineList)
+        {
+            bool shouldStoreStringInStringTable = externalRoutine->name.size() > 8;
+            if (shouldStoreStringInStringTable)
+            {
+                externalRoutine->stringTableIndexAddress = offset + 4;
+            }
+            SymbolRecord sectionSymbol =
+            {
+                .name = "",
+                .value = 0, // Should be 0 for external function
+                .sectionNumber = 0, // Should be 0 for external function
+                .type = 0, // This should be zero by looking at MSVC output. Don't know why?
+                .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_EXTERNAL),
+                .numberOfAuxSymbols = 0,
+            };
+            output.write<SymbolRecord>(&sectionSymbol, 18);
+            offset += 18;
+            if (!shouldStoreStringInStringTable)
+            {
+                std::memcpy(&sectionSymbol.name, externalRoutine->name.toString(), externalRoutine->name.size());
+            }
+            for (uint64_t relocationOffset : externalRoutine->symbolTableIndexRelocationList)
+            {
+                _bw->writeDoubleWordAtAddress(symbolTableIndex, relocationOffset);
+            }
+            ++symbolTableIndex;
+        }
+
+
+        List<String*> stringList = assemblyWriter->getStrings();
+        for (String* string : stringList)
+        {
+            _bw->writeDoubleWordAtAddress(symbolTableIndex, string->relocationAddress.value1);
+
+            bool shouldStoreStringInStringTable = string->value.size() > 8;
+            if (shouldStoreStringInStringTable)
+            {
+                string->relocationAddress.value3 = offset + 4;
+            }
+            SymbolRecord sectionSymbol =
+            {
+                .name = "",
+                .value = string->relocationAddress.value2,
+                .sectionNumber = 3,
+                .type = 0, // This should be zero by looking at MSVC output. Don't know why?
+                .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_EXTERNAL),
+                .numberOfAuxSymbols = 0,
+            };
+            output.write<SymbolRecord>(&sectionSymbol, 18);
+            offset += 18;
+            if (!shouldStoreStringInStringTable)
+            {
+                std::memcpy(&sectionSymbol.name, string->value.toString(), string->value.size());
+            }
+            _bw->writeDoubleWordAtAddress(symbolTableIndex, string->relocationAddress.value1);
             ++symbolTableIndex;
         }
         _imageFileHeader->numberOfSymbols = symbolTableIndex;
@@ -256,155 +386,95 @@ namespace elet::domain::compiler::instruction::output::pe32
     void
     Pe32FileWriter::writeStringTable()
     {
-        uint64_t stringTableIndex = 0;
-        _bw->writeDoubleWord(4);
-//        _bw->writeString("helloworld");
-//        for (FunctionRoutine* functionRoutine : assemblyWriter->internalRoutines)
-//        {
-//            _bw->writeDoubleWordAtAddress(stringTableIndex, functionRoutine->stringTableIndexAddress);
-//            _bw->writeString(functionRoutine->name);
-//            stringTableIndex += functionRoutine->name.size() + 1;
-//        }
-//        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
-//        {
-//            _bw->writeDoubleWordAtAddress(stringTableIndex, externalRoutine->stringTableIndexAddress);
-//            _bw->writeString(externalRoutine->name);
-//            stringTableIndex += externalRoutine->name.size() + 1;
-//        }
+        uint32_t stringTableIndex = 4;
+        uint32_t start = offset;
+        _bw->writeDoubleWord(0);
+        for (FunctionRoutine* functionRoutine : assemblyWriter->internalRoutineList)
+        {
+            if (functionRoutine->stringTableIndexAddress == 0)
+            {
+                continue;
+            }
+            _bw->writeDoubleWordAtAddress(stringTableIndex, functionRoutine->stringTableIndexAddress);
+            _bw->writeStringWithNullCharEnd(functionRoutine->name);
+            stringTableIndex += functionRoutine->name.size() + 1;
+        }
+        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutineList)
+        {
+            if (externalRoutine->stringTableIndexAddress == 0)
+            {
+                continue;
+            }
+            _bw->writeDoubleWordAtAddress(stringTableIndex, externalRoutine->stringTableIndexAddress);
+            _bw->writeStringWithNullCharEnd(externalRoutine->name);
+            stringTableIndex += externalRoutine->name.size() + 1;
+        }
+        List<String*> stringList = assemblyWriter->getStrings();
+        for (String* string : stringList)
+        {
+            if (string->relocationAddress.value3 == 0)
+            {
+                continue;
+            }
+            _bw->writeDoubleWordAtAddress(stringTableIndex, string->relocationAddress.value3);
+            _bw->writeStringWithNullCharEnd(string->value);
+            stringTableIndex += string->value.size() + 1;
+        }
+        _bw->writeDoubleWordAtAddress(stringTableIndex, start);
     }
 
 
     void
     Pe32FileWriter::writeSectionSymbols(uint64_t& index)
     {
-        writeTextSectionSymbolRecord();
-        writeDataSectionSymbolRecord();
-//        writeBssSectionSymbolRecord();
-        writeDrectveSectionSymbolRecord();
-        index += 2 * 3;
-    }
-
-
-    void
-    Pe32FileWriter::writeTextSectionSymbolRecord()
-    {
-        SymbolRecord sectionSymbol =
+        std::vector<std::string> sectionNameList =
         {
-            .name = ".text",
-            .value = 0,
-            .sectionNumber = 1,
-            .type = static_cast<uint16_t>(SymbolType::IMAGE_SYM_TYPE_NULL),
-            .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_STATIC),
-            .numberOfAuxSymbols = 1,
+            ".text",
+            ".data",
+            ".drectve"
         };
-        output.write<SymbolRecord>(&sectionSymbol, 18);
-        offset += 18;
-
-        AuxiliarySymbol_SectionDefinition sectionDefinition =
+        std::vector<const ContainerPtr<SectionHeader, uint8_t>*> sectionHeaderList =
         {
-            .length = _textSectionHeader->sizeOfRawData,
-            .numberOfRelocations = 0,
-            .numberOfLineNumbers = 0,
-            .checksum = calculateChecksum(_text),
-            .number = 1,
-            .selection = 0,
-            .__unused1 = 0,
-            .__unused2 = 0,
+            &_textSectionHeader,
+            &_dataSectionHeader,
+            &_drectveSectionHeader,
         };
-        output.write<AuxiliarySymbol_SectionDefinition>(&sectionDefinition, 18);
-        offset += 18;
-    }
-
-
-    void
-    Pe32FileWriter::writeDataSectionSymbolRecord()
-    {
-        SymbolRecord symbolRecord =
+        std::vector<const List<uint8_t>*> sectionData =
         {
-            .name = ".data",
-            .value = 0,
-            .sectionNumber = 2,
-            .type = static_cast<uint16_t>(SymbolType::IMAGE_SYM_TYPE_NULL),
-            .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_STATIC),
-            .numberOfAuxSymbols = 1,
+            &_text,
+            &_data,
+            &_drectve,
         };
-        output.write<SymbolRecord>(&symbolRecord, 18);
-        offset += 18;
-
-        AuxiliarySymbol_SectionDefinition sectionDefinition =
+        uint16_t sectionNumber = 1;
+        for (uint16_t i = 0; i < sectionNameList.size(); ++i)
         {
-            .length = _dataSectionHeader->sizeOfRawData,
-            .numberOfRelocations = 0,
-            .numberOfLineNumbers = 0,
-            .checksum = 0,
-            .number = 2,
-            .selection = 0,
-            .__unused1 = 0,
-            .__unused2 = 0,
-        };
-        output.write<AuxiliarySymbol_SectionDefinition>(&sectionDefinition, 18);
-        offset += 18;
-    }
+            SymbolRecord sectionSymbol =
+            {
+                .name = "",
+                .value = 0,
+                .sectionNumber = static_cast<uint16_t>(i + 1),
+                .type = static_cast<uint16_t>(SymbolType::IMAGE_SYM_TYPE_NULL),
+                .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_STATIC),
+                .numberOfAuxSymbols = 1,
+            };
+            std::memcpy(&sectionSymbol.name, sectionNameList[i].c_str(), 8);
+            output.write<SymbolRecord>(&sectionSymbol, 18);
 
-
-    void
-    Pe32FileWriter::writeBssSectionSymbolRecord()
-    {
-        SymbolRecord sectionSymbol =
-        {
-            .name = ".bss",
-            .value = 0,
-            .sectionNumber =3,
-            .type = static_cast<uint16_t>(SymbolType::IMAGE_SYM_TYPE_NULL),
-            .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_STATIC),
-            .numberOfAuxSymbols = 1,
-        };
-        output.write<SymbolRecord>(&sectionSymbol, 18);
-        offset += 18;
-
-        AuxiliarySymbol_SectionDefinition sectionDefinition =
-        {
-            .length = _bssSectionHeader->sizeOfRawData,
-            .numberOfRelocations = 0,
-            .numberOfLineNumbers = 0,
-            .checksum = 0,
-            .number = 3,
-            .selection = 0,
-            .__unused1 = 0,
-            .__unused2 = 0,
-        };
-        output.write<AuxiliarySymbol_SectionDefinition>(&sectionDefinition, 18);
-        offset += 18;
-    }
-
-
-    void
-    Pe32FileWriter::writeDrectveSectionSymbolRecord()
-    {
-        SymbolRecord sectionSymbol =
-        {
-            .name = { '.', 'd', 'r', 'e', 'c', 't', 'v', 'e' },
-            .value = 0,
-            .sectionNumber = 3,
-            .type = static_cast<uint16_t>(SymbolType::IMAGE_SYM_TYPE_NULL),
-            .storageClass = static_cast<uint8_t>(StorageClass::IMAGE_SYM_CLASS_STATIC),
-            .numberOfAuxSymbols = 1,
-        };
-        output.write<SymbolRecord>(&sectionSymbol, 18);
-        offset += 18;
-
-        AuxiliarySymbol_SectionDefinition sectionDefinition =
-        {
-            .length = _drectveSectionHeader->sizeOfRawData,
-            .numberOfRelocations = 0,
-            .numberOfLineNumbers = 0,
-            .checksum = 0,
-            .number = 4,
-            .selection = 0,
-            .__unused1 = 0,
-            .__unused2 = 0,
-        };
-        output.write<AuxiliarySymbol_SectionDefinition>(&sectionDefinition, 18);
-        offset += 18;
+            AuxiliarySymbol_SectionDefinition sectionDefinition =
+            {
+                .length = (*sectionHeaderList[i])->sizeOfRawData,
+                .numberOfRelocations = 0,
+                .numberOfLineNumbers = 0,
+                .checksum = calculateChecksum(*sectionData[i]),
+                .number = static_cast<uint16_t>(i + 1),
+                .selection = 0,
+                .__unused1 = 0,
+                .__unused2 = 0,
+            };
+            output.write<AuxiliarySymbol_SectionDefinition>(&sectionDefinition, 18);
+            offset += 36;
+            sectionNumber++;
+            index += 2;
+        }
     }
 }

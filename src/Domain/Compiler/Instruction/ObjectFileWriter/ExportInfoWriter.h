@@ -37,9 +37,6 @@ namespace elet::domain::compiler::instruction::output::macho
         void
         writeExports(const List<ExportTrieNode*>& orderedNodes);
 
-        Utf8String
-        getSymbolStringFromNode(const SparseExportTrieNode* pNode);
-
         void
         setOffsetInNodes(List<ExportTrieNode*>& orderedNodes) const;
     };

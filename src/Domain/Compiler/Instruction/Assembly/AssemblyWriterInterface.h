@@ -13,187 +13,193 @@ namespace elet::domain::compiler::instruction::output
 {
 
 
-struct String;
+    struct String;
 
 
 
-struct CallingConvention
-{
-    List<uint8_t>
-    registers;
-};
+    enum class CallingConvention
+    {
+        SysV,
+        MicrosoftX64,
+    };
 
 
-class AssemblyWriterInterface
-{
+    class AssemblyWriterInterface
+    {
 
-public:
+    public:
 
-    AssemblyWriterInterface(List<uint8_t>* output);
+        AssemblyWriterInterface(List<uint8_t>* output);
 
-    virtual
-    void
-    writeTextSection(FunctionRoutine* routine) = 0;
+        virtual
+        void
+        setCallingConvention(CallingConvention callingConvention);
 
-    void
-    writeFunction(FunctionRoutine* function);
+        virtual
+        void
+        writeTextSection(FunctionRoutine* routine) = 0;
 
-    void
-    writeFunctionInstructions(FunctionRoutine* function);
+        void
+        writeFunction(FunctionRoutine* function);
 
-    virtual
-    void
-    writeFunctionRelocationAddresses(FunctionRoutine* routine) = 0;
+        void
+        writeFunctionInstructions(FunctionRoutine* function);
 
-    virtual
-    void
-    writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
+        virtual
+        void
+        writeFunctionRelocationAddresses(FunctionRoutine* routine) = 0;
 
-    virtual
-    void
-    writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeCallInstruction(CallInstruction* callInstruction, FunctionRoutine* parentRoutine);
 
-    virtual
-    void
-    writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeAddImmediateInstruction(AddImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeAddImmediateInstruction(AddImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function);
+        virtual
+        void
+        writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeInstructionsPadding(FunctionRoutine* function);
+        virtual
+        void
+        writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function);
 
-    virtual
-    void
-    writeFunctionPrologue(FunctionRoutine* function);
+        virtual
+        void
+        writeInstructionsPadding(FunctionRoutine* function);
 
-    virtual
-    void
-    writeFunctionEpilogue(FunctionRoutine* function);
+        virtual
+        void
+        writeFunctionPrologue(FunctionRoutine* function);
 
-    virtual
-    void
-    writeCStringSection() = 0;
+        virtual
+        void
+        writeFunctionEpilogue(FunctionRoutine* function);
 
-    virtual
-    void
-    relocateCStrings(uint64_t textSegmentStartOffset);
+        virtual
+        void
+        writeCStringSection() = 0;
 
-    virtual
-    void
-    relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine) = 0;
+        virtual
+        void
+        relocateCStrings(uint64_t textSegmentStartOffset);
 
-    virtual
-    void
-    relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) = 0;
+        virtual
+        void
+        relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine) = 0;
 
-    virtual
-    void
-    relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset) = 0;
+        virtual
+        void
+        relocateDyldPrivate(uint64_t dataSectionOffset, uint64_t textSegmentStartOffset) = 0;
 
-    virtual
-    void
-    relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) = 0;
+        virtual
+        void
+        relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset) = 0;
 
-    virtual
-    void
-    writeStubs() = 0;
+        virtual
+        void
+        relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) = 0;
 
-    virtual
-    void
-    writeStubHelper() = 0;
+        virtual
+        void
+        writeStubs() = 0;
 
-    List<uint8_t>*
-    getOutput();
+        virtual
+        void
+        writeStubHelper() = 0;
 
-    uint64_t
-    getOffset();
+        List<uint8_t>*
+        getOutput();
 
-    uint32_t
-    getExternRoutinesSize() const;
+        uint64_t
+        getOffset();
 
-    ByteWriter*
-    bw;
+        List<String*>
+        getStrings() const;
 
-    List<FunctionRoutine*>
-    internalRoutines;
+        uint32_t
+        getExternRoutinesSize() const;
 
-    List<ExternalRoutine*>
-    externalRoutines;
+        ByteWriter*
+        bw;
 
-    List<ExternalRoutine*>
-    gotBoundRoutines;
+        List<FunctionRoutine*>
+        internalRoutineList;
 
-    List<FunctionRoutine*>
-    exportedRoutines;
+        List<ExternalRoutine*>
+        externalRoutineList;
 
-    void
-    writePadding(size_t amount);
+        List<ExternalRoutine*>
+        gotBoundRoutines;
 
-    uint64_t
-    dyldPrivateOffset;
+        List<FunctionRoutine*>
+        exportedRoutines;
 
-protected:
+        void
+        writePadding(size_t amount);
 
-    output::Instruction*
-    _nextInstruction;
+        uint64_t
+        dyldPrivateOffset;
 
-    List<output::Instruction*>::Iterator*
-    _instructionIterator;
+    protected:
 
-    CallingConvention
-    _callingConvention;
+        output::Instruction*
+        _nextInstruction;
 
-    List<uint8_t>*
-    _output;
+        List<output::Instruction*>::Iterator*
+        _instructionIterator;
 
-    List<String*>
-    _strings;
+        CallingConvention
+        _callingConvention;
 
-    uint64_t
-    _offset = 0;
+        List<uint8_t>*
+        _output;
 
-    uint64_t
-    getStackSizeFromFunctionParameters(const FunctionRoutine* routine);
+        List<String*>
+        _strings;
 
-    bool
-    nextInstructionIs(InstructionKind kind) const;
-};
+        uint64_t
+        _offset = 0;
 
+//        uint64_t
+//        getStackSizeFromFunctionParameters(const FunctionRoutine* routine);
+
+        bool
+        nextInstructionIs(InstructionKind kind) const;
+    };
 }
 
 

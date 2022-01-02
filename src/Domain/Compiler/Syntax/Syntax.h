@@ -72,9 +72,13 @@ namespace elet::domain::compiler::ast
         UsingKeyword,
         ImplementsKeyword,
         EnumKeyword,
+
+        // Control Flows
         ReturnKeyword,
         IfKeyword,
         ElseKeyword,
+        SwitchKeyword,
+        CaseKeyword,
         WhenKeyword,
         ForKeyword,
         WhileKeyword,
@@ -82,6 +86,8 @@ namespace elet::domain::compiler::ast
         ObserveKeyword,
         OnKeyword,
         FromKeyword,
+
+        // Values
         TrueKeyword,
         FalseKeyword,
 
@@ -94,6 +100,7 @@ namespace elet::domain::compiler::ast
         InterfaceKeyword,
         ExternKeyword,
 
+        // Punctuations
         OpenParen,
         CloseParen,
         OpenBrace,
@@ -114,10 +121,13 @@ namespace elet::domain::compiler::ast
         DoubleQuote,
         SingleQuote,
         BackwardSlash,
+        Hash,
 
 
         AmpersandAmpersand,
         PipePipe,
+
+        // Operators
         Plus,
         Minus,
         ForwardSlash,

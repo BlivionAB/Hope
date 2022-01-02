@@ -40,11 +40,14 @@ TEST_F(FunctionFixture, ExternalFunction)
 
     EXPECT_TRUE(testProject({
         .baselineName = "ExternalFunction",
-        .targets = {
-            CompilationTarget::MachO_x86_64,
-            CompilationTarget::MachO_Aarch64,
-            CompilationTarget::StashIR
+        .targets =
+        {
+            CompilationTarget::Pe32_x86_64,
+//            CompilationTarget::MachO_x86_64,
+//            CompilationTarget::MachO_Aarch64,
+//            CompilationTarget::StashIR
         },
+        .writeExecutable = true,
     }));
 }
 

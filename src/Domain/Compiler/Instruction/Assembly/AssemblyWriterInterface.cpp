@@ -12,6 +12,13 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
+    AssemblyWriterInterface::setCallingConvention(CallingConvention callingConvention)
+    {
+        assert("You have not implemented setCallingConvention.");
+    }
+
+
+    void
     AssemblyWriterInterface::writeFunction(FunctionRoutine* function)
     {
         if (function->hasWrittenOutput)
@@ -34,7 +41,7 @@ namespace elet::domain::compiler::instruction::output
         {
             exportedRoutines.add(function);
         }
-        internalRoutines.add(function);
+        internalRoutineList.add(function);
     }
 
 
@@ -69,7 +76,7 @@ namespace elet::domain::compiler::instruction::output
     std::uint32_t
     AssemblyWriterInterface::getExternRoutinesSize() const
     {
-        return externalRoutines.size();
+        return externalRoutineList.size();
     }
 
 
@@ -83,25 +90,25 @@ namespace elet::domain::compiler::instruction::output
     }
 
 
-    uint64_t
-    AssemblyWriterInterface::getStackSizeFromFunctionParameters(const FunctionRoutine* routine)
-    {
-        uint64_t stackOffset = 0;
-        for (unsigned int i = 0; i < routine->parameters.size(); ++i)
-        {
-            auto parameter = routine->parameters[i];
-            if (i < _callingConvention.registers.size())
-            {
-                stackOffset += static_cast<int>(parameter->allocationSize);
-            }
-        }
-        uint64_t rest = stackOffset % 16;
-        if (rest != 0)
-        {
-            stackOffset += 16 - rest;
-        }
-        return stackOffset;
-    }
+//    uint64_t
+//    AssemblyWriterInterface::getStackSizeFromFunctionParameters(const FunctionRoutine* routine)
+//    {
+//        uint64_t stackOffset = 0;
+//        for (unsigned int i = 0; i < routine->parameters.size(); ++i)
+//        {
+//            auto parameter = routine->parameters[i];
+//            if (i < _parameterRegisters.registers.size())
+//            {
+//                stackOffset += static_cast<int>(parameter->allocationSize);
+//            }
+//        }
+//        uint64_t rest = stackOffset % 16;
+//        if (rest != 0)
+//        {
+//            stackOffset += 16 - rest;
+//        }
+//        return stackOffset;
+//    }
 
 
     void
@@ -283,5 +290,12 @@ namespace elet::domain::compiler::instruction::output
     AssemblyWriterInterface::writeInstructionsPadding(FunctionRoutine* function)
     {
         throw std::runtime_error("Not implemented \"writeInstructionsPadding\" method.");
+    }
+
+
+    List<String*>
+    AssemblyWriterInterface::getStrings() const
+    {
+        return _strings;
     }
 }

@@ -4,6 +4,7 @@
 #include "List.h"
 #include "./Utf8String.h"
 #include <iostream>
+#include <assert.h>
 
 
 namespace elet::foundation
@@ -498,7 +499,7 @@ namespace elet::foundation
     List<T>
     List<T>::slice(size_t index, size_t size)
     {
-        assert("size + index cannot be larger than size" && size + index <= this->size());
+        assert(size + index <= this->size() && "size + index cannot be larger than size.");
 
         List<T> list;
         list._items = reinterpret_cast<T*>(calloc(size, sizeof(T)));

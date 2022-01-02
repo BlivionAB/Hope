@@ -50,7 +50,7 @@ namespace elet::domain::compiler::instruction::output
             switch (assemblyTarget)
             {
                 case AssemblyTarget::x86_64:
-                    assemblyWriter = new X86_64Writer(&_text);
+                    assemblyWriter = new x86::X86_64Writer(&_text);
                     break;
                 case AssemblyTarget::Aarch64:
                     assemblyWriter = new Aarch64Writer(&_text);

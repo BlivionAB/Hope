@@ -457,7 +457,7 @@ namespace elet::domain::compiler::instruction::output::macho
 
         for (const auto& gotBoundRoutine : assemblyWriter->gotBoundRoutines)
         {
-            for (const auto& relocationAddress : gotBoundRoutine->relocationAddresses)
+            for (const auto& relocationAddress : gotBoundRoutine->relocationAddressList)
             {
                 assemblyWriter->relocateGotBoundRoutine(offset - (textSegmentStartOffset + relocationAddress), textSegmentStartOffset + relocationAddress);
             }
@@ -501,7 +501,7 @@ namespace elet::domain::compiler::instruction::output::macho
     {
         _dataLaSymbolPtrSection->address = vmAddress;
         _dataLaSymbolPtrSection->offset = offset;
-        for (const auto& externalRoutine : assemblyWriter->externalRoutines)
+        for (const auto& externalRoutine : assemblyWriter->externalRoutineList)
         {
             // Write the offset in the stub address
             assemblyWriter->relocateStub(offset, textSegmentStartOffset, externalRoutine);
@@ -618,7 +618,7 @@ namespace elet::domain::compiler::instruction::output::macho
         symtabCommand->symbolOffset = offset;
         writeDyldPrivateSymbol();
 
-        for (FunctionRoutine* function : assemblyWriter->internalRoutines)
+        for (FunctionRoutine* function : assemblyWriter->internalRoutineList)
         {
             function->stringTableIndexAddress = offset;
 
@@ -645,7 +645,7 @@ namespace elet::domain::compiler::instruction::output::macho
         }
 
         dysymTabCommand->undefinedSymbolIndex = symbolTableIndex;
-        List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutines.concat(assemblyWriter->gotBoundRoutines);
+        List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutineList.concat(assemblyWriter->gotBoundRoutines);
         for (ExternalRoutine* externalRoutine : allRoutines)
         {
             externalRoutine->stringTableIndexAddress = offset;
@@ -709,13 +709,13 @@ namespace elet::domain::compiler::instruction::output::macho
         _bw->writeDoubleWordAtAddress(stringTableIndex, _dyldPrivateStringTableIndexOffset);
         stringTableIndex += _bw->writeString("__dyld_private");
 
-        for (FunctionRoutine* functionRoutine : assemblyWriter->internalRoutines)
+        for (FunctionRoutine* functionRoutine : assemblyWriter->internalRoutineList)
         {
             _bw->writeDoubleWordAtAddress(stringTableIndex, functionRoutine->stringTableIndexAddress);
             _bw->writeStringWithNullCharEnd(functionRoutine->name);
             stringTableIndex += functionRoutine->name.size() + 1;
         }
-        List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutines.concat(assemblyWriter->gotBoundRoutines);
+        List<ExternalRoutine*> allRoutines = assemblyWriter->externalRoutineList.concat(assemblyWriter->gotBoundRoutines);
         for (ExternalRoutine* externalRoutine : allRoutines)
         {
             _bw->writeDoubleWordAtAddress(stringTableIndex, externalRoutine->stringTableIndexAddress);
@@ -735,11 +735,11 @@ namespace elet::domain::compiler::instruction::output::macho
         // Write stubs
         uint32_t index = 0;
         _stubsSection->reserved1 = index;
-        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutineList)
         {
             _bw->writeDoubleWord(externalRoutine->symbolTableIndex);
         }
-        index += assemblyWriter->externalRoutines.size();
+        index += assemblyWriter->externalRoutineList.size();
 
         // Write got function
         _dataConstGotSection->reserved1 = index;
@@ -751,11 +751,11 @@ namespace elet::domain::compiler::instruction::output::macho
 
         // Write laze symbol pointers
         _dataLaSymbolPtrSection->reserved1 = index;
-        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutines)
+        for (ExternalRoutine* externalRoutine : assemblyWriter->externalRoutineList)
         {
             _bw->writeDoubleWord(externalRoutine->symbolTableIndex);
         }
-        index += assemblyWriter->externalRoutines.size();
+        index += assemblyWriter->externalRoutineList.size();
 
         dysymTabCommand->indirectSymbolTableEntries = index;
     }

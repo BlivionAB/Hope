@@ -440,7 +440,10 @@ namespace elet::domain::compiler::ast
 
         IntegerLiteral*
         createNegativeIntegerLiteral();
-    };
+
+//        DeclarationDecoration*
+//        parseDecoration();
+};
 }
 
 #include "Parser.Impl.h"

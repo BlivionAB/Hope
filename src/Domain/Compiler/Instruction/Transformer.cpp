@@ -51,12 +51,36 @@ namespace elet::domain::compiler::instruction
         uint64_t stackOffset = _defaultFunctionStackOffset;
         bool isStartFunction = function->isStartFunction = functionDeclaration->signature->isStartFunction;
         function->inferReturnZero = isStartFunction && functionDeclaration->signature->hasReturnStatementOnAllBranches;
-        function->name = isStartFunction ? "_main" : functionDeclaration->symbol->externalSymbol;
+        if (isStartFunction)
+        {
+            setStartFunctionSymbolName(function, functionDeclaration);
+        }
+
         transformFunctionParameters(functionDeclaration, function, stackOffset);
-        transformLocalStatements(functionDeclaration->body->statements, stackOffset);
+        transformLocalStatements(functionDeclaration->body->statements, function, stackOffset);
         function->stackSize = getAlignedStackSizeFromStackOffset(stackOffset);
+
         _currentRoutineStack.pop();
         return function;
+    }
+
+
+    void
+    Transformer::setStartFunctionSymbolName(output::FunctionRoutine* function, const ast::FunctionDeclaration* functionDeclaration) const
+    {
+        assert(function->isStartFunction && "Function must be start function.");
+
+        switch (_compilerOptions.objectFileTarget)
+        {
+            case ObjectFileTarget::Pe32:
+                function->name = "main";
+                break;
+            case ObjectFileTarget::MachO:
+                function->name = "_main";
+                break;
+            default:
+                throw std::runtime_error("Unknown ObjectFileTarget in setStartFunctionSymbolName");
+        }
     }
 
 
@@ -74,14 +98,15 @@ namespace elet::domain::compiler::instruction
 
                 // TODO: The reference instruction should be on property basis.
                 parameterDeclaration->referenceInstruction = store;
-                stackOffset += static_cast<int>(param->allocationSize);
+                stackOffset += static_cast<uint64_t>(param->allocationSize);
+                function->parameterSize += static_cast<uint8_t>(param->allocationSize);
             }
         }
     }
 
 
     List<output::Instruction*>*
-    Transformer::transformLocalStatements(List<ast::Syntax*>& statements, uint64_t& stackOffset)
+    Transformer::transformLocalStatements(List<ast::Syntax*>& statements, output::FunctionRoutine* function, uint64_t& stackOffset)
     {
         List<output::Instruction*>* list = new List<output::Instruction*>();
         for (const auto& statement : statements)
@@ -89,10 +114,10 @@ namespace elet::domain::compiler::instruction
             switch (statement->kind)
             {
                 case ast::SyntaxKind::VariableDeclaration:
-                    transformVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement), stackOffset);
+                    transformVariableDeclaration(reinterpret_cast<ast::VariableDeclaration*>(statement), function, stackOffset);
                     break;
                 case ast::SyntaxKind::CallExpression:
-                    transformCallExpression(reinterpret_cast<ast::CallExpression*>(statement), stackOffset);
+                    transformCallExpression(reinterpret_cast<ast::CallExpression*>(statement), function, stackOffset);
                     break;
                 case ast::SyntaxKind::ReturnStatement:
                     transformReturnStatement(reinterpret_cast<ast::ReturnStatement*>(statement), stackOffset);
@@ -127,7 +152,7 @@ namespace elet::domain::compiler::instruction
 
 
     void
-    Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset)
+    Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, output::FunctionRoutine* function, uint64_t& stackOffset)
     {
         RegisterSize registerSize;
         output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset, registerSize);
@@ -143,6 +168,7 @@ namespace elet::domain::compiler::instruction
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
+        function->localVariableSize += static_cast<uint8_t>(registerSize);
     }
 
 
@@ -303,7 +329,7 @@ namespace elet::domain::compiler::instruction
 
 
     void
-    Transformer::transformCallExpression(const ast::CallExpression* callExpression, uint64_t& stackOffset)
+    Transformer::transformCallExpression(const ast::CallExpression* callExpression, output::FunctionRoutine* function, uint64_t& stackOffset)
     {
         auto callInstruction = new output::CallInstruction();
         uint64_t argumentIndex = 0;
@@ -321,13 +347,38 @@ namespace elet::domain::compiler::instruction
             }
         }
         const ast::FunctionDeclaration* functionDeclaration = reinterpret_cast<ast::FunctionDeclaration*>(callExpression->referenceDeclaration);
+        function->calleeParameterSize = 0;
         if (functionDeclaration->body)
         {
             callInstruction->routine = transformFunctionDeclaration(functionDeclaration);
+            uint8_t thisCallParameterSize = reinterpret_cast<output::FunctionRoutine*>(callInstruction->routine)->parameterSize;
+            if (function->calleeParameterSize < thisCallParameterSize)
+            {
+                function->calleeParameterSize = thisCallParameterSize;
+            }
         }
         else
         {
-            callInstruction->routine = new output::ExternalRoutine(callExpression->referenceDeclaration->symbol->externalSymbol);
+            Utf8String* externalSymbol = new Utf8String();
+            if (functionDeclaration->isCReference)
+            {
+                switch (_compilerOptions.objectFileTarget)
+                {
+                    case ObjectFileTarget::Pe32:
+                        *externalSymbol = Utf8String("__imp_") + functionDeclaration->symbol->name.toString();
+                        break;
+                    case ObjectFileTarget::MachO:
+                        *externalSymbol = Utf8String("_") + functionDeclaration->symbol->name.toString();
+                        break;
+                    default:
+                        assert("Unknown object file target.");
+                }
+            }
+            else
+            {
+                *externalSymbol = functionDeclaration->symbol->name.toString();
+            }
+            callInstruction->routine = new output::ExternalRoutine(*externalSymbol);
         }
         addInstruction(callInstruction);
     }

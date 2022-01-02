@@ -39,7 +39,7 @@ namespace elet::domain::compiler
     };
 
 
-    enum class RegisterSize
+    enum class RegisterSize : uint8_t
     {
         None,
         Byte = 1,

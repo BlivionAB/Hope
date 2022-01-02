@@ -27,6 +27,7 @@ namespace elet::domain::compiler::instruction::output::macho
         writeExports(orderedNodes);
     }
 
+
     void
     ExportInfoWriter::setOffsetInNodes(List<ExportTrieNode*>& orderedNodes) const
     {
@@ -96,9 +97,4 @@ namespace elet::domain::compiler::instruction::output::macho
     }
 
 
-    Utf8String
-    ExportInfoWriter::getSymbolStringFromNode(const SparseExportTrieNode* node)
-    {
-        return Utf8String(node->fromLabel.toString()) + getSymbolStringFromNode(node->parent);
-    }
 }

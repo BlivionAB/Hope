@@ -50,7 +50,7 @@ enum OneByteOpCode : uint8_t
     ImmediateGroup1_Ev_Ib = 0x83,
 
     ExtGroup5 = 0xff,
-    ExtGroup5_NearCallRegistryBits = 0b00100000,
+    ExtGroup5_NearCallRegisterBits = 0b00010000,
 };
 
 

@@ -21,6 +21,27 @@ namespace elet::domain::compiler::ast
     struct InterfaceDeclaration;
 
 
+    namespace Decoration
+    {
+        struct ControlFlowStatement : Syntax
+        {
+        };
+
+
+        struct IfStatement : ControlFlowStatement
+        {
+
+        };
+
+
+        struct Declaration : Syntax
+        {
+            ControlFlowStatement*
+            controlFlowStatement;
+        };
+    };
+
+
     struct Declaration : Syntax
     {
         Name*
@@ -46,6 +67,9 @@ namespace elet::domain::compiler::ast
 
         output::MemoryAllocation*
         referenceInstruction;
+
+        List<Decoration::Declaration*>
+        decorations;
     };
 
 
@@ -189,6 +213,9 @@ namespace elet::domain::compiler::ast
         // Used for deciding
         output::FunctionRoutine*
         routine;
+
+        bool
+        isCReference;
     };
 }
 

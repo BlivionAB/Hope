@@ -2,6 +2,7 @@
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h"
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h"
 #include <cmath>
+#include <assert.h>
 
 namespace elet::domain::compiler::test::x86
 {
@@ -78,10 +79,10 @@ X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instructi
             uint8_t op = (modrmByte & ModRmMask::Reg);
             switch (op)
             {
-                case RegisterBits::ImmediateGroup1_Add:
+                case static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Add):
                     instruction.kind = InstructionKind::Add;
                     break;
-                case RegisterBits::ImmediateGroup1_Sub:
+                    case static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Sub):
                     instruction.kind = InstructionKind::Sub;
                     break;
                 default:
@@ -261,9 +262,9 @@ X86AssemblyParser::createEv(uint8_t modrmByte, Instruction& instruction, bool us
                 {
                     uint8_t sib = getByte(instruction);
                     uint8_t offset = getByte(instruction);
-                    uint8_t base = sib & Sib::BaseMask;
-                    uint8_t index = sib & Sib::IndexMask >> 3;
-                    uint8_t scale = std::pow(2, sib & Sib::ScaleMask >> 5);
+                    uint8_t base = sib & SibBits::BaseMask;
+                    uint8_t index = sib & SibBits::IndexMask >> 3;
+                    uint8_t scale = std::pow(2, sib & SibBits::ScaleMask >> 5);
                     auto sibDisplacement = new SibDisplacement(static_cast<Register>(base), static_cast<Register>(index), scale);
                     ev->emplace<ByteDisplacement>(sibDisplacement, offset);
                 }
@@ -278,9 +279,9 @@ X86AssemblyParser::createEv(uint8_t modrmByte, Instruction& instruction, bool us
                 {
                     uint8_t sib = getByte(instruction);
                     std::array<uint8_t, 4> dw = getDoubleWord(instruction);
-                    uint8_t base = sib & Sib::BaseMask;
-                    uint8_t index = sib & Sib::IndexMask >> 3;
-                    uint8_t scale = std::pow(2, sib & Sib::ScaleMask >> 5);
+                    uint8_t base = sib & SibBits::BaseMask;
+                    uint8_t index = sib & SibBits::IndexMask >> 3;
+                    uint8_t scale = std::pow(2, sib & SibBits::ScaleMask >> 5);
                     auto sibDisplacement = new SibDisplacement(static_cast<Register>(base), static_cast<Register>(index), scale);
                     ev->emplace<LongDisplacement>(sibDisplacement, dw);
                 }
@@ -317,6 +318,8 @@ X86AssemblyParser::createGv(std::uint8_t opcode, bool isQuadWord)
 Register
 X86AssemblyParser::mapDoubleWordRegisterIndex(std::uint8_t reg)
 {
+    assert(reg > 7 && "Reg cannot be larger than 7.");
+
     switch (reg)
     {
         case 0:
@@ -335,7 +338,6 @@ X86AssemblyParser::mapDoubleWordRegisterIndex(std::uint8_t reg)
             return Register::rSI;
         case 7:
             return Register::rDI;
-        default:;
     }
 }
 

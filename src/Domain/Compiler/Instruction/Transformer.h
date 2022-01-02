@@ -122,14 +122,15 @@ namespace elet::domain::compiler::instruction
         createFunctionRoutine(const Utf8StringView& name);
 
         List<output::Instruction*>*
-        transformLocalStatements(List<ast::Syntax*>& statements, uint64_t& stackOffset);
+        transformLocalStatements(List<ast::Syntax*>& statements, output::FunctionRoutine* function, uint64_t& stackOffset);
 
         static
         Utf8StringView
         getSymbolReference(ast::NamedExpression *expression);
 
         void
-        transformCallExpression(const ast::CallExpression* callExpression, uint64_t& stackOffset);
+        transformCallExpression(const ast::CallExpression* callExpression, output::FunctionRoutine* function,
+                                uint64_t& stackOffset);
 
         output::String*
         addStaticConstantString(ast::StringLiteral* stringLiteral);
@@ -170,7 +171,7 @@ namespace elet::domain::compiler::instruction
         transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression, uint64_t argumentIndex);
 
         void
-        transformVariableDeclaration(ast::VariableDeclaration* variable, uint64_t& stackOffset);
+        transformVariableDeclaration(ast::VariableDeclaration* variable, output::FunctionRoutine* function, uint64_t& stackOffset);
 
         void
         addInstruction(output::Instruction* instruction);
@@ -206,6 +207,10 @@ namespace elet::domain::compiler::instruction
 
         output::OperandRegister
         borrowScratchRegister();
+
+        void
+        setStartFunctionSymbolName(output::FunctionRoutine* function,
+                                   const ast::FunctionDeclaration* functionDeclaration) const;
     };
 
 

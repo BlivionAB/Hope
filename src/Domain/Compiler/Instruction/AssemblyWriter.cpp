@@ -18,7 +18,7 @@ AssemblyWriter::AssemblyWriter(compiler::AssemblyTarget target) :
     switch (target)
     {
         case AssemblyTarget::x86_64:
-            _assemblyWriter = new X86_64Writer(nullptr);
+            _assemblyWriter = new x86::X86_64Writer(nullptr);
             break;
         case AssemblyTarget::Aarch64:
             _assemblyWriter = new Aarch64Writer(nullptr);

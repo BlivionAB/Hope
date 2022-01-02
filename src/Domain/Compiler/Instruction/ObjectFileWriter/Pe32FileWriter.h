@@ -217,6 +217,28 @@ namespace elet::domain::compiler::instruction::output::pe32
     };
 
 
+    enum class ImageRelocationType : uint16_t
+    {
+        IMAGE_REL_AMD64_ABSOLUTE = 0x0000,
+        IMAGE_REL_AMD64_ADDR64 = 0x0001,
+        IMAGE_REL_AMD64_ADDR32 = 0x0002,
+        IMAGE_REL_AMD64_ADDR32NB = 0x0003,
+        IMAGE_REL_AMD64_REL32 = 0x0004,
+    };
+
+
+    struct ImageRelocation
+    {
+        uint32_t
+        virtualAddress;
+
+        uint32_t
+        symbolTableIndex;
+
+        ImageRelocationType
+        type;
+    };
+
     enum class SectionFlag : uint32_t
     {
         IMAGE_SCN_TYPE_NO_PAD = 0x00000008,
@@ -318,6 +340,12 @@ namespace elet::domain::compiler::instruction::output::pe32
         uint32_t
         _textSize;
 
+        uint32_t
+        _rdataOffset;
+
+        uint32_t
+        _rdataSize;
+
         ContainerPtr<SectionHeader, uint8_t>
         _textSectionHeader;
 
@@ -325,10 +353,19 @@ namespace elet::domain::compiler::instruction::output::pe32
         _dataSectionHeader;
 
         ContainerPtr<SectionHeader, uint8_t>
+        _rdataSectionHeader;
+
+        ContainerPtr<SectionHeader, uint8_t>
         _bssSectionHeader;
 
         ContainerPtr<SectionHeader, uint8_t>
         _drectveSectionHeader;
+
+        List<uint8_t>
+        _data;
+
+        List<uint8_t>
+        _drectve;
 
         void
         writeImageFileHeader();
@@ -383,6 +420,15 @@ namespace elet::domain::compiler::instruction::output::pe32
 
         void
         writeDrectveSection();
+
+        void
+        writeTextSectionRelocations();
+
+        void
+        writeRdataSection();
+
+        void
+        writeRdataSectionHeader();
     };
 }
 

@@ -262,6 +262,7 @@ namespace elet::domain::compiler::ast
     Parser::parseFunctionDeclaration()
     {
         auto functionDeclaration = createDeclaration<FunctionDeclaration>(SyntaxKind::FunctionDeclaration);
+        functionDeclaration->isCReference = _isInCBlock;
         functionDeclaration->routine = nullptr;
         functionDeclaration->name = parseName();
         Token token = takeNextToken();
@@ -1293,14 +1294,6 @@ namespace elet::domain::compiler::ast
         auto symbol = new Symbol(_symbolOffset, declaration->name->name);
         symbols->add(symbol);
         declaration->symbol = symbol;
-        if (_isInCBlock)
-        {
-            declaration->symbol->externalSymbol = Utf8String("_") + symbol->name.toString();
-        }
-        else
-        {
-            declaration->symbol->externalSymbol = symbol->name.toString();
-        }
     }
 
 
@@ -1628,4 +1621,10 @@ namespace elet::domain::compiler::ast
         }
         while(token != Token::SemiColon && token != Token::EndOfFile);
     }
+//
+//    DeclarationDecoration*
+//    Parser::parseDecoration()
+//    {
+//        return nullptr;
+//    }
 }

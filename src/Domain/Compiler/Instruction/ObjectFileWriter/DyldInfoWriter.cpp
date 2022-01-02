@@ -85,7 +85,7 @@ namespace elet::domain::compiler::instruction::output::macho
     {
         _machoWriter->dyldInfoCommand->lazyBindOffset = _machoWriter->offset;
         uint64_t offset = 0;
-        for (const auto& externalRoutine : _machoWriter->assemblyWriter->externalRoutines)
+        for (const auto& externalRoutine : _machoWriter->assemblyWriter->externalRoutineList)
         {
             // Replace the pushed offset for lazy binding
             _machoWriter->assemblyWriter->relocateStubHelperOffset(offset, _machoWriter->textSegmentStartOffset, externalRoutine->stubHelperAddress);

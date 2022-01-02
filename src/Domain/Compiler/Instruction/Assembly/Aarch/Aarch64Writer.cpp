@@ -11,7 +11,7 @@ namespace elet::domain::compiler::instruction::output
     Aarch64Writer::Aarch64Writer(List<uint8_t>* output):
         AssemblyWriterInterface(output)
     {
-        _callingConvention = { { Aarch64Register::r0, Aarch64Register::r1, Aarch64Register::r2, Aarch64Register::r4 } };
+        _parameterRegisters = { Aarch64Register::r0, Aarch64Register::r1, Aarch64Register::r2, Aarch64Register::r4 };
     }
 
 
@@ -25,9 +25,9 @@ namespace elet::domain::compiler::instruction::output
     void
     Aarch64Writer::writeStubs()
     {
-        for (const auto& routine : externalRoutines)
+        for (const auto& routine : externalRoutineList)
         {
-            for (const auto& relocationAddress : routine->relocationAddresses)
+            for (const auto& relocationAddress : routine->relocationAddressList)
             {
                 uint64_t start = _offset;
                 bw->writeDoubleWord(Aarch64Instruction::Nop);
@@ -55,13 +55,13 @@ namespace elet::domain::compiler::instruction::output
         Utf8StringView string = Utf8StringView(*dyldStubBinderString);
         ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);
         gotBoundRoutines.add(dyldStubBinderRoutine);
-        dyldStubBinderRoutine->relocationAddresses.add(_offset);
+        dyldStubBinderRoutine->relocationAddressList.add(_offset);
 
         bw->writeDoubleWord(Aarch64Instruction::Ldr64 | simm19(0) | Rt(16));
         bw->writeDoubleWord(Aarch64Instruction::Br | Rn(16));
 
         uint32_t i = 0;
-        for (const auto& routine : externalRoutines)
+        for (const auto& routine : externalRoutineList)
         {
             bw->writeDoubleWord(Aarch64Instruction::Ldr32 | simm19(8) | Rt(16));
             writeB(start - _offset);
@@ -113,9 +113,9 @@ namespace elet::domain::compiler::instruction::output
             case RoutineKind::External:
             {
                 auto routine = reinterpret_cast<ExternalRoutine*>(callInstruction->routine);
-                routine->relocationAddresses.add(_offset);
+                routine->relocationAddressList.add(_offset);
                 bw->writeDoubleWordInFunction(Aarch64Instruction::Bl | simm26(0), parentRoutine);
-                externalRoutines.add(routine);
+                externalRoutineList.add(routine);
                 break;
             }
             default:

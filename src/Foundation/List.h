@@ -81,7 +81,7 @@ namespace elet::foundation
                 return *this;
             }
 
-            const Iterator&
+            Iterator
             peek() const
             {
                 return Iterator(value + 1);

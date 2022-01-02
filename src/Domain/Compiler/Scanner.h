@@ -115,6 +115,8 @@ namespace elet::domain::compiler::ast
         // Control flows
         { "if", Token::IfKeyword },
         { "else", Token::ElseKeyword },
+        { "switch", Token::SwitchKeyword },
+        { "case", Token::CaseKeyword },
         { "for", Token::ForKeyword },
         { "while", Token::WhileKeyword },
         { "return", Token::ReturnKeyword },
@@ -172,6 +174,8 @@ namespace elet::domain::compiler::ast
         // Control flows
         { Token::IfKeyword, "if" },
         { Token::ElseKeyword, "else" },
+        { Token::SwitchKeyword, "switch" },
+        { Token::CaseKeyword, "case" },
         { Token::ForKeyword, "for" },
         { Token::WhileKeyword, "while" },
         { Token::ReturnKeyword, "return" },

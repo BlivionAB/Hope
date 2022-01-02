@@ -51,6 +51,8 @@ namespace elet::domain::compiler::ast
                     }
                     return scanDecimalDigits();
                 }
+                case Character::Hash:
+                    return Token::Hash;
                 case Character::Comma:
                     return Token::Comma;
                 case Character::Asterisk:

@@ -126,9 +126,9 @@ public:
         Ampersand = 0x26,             // &
         Asterisk = 0x2A,              // *
         At = 0x40,                    // @
-        BackwardSlash = 0x5C,         // \
-        Backtick = 0x60,
-        Pipe = 0x7C,                   // |
+        BackwardSlash = 0x5C,         //
+        Backtick = 0x60,              // `
+        Pipe = 0x7C,                  // |
         Caret = 0x5E,                 // ^
         CloseBrace = 0x7D,            // }
         CloseBracket = 0x5D,          // ]

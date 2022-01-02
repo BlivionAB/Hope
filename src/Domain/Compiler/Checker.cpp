@@ -39,7 +39,8 @@ namespace elet::domain::compiler::ast
                 return checkPropertyExpression(reinterpret_cast<PropertyExpression*>(expression));
             case SyntaxKind::IntegerLiteral:
                 return checkIntegerLiteral(reinterpret_cast<IntegerLiteral*>(expression));
-            default:;
+            default:
+                throw std::runtime_error("Unknown expression to check.");
         }
     }
 
@@ -201,6 +202,7 @@ namespace elet::domain::compiler::ast
                 return new Type(TypeKind::U64);
             }
         }
+        throw std::runtime_error("Unkown integer literal");
     }
 
 
@@ -314,6 +316,11 @@ namespace elet::domain::compiler::ast
         {
             return resolveTypeFromDeclaration(reinterpret_cast<NamedExpression*>(expression)->referenceDeclaration);
         }
+        else if (expression->kind == SyntaxKind::StringLiteral)
+        {
+            return new Type(TypeKind::Char, 1);
+        }
+        throw std::runtime_error("Unimplemented resolve type from expression.");
     }
 
 

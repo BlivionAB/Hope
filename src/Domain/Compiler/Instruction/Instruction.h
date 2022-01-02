@@ -288,7 +288,7 @@ namespace elet::domain::compiler::instruction::output
         symbolTableIndex;
 
         uint64_t
-        stringTableIndexAddress;
+        stringTableIndexAddress = 0;
 
         Routine(RoutineKind kind):
             kind(kind)
@@ -298,6 +298,10 @@ namespace elet::domain::compiler::instruction::output
 
     struct InternalRoutine : Routine
     {
+        // Used in Pe32 to relocate symbol index in an internal routine
+        List<uint64_t>
+        symbolTableIndexRelocationList;
+
         List<Instruction*>
         instructions;
 
@@ -315,8 +319,11 @@ namespace elet::domain::compiler::instruction::output
 
     struct ExternalRoutine : Routine
     {
-        List<size_t>
-        relocationAddresses;
+        List<uint64_t>
+        relocationAddressList;
+
+        List<uint64_t>
+        symbolTableIndexRelocationList;
 
         Utf8StringView
         name;
@@ -330,7 +337,7 @@ namespace elet::domain::compiler::instruction::output
         uint64_t
         stubHelperAddress;
 
-        ExternalRoutine(Utf8StringView& name):
+        ExternalRoutine(Utf8StringView name):
             name(name),
             Routine(RoutineKind::External)
         { }
@@ -343,12 +350,18 @@ namespace elet::domain::compiler::instruction::output
         offset;
 
         // aarch64: adrp instruction offset. It's used to calculate mod 4k page size.
+        // pe32: string symbol relocation index
         uint32_t
-        value1;
+        value1 = 0;
+
+        // pe32: rdata relocation offset
+        uint32_t
+        value2 = 0;
 
         // aarch64: string offset. Since, relocation is required after the text segment is placed in the object file.
+        // pe32: string table relocation index
         uint32_t
-        value2;
+        value3 = 0;
 
         RelocationPlaceholder(uint32_t offset, uint32_t value1):
             offset(offset),
@@ -386,6 +399,15 @@ namespace elet::domain::compiler::instruction::output
 
         bool
         inferReturnZero;
+
+        uint8_t
+        parameterSize = 0;
+
+        uint8_t
+        calleeParameterSize = 0;
+
+        uint8_t
+        localVariableSize = 0;
 
         uint64_t
         stackSize = 0;
