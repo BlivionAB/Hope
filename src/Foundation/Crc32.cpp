@@ -50,6 +50,7 @@ namespace elet::foundation
         0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
     };
 
+
     uint32_t
     crc32(uint32_t crc, const List<uint8_t>& data)
     {
@@ -61,6 +62,7 @@ namespace elet::foundation
         }
         return crc ^ 0xFFFFFFFFU;
     }
+
 
     uint32_t
     crc32(const List<uint8_t>& data)

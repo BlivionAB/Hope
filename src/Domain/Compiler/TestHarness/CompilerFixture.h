@@ -309,15 +309,34 @@ namespace elet::domain::compiler::test
                 }
                 else
                 {
-                    List<uint8_t>& output = compiler.getOutput();
-                    switch (compilerOptions.assemblyTarget)
+                    if (options.writeExecutable)
                     {
-                        case AssemblyTarget::x86_64:
-                            checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
-                            break;
-                        case AssemblyTarget::Aarch64:
-                            checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, compilerOptions, output,result);
-                            break;
+                        fs::path objectFilePath(options.baselineName + ".obj");
+                        fs::path executableFilePath(options.baselineName + ".exe");
+                        compiler.writeObjectFile(objectFilePath);
+                        compiler.link(objectFilePath, executableFilePath);
+                    }
+                    else
+                    {
+                        List<uint8_t>& output = compiler.getOutput();
+                        switch (compilerOptions.objectFileTarget)
+                        {
+                            case ObjectFileTarget::MachO:
+                                switch (compilerOptions.assemblyTarget)
+                                {
+                                    case AssemblyTarget::x86_64:
+                                        checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
+                                        break;
+                                    case AssemblyTarget::Aarch64:
+                                        checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, compilerOptions, output,result);
+                                        break;
+                                    default:
+                                        assert("Unknown assembly target for MachO.");
+                                }
+                                break;
+                            case ObjectFileTarget::Pe32:
+                                assert("We have not implemented Pe32 baseline tests yet.");
+                        }
                     }
                 }
             }
@@ -353,10 +372,6 @@ namespace elet::domain::compiler::test
         void
         checkTextSegmentBaselines(const TestProjectOptions& options, const CompilerOptions& compilerOptions, List<uint8_t>& output, testing::AssertionResult& result)
         {
-            if (options.writeExecutable)
-            {
-                writeOutput(output, options.baselineName + ".obj");
-            }
             MachOBaselineParser<TAssemblyParser, TAssemblyPrinter, TInstruction> baselineParser(output, compilerOptions.assemblyTarget);
             baselineParser.parse();
             Utf8String textSection = baselineParser.serializeTextSegment();
@@ -403,32 +418,6 @@ namespace elet::domain::compiler::test
                 return;
             }
             File::write(basm, result);
-        }
-
-
-        void
-        writeOutput(const List<uint8_t>& output, fs::path file) const
-        {
-            std::ofstream fileHandle;
-            std::error_code ec;
-            fs::path outputFile = fs::current_path() / file;
-            if (fs::exists(outputFile))
-            {
-                fs::remove(outputFile, ec);
-                if (ec)
-                {
-                    std::cerr << ec.message() << std::endl;
-                    std::exit(1);
-                }
-            }
-            std::string outputFileString = outputFile.string();
-            const char* path = outputFileString.c_str();
-            fileHandle.open(path, std::ios_base::binary);
-            for (int i = 0; i < output.size(); ++i)
-            {
-                fileHandle.write(reinterpret_cast<char*>(&output[i]), 1);
-            }
-            fileHandle.close();
         }
 
 

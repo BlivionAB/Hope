@@ -93,6 +93,9 @@ namespace elet::domain::compiler
         void
         compileFile(const fs::path& file);
 
+        void
+        writeObjectFile(fs::path filePath) const;
+
         std::map<std::string, ast::SourceFile*>
         files;
 
@@ -100,13 +103,16 @@ namespace elet::domain::compiler
         getStashIR();
 
         List<uint8_t>&
-        getOutput();
+        getOutput() const;
 
         Utf8String
         printCompileErrors();
 
         List<ast::SourceFile*>
         getSourceFiles();
+
+        void
+        link(const fs::path& objectFilePath, const fs::path& executableFilePath) const;
 
     private:
 

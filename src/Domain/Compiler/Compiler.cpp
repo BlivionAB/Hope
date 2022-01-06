@@ -6,12 +6,15 @@
 #include "Instruction/ObjectFileWriter/MachoFileWriter.h"
 #include "Instruction/ObjectFileWriter/Pe32FileWriter.h"
 #include "ErrorWriter.h"
+#include "Linker_VisualStudioLinker.h"
 
 using namespace elet::domain::compiler::instruction::output;
 
-
 namespace elet::domain::compiler
 {
+    using namespace linker::vs;
+
+
     Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions options):
         _fileStreamReader(fileStreamReader),
         _options(options),
@@ -441,7 +444,7 @@ namespace elet::domain::compiler
 
 
     List<uint8_t>&
-    Compiler::getOutput()
+    Compiler::getOutput() const
     {
         return _objectFileWriter->getOutput();
     }
@@ -471,5 +474,41 @@ namespace elet::domain::compiler
             return { .assemblyHasMultiRegisterOperands = true };
         }
         return { .assemblyHasMultiRegisterOperands = false };
+    }
+
+
+    void
+    Compiler::writeObjectFile(fs::path filePath) const
+    {
+        std::ofstream fileHandle;
+        std::error_code ec;
+        fs::path outputFile = fs::current_path() / filePath;
+        if (fs::exists(outputFile))
+        {
+            fs::remove(outputFile, ec);
+            if (ec)
+            {
+                std::cerr << ec.message() << std::endl;
+                std::exit(1);
+            }
+        }
+        std::string outputFileString = outputFile.string();
+        const char* path = outputFileString.c_str();
+        fileHandle.open(path, std::ios_base::binary);
+        List<uint8_t>& output = getOutput();
+        for (int i = 0; i < output.size(); ++i)
+        {
+            fileHandle.write(reinterpret_cast<char*>(&output[i]), 1);
+        }
+        fileHandle.close();
+    }
+
+
+
+    void
+    Compiler::link(const fs::path& objectFilePath, const fs::path& executableFilePath) const
+    {
+        VisualStudioLinker vsLinker;
+        vsLinker.link(objectFilePath, executableFilePath);
     }
 }

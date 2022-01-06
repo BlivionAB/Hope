@@ -101,6 +101,7 @@ namespace elet::domain::compiler::instruction::output::x86
     {
         uint8_t stackAllocationSize = getMicrosoftX64StackAllocationSize(function);
         writeAddImmediateInstruction(OperandRegister::StackPointer, stackAllocationSize, function);
+        bw->writeInstructionInFunction(OneByteOpCode::Ret, function);
     }
 
     uint8_t
@@ -193,7 +194,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function)
     {
         uint8_t rexByte = uint8_t(OpCodePrefix::RexMagic);
-        if (storeRegisterInstruction->stackOffset < UINT8_MAX)
+        if (storeRegisterInstruction->stackOffset < INT8_MAX)
         {
             rexByte |= uint8_t(OpCodePrefix::RexW);
         }
@@ -586,7 +587,7 @@ namespace elet::domain::compiler::instruction::output::x86
     void
     X86_64Writer::writeSubtractImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function)
     {
-        if (value <= UINT8_MAX)
+        if (value <= INT8_MAX)
         {
             bw->writeInstructionsInFunction({
                 OpCodePrefix::RexMagic | OpCodePrefix::RexW,
