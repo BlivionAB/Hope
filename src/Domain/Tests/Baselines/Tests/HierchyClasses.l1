@@ -24,10 +24,10 @@ fn OnProcessStart(): void
             var lte = "color";
             VStackImage(lite);
         },
-        for (item in range)
+        ... for (item in range)
         {
             SomeStack(item.name);
-        },
+        }
     ]);
     onHover(some);
 }

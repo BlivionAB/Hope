@@ -91,6 +91,7 @@ namespace elet::domain::compiler::ast::type
         {
             switch (kind)
             {
+                case TypeKind::Char:
                 case TypeKind::S8:
                 case TypeKind::S16:
                 case TypeKind::S32:

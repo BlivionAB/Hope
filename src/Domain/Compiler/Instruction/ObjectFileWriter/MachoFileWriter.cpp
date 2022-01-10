@@ -8,6 +8,7 @@ namespace elet::domain::compiler::instruction::output::macho
     MachoFileWriter::MachoFileWriter(AssemblyTarget assemblyTarget):
         ObjectFileWriter(assemblyTarget)
     {
+        assemblyWriter->setCallingConvention(CallingConvention::SysV);
         _dyldInfoWriter = new DyldInfoWriter(this);
     }
 

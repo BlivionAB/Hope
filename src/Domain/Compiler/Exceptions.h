@@ -48,6 +48,9 @@ namespace elet::domain::compiler::ast::error
         const char*
         positionAddress;
 
+        const char*
+        endAddress;
+
         const
         ast::SourceFile*
         sourceFile;
@@ -59,6 +62,16 @@ namespace elet::domain::compiler::ast::error
         explicit LexicalError(const ast::SourceFile* sourceFile, const char* position, const char* message, Args... args):
             sourceFile(sourceFile),
             positionAddress(position),
+            endAddress(nullptr),
+            message(std::format(message, args...).c_str())
+        { }
+
+
+        template<typename... Args>
+        explicit LexicalError(const ast::SourceFile* sourceFile, const char* position, const char* endAddress, const char* message, Args... args):
+            sourceFile(sourceFile),
+            positionAddress(position),
+            endAddress(endAddress),
             message(std::format(message, args...).c_str())
         { }
     };

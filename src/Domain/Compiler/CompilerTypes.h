@@ -19,13 +19,13 @@ namespace elet::domain::compiler
         // Integer types, ranked after the conversion ranking
         U8,
         S8,
+        Char,
         U16,
         S16,
         U32,
         S32,
         U64,
         S64,
-        Char,
         UInt,
         Int,
 

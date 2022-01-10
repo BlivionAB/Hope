@@ -41,6 +41,9 @@ public:
         void
         operator ++ ();
 
+        Utf8StringView::Iterator
+        operator + (int step);
+
         const char*
         getPositionAddress() const;
 

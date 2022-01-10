@@ -74,7 +74,18 @@ namespace elet::domain::compiler::ast
             _tw.write(" ");
             ++iterator;
         }
-        _tw.write("^");
+        if (lexicalError->endAddress)
+        {
+            while (iterator.getPositionAddress() != lexicalError->endAddress)
+            {
+                _tw.write("^");
+                ++iterator;
+            }
+        }
+        else
+        {
+            _tw.write("^");
+        }
         _tw.newline();
     }
 

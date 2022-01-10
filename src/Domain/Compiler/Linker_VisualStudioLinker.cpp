@@ -194,6 +194,7 @@ namespace elet::domain::compiler::linker::vs
         }
     }
 
+
     std::string
     VisualStudioLinker::getEscapedStringPath(fs::path path) const
     {

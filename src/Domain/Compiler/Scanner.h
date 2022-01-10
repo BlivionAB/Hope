@@ -55,6 +55,9 @@ namespace elet::domain::compiler::ast
         void
         resetFlags();
 
+        uint8_t
+        getCharacterLiteralValue();
+
     private:
 
         Token
@@ -79,6 +82,9 @@ namespace elet::domain::compiler::ast
         Utf8StringView
         _sourceString;
 
+        uint8_t
+        _characterLiteralValue;
+
         Token
         scanDecimalDigits();
 
@@ -87,6 +93,18 @@ namespace elet::domain::compiler::ast
 
         Token
         scanWhitespace();
+
+        Token
+        scanCharacterLiteral();
+
+        void
+        throwLexicalError(const char* message) const;
+
+        void
+        throwLexicalError(const char* startAddress, const char* endAddress, const char* message) const;
+
+        int8_t
+        scanHexDigits(uint32_t& result);
     };
 
 

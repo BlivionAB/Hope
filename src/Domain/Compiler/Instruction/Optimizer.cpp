@@ -81,6 +81,18 @@ namespace elet::domain::compiler::instruction::output
         {
             case InstructionKind::AddRegister:
                 return new AddRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::SubtractRegister:
+                return new SubtractRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::MultiplySignedRegister:
+                return new MultiplySignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::DivideUnsignedRegister:
+                return new DivideUnsignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::DivideSignedRegister:
+                return new DivideSignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::ModuloUnsignedRegister:
+                return new ModuloUnsignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::ModuloSignedRegister:
+                return new ModuloSignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
             default:
                 throw std::runtime_error("Unknown operationRegisterInstruction");
         }
@@ -93,6 +105,18 @@ namespace elet::domain::compiler::instruction::output
         switch (instruction->kind)
         {
             case InstructionKind::AddRegister:
+                return true;
+            case InstructionKind::SubtractRegister:
+                return true;
+            case InstructionKind::MultiplySignedRegister:
+                return true;
+            case InstructionKind::DivideUnsignedRegister:
+                return true;
+            case InstructionKind::DivideSignedRegister:
+                return true;
+            case InstructionKind::ModuloUnsignedRegister:
+                return true;
+            case InstructionKind::ModuloSignedRegister:
                 return true;
             default:
                 return false;

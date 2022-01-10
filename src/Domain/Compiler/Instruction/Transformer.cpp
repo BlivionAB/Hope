@@ -75,6 +75,7 @@ namespace elet::domain::compiler::instruction
             case ObjectFileTarget::Pe32:
                 function->name = "main";
                 break;
+            case ObjectFileTarget::StashIR:
             case ObjectFileTarget::MachO:
                 function->name = "_main";
                 break;
@@ -175,22 +176,36 @@ namespace elet::domain::compiler::instruction
     output::CanonicalExpression
     Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize)
     {
+        return transformExpression(expression, stackOffset, registerSize, nullptr);
+    }
+
+
+    output::CanonicalExpression
+    Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize, ast::Type* forcedType)
+    {
         switch (expression->kind)
         {
             case ast::SyntaxKind::BinaryExpression:
-                return transformBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression), stackOffset, registerSize);
+                return transformBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression), stackOffset,registerSize, forcedType);
             case ast::SyntaxKind::IntegerLiteral:
             {
                 ast::IntegerLiteral* integerLiteral = reinterpret_cast<ast::IntegerLiteral*>(expression);
-                registerSize = integerLiteral->resolvedType->size();
+                ast::Type* type = forcedType ? forcedType : integerLiteral->resolvedType;
+                registerSize = type->size();
                 if (integerLiteral->isNegative)
                 {
-                    return output::ImmediateValue(integerLiteral->resolvedType->kind, -integerLiteral->value);
+                    return output::ImmediateValue(type->kind, -integerLiteral->value);
                 }
                 else
                 {
-                    return output::ImmediateValue(integerLiteral->resolvedType->kind, integerLiteral->value);
+                    return output::ImmediateValue(type->kind, integerLiteral->value);
                 }
+            }
+            case ast::SyntaxKind::CharacterLiteral:
+            {
+                ast::TypeKind typeKind = forcedType ? forcedType->kind : TypeKind::U8;
+                ast::CharacterLiteral* characterLiteral = reinterpret_cast<ast::CharacterLiteral*>(expression);
+                return output::ImmediateValue(typeKind, characterLiteral->value);
             }
             case ast::SyntaxKind::PropertyExpression:
                 return transformPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression),registerSize);
@@ -462,7 +477,7 @@ namespace elet::domain::compiler::instruction
 
 
     output::OperandRegister
-    Transformer::transformRegisterToRegisterBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, output::OperandRegister target, output::OperandRegister value)
+    Transformer::transformRegisterToRegisterBinaryExpression(ast::BinaryExpression* binaryExpression, output::OperandRegister target, output::OperandRegister value)
     {
         // Str [Sp + 0], 3
         // Str [Sp + 4], 3
@@ -479,7 +494,7 @@ namespace elet::domain::compiler::instruction
         _scratchRegisterIndex -= 2;
 
         output::OperandRegister destination = borrowScratchRegister();
-        switch (binaryOperatorKind)
+        switch (binaryExpression->binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
                 addInstruction(new output::AddRegisterInstruction(destination, target, value));
@@ -491,7 +506,24 @@ namespace elet::domain::compiler::instruction
                 addInstruction(new output::MultiplyRegisterInstruction(destination, target, value));
                 break;
             case ast::BinaryOperatorKind::Divide:
-                addInstruction(new output::DivideRegisterInstruction(destination, target, value));
+                if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
+                {
+                    addInstruction(new output::DivideSignedRegisterInstruction(destination, target, value));
+                }
+                else
+                {
+                    addInstruction(new output::DivideUnsignedRegisterInstruction(destination, target, value));
+                }
+                break;
+            case ast::BinaryOperatorKind::Modulo:
+                if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
+                {
+                    addInstruction(new output::ModuloSignedRegisterInstruction(destination, target, value));
+                }
+                else
+                {
+                    addInstruction(new output::ModuloUnsignedRegisterInstruction(destination, target, value));
+                }
                 break;
             case ast::BinaryOperatorKind::BitwiseAnd:
                 addInstruction(new output::AndRegisterInstruction(destination, target, value));
@@ -510,7 +542,7 @@ namespace elet::domain::compiler::instruction
 
 
     output::CanonicalExpression
-    Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset, RegisterSize& registerSize)
+    Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset, RegisterSize& registerSize, ast::Type* forcedType)
     {
         // (1) if both hand-sides are binary expressions evaluate both. left first.
         // (2) Continue (1) until you find a binary expression without binary expression.
@@ -552,23 +584,23 @@ namespace elet::domain::compiler::instruction
 
         output::CanonicalExpression leftOutput;
         output::CanonicalExpression rightOutput;
-
+        ast::Type* type = forcedType ? forcedType : binaryExpression->resolvedType;
         // Transform binary expressions first and then regular expressions.
         if (binaryExpression->left->kind == ast::SyntaxKind::BinaryExpression)
         {
-            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize);
+            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize, type);
         }
         if (binaryExpression->right->kind == ast::SyntaxKind::BinaryExpression)
         {
-            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize);
+            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize, type);
         }
         if (std::holds_alternative<std::monostate>(leftOutput))
         {
-            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize);
+            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize, type);
         }
         if (std::holds_alternative<std::monostate>(rightOutput))
         {
-            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize);
+            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize, type);
         }
 
         if (std::holds_alternative<output::OperandRegister>(leftOutput) && std::holds_alternative<output::OperandRegister>(rightOutput))
@@ -579,11 +611,11 @@ namespace elet::domain::compiler::instruction
             // Make operand registers have an ascending order
             if (target < value)
             {
-                return transformRegisterToRegisterBinaryExpression(binaryExpression->binaryOperatorKind, target, value);
+                return transformRegisterToRegisterBinaryExpression(binaryExpression, target, value);
             }
             else
             {
-                return transformRegisterToRegisterBinaryExpression(binaryExpression->binaryOperatorKind, value, target);
+                return transformRegisterToRegisterBinaryExpression(binaryExpression, value, target);
             }
         }
         else if (std::holds_alternative<output::ImmediateValue>(leftOutput) && std::holds_alternative<output::ImmediateValue>(rightOutput))

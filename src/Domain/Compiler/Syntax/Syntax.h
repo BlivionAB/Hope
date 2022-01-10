@@ -135,9 +135,10 @@ namespace elet::domain::compiler::ast
         Ampersand,
         Pipe,
         Caret,
+        Percent,
 
         BinaryOperationStart = AmpersandAmpersand,
-        BinaryOperationEnd = Caret,
+        BinaryOperationEnd = Percent,
 
         // Types
         VoidKeyword,
@@ -170,6 +171,7 @@ namespace elet::domain::compiler::ast
         SizeOfKeyword,
 
         StringLiteral,
+        CharacterLiteral,
         FloatLiteral,
 
         DecimalLiteral,
@@ -397,6 +399,13 @@ namespace elet::domain::compiler::ast
     };
 
 
+    struct CharacterLiteral : Expression
+    {
+        uint8_t
+        value;
+    };
+
+
     struct StringLiteral : Expression
     {
         const char*
@@ -470,6 +479,7 @@ namespace elet::domain::compiler::ast
         Minus,
         Multiply,
         Divide,
+        Modulo,
 
         BitwiseAnd,
         BitwiseXor,

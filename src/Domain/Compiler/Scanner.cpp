@@ -62,7 +62,7 @@ namespace elet::domain::compiler::ast
                 case Character::BackwardSlash:
                     return Token::BackwardSlash;
                 case Character::SingleQuote:
-                    return Token::SingleQuote;
+                    return scanCharacterLiteral();
                 case Character::DoubleQuote:
                     return scanString();
                 case Character::Dot:
@@ -110,6 +110,8 @@ namespace elet::domain::compiler::ast
                         return Token::EqualEqual;
                     }
                     return Token::Equal;
+                case Character::Percent:
+                    return Token::Percent;
                 default:
                     if (isIdentifierStart(character))
                     {
@@ -229,9 +231,7 @@ namespace elet::domain::compiler::ast
         }
         if (!hasAtLeastOneHexCharacter)
         {
-            const char* positionAddress = getPositionAddress();
-            scanToNextSemicolon();
-            throw new error::LexicalError(_sourceFile, positionAddress, "Hexadecimal literal must consist of at least one hexadecimal character.");
+            throwLexicalError("Hexadecimal literal must consist of at least one hexadecimal character.");
         }
         return Token::HexadecimalLiteral;
     }
@@ -254,5 +254,122 @@ namespace elet::domain::compiler::ast
             break;
         }
         return Token::Whitespace;
+    }
+
+
+    Token
+    Scanner::scanCharacterLiteral()
+    {
+        Character character = getCharacter();
+        const char* start = getPositionAddress();
+        if (character == Character::BackwardSlash)
+        {
+            increment();
+            character = getCharacter();
+            increment();
+            if (character == Character::x)
+            {
+                uint32_t result = 0;
+                int8_t numberOfDigits = scanHexDigits(result);
+                if (numberOfDigits == -1)
+                {
+                    throwLexicalError("Expected hex digit.");
+                }
+
+                // hex escape sequence can accomodate unsigned part.
+                if (static_cast<uint32_t>(result) > UCHAR_MAX)
+                {
+                    throwLexicalError(start, getPositionAddress(), "Character literal must be in ASCII (non-extended) range.");
+                }
+                _characterLiteralValue = result;
+            }
+            else {
+                switch (character)
+                {
+                    case Character::n:
+                        _characterLiteralValue = static_cast<uint8_t>(Character::Newline);
+                        break;
+                    case Character::r:
+                        _characterLiteralValue = static_cast<uint8_t>(Character::CarriageReturn);
+                        break;
+                    case Character::t:
+                        _characterLiteralValue = static_cast<uint8_t>(Character::Tab);
+                        break;
+                    case Character::BackwardSlash:
+                        _characterLiteralValue = static_cast<uint8_t>(Character::BackwardSlash);
+                        break;
+                    case Character::_0:
+                        _characterLiteralValue = static_cast<uint8_t>(Character::NullCharacter);
+                        break;
+                    default:
+                        throwLexicalError(start, getPositionAddress(), "Unknown escape sequence.");
+                }
+            }
+        }
+        else if (static_cast<uint32_t>(character) > CHAR_MAX)
+        {
+            throwLexicalError("Character literal must be in ASCII (non-extended) range.");
+        }
+        else
+        {
+            increment();
+            _characterLiteralValue = static_cast<uint8_t>(character);
+        }
+        character = getCharacter();
+        if (character != Character::SingleQuote)
+        {
+            throwLexicalError("Expected single quote (') character.");
+        }
+        increment();
+        return Token::CharacterLiteral;
+    }
+
+
+    void
+    Scanner::throwLexicalError(const char* message) const
+    {
+        char* positionAddress = getPositionAddress();
+        throw new error::LexicalError(_sourceFile, positionAddress, message);
+    }
+
+
+    void
+    Scanner::throwLexicalError(const char* startAddress, const char* endAddress, const char* message) const
+    {
+        throw new error::LexicalError(_sourceFile, startAddress, endAddress, message);
+    }
+
+
+    int8_t
+    Scanner::scanHexDigits(uint32_t& result)
+    {
+        Character character = getCharacter();
+
+        if (character >= Character::_0 && character <= Character::_9)
+        {
+            increment();
+            uint8_t exp = scanHexDigits(result) + 1;
+            result += (static_cast<uint32_t>(character) - static_cast<uint32_t>(Character::_0)) * static_cast<uint32_t>(std::pow(16, exp));
+            return exp;
+        }
+        else if (character >= Character::a && character <= Character::f)
+        {
+            increment();
+            uint8_t exp = scanHexDigits(result) + 1;
+            uint32_t e = static_cast<uint32_t>(std::pow(16, exp));
+            result += (static_cast<uint32_t>(character) - static_cast<uint32_t>(Character::a) + 10) * e;
+            return exp;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+
+    uint8_t
+    Scanner::getCharacterLiteralValue()
+    {
+        return _characterLiteralValue;
     }
 }

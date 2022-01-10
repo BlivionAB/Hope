@@ -179,6 +179,9 @@ namespace elet::domain::compiler::instruction
         output::CanonicalExpression
         transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize);
 
+        output::CanonicalExpression
+        transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize, ast::Type* forcedType);
+
         output::ImmediateValue
         transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right);
 
@@ -192,11 +195,11 @@ namespace elet::domain::compiler::instruction
         transformPropertyExpression(ast::PropertyExpression* propertyExpression, RegisterSize& registerSize);
 
         output::OperandRegister
-        transformRegisterToRegisterBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, output::OperandRegister target, output::OperandRegister value);
+        transformRegisterToRegisterBinaryExpression(ast::BinaryExpression* binaryExpression, output::OperandRegister target, output::OperandRegister value);
 
         output::CanonicalExpression
         transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset,
-                                  RegisterSize& registerSize);
+                                  RegisterSize& registerSize, ast::Type* forcedType);
 
         output::OperandRegister
         getOperandRegisterFromArgumentIndex(uint64_t argumentIndex);

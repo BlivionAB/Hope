@@ -45,6 +45,7 @@ namespace elet::domain::compiler::ast
         ReturnStatement,
 
         // Expressions
+        CharacterLiteral,
         StringLiteral,
         BooleanLiteral,
         IntegerLiteral,

@@ -443,6 +443,8 @@ namespace elet::domain::compiler::ast
 
 //        DeclarationDecoration*
 //        parseDecoration();
+    CharacterLiteral*
+    createCharacterLiteral();
 };
 }
 

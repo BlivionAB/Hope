@@ -285,6 +285,17 @@ namespace elet::foundation
     }
 
 
+    Utf8StringView::Iterator
+    Utf8StringView::Iterator::operator+(int step)
+    {
+        for (int i = 0; i < step; ++i)
+        {
+            this->operator++();
+        }
+        return *this;
+    }
+
+
     void
     operator += (Utf8String& string1, const Utf8StringView& string2)
     {

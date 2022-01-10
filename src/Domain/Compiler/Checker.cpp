@@ -39,8 +39,10 @@ namespace elet::domain::compiler::ast
                 return checkPropertyExpression(reinterpret_cast<PropertyExpression*>(expression));
             case SyntaxKind::IntegerLiteral:
                 return checkIntegerLiteral(reinterpret_cast<IntegerLiteral*>(expression));
+            case SyntaxKind::CharacterLiteral:
+                return new Type(TypeKind::Char);
             default:
-                throw std::runtime_error("Unknown expression to check.");
+                assert("Unknown expression to check.");
         }
     }
 
@@ -92,7 +94,16 @@ namespace elet::domain::compiler::ast
     void
     Checker::checkVariableDeclaration(VariableDeclaration* variable)
     {
-        variable->resolvedType = checkExpression(variable->expression);
+        Type* expressionType = checkExpression(variable->expression);
+        if (variable->type)
+        {
+            variable->resolvedType = new Type(variable->type->type, variable->type->pointers.size());
+            checkTypeAssignability(variable->resolvedType, expressionType);
+        }
+        else
+        {
+            variable->resolvedType = expressionType;
+        }
     }
 
 

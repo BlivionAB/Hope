@@ -75,6 +75,26 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
+        writeMultiplySignedRegisterAddressInstruction(MultiplySignedRegisterAddressInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeDivideSignedRegisterAddressInstruction(DivideSignedRegisterAddressInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeModuloSignedRegisterAddressInstruction(ModuloSignedRegisterAddressInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
         writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function);
 
         virtual
@@ -92,6 +112,10 @@ namespace elet::domain::compiler::instruction::output
         virtual
         void
         writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeSubtractRegisterAddressInstruction(SubtractRegisterAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function);
 
         virtual
         void
@@ -199,7 +223,7 @@ namespace elet::domain::compiler::instruction::output
 
         bool
         nextInstructionIs(InstructionKind kind) const;
-    };
+};
 }
 
 

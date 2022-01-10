@@ -17,7 +17,7 @@ class Utf8String
 {
 public:
 
-    enum class Character
+    enum class Character : uint32_t
     {
         NullCharacter = 0x00,
         Eof = 0x04,

@@ -14,6 +14,8 @@ enum OpCodePrefix : uint8_t
 
     OperandSizePrefix = 0x66,
     TwoByteEscape = 0x0f,
+    ThreeByteEscape1 = 0x38,
+    ThreeByteEscape2 = 0x3A,
 };
 
 
@@ -41,7 +43,10 @@ enum OneByteOpCode : uint8_t
     Ret = 0xc3,
 
     Sub = 0xec,
+    Sub_Gv_Ev = 0x2b,
     Add_Gv_Ev = 0x03,
+    Imul_Gv_Ev = 0xaf,
+    Cdq = 0x99,
 
     // Immediate Group 1
     ImmediateGroup1_Eb_Ib = 0x80,
@@ -49,8 +54,14 @@ enum OneByteOpCode : uint8_t
     ImmediateGroup1_Eb_Ib_i64 = 0x82,
     ImmediateGroup1_Ev_Ib = 0x83,
 
+
+    ExtGroup3 = 0xf7,
+    ExtGroup3_DivBits = 0b00110000,
+    ExtGroup3_IdivBits = 0b00111000,
     ExtGroup5 = 0xff,
     ExtGroup5_NearCallRegisterBits = 0b00010000,
+
+    TwoByteOpCodePrefix = 0x0f,
 };
 
 

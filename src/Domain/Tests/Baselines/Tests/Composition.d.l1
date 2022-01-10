@@ -1,6 +1,6 @@
 
 
-class Editor
+object Editor
 {
     Editor();
     ~Editor();

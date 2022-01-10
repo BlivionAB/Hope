@@ -98,8 +98,17 @@ namespace elet::domain::compiler::instruction::output
         AddRegisterAddress,
         AddImmediate,
         SubtractRegister,
-        MultiplyRegister,
-        DivideRegister,
+        SubtractRegisterAddress,
+        MultiplySignedRegister,
+        MultiplySignedRegisterAddress,
+        DivideUnsignedRegister,
+        DivideUnsignedRegisterAddress,
+        DivideSignedRegister,
+        DivideSignedRegisterAddress,
+        ModuloUnsignedRegister,
+        ModuloUnsignedRegisterAddress,
+        ModuloSignedRegister,
+        ModuloSignedRegisterAddress,
         AndRegister,
         XorRegister,
         OrRegister,
@@ -350,7 +359,7 @@ namespace elet::domain::compiler::instruction::output
         offset;
 
         // aarch64: adrp instruction offset. It's used to calculate mod 4k page size.
-        // pe32: string symbol relocation index
+        // pe32: string symbol relocation offset
         uint32_t
         value1 = 0;
 
@@ -359,7 +368,7 @@ namespace elet::domain::compiler::instruction::output
         value2 = 0;
 
         // aarch64: string offset. Since, relocation is required after the text segment is placed in the object file.
-        // pe32: string table relocation index
+        // pe32: string table relocation offset
         uint32_t
         value3 = 0;
 

@@ -76,11 +76,11 @@ namespace elet::domain::compiler::test
             case output::InstructionKind::SubtractRegister:
                 writeOperation("Sub", reinterpret_cast<const output::SubtractRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::MultiplyRegister:
+            case output::InstructionKind::MultiplySignedRegister:
                 writeOperation("Mul", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::DivideRegister:
-                writeOperation("Div", reinterpret_cast<const output::DivideRegisterInstruction*>(instruction));
+            case output::InstructionKind::DivideSignedRegister:
+                writeOperation("Div", reinterpret_cast<const output::DivideSignedRegisterInstruction*>(instruction));
                 break;
             case output::InstructionKind::OrRegister:
                 writeOperation("Or", reinterpret_cast<const output::OrRegisterInstruction*>(instruction));

@@ -36,6 +36,7 @@ namespace elet::domain::compiler
         switch (options.objectFileTarget)
         {
             case ObjectFileTarget::StashIR:
+                return nullptr;
             case ObjectFileTarget::MachO:
                 return new output::macho::MachoFileWriter(options.assemblyTarget);
             case ObjectFileTarget::Pe32:

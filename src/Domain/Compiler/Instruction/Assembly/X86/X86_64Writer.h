@@ -146,6 +146,24 @@ namespace elet::domain::compiler::instruction::output::x86
         writeSubtractImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
 
         void
+        writeSubtractRegisterAddressInstruction(SubtractRegisterAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function) override;
+
+        void
+        writeMultiplySignedRegisterAddressInstruction(MultiplySignedRegisterAddressInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function) override;
+
+        void
+        writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeDivideSignedRegisterAddressInstruction(DivideSignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeModuloSignedRegisterAddressInstruction(ModuloSignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+
+        void
         writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function) override;
 
         void
@@ -168,6 +186,9 @@ namespace elet::domain::compiler::instruction::output::x86
 
         void
         writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister operandRegister, FunctionRoutine* function);
+
+        void
+        writeEbpReferenceBytes(uint64_t stackOffset, uint8_t registerBits, FunctionRoutine* function);
 
         void
         writeEspReferenceBytes(uint64_t stackOffset, OperandRegister operandRegister, FunctionRoutine* function);

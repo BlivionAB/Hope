@@ -28,6 +28,10 @@ enum class InstructionKind
     Nop,
     Add,
     Sub,
+    Imul,
+    Div,
+    Idiv,
+    Cdq,
     Jmp,
 };
 

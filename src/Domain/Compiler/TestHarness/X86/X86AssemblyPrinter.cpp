@@ -37,6 +37,18 @@ namespace elet::domain::compiler::test::x86
             case InstructionKind::Sub:
                 writeInstructionWithName("sub", instruction);
                 break;
+            case InstructionKind::Imul:
+                writeInstructionWithName("imul", instruction);
+                break;
+            case InstructionKind::Idiv:
+                writeInstructionWithName("idiv", instruction);
+                break;
+            case InstructionKind::Div:
+                writeInstructionWithName("div", instruction);
+                break;
+            case InstructionKind::Cdq:
+                _tw.write("cdq");
+                break;
             case InstructionKind::Nop:
                 writeInstructionWithName("nop", instruction);
                 break;

@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include "Exceptions.h"
+#include <Foundation/Utf8String.h>
 #include <filesystem>
 #include <cassert>
 
@@ -54,6 +55,10 @@ namespace elet::domain::compiler::ast
                 }
                 addSymbolToSourceFile(statement, sourceFile);
                 statements.add(statement);
+            }
+            catch (error::SyntaxError &ex)
+            {
+                std::cout << ex.message << std::endl;
             }
             catch (error::UnexpectedEndOfFile &ex)
             {
@@ -249,10 +254,12 @@ namespace elet::domain::compiler::ast
         catch (error::SyntaxError* syntaxError)
         {
             _syntaxErrors.add(syntaxError);
+            _scanner->scanToNextSemicolon();
         }
         catch (error::LexicalError* lexicalError)
         {
             _lexicalErrors.add(lexicalError);
+            _scanner->scanToNextSemicolon();
         }
         return nullptr;
     }
@@ -477,7 +484,6 @@ namespace elet::domain::compiler::ast
         {
             ErrorNode* errorNode = _error->createErrorNodeOnCurrentToken();
             const char* tokenValue = getTokenValue().toString();
-            _scanner->scanToNextSemicolon();
             throw new error::SyntaxError(errorNode, _sourceFile, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), tokenValue);
         }
     }
@@ -524,6 +530,9 @@ namespace elet::domain::compiler::ast
                 break;
             case Token::USizeKeyword:
                 typeAssignment->type = TypeKind::USize;
+                break;
+            case Token::U32Keyword:
+                typeAssignment->type = TypeKind::U32;
                 break;
             case Token::StringKeyword:
             case Token::Identifier:
@@ -713,6 +722,8 @@ namespace elet::domain::compiler::ast
                 stringLiteral->stringEnd = stringLiteral->end - 1;
                 return stringLiteral;
             }
+            case Token::CharacterLiteral:
+                return createCharacterLiteral();
             case Token::Minus:
                 return createNegativeIntegerLiteral();
             case Token::HexadecimalLiteral:
@@ -747,6 +758,18 @@ namespace elet::domain::compiler::ast
         {
             throw std::runtime_error("Not implemented syntax.");
         }
+    }
+
+
+    CharacterLiteral*
+    Parser::createCharacterLiteral()
+    {
+        using Character = Utf8String::Character;
+
+        CharacterLiteral* characterLiteral = createSyntax<CharacterLiteral>(SyntaxKind::CharacterLiteral);
+        characterLiteral->value = _scanner->getCharacterLiteralValue();
+        finishSyntax(characterLiteral);
+        return characterLiteral;
     }
 
 
@@ -1324,7 +1347,7 @@ namespace elet::domain::compiler::ast
         expectToken(Token::StringLiteral);
         if (getTokenValue() != "\"C\"")
         {
-            throw _error->throwSyntaxError("Onyl C language API is allowed.");
+            throw _error->throwSyntaxError("Only C language API is allowed.");
         }
         expectToken(Token::OpenBrace);
         block->declarations = parseExternCBlockLevelDeclarations();
@@ -1396,6 +1419,8 @@ namespace elet::domain::compiler::ast
                 return BinaryOperatorKind::Multiply;
             case Token::ForwardSlash:
                 return BinaryOperatorKind::Divide;
+            case Token::Percent:
+                return BinaryOperatorKind::Modulo;
             default:
                 throw std::runtime_error("Unknown binary operator.");
         }
@@ -1421,6 +1446,7 @@ namespace elet::domain::compiler::ast
                 return 1;
             case Token::Asterisk:
             case Token::ForwardSlash:
+            case Token::Percent:
                 return 2;
             case Token::Pipe:
                 return 3;
@@ -1429,7 +1455,7 @@ namespace elet::domain::compiler::ast
             case Token::Ampersand:
                 return 5;
             default:
-                throw std::runtime_error("Unknown operator token.");
+                assert("Unknown operator token.");
         }
     }
 
@@ -1621,10 +1647,4 @@ namespace elet::domain::compiler::ast
         }
         while(token != Token::SemiColon && token != Token::EndOfFile);
     }
-//
-//    DeclarationDecoration*
-//    Parser::parseDecoration()
-//    {
-//        return nullptr;
-//    }
 }
