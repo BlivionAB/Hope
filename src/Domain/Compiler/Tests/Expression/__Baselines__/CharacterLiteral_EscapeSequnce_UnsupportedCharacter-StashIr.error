@@ -1,0 +1,5 @@
+error: Unknown escape sequence.
+--> main.hs:8:9
+  | 
+8 | return '\g';    }
+  |         ^^
