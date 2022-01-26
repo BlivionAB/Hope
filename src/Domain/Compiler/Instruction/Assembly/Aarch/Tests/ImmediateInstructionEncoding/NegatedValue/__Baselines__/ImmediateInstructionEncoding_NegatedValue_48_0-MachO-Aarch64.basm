@@ -1,0 +1,12 @@
+Address           Bytes                 Instruction
+============================================================
+
+__TEXT,__text:
+
+_main:
+0000000100003fc0  fd7bbfa9              stp fp, lr, [sp, #-0x10]!
+0000000100003fc4  fd030091              add fp, sp, #0x0
+0000000100003fc8  e0ffff92              movn x0, 0xffff_ffff_ffff
+0000000100003fcc  200080f2              movk x0, #0x1
+0000000100003fd0  fd7bc1a8              ldp fp, lr, [sp], #0x10
+0000000100003fd4  c0035fd6              ret lr
