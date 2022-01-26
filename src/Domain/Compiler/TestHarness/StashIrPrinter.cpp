@@ -70,26 +70,32 @@ namespace elet::domain::compiler::test
             case output::InstructionKind::Return:
                 _tw.write("Ret");
                 break;
-            case output::InstructionKind::AddRegister:
-                writeOperation("Add", reinterpret_cast<const output::AddRegisterInstruction*>(instruction));
+            case output::InstructionKind::AddRegisterToRegister:
+                writeRegisterToRegisterOperation("Add", reinterpret_cast<const output::AddRegisterToRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::SubtractRegister:
-                writeOperation("Sub", reinterpret_cast<const output::SubtractRegisterInstruction*>(instruction));
+            case output::InstructionKind::AddImmediateToRegister:
+                writeImmediateToRegisterOperation("Add", reinterpret_cast<const output::AddImmediateToRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::MultiplySignedRegister:
-                writeOperation("Mul", reinterpret_cast<const output::MultiplyRegisterInstruction*>(instruction));
+            case output::InstructionKind::SubtractRegisterToRegister:
+                writeRegisterToRegisterOperation("Sub", reinterpret_cast<const output::SubtractRegisterToRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::DivideSignedRegister:
-                writeOperation("Div", reinterpret_cast<const output::DivideSignedRegisterInstruction*>(instruction));
+            case output::InstructionKind::SubtractImmediateToRegister:
+                writeImmediateToRegisterOperation("Sub", reinterpret_cast<const output::SubtractImmediateToRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::OrRegister:
-                writeOperation("Or", reinterpret_cast<const output::OrRegisterInstruction*>(instruction));
+            case output::InstructionKind::MultiplySignedRegisterToRegister:
+                writeRegisterToRegisterOperation("Mul", reinterpret_cast<const output::MultiplySignedRegisterToRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::XorRegister:
-                writeOperation("Xor", reinterpret_cast<const output::XorRegisterInstruction*>(instruction));
+            case output::InstructionKind::DivideSignedRegisterToRegister:
+                writeRegisterToRegisterOperation("Div", reinterpret_cast<const output::DivideSignedRegisterToRegisterInstruction*>(instruction));
                 break;
-            case output::InstructionKind::AndRegister:
-                writeOperation("And", reinterpret_cast<const output::AndRegisterInstruction*>(instruction));
+            case output::InstructionKind::OrRegisterToRegister:
+                writeRegisterToRegisterOperation("Or", reinterpret_cast<const output::OrRegisterToRegisterInstruction*>(instruction));
+                break;
+            case output::InstructionKind::XorRegisterToRegister:
+                writeRegisterToRegisterOperation("Xor", reinterpret_cast<const output::XorRegisterToRegisterInstruction*>(instruction));
+                break;
+            case output::InstructionKind::AndRegisterToRegister:
+                writeRegisterToRegisterOperation("And", reinterpret_cast<const output::AndRegisterToRegisterInstruction*>(instruction));
                 break;
             default:
                 throw std::runtime_error("Unknown instruction");
@@ -215,7 +221,7 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeOperation(Utf8String operationString, const output::OperationRegisterInstruction* operationInstruction)
+    StashIRPrinter::writeRegisterToRegisterOperation(Utf8String operationString, const output::OperationRegisterToRegisterInstruction* operationInstruction)
     {
         _tw.write(operationString);
         _tw.write(" ");
@@ -224,12 +230,24 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeOperationRegisters(const output::OperationRegisterInstruction* operationInstruction)
+    StashIRPrinter::writeOperationRegisters(const output::OperationRegisterToRegisterInstruction* operationInstruction)
     {
         writeOperandRegister(operationInstruction->destination);
         _tw.write(", ");
         writeOperandRegister(operationInstruction->target);
         _tw.write(", ");
         writeOperandRegister(operationInstruction->value);
+    }
+
+    void
+    StashIRPrinter::writeImmediateToRegisterOperation(const char* operationName, const output::OperationImmediateToRegisterInstruction* instruction)
+    {
+        _tw.write(operationName);
+        _tw.write(" ");
+        writeOperandRegister(instruction->destination);
+        _tw.write(", ");
+        writeOperandRegister(instruction->target);
+        _tw.write(", ");
+        _tw.writeUnsignedHexValue(instruction->value);
     }
 }

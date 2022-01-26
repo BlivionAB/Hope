@@ -28,8 +28,17 @@ void
 File::write(const fs::path& path, const Utf8String& content)
 {
     std::ofstream outputFileStream;
-    outputFileStream.open(path.string().c_str());
-    outputFileStream << content.toString();
+    outputFileStream.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    try
+    {
+        outputFileStream.open(path.string().c_str());
+        outputFileStream << content.toString();
+    }
+    catch (std::ofstream::failure& e)
+    {
+        std::cerr << e.what() << std::endl;
+        std::cerr << "Maybe the filename is too long?" << std::endl;
+    }
     outputFileStream.close();
 }
 

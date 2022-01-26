@@ -35,7 +35,7 @@ public:
     writeBl(const BlInstruction* pInstruction);
 
     void
-    writeMovImmediate(const MovzInstruction* instruction);
+    writeMovz(const MovzInstruction* instruction);
 
     void
     writeLoadStoreInstruction(const LoadStoreInstruction* instruction);

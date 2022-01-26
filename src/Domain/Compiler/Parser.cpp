@@ -728,6 +728,7 @@ namespace elet::domain::compiler::ast
                 return createNegativeIntegerLiteral();
             case Token::HexadecimalLiteral:
             case Token::DecimalLiteral:
+            case Token::BinaryLiteral:
                 return createIntegerLiteral(token);
             case Token::TrueKeyword:
                 return createBooleanLiteral(true);
@@ -779,6 +780,13 @@ namespace elet::domain::compiler::ast
         IntegerLiteral* integerLiteral = createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
         switch (token)
         {
+            case Token::BinaryLiteral:
+            {
+                BinaryLiteral* binaryLiteral = createSyntax<BinaryLiteral>(SyntaxKind::BinaryLiteral);
+                finishSyntax(binaryLiteral);
+                integerLiteral->digits = binaryLiteral;
+                break;
+            }
             case Token::DecimalLiteral:
             {
                 DecimalLiteral* decimalLiteral = createSyntax<DecimalLiteral>(SyntaxKind::DecimalLiteral);
@@ -807,6 +815,9 @@ namespace elet::domain::compiler::ast
         }
         switch (token)
         {
+            case Token::BinaryLiteral:
+                integerLiteral->value = parseBinaryLiteral(std::get<BinaryLiteral*>(integerLiteral->digits));
+                break;
             case Token::DecimalLiteral:
                 integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits));
                 break;
@@ -1464,6 +1475,43 @@ namespace elet::domain::compiler::ast
     Parser::isBinaryOperator(Token token) const
     {
         return token >= Token::BinaryOperationStart && token <= Token::BinaryOperationEnd;
+    }
+
+
+    uint64_t
+    Parser::parseBinaryLiteral(const BinaryLiteral* binaryLiteral) const
+    {
+        const char* cursor = binaryLiteral->end - 1;
+        const char* start = binaryLiteral->start + 2;
+        uint64_t exponent = 0;
+        uint64_t result = 0;
+        uint64_t leftOfMaxLimit = UINT64_MAX;
+        while (true)
+        {
+            unsigned char character = cursor[0];
+            if (character == '_')
+            {
+                cursor--;
+                continue;
+            }
+            uint64_t positionValue = character - '0';
+            uint64_t f = positionValue << exponent;
+            if (f > leftOfMaxLimit)
+            {
+                _error->throwSyntaxError(
+                    binaryLiteral,
+                    "Integer literal has exceeded its max limit of U64_MAX.");
+            }
+            result += f;
+            leftOfMaxLimit -= f;
+            if (cursor == start)
+            {
+                break;
+            }
+            cursor--;
+            exponent++;
+        }
+        return result;
     }
 
 

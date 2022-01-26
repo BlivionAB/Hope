@@ -45,7 +45,7 @@ namespace elet::domain::compiler::instruction::output
             }
             else if (isOperationInstruction(instruction))
             {
-                const OperationRegisterInstruction* operation = reinterpret_cast<const OperationRegisterInstruction*>(instruction);
+                const OperationRegisterToRegisterInstruction* operation = reinterpret_cast<const OperationRegisterToRegisterInstruction*>(instruction);
                 const LoadInstruction* loadInstruction = currentLoadInstructions[static_cast<unsigned int>(operation->value)];
                 if (loadInstruction != nullptr)
                 {
@@ -74,25 +74,25 @@ namespace elet::domain::compiler::instruction::output
     }
 
 
-    OperationRegisterAddressInstruction*
-    Optimizer::createOperationRegisterAddressInstructionFromOperationRegisterInstruction(const OperationRegisterInstruction* operationRegisterInstruction, const LoadInstruction* loadInstruction)
+    OperationAddressToRegisterInstruction*
+    Optimizer::createOperationRegisterAddressInstructionFromOperationRegisterInstruction(const OperationRegisterToRegisterInstruction* operationRegisterInstruction, const LoadInstruction* loadInstruction)
     {
         switch (operationRegisterInstruction->kind)
         {
-            case InstructionKind::AddRegister:
-                return new AddRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
-            case InstructionKind::SubtractRegister:
-                return new SubtractRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
-            case InstructionKind::MultiplySignedRegister:
-                return new MultiplySignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
-            case InstructionKind::DivideUnsignedRegister:
-                return new DivideUnsignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
-            case InstructionKind::DivideSignedRegister:
-                return new DivideSignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
-            case InstructionKind::ModuloUnsignedRegister:
-                return new ModuloUnsignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
-            case InstructionKind::ModuloSignedRegister:
-                return new ModuloSignedRegisterAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::AddRegisterToRegister:
+                return new AddAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::SubtractRegisterToRegister:
+                return new SubtractRegisterToAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::MultiplySignedRegisterToRegister:
+                return new MultiplySignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::DivideUnsignedRegisterToRegister:
+                return new DivideUnsignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::DivideSignedRegisterToRegister:
+                return new DivideSignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::ModuloUnsignedRegisterToRegister:
+                return new ModuloUnsignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+            case InstructionKind::ModuloSignedRegisterToRegister:
+                return new ModuloSignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
             default:
                 throw std::runtime_error("Unknown operationRegisterInstruction");
         }
@@ -104,19 +104,19 @@ namespace elet::domain::compiler::instruction::output
     {
         switch (instruction->kind)
         {
-            case InstructionKind::AddRegister:
+            case InstructionKind::AddRegisterToRegister:
                 return true;
-            case InstructionKind::SubtractRegister:
+            case InstructionKind::SubtractRegisterToRegister:
                 return true;
-            case InstructionKind::MultiplySignedRegister:
+            case InstructionKind::MultiplySignedRegisterToRegister:
                 return true;
-            case InstructionKind::DivideUnsignedRegister:
+            case InstructionKind::DivideUnsignedRegisterToRegister:
                 return true;
-            case InstructionKind::DivideSignedRegister:
+            case InstructionKind::DivideSignedRegisterToRegister:
                 return true;
-            case InstructionKind::ModuloUnsignedRegister:
+            case InstructionKind::ModuloUnsignedRegisterToRegister:
                 return true;
-            case InstructionKind::ModuloSignedRegister:
+            case InstructionKind::ModuloSignedRegisterToRegister:
                 return true;
             default:
                 return false;

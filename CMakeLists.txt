@@ -34,8 +34,21 @@ file(GLOB DOMAIN_TEST
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/Aarch/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/Tests/*
+    src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteral_Test.cpp
+    src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteralFixture.h
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/ImmediateKindFixture.h.cpp
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/BinaryExpression_ImmediateKind_Test.cpp
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediate_Test.cpp
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediateFixture.h
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKind_Test.cpp
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKindFixture.h
 
-    src/Domain/Compiler/Instruction/Assembly/X86/Tests/*)
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/BitmaskImmediate/BitmaskImmediate_Test.cpp
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue/NonNegatedValue_Test.cpp
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue/NegatedValue_Test.cpp
+
+    src/Domain/Compiler/Instruction/Assembly/X86/Tests/BinaryExpression_RegisterToRegister_Operator/BinaryExpression_RegisterToRegister_Operator_Test.cpp
+)
 
 #message(STATUS ${DOMAIN_TEST})
 

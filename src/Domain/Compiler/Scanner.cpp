@@ -34,6 +34,18 @@ namespace elet::domain::compiler::ast
                     }
                     continue;
                 case Character::_0:
+                {
+                    Character ch = getCharacter();
+                    if (ch == Character::x)
+                    {
+                        return scanHexadecimalDigits();
+                    }
+                    else if (ch == Character::b)
+                    {
+                        return scanBinaryDigits();
+                    }
+                    return scanDecimalDigits();
+                }
                 case Character::_1:
                 case Character::_2:
                 case Character::_3:
@@ -44,11 +56,6 @@ namespace elet::domain::compiler::ast
                 case Character::_8:
                 case Character::_9:
                 {
-                    Character ch = getCharacter();
-                    if (ch == Character::x)
-                    {
-                        return scanHexadecimalDigits();
-                    }
                     return scanDecimalDigits();
                 }
                 case Character::Hash:
@@ -234,6 +241,35 @@ namespace elet::domain::compiler::ast
             throwLexicalError("Hexadecimal literal must consist of at least one hexadecimal character.");
         }
         return Token::HexadecimalLiteral;
+    }
+
+
+    Token
+    Scanner::scanBinaryDigits()
+    {
+        increment();
+        bool hasAtLeastOneHexCharacter = false;
+        while (true)
+        {
+            Character character = getCharacter();
+            if ((character == Character::_0 || character == Character::_1))
+            {
+                hasAtLeastOneHexCharacter = true;
+                increment();
+                continue;
+            }
+            else if (character == Character::_)
+            {
+                increment();
+                continue;
+            }
+            break;
+        }
+        if (!hasAtLeastOneHexCharacter)
+        {
+            throwLexicalError("Binary literal must consist of at least one binary character.");
+        }
+        return Token::BinaryLiteral;
     }
 
 

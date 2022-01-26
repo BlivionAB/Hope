@@ -1,9 +1,9 @@
-#include "ExpressionFixture.h"
+#include "OperatorKindFixture.h"
 
 
 namespace elet::domain::compiler::test
 {
-    TEST_F(ExpressionFixture, BinaryExpression_Operator_Add)
+    TEST_F(OperatorKindFixture, Operator_Add)
     {
         testMainFunction(
             "var x = 3;\n"
@@ -11,7 +11,7 @@ namespace elet::domain::compiler::test
             "return x + y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Operator_Add",
+            .baselineName = "Operator_Add",
             .targets = {
                 CompilationTarget::StashIR,
             },
@@ -19,7 +19,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Operator_Subtract)
+    TEST_F(OperatorKindFixture, Operator_Subtract)
     {
         testMainFunction(
             "var x = 3;\n"
@@ -27,7 +27,7 @@ namespace elet::domain::compiler::test
             "return x - y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Operator_Subtract",
+            .baselineName = "Operator_Subtract",
             .targets = {
                 CompilationTarget::StashIR,
             },
@@ -35,7 +35,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Operator_Multiply)
+    TEST_F(OperatorKindFixture, Operator_Multiply)
     {
         testMainFunction(
             "var x = 3;\n"
@@ -43,7 +43,7 @@ namespace elet::domain::compiler::test
             "return x * y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Operator_Multiply",
+            .baselineName = "Operator_Multiply",
             .targets = {
                 CompilationTarget::StashIR,
             }
@@ -51,7 +51,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Operator_Divide)
+    TEST_F(OperatorKindFixture, Operator_Divide)
     {
         testMainFunction(
             "var x = 3;\n"
@@ -59,7 +59,7 @@ namespace elet::domain::compiler::test
             "return x / y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Operator_Divide",
+            .baselineName = "Operator_Divide",
             .targets = {
                 CompilationTarget::StashIR,
             },

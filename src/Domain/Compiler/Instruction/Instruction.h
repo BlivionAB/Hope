@@ -29,7 +29,7 @@ namespace elet::domain::compiler::instruction::output
     struct ParameterDeclaration;
     struct ArgumentDeclaration;
     struct String;
-    struct SubtractImmediateInstruction;
+    struct SubtractImmediateToRegisterInstruction;
     enum class OperandRegister;
 
 
@@ -94,25 +94,25 @@ namespace elet::domain::compiler::instruction::output
         Load,
         StoreImmediate,
         StoreRegister,
-        AddRegister,
-        AddRegisterAddress,
-        AddImmediate,
-        SubtractRegister,
-        SubtractRegisterAddress,
-        MultiplySignedRegister,
-        MultiplySignedRegisterAddress,
-        DivideUnsignedRegister,
-        DivideUnsignedRegisterAddress,
-        DivideSignedRegister,
-        DivideSignedRegisterAddress,
-        ModuloUnsignedRegister,
-        ModuloUnsignedRegisterAddress,
-        ModuloSignedRegister,
-        ModuloSignedRegisterAddress,
-        AndRegister,
-        XorRegister,
-        OrRegister,
-        SubtractImmediate,
+        AddRegisterToRegister,
+        AddAddressToRegister,
+        AddImmediateToRegister,
+        SubtractRegisterToRegister,
+        SubtractImmediateToRegister,
+        SubtractRegisterToAddress,
+        MultiplySignedRegisterToRegister,
+        MultiplySignedAddressToRegister,
+        DivideUnsignedRegisterToRegister,
+        DivideUnsignedAddressToRegister,
+        DivideSignedRegisterToRegister,
+        DivideSignedAddressToRegister,
+        ModuloUnsignedRegisterToRegister,
+        ModuloUnsignedAddressToRegister,
+        ModuloSignedRegisterToRegister,
+        ModuloSignedAddressToRegister,
+        AndRegisterToRegister,
+        XorRegisterToRegister,
+        OrRegisterToRegister,
         Call,
         MoveImmediate,
         MoveRegister,

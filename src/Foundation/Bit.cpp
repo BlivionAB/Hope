@@ -1,8 +1,6 @@
-//
-// Created by tinganho on 2021-09-26.
-//
-
 #include "Bit.h"
+
+
 namespace elet::foundation
 {
 
@@ -57,18 +55,23 @@ namespace elet::foundation
         return count;
     }
 
-
+    /// Return true whether it's a shifted mask. A shifted mask is a bit pattern with
+    /// sequence of ones left-shifted. E.g. 0b00001110 == true.
     bool
     Bit::isShiftedMask64(uint64_t value)
     {
-        return value && isMask64((value - 1 | value));
+        uint64_t inverseTrailingZeroes = value - 1;
+        uint64_t valueAndInverseTrailingZeroUnion = inverseTrailingZeroes | value;
+        return value && isMask64(valueAndInverseTrailingZeroUnion);
     }
 
-
+    /// Return true whether it's a 64 bit mask. A mask is a bit pattern with
+    /// sequence of ones beginning from the least significant bit. E.g. 0b00001111 == true.
     bool
     Bit::isMask64(uint64_t value)
     {
-        return value && ((value + 1) & value) == 0;
+        uint64_t inverseOnes = value + 1;
+        return value && (inverseOnes & value) == 0;
     }
 
 

@@ -9,7 +9,6 @@ namespace elet::domain::compiler::instruction::output::x86
     }
 
 
-
     void
     X86_64Writer::writeFunctionPrologue(FunctionRoutine* function)
     {
@@ -539,14 +538,14 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+    X86_64Writer::writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
     {
         throw std::runtime_error("Not implemented");
     }
 
 
     void
-    X86_64Writer::writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function)
+    X86_64Writer::writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* addRegisterAddressInstruction, FunctionRoutine* function)
     {
         bw->writeInstructionInFunction(OneByteOpCode::Add_Gv_Ev, function);
         writeEbpReferenceBytes(addRegisterAddressInstruction->value_stackOffset, addRegisterAddressInstruction->destination, function);
@@ -554,7 +553,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeMultiplySignedRegisterAddressInstruction(MultiplySignedRegisterAddressInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function)
+    X86_64Writer::writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({ OneByteOpCode::TwoByteOpCodePrefix, OneByteOpCode::Imul_Gv_Ev }, function);
         writeEbpReferenceBytes(multiplyRegisterAddressInstruction->value_stackOffset, multiplyRegisterAddressInstruction->destination, function);
@@ -562,7 +561,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function)
+    X86_64Writer::writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({
             OneByteOpCode::Xor_Ev_Gv,
@@ -573,7 +572,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeDivideSignedRegisterAddressInstruction(DivideSignedRegisterAddressInstruction* instruction, FunctionRoutine* function)
+    X86_64Writer::writeDivideSignedRegisterAddressInstruction(DivideSignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({ OneByteOpCode::Cdq, OneByteOpCode::ExtGroup3 }, function);
         writeEbpReferenceBytes(instruction->value_stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_IdivBits), function);
@@ -581,7 +580,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function)
+    X86_64Writer::writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({
             OneByteOpCode::Xor_Ev_Gv,
@@ -594,7 +593,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeModuloSignedRegisterAddressInstruction(ModuloSignedRegisterAddressInstruction* instruction, FunctionRoutine* function)
+    X86_64Writer::writeModuloSignedRegisterAddressInstruction(ModuloSignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({ OneByteOpCode::Cdq, OneByteOpCode::ExtGroup3 }, function);
         writeEbpReferenceBytes(instruction->value_stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_IdivBits), function);
@@ -604,7 +603,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeAddImmediateInstruction(AddImmediateInstruction* addImmediateInstruction, FunctionRoutine* function)
+    X86_64Writer::writeAddImmediateInstruction(AddImmediateToRegisterInstruction* addImmediateInstruction, FunctionRoutine* function)
     {
         writeAddImmediateInstruction(addImmediateInstruction->destination, addImmediateInstruction->value, function);
     }
@@ -635,7 +634,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function)
+    X86_64Writer::writeSubtractImmediateInstruction(SubtractImmediateToRegisterInstruction* subtractImmediateInstruction, FunctionRoutine* function)
     {
         writeSubtractImmediateInstruction(subtractImmediateInstruction->destination, subtractImmediateInstruction->value, function);
     }
@@ -666,7 +665,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeSubtractRegisterAddressInstruction(SubtractRegisterAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function)
+    X86_64Writer::writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function)
     {
         bw->writeInstructionInFunction(OneByteOpCode::Sub_Gv_Ev, function);
         writeEbpReferenceBytes(subtractRegisterAddressInstruction->value_stackOffset, subtractRegisterAddressInstruction->destination, function);

@@ -1,9 +1,9 @@
-#include "X86Fixture.h"
+#include "BinaryExpression_RegisterToRegister_Operator_Fixture.h"
 
 
 namespace elet::domain::compiler::instruction::output::test
 {
-    TEST_F(X86Fixture, BinaryExpressionRegisterToRegister_Operator_Add)
+    TEST_F(BinaryExpression_RegisterToRegister_Operator_Fixture, BinaryExpression_RegisterToRegister_Operator_Add)
     {
         testMainFunction(
             "var x = 1 + 2;\n"
@@ -11,7 +11,7 @@ namespace elet::domain::compiler::instruction::output::test
             "return x + y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpressionRegisterToRegister_Operator_Add",
+            .baselineName = "BinaryExpression_RegisterToRegister_Operator_Add",
             .targets = {
                 CompilationTarget::MachO_x86_64,
             },
@@ -19,7 +19,7 @@ namespace elet::domain::compiler::instruction::output::test
     }
 
 
-    TEST_F(X86Fixture, BinaryExpressionRegisterToRegister_Operator_Subtract)
+    TEST_F(BinaryExpression_RegisterToRegister_Operator_Fixture, BinaryExpression_RegisterToRegister_Operator_Subtract)
     {
         testMainFunction(
             "var x = 1 + 2;\n"
@@ -27,7 +27,7 @@ namespace elet::domain::compiler::instruction::output::test
             "return x - y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpressionRegisterToRegister_Operator_Subtract",
+            .baselineName = "BinaryExpression_RegisterToRegister_Operator_Subtract",
             .targets = {
                 CompilationTarget::MachO_x86_64
             },
@@ -35,7 +35,7 @@ namespace elet::domain::compiler::instruction::output::test
     }
 
 
-    TEST_F(X86Fixture, BinaryExpressionRegisterToRegister_Operator_MultiplySigned)
+    TEST_F(BinaryExpression_RegisterToRegister_Operator_Fixture, BinaryExpression_RegisterToRegister_Operator_MultiplySigned)
     {
         testMainFunction(
             "var x = 1 + 2;\n"
@@ -43,7 +43,7 @@ namespace elet::domain::compiler::instruction::output::test
             "return x * y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpressionRegisterToRegister_Operator_MultiplySigned",
+            .baselineName = "BinaryExpression_RegisterToRegister_Operator_MultiplySigned",
             .targets = {
                 CompilationTarget::MachO_x86_64
             },
@@ -51,7 +51,7 @@ namespace elet::domain::compiler::instruction::output::test
     }
 
 
-    TEST_F(X86Fixture, BinaryExpressionRegisterToRegister_Operator_DivideSigned)
+    TEST_F(BinaryExpression_RegisterToRegister_Operator_Fixture, BinaryExpression_RegisterToRegister_Operator_DivideSigned)
     {
         testMainFunction(
             "var x = 1 + 2;\n"
@@ -59,7 +59,7 @@ namespace elet::domain::compiler::instruction::output::test
             "return x / y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpressionRegisterToRegister_Operator_DivideSigned",
+            .baselineName = "BinaryExpression_RegisterToRegister_Operator_DivideSigned",
             .targets = {
                 CompilationTarget::MachO_x86_64
             },
@@ -67,7 +67,7 @@ namespace elet::domain::compiler::instruction::output::test
     }
 
 
-    TEST_F(X86Fixture, BinaryExpressionRegisterToRegister_Operator_DivideUnsigned)
+    TEST_F(BinaryExpression_RegisterToRegister_Operator_Fixture, BinaryExpression_RegisterToRegister_Operator_DivideUnsigned)
     {
         testMainFunction(
             "var x: u32 = 3;\n"
@@ -75,7 +75,7 @@ namespace elet::domain::compiler::instruction::output::test
             "return x / y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpressionRegisterToRegister_Operator_DivideUnsigned",
+            .baselineName = "BinaryExpression_RegisterToRegister_Operator_DivideUnsigned",
             .targets = {
                 CompilationTarget::MachO_x86_64
             },
@@ -83,7 +83,7 @@ namespace elet::domain::compiler::instruction::output::test
     }
 
 
-    TEST_F(X86Fixture, BinaryExpressionRegisterToRegister_Operator_RemainderSigned)
+    TEST_F(BinaryExpression_RegisterToRegister_Operator_Fixture, BinaryExpression_RegisterToRegister_Operator_RemainderSigned)
     {
         testMainFunction(
             "var x = 3;\n"
@@ -91,7 +91,7 @@ namespace elet::domain::compiler::instruction::output::test
             "return x % y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpressionRegisterToRegister_Operator_RemainderSigned",
+            .baselineName = "BinaryExpression_RegisterToRegister_Operator_RemainderSigned",
             .targets = {
                 CompilationTarget::MachO_x86_64
             },
@@ -99,7 +99,7 @@ namespace elet::domain::compiler::instruction::output::test
     }
 
 
-    TEST_F(X86Fixture, BinaryExpressionRegisterToRegister_Operator_RemainderUnsigned)
+    TEST_F(BinaryExpression_RegisterToRegister_Operator_Fixture, BinaryExpression_RegisterToRegister_Operator_RemainderUnsigned)
     {
         testMainFunction(
             "var x: u32 = 3;\n"
@@ -107,7 +107,7 @@ namespace elet::domain::compiler::instruction::output::test
             "return x % y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpressionRegisterToRegister_Operator_RemainderUnsigned",
+            .baselineName = "BinaryExpression_RegisterToRegister_Operator_RemainderUnsigned",
             .targets = {
                 CompilationTarget::MachO_x86_64
             },

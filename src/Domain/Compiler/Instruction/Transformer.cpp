@@ -204,6 +204,7 @@ namespace elet::domain::compiler::instruction
             case ast::SyntaxKind::CharacterLiteral:
             {
                 ast::TypeKind typeKind = forcedType ? forcedType->kind : TypeKind::U8;
+                registerSize = RegisterSize::Byte;
                 ast::CharacterLiteral* characterLiteral = reinterpret_cast<ast::CharacterLiteral*>(expression);
                 return output::ImmediateValue(typeKind, characterLiteral->value);
             }
@@ -223,8 +224,13 @@ namespace elet::domain::compiler::instruction
         switch (binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
-
+                addInstruction(new output::AddImmediateToRegisterInstruction(scratchRegister, left, right));
                 break;
+            case ast::BinaryOperatorKind::Minus:
+                addInstruction(new output::SubtractImmediateToRegisterInstruction(scratchRegister, left, right));
+                break;
+            default:
+                assert("Not implemented binary operator in 'transformImmediateToRegisterExpression'.");
         }
         return scratchRegister;
     }
@@ -233,22 +239,23 @@ namespace elet::domain::compiler::instruction
     output::ImmediateValue
     Transformer::transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right)
     {
+        IntegerType integerType = getIntegerTypeFromTypeKind(left.type);
         output::ImmediateValue immediateValue(left.type, 0);
         switch (binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::BitwiseAnd:
-                switch (left.type)
+                switch (integerType)
                 {
-                    case TypeKind::S32:
+                    case IntegerType::S32:
                         immediateValue.value = static_cast<int32_t>(left.value) & static_cast<int32_t>(right.value);
                         break;
-                    case TypeKind::S64:
+                    case IntegerType::S64:
                         immediateValue.value = static_cast<int64_t>(left.value) & static_cast<int64_t>(right.value);
                         break;
-                    case TypeKind::U32:
+                    case IntegerType::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) & static_cast<uint32_t>(right.value);
                         break;
-                    case TypeKind::U64:
+                    case IntegerType::U64:
                         immediateValue.value = left.value & right.value;
                         break;
                     default:
@@ -257,18 +264,18 @@ namespace elet::domain::compiler::instruction
                 return immediateValue;
 
             case ast::BinaryOperatorKind::BitwiseXor:
-                switch (left.type)
+                switch (integerType)
                 {
-                    case TypeKind::S32:
+                    case IntegerType::S32:
                         immediateValue.value = static_cast<int32_t>(left.value) ^ static_cast<int32_t>(right.value);
                         break;
-                    case TypeKind::S64:
+                    case IntegerType::S64:
                         immediateValue.value = static_cast<int64_t>(left.value) ^ static_cast<int64_t>(right.value);
                         break;
-                    case TypeKind::U32:
+                    case IntegerType::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) ^ static_cast<uint32_t>(right.value);
                         break;
-                    case TypeKind::U64:
+                    case IntegerType::U64:
                         immediateValue.value = left.value ^ right.value;
                         break;
                     default:
@@ -276,18 +283,18 @@ namespace elet::domain::compiler::instruction
                 }
                 return immediateValue;
             case ast::BinaryOperatorKind::BitwiseOr:
-                switch (left.type)
+                switch (integerType)
                 {
-                    case TypeKind::S32:
+                    case IntegerType::S32:
                         immediateValue.value = static_cast<int32_t>(left.value) | static_cast<int32_t>(right.value);
                         break;
-                    case TypeKind::S64:
+                    case IntegerType::S64:
                         immediateValue.value = static_cast<int64_t>(left.value) | static_cast<int64_t>(right.value);
                         break;
-                    case TypeKind::U32:
+                    case IntegerType::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) | static_cast<uint32_t>(right.value);
                         break;
-                    case TypeKind::U64:
+                    case IntegerType::U64:
                         immediateValue.value = left.value | right.value;
                         break;
                     default:
@@ -296,18 +303,18 @@ namespace elet::domain::compiler::instruction
                 return immediateValue;
             case ast::BinaryOperatorKind::Multiply:
             {
-                switch (left.type)
+                switch (integerType)
                 {
-                    case TypeKind::S32:
+                    case IntegerType::S32:
                         immediateValue.value = left.value * right.value;
                         break;
-                    case TypeKind::S64:
+                    case IntegerType::S64:
                         immediateValue.value = static_cast<uint64_t>(static_cast<int32_t>(left.value) * static_cast<int32_t>(right.value));
                         break;
-                    case TypeKind::U32:
+                    case IntegerType::U32:
                         immediateValue.value = static_cast<uint64_t>(left.value) * static_cast<uint64_t>(right.value);
                         break;
-                    case TypeKind::U64:
+                    case IntegerType::U64:
                         immediateValue.value = static_cast<uint32_t>(left.value) * static_cast<uint32_t>(right.value);
                         break;
                     default:
@@ -318,22 +325,32 @@ namespace elet::domain::compiler::instruction
 
             case ast::BinaryOperatorKind::Plus:
             {
-                switch (left.type)
+                switch (integerType)
                 {
-                    case TypeKind::S32:
-                        immediateValue.value = left.value + right.value;
+                    case IntegerType::U8:
+                        immediateValue.value = static_cast<uint8_t>(left.value) + static_cast<uint8_t>(right.value);
                         break;
-                    case TypeKind::S64:
-                        immediateValue.value = static_cast<uint64_t>(static_cast<int32_t>(left.value) + static_cast<int32_t>(right.value));
+                    case IntegerType::S8:
+                        immediateValue.value = static_cast<int8_t>(left.value) + static_cast<int8_t>(right.value);
                         break;
-                    case TypeKind::U32:
-                        immediateValue.value = static_cast<uint64_t>(left.value) + static_cast<uint64_t>(right.value);
+                    case IntegerType::U16:
+                        immediateValue.value = static_cast<uint16_t>(left.value) + static_cast<uint16_t>(right.value);
                         break;
-                    case TypeKind::U64:
+                    case IntegerType::S16:
+                        immediateValue.value = static_cast<int16_t>(left.value) + static_cast<int16_t>(right.value);
+                        break;
+                    case IntegerType::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) + static_cast<uint32_t>(right.value);
                         break;
-                    default:
-                        throw std::runtime_error("Should not contain lower than 32bit ints.");
+                    case IntegerType::S32:
+                        immediateValue.value = static_cast<int32_t>(left.value) + static_cast<int32_t>(right.value);
+                        break;
+                    case IntegerType::S64:
+                        immediateValue.value = static_cast<int64_t>(left.value) + static_cast<int64_t>(right.value);
+                        break;
+                    case IntegerType::U64:
+                        immediateValue.value = static_cast<uint64_t>(left.value) + static_cast<uint64_t>(right.value);
+                        break;
                 }
                 return immediateValue;
             }
@@ -497,42 +514,42 @@ namespace elet::domain::compiler::instruction
         switch (binaryExpression->binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
-                addInstruction(new output::AddRegisterInstruction(destination, target, value));
+                addInstruction(new output::AddRegisterToRegisterInstruction(destination, target, value));
                 break;
             case ast::BinaryOperatorKind::Minus:
-                addInstruction(new output::SubtractRegisterInstruction(destination, target, value));
+                addInstruction(new output::SubtractRegisterToRegisterInstruction(destination, target, value));
                 break;
             case ast::BinaryOperatorKind::Multiply:
-                addInstruction(new output::MultiplyRegisterInstruction(destination, target, value));
+                addInstruction(new output::MultiplySignedRegisterToRegisterInstruction(destination, target, value));
                 break;
             case ast::BinaryOperatorKind::Divide:
                 if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
                 {
-                    addInstruction(new output::DivideSignedRegisterInstruction(destination, target, value));
+                    addInstruction(new output::DivideSignedRegisterToRegisterInstruction(destination, target, value));
                 }
                 else
                 {
-                    addInstruction(new output::DivideUnsignedRegisterInstruction(destination, target, value));
+                    addInstruction(new output::DivideUnsignedRegisterToRegisterInstruction(destination, target, value));
                 }
                 break;
             case ast::BinaryOperatorKind::Modulo:
                 if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
                 {
-                    addInstruction(new output::ModuloSignedRegisterInstruction(destination, target, value));
+                    addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value));
                 }
                 else
                 {
-                    addInstruction(new output::ModuloUnsignedRegisterInstruction(destination, target, value));
+                    addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value));
                 }
                 break;
             case ast::BinaryOperatorKind::BitwiseAnd:
-                addInstruction(new output::AndRegisterInstruction(destination, target, value));
+                addInstruction(new output::AndRegisterToRegisterInstruction(destination, target, value));
                 break;
             case ast::BinaryOperatorKind::BitwiseXor:
-                addInstruction(new output::XorRegisterInstruction(destination, target, value));
+                addInstruction(new output::XorRegisterToRegisterInstruction(destination, target, value));
                 break;
             case ast::BinaryOperatorKind::BitwiseOr:
-                addInstruction(new output::OrRegisterInstruction(destination, target, value));
+                addInstruction(new output::OrRegisterToRegisterInstruction(destination, target, value));
                 break;
             default:
                 throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
@@ -666,5 +683,32 @@ namespace elet::domain::compiler::instruction
             return (16 - rest) + stackOffset;
         }
         return stackOffset;
+    }
+
+
+    IntegerType
+    Transformer::getIntegerTypeFromTypeKind(TypeKind typeKind)
+    {
+        switch (typeKind)
+        {
+            case TypeKind::Char:
+            case TypeKind::U8:
+                return IntegerType::U8;
+            case TypeKind::S8:
+                return IntegerType::S8;
+            case TypeKind::U16:
+                return IntegerType::U16;
+            case TypeKind::S16:
+                return IntegerType::S16;
+            case TypeKind::U32:
+                return IntegerType::U32;
+            case TypeKind::S32:
+                return IntegerType::S32;
+            case TypeKind::U64:
+                return IntegerType::U64;
+            case TypeKind::S64:
+                return IntegerType::S64;
+        }
+        assert("Cannot convert typekind to integer type.");
     }
 }

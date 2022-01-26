@@ -1,5 +1,5 @@
-#ifndef ELET_X86FIXTURE_H
-#define ELET_X86FIXTURE_H
+#ifndef ELET_BITMASKIMMEDIATEFIXTURE_H
+#define ELET_IMMEDIATEINSTRUCTIONENCODINGFIXTURE_H
 
 #include "Domain/Compiler/TestHarness/CompilerFixture.h"
 #include <filesystem>
@@ -10,22 +10,22 @@ namespace elet::domain::compiler::instruction::output::test
     using namespace elet::domain::compiler::test;
 
 
-    class X86Fixture : public CompileFixture
+    class NonNegatedValueFixture : public CompileFixture
     {
         std::filesystem::path
         basePath() override
         {
-            return "src/Domain/Compiler/Instruction/Assembly/X86";
+            return "src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue";
         }
 
 
         std::filesystem::path
         localTestPath() override
         {
-            return "Tests";
+            return "";
         }
     };
 }
 
 
-#endif //ELET_X86FIXTURE_H
+#endif //ELET_BITMASKIMMEDIATEFIXTURE_H

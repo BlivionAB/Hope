@@ -55,6 +55,7 @@ public:
 
     test WriteInt(integer = !Negative & SmallerThanAbsTen)
     {
+        WriteInt(integer / 10);
         putc('0' + integer % 10);
     }
 }

@@ -1,9 +1,9 @@
-#include "ExpressionFixture.h"
+#include "CharacterLiteralFixture.h"
 
 
 namespace elet::domain::compiler::test
 {
-    TEST_F(ExpressionFixture, CharacterLiteral_Start)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Start)
     {
         testMainFunction("return '\\0';");
 
@@ -12,12 +12,11 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .acceptBaselines = true,
         }));
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_End)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_End)
     {
         testMainFunction("return '~';");
 
@@ -26,12 +25,11 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .acceptBaselines = true,
         }));
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_Digit_0)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Digit_0)
     {
         testMainFunction("return '0';");
 
@@ -43,7 +41,7 @@ namespace elet::domain::compiler::test
         }));
     }
 
-    TEST_F(ExpressionFixture, CharacterLiteral_Digit_9)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Digit_9)
     {
         testMainFunction("return '9';");
 
@@ -56,7 +54,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_Alphabet_Start)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Alphabet_Start)
     {
         testMainFunction("return 'A';");
 
@@ -69,7 +67,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_Alphabet_End)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Alphabet_End)
     {
         testMainFunction("return 'z';");
 
@@ -82,7 +80,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_Newline)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_Newline)
     {
         testMainFunction("return '\\n';");
 
@@ -95,7 +93,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_CarriageReturn)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_CarriageReturn)
     {
         testMainFunction("return '\\r';");
 
@@ -108,7 +106,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_Tab)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_Tab)
     {
         testMainFunction("return '\\t';");
 
@@ -122,7 +120,7 @@ namespace elet::domain::compiler::test
 
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_BackwardSlash)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_BackwardSlash)
     {
         testMainFunction("return '\\\\';");
 
@@ -135,7 +133,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_Null)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_Null)
     {
         testMainFunction("return '\\0';");
 
@@ -148,7 +146,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_CodePoint_Start)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_CodePoint_Start)
     {
         testMainFunction("return '\\x00';");
 
@@ -161,7 +159,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_CodePoint_SingleCharacter)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_CodePoint_SingleCharacter)
     {
         testMainFunction("return '\\x1';");
 
@@ -174,7 +172,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_CodePoint_End)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_CodePoint_End)
     {
         testMainFunction("return '\\xff';");
 
@@ -187,7 +185,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequence_CodePoint_Error_ExceedingCharRange)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequence_CodePoint_Error_ExceedingCharRange)
     {
         testMainFunction("return '\\xa00';");
 
@@ -200,7 +198,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_EscapeSequnce_UnsupportedCharacter)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_EscapeSequnce_UnsupportedCharacter)
     {
         testMainFunction("return '\\g';");
 
@@ -213,7 +211,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_Error_MultiCharacter)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Error_MultiCharacter)
     {
         testMainFunction("return 'abc';");
 
@@ -225,7 +223,7 @@ namespace elet::domain::compiler::test
         }));
     }
 
-    TEST_F(ExpressionFixture, CharacterLiteral_Error_UnsupportedCharacter_RandomUnicode)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Error_UnsupportedCharacter_RandomUnicode)
     {
         testMainFunction("return '我';");
 
@@ -238,7 +236,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, CharacterLiteral_Error_UnsupportedCharacter_AsciiExtended)
+    TEST_F(CharacterLiteralFixture, CharacterLiteral_Error_UnsupportedCharacter_AsciiExtended)
     {
         testMainFunction("return 'å';");
 

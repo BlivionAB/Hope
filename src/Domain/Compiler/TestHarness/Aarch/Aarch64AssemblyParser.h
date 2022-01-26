@@ -65,7 +65,7 @@ private:
     uint32_t
     hw(uint32_t dw);
 
-    uint32_t
+    uint64_t
     getLeftShiftFromHv(uint32_t dw);
 
     void

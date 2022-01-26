@@ -49,6 +49,7 @@ namespace elet::domain::compiler::ast
         StringLiteral,
         BooleanLiteral,
         IntegerLiteral,
+        BinaryLiteral,
         DecimalLiteral,
         HexadecimalLiteral,
         IntegerSuffix,

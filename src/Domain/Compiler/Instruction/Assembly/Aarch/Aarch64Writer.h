@@ -149,13 +149,22 @@ namespace elet::domain::compiler::instruction::output
         moveWideIsPreferred(uint8_t sf, uint8_t N, uint8_t imms, uint8_t immr) const;
 
         bool
-        processLogicalImmediate(uint64_t imm, RegisterBitSize registerSize, uint32_t& encoding);
+        processLogicalImmediate(uint64_t imm, const Aarch64Register& rd, RegisterBitSize registerSize,
+                                output::FunctionRoutine* function);
 
         void
         writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function);
 
         void
         writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, RegisterBitSize registerSize, FunctionRoutine* function);
+
+        bool
+        processNegatedImmediateEncoding(uint64_t value, const Aarch64Register& rd, const RegisterBitSize& registerSize,
+                                        output::FunctionRoutine* function) const;
+
+        void
+        processPositiveValues(uint64_t value, const Aarch64Register& rd, const RegisterBitSize& registerSize,
+                              FunctionRoutine* function);
     };
 }
 

@@ -174,8 +174,9 @@ namespace elet::domain::compiler::ast
         CharacterLiteral,
         FloatLiteral,
 
-        DecimalLiteral,
         HexadecimalLiteral,
+        DecimalLiteral,
+        BinaryLiteral,
 
         EndOfFile,
     };
@@ -426,12 +427,19 @@ namespace elet::domain::compiler::ast
     };
 
 
-    struct DecimalLiteral : Expression
+    struct BinaryLiteral : Expression
     {
+
     };
 
 
-    struct HexadecimalLiteral : DecimalLiteral
+    struct DecimalLiteral : Expression
+    {
+
+    };
+
+
+    struct HexadecimalLiteral : Expression
     {
 
     };
@@ -439,7 +447,7 @@ namespace elet::domain::compiler::ast
 
     struct IntegerLiteral : Expression
     {
-        std::variant<HexadecimalLiteral*, DecimalLiteral*>
+        std::variant<HexadecimalLiteral*, DecimalLiteral*, BinaryLiteral*>
         digits;
 
         uint64_t

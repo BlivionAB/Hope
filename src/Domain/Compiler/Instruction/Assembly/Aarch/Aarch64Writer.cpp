@@ -333,80 +333,121 @@ namespace elet::domain::compiler::instruction::output
     void
     Aarch64Writer::writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, RegisterBitSize registerSize, FunctionRoutine* function)
     {
-        uint32_t logicalBitmask = 0;
-        bool hasLogicalImmediate = processLogicalImmediate(value, registerSize, logicalBitmask);
-        if (hasLogicalImmediate)
+        if (processLogicalImmediate(value, rd, registerSize, function))
         {
-            uint32_t instruction = Aarch64Instruction::MovBitmaskImmediate | logicalBitmask | Rn(Aarch64Register::r31) | rd;
-            if (registerSize == RegisterBitSize::Quad)
-            {
-                instruction |= Aarch64Instruction::sf;
-            }
-            bw->writeDoubleWordInFunction(instruction, function);
             return;
         }
-        unsigned int sequenceOffset = 0;
-        bool hasSequenceOfOnes = false;
-        for (int i = 0; i < static_cast<int>(registerSize); i += 16)
+        if (processNegatedImmediateEncoding(value, rd, registerSize, function))
         {
-            if ((0xffff << i) & value == 0xffff)
+            return;
+        }
+        processPositiveValues(value, rd, registerSize, function);
+    }
+
+
+    void
+    Aarch64Writer::processPositiveValues(uint64_t value, const Aarch64Register& rd, const RegisterBitSize& registerSize, FunctionRoutine* function)
+    {
+        bool hasWrittenMovz = false;
+        uint32_t sf = registerSize == RegisterBitSize::Quad ? Aarch64Instruction::sf : 0;
+        uint64_t i = 0;
+        if (registerSize == RegisterBitSize::Quad)
+        {
+            bool hasBitmaskImmediate = hasWrittenMovz = processLogicalImmediate(0xffff'ffff & value, rd, RegisterBitSize::Dword, function);
+            if (hasBitmaskImmediate)
             {
-                hasSequenceOfOnes = true;
+                i = 32;
+            }
+        }
+        for (; i < static_cast<int>(registerSize); i += 16)
+        {
+            uint64_t elementValue = ((0xffffui64 << i) & value) >> i;
+            if (!hasWrittenMovz && elementValue != 0ui64)
+            {
+                bw->writeDoubleWordInFunction(sf | Movz | hw(i) | uimm16(elementValue) | rd, function);
+                hasWrittenMovz = true;
                 continue;
             }
-            if (hasSequenceOfOnes)
+            if (elementValue != 0)
             {
-                uint32_t elementValue = ((0xffff << i) & value) >> i;
-                if (elementValue != 0xffff)
-                {
-                    sequenceOffset = i;
-                    break;
-                }
+                bw->writeDoubleWordInFunction(sf | Movk | uimm16(elementValue) | hw(i) | rd, function);
             }
         }
-        if (hasSequenceOfOnes)
+
+        // We can only reach here if value == 0.
+        if (!hasWrittenMovz)
         {
-            uint32_t elementValue = ~(((0xffff << sequenceOffset) & value) >> sequenceOffset);
-            bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movn | hw(sequenceOffset) | uimm16(elementValue) | rd, function);
-            for (int i = 0; i < static_cast<int>(registerSize); i += 16)
+            bw->writeDoubleWordInFunction(sf | Movz | hw(0) | uimm16(0) | rd, function);
+        }
+    }
+
+
+    bool
+    Aarch64Writer::processNegatedImmediateEncoding(uint64_t value, const Aarch64Register& rd, const RegisterBitSize& registerSize, output::FunctionRoutine* function) const
+    {
+        enum class Stage
+        {
+            Negation,
+            Tail,
+        };
+        Stage stage = Stage::Negation;
+        uint64_t negationIndex = 0;
+        uint64_t onesSequenceCount = 0;
+        uint64_t zeroesSequenceCount = 0;
+        for (int i = static_cast<int>(registerSize) - 16; i >= 0; i -= 16)
+        {
+            uint32_t elementValue = ((0xffffui64 << i) & value) >> i;
+            if (elementValue == 0)
             {
-                if (i == sequenceOffset)
+                zeroesSequenceCount++;
+            }
+            if (stage == Stage::Negation)
+            {
+                if (elementValue == 0xffff)
                 {
+                    onesSequenceCount++;
                     continue;
                 }
-                elementValue = ((0xffff << i) & value) >> i;
-                if (elementValue != 0xffff)
+                negationIndex = i;
+                stage = Stage::Tail;
+                continue;
+            }
+            if (stage == Stage::Tail)
+            {
+                if (elementValue == 0xffff)
                 {
-                    bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movk | uimm16(elementValue) | hw(i) | rd, function);
+                    onesSequenceCount++;
                 }
+                continue;
             }
         }
-        else
+        // Note that -1 or 111... will fall through here with stage == Stage::Negation and negationIndex == 0.
+
+
+        // Write a nonNegated value if there exists equal or higher amounts of zero sequences.
+        //
+        // 11_11_11_11: 4 1s
+        // 00_00_00_00: 4 0s
+        // 11_00_11_00: 2 1s 2 0s
+        // nonOnesSequenceCount plus zeroesSequenceCount
+        if (zeroesSequenceCount >= onesSequenceCount)
         {
-            for (int i = 0; i < static_cast<int>(registerSize); i += 16)
+            return false;
+        }
+
+        uint16_t maskedValue = ((0xffffui64 << negationIndex) & value) >> negationIndex;
+        uint16_t elementValue = ~maskedValue;
+        uint32_t sf = registerSize == RegisterBitSize::Quad ? Aarch64Instruction::sf : 0;
+        bw->writeDoubleWordInFunction(sf | Aarch64Instruction::Movn | hw(negationIndex) | uimm16(elementValue) | rd, function);
+        for (int i = 0; i < negationIndex; i += 16)
+        {
+            elementValue = ((0xffffui64 << i) & value) >> i;
+            if (elementValue != 0xffff)
             {
-                uint32_t elementValue = ((0xffff << i) & value) >> i;
-                if (elementValue != 0)
-                {
-                    sequenceOffset = i;
-                    break;
-                }
-            }
-            uint32_t elementValue = ((0xffff << sequenceOffset) & value) >> sequenceOffset;
-            bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movz | hw(sequenceOffset) | uimm16(elementValue) | rd, function);
-            for (int i = 0; i < static_cast<int>(registerSize); i += 16)
-            {
-                if (i == sequenceOffset)
-                {
-                    continue;
-                }
-                uint64_t elementValue = ((0xffff << i) & value) >> i;
-                if (elementValue != 0)
-                {
-                    bw->writeDoubleWordInFunction(Aarch64Instruction::sf | Aarch64Instruction::Movk | uimm16(elementValue) | hw(i) | rd, function);
-                }
+                bw->writeDoubleWordInFunction(sf | Aarch64Instruction::Movk | uimm16(elementValue) | hw(i) | rd, function);
             }
         }
+        return true;
     }
 
 
@@ -594,14 +635,16 @@ namespace elet::domain::compiler::instruction::output
 
 
     bool
-    Aarch64Writer::processLogicalImmediate(uint64_t imm, RegisterBitSize registerSize, uint32_t& encoding)
+    Aarch64Writer::processLogicalImmediate(uint64_t imm, const Aarch64Register& rd, RegisterBitSize registerSize,
+                                           output::FunctionRoutine* function)
     {
         // Ensures that it is not only zero bit pattern or only one bit pattern.
         if (imm == 0ULL || imm == ~0ULL)
         {
             return false;
         }
-        if ((registerSize != RegisterBitSize::Quad) && (imm >> static_cast<int>(registerSize) != 0 || imm == (~0ULL >> (static_cast<int>(RegisterBitSize::Quad) - static_cast<int>(registerSize)))))
+        if ((registerSize != RegisterBitSize::Quad) &&
+            (imm >> static_cast<int>(registerSize) != 0 || imm == (~0ULL >> (static_cast<int>(RegisterBitSize::Quad) - static_cast<int>(registerSize)))))
         {
             return false;
         }
@@ -620,6 +663,11 @@ namespace elet::domain::compiler::instruction::output
             }
         }
         while (elementSize > 2);
+
+        if (elementSize == static_cast<int>(registerSize))
+        {
+            return false;
+        }
 
         // Determine the rotation
         uint32_t trailingOnesCount;
@@ -648,7 +696,14 @@ namespace elet::domain::compiler::instruction::output
         uint64_t Nimms = ~(elementSize - 1) << 1;
         Nimms |= (trailingOnesCount - 1);
         uint64_t N = ((Nimms >> 6) & 1) ^ 1;
-        encoding = (N << 22) | (immr << 16) | ((Nimms & 0x3f) << 10);
+        uint32_t logicalBitmask = (N << 22) | (immr << 16) | ((Nimms & 0x3f) << 10);
+
+        uint32_t instruction = Aarch64Instruction::MovBitmaskImmediate | logicalBitmask | Rn(Aarch64Register::r31) | rd;
+        if (registerSize == RegisterBitSize::Quad)
+        {
+            instruction |= Aarch64Instruction::sf;
+        }
+        bw->writeDoubleWordInFunction(instruction, function);
         return true;
     }
 

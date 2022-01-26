@@ -105,6 +105,9 @@ namespace elet::domain::compiler::ast
 
         int8_t
         scanHexDigits(uint32_t& result);
+
+        Token
+        scanBinaryDigits();
     };
 
 

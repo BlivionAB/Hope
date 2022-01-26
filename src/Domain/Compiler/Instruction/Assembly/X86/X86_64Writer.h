@@ -128,40 +128,40 @@ namespace elet::domain::compiler::instruction::output::x86
         writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
 
         void
-        writeAddRegisterInstruction(AddRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
+        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
 
         void
-        writeAddImmediateInstruction(AddImmediateInstruction* addImmediateInstruction, FunctionRoutine* function) override;
+        writeAddImmediateInstruction(AddImmediateToRegisterInstruction* addImmediateInstruction, FunctionRoutine* function) override;
 
         void
-        writeAddRegisterAddressInstruction(AddRegisterAddressInstruction* addRegisterAddressInstruction, FunctionRoutine* function) override;
+        writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* addRegisterAddressInstruction, FunctionRoutine* function) override;
 
         void
         writeAddImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
 
         void
-        writeSubtractImmediateInstruction(SubtractImmediateInstruction* subtractImmediateInstruction, FunctionRoutine* function) override;
+        writeSubtractImmediateInstruction(SubtractImmediateToRegisterInstruction* subtractImmediateInstruction, FunctionRoutine* function) override;
 
         void
         writeSubtractImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
 
         void
-        writeSubtractRegisterAddressInstruction(SubtractRegisterAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function) override;
+        writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function) override;
 
         void
-        writeMultiplySignedRegisterAddressInstruction(MultiplySignedRegisterAddressInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function) override;
+        writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function) override;
 
         void
-        writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+        writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeDivideSignedRegisterAddressInstruction(DivideSignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+        writeDivideSignedRegisterAddressInstruction(DivideSignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+        writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeModuloSignedRegisterAddressInstruction(ModuloSignedRegisterAddressInstruction* instruction, FunctionRoutine* function) override;
+        writeModuloSignedRegisterAddressInstruction(ModuloSignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function) override;

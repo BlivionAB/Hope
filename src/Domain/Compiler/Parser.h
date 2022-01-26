@@ -418,6 +418,9 @@ namespace elet::domain::compiler::ast
         parseReturnStatement();
 
         uint64_t
+        parseBinaryLiteral(const BinaryLiteral* binaryLiteral) const;
+
+        uint64_t
         parseDecimalLiteral(const DecimalLiteral* decimalLiteral) const;
 
         uint64_t

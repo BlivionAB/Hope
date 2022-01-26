@@ -334,7 +334,7 @@ namespace elet::domain::compiler::test::aarch
         movz->is64Bit = sf(dw);
         movz->rd = Rd(dw);
         movz->imm16 = uimm16(dw);
-        movz->immediateValue = uimm16(dw) << getLeftShiftFromHv(dw);
+        movz->immediateValue = static_cast<uint64_t>(uimm16(dw)) << getLeftShiftFromHv(dw);
     }
 
 
@@ -346,8 +346,20 @@ namespace elet::domain::compiler::test::aarch
         movn->rd = Rd(dw);
         movn->hw = static_cast<Hw>(hw(dw));
         movn->imm16 = uimm16(dw);
-        uint64_t result = (0ULL) | ~(static_cast<uint64_t>(uimm16(dw)) << getLeftShiftFromHv(dw));
-        movn->immediateValue = ~result;
+        uint16_t s = ~uimm16(dw);
+        int64_t imm16 = static_cast<int64_t>(s);
+        uint64_t lsh = getLeftShiftFromHv(dw);
+        uint64_t result = (imm16 << lsh);
+        if (imm16 >= 0)
+        {
+            // For some reason when lsh + 16 == 64. The left shift yields -1 instead of 0. Let's guard against that.
+            if (lsh != 48)
+            {
+                result |= -1i64 << (lsh + 16);
+            }
+            result |= (1ui64 << lsh) - 1ui64;
+        }
+        movn->immediateValue = result;
     }
 
 
@@ -355,10 +367,11 @@ namespace elet::domain::compiler::test::aarch
     Aarch64AssemblyParser::parseMovkInstruction(MovkInstruction* movk, uint32_t dw)
     {
         movk->kind = Aarch64Instruction::Movk;
+        movk->is64Bit = sf(dw);
         movk->rd = Rd(dw);
         movk->hw = static_cast<Hw>(hw(dw));
         movk->imm16 = uimm16(dw);
-        movk->immediateValue = static_cast<uint64_t>(uimm16(dw)) << getLeftShiftFromHv(dw);
+        movk->immediateValue = static_cast<uint64_t>(uimm16(dw));
     }
 
 
@@ -502,7 +515,7 @@ namespace elet::domain::compiler::test::aarch
     }
 
 
-    uint32_t
+    uint64_t
     Aarch64AssemblyParser::getLeftShiftFromHv(uint32_t dw)
     {
         return (((0b11 << 21) & dw) >> 21) * 16;

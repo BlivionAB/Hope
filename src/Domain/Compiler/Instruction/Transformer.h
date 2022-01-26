@@ -214,6 +214,9 @@ namespace elet::domain::compiler::instruction
         void
         setStartFunctionSymbolName(output::FunctionRoutine* function,
                                    const ast::FunctionDeclaration* functionDeclaration) const;
+
+        IntegerType
+        getIntegerTypeFromTypeKind(TypeKind typeKind);
     };
 
 

@@ -43,7 +43,7 @@ namespace elet::domain::compiler::test::aarch
                     writeOrrImmediate(reinterpret_cast<const OrrImmediateInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::Movz:
-                    writeMovImmediate(reinterpret_cast<const MovzInstruction*>(instruction));
+                    writeMovz(reinterpret_cast<const MovzInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::Movn:
                     writeMovn(reinterpret_cast<const MovnInstruction*>(instruction));
@@ -98,9 +98,16 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeMovImmediate(const MovzInstruction* instruction)
+    Aarch64AssemblyPrinter::writeMovz(const MovzInstruction* instruction)
     {
-        _tw.write("movz ");
+        if (!(instruction->imm16 == 0 && instruction->hw != Hw::_0))
+        {
+            _tw.write("mov ");
+        }
+        else
+        {
+            _tw.write("movz ");
+        }
         writeGeneralPurposeRegister(instruction->rd, instruction);
         _tw.write(", #");
         _tw.writeSignedHexValue(instruction->immediateValue);
@@ -397,10 +404,10 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64AssemblyPrinter::writeMovn(const MovnInstruction* instruction)
     {
-        _tw.write("instruction");
+        _tw.write("movn ");
         writeGeneralPurposeRegister(instruction->rd, instruction);
         _tw.write(", ");
-        _tw.writeSignedImmediateValue(instruction->immediateValue);
+        _tw.writeUnsignedHexValue(instruction->immediateValue);
     }
 
 
