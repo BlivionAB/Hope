@@ -1,0 +1,6 @@
+_main():
+    Str [Sp + #-1], #0x61
+    Ldr X0, [Sp + #-1]
+    Sub X0, X0, 0x3
+    Mov OpRet, X0
+
