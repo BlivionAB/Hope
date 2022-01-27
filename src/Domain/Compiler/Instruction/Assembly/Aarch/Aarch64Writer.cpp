@@ -124,35 +124,6 @@ namespace elet::domain::compiler::instruction::output
         }
     }
 
-
-
-    //void
-    //Aarch64Writer::writeCallInstructionArguments(CallInstruction* callInstruction, FunctionRoutine* parentRoutine)
-    //{
-    //    uint64_t size = 0;
-    //    unsigned int i = 0;
-    //    for (const auto& argument : callInstruction->arguments)
-    //    {
-    //        auto reg = _callingConvention.registers[i];
-    //
-    //        if (auto parameter = std::get_if<ParameterDeclaration*>(&argument->immediateValue))
-    //        {
-    //            bw->writeDoubleWord(Aarch64Instruction::LdrImmediateBaseOffset64 | uimm12((parentRoutine->stackSize - (*parameter)->stackOffset) / 8) | Rn(Aarch64Register::sp) | Rt(reg));
-    //            size += 4;
-    //        }
-    //        else if (auto string = std::get_if<String*>(&argument->immediateValue))
-    //        {
-    //            (*string)->relocationAddress.value1 = _offset;
-    //            bw->writeDoubleWord(Aarch64Instruction::Adrp | immhilo(0) | Rd(Aarch64Register::r0));
-    //            (*string)->relocationAddress.offset = _offset;
-    //            writeAddImmediate64(Aarch64Register::r0, Aarch64Register::r0, 0);
-    //            size += 4;
-    //            _strings.add(*string);
-    //        }
-    //    }
-    //}
-
-
     void
     Aarch64Writer::writeCStringSection()
     {

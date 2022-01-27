@@ -40,6 +40,12 @@ file(GLOB DOMAIN_TEST
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/BinaryExpression_ImmediateKind_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediate_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediateFixture.h
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToImmediate/VariableToImmediate_Test.cpp
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToImmediate/VariableToImmediateFixture.h
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToVariable/VariableToVariable_Test.cpp
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToVariable/VariableToVariableFixture.h
+    src/Domain/Compiler/Tests/Expression/IntegerLiteral/HexadecimalLiteral/HexadecimalLiteral_Test.cpp
+    src/Domain/Compiler/Tests/Expression/IntegerLiteral/DecimalLiteral/DecimalLiteral_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKind_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKindFixture.h
 

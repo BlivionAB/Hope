@@ -1,9 +1,9 @@
-#include "ExpressionFixture.h"
+#include "VariableToVariableFixture.h"
 
 
 namespace elet::domain::compiler::test
 {
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_SingleTerm)
+    TEST_F(VariableToVariableFixture, VariableToVariable_SingleTerm)
     {
         testMainFunction(
             "var x = 1 + 2;\n"
@@ -11,7 +11,7 @@ namespace elet::domain::compiler::test
             "return x + y;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_SingleTerm",
+            .baselineName = "VariableToVariable_SingleTerm",
             .targets = {
                 CompilationTarget::StashIR
             }
@@ -19,7 +19,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_MultiTerms)
+    TEST_F(VariableToVariableFixture, VariableToVariable_MultiTerms)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -28,7 +28,7 @@ namespace elet::domain::compiler::test
             "return x + y + z + x;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_MultiTerms",
+            .baselineName = "VariableToVariable_MultiTerms",
             .targets = {
                 CompilationTarget::StashIR
             }
@@ -36,7 +36,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_HigherPrecedence_LowerPrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_HigherPrecedence_LowerPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -45,7 +45,7 @@ namespace elet::domain::compiler::test
             "return x * y + z;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_HigherPrecedence_LowerPrecedence",
+            .baselineName = "VariableToVariable_HigherPrecedence_LowerPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             }
@@ -53,7 +53,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_LowerPrecedence_HigherPrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_LowerPrecedence_HigherPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -62,7 +62,7 @@ namespace elet::domain::compiler::test
             "return x + y * z;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_LowerPrecedence_HigherPrecedence",
+            .baselineName = "VariableToVariable_LowerPrecedence_HigherPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             },
@@ -70,7 +70,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_EqualPrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_EqualPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -79,7 +79,7 @@ namespace elet::domain::compiler::test
             "return x + y + z;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_EqualPrecedence",
+            .baselineName = "VariableToVariable_EqualPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             }
@@ -87,7 +87,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_LowestPrecedence_MiddlePrecedence_HighestPrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_LowestPrecedence_MiddlePrecedence_HighestPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -96,7 +96,7 @@ namespace elet::domain::compiler::test
             "return x | y ^ z & x;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_LowestPrecedence_MiddlePrecedence_HighestPrecedence",
+            .baselineName = "VariableToVariable_LowestPrecedence_MiddlePrecedence_HighestPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             },
@@ -104,7 +104,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_MiddlePrecedence_HighestPrecedence_LowestPrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_MiddlePrecedence_HighestPrecedence_LowestPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -113,7 +113,7 @@ namespace elet::domain::compiler::test
             "return x ^ y & z | x;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_MiddlePrecedence_HighestPrecedence_LowestPrecedence",
+            .baselineName = "VariableToVariable_MiddlePrecedence_HighestPrecedence_LowestPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             }
@@ -121,7 +121,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_LowestPrecedence_HighestPrecedence_MiddlePrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_LowestPrecedence_HighestPrecedence_MiddlePrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -130,7 +130,7 @@ namespace elet::domain::compiler::test
             "return x | y & z ^ x;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_LowestPrecedence_HighestPrecedence_MiddlePrecedence",
+            .baselineName = "VariableToVariable_LowestPrecedence_HighestPrecedence_MiddlePrecedence",
             .targets = {
                 CompilationTarget::StashIR
             },
@@ -138,7 +138,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_HighestPrecedence_MiddlePrecedence_LowestPrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_HighestPrecedence_MiddlePrecedence_LowestPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -147,7 +147,7 @@ namespace elet::domain::compiler::test
             "return x & y ^ z | x;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_HighestPrecedence_MiddlePrecedence_LowestPrecedence",
+            .baselineName = "VariableToVariable_HighestPrecedence_MiddlePrecedence_LowestPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             }
@@ -155,7 +155,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_HighestPrecedence_LowestPrecedence_MiddlePrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_HighestPrecedence_LowestPrecedence_MiddlePrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -164,7 +164,7 @@ namespace elet::domain::compiler::test
             "return x & y | z ^ x;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_HighestPrecedence_LowestPrecedence_MiddlePrecedence",
+            .baselineName = "VariableToVariable_HighestPrecedence_LowestPrecedence_MiddlePrecedence",
             .targets = {
                 CompilationTarget::StashIR
             }
@@ -172,7 +172,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(ExpressionFixture, BinaryExpression_Variable_MiddlePrecedence_LowestPrecedence_HighestPrecedence)
+    TEST_F(VariableToVariableFixture, VariableToVariable_MiddlePrecedence_LowestPrecedence_HighestPrecedence)
     {
         testMainFunction(
             "var x = 1;\n"
@@ -181,7 +181,7 @@ namespace elet::domain::compiler::test
             "return x ^ y | z & x;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
-            .baselineName = "BinaryExpression_Variable_MiddlePrecedence_LowestPrecedence_HighestPrecedence",
+            .baselineName = "VariableToVariable_MiddlePrecedence_LowestPrecedence_HighestPrecedence",
             .targets = {
                 CompilationTarget::StashIR
             }

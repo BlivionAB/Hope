@@ -431,18 +431,6 @@ namespace elet::domain::compiler::instruction::output::x86
     void
     X86_64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
     {
-//        // TODO: Rewrite this to not use load instruction to check following add instructions. An optimization pass should
-//        // clean the assembly code,
-//        switch (_nextInstruction->kind)
-//        {
-//            case InstructionKind::AddRegister:
-//                bw->writeInstructionInFunction(OneByteOpCode::Add_Gv_Ev, function);
-//                writeEbpReferenceBytes(loadInstruction->stackOffset + static_cast<int>(loadInstruction->allocationSize), reinterpret_cast<AddRegisterInstruction*>(_nextInstruction)->destination, function);
-//                // Skip next instruction, since we already processed it.
-//                _instructionIterator->next();
-//                return;
-//        }
-
         uint8_t rexByte = 0;
         if (loadInstruction->allocationSize == RegisterSize::Quad)
         {
