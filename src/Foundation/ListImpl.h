@@ -407,6 +407,22 @@ namespace elet::foundation
         return Iterator(_cursor);
     }
 
+
+    template<typename T>
+    typename List<T>::ReverseIterator
+    List<T>::rbegin() const
+    {
+        return List::ReverseIterator(_cursor - 1);
+    }
+
+    template<typename T>
+    typename List<T>::ReverseIterator
+    List<T>::rend() const
+    {
+        return List::ReverseIterator(_items - 1);
+    }
+
+
     template<typename T>
     void
     List<T>::reserve(std::size_t capacity)

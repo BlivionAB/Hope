@@ -50,10 +50,15 @@ file(GLOB DOMAIN_TEST
     src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKindFixture.h
 
     src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/BitmaskImmediate/BitmaskImmediate_Test.cpp
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/BitmaskImmediate/BitmaskImmediateFixture.h
     src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue/NonNegatedValue_Test.cpp
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue/NonNegatedValueFixture.h
     src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue/NegatedValue_Test.cpp
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue/NegatedValueFixture.h
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/OperatorKind/OperatorKind_Test.cpp
+    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/OperatorKind/OperatorKindFixture.h
 
-    src/Domain/Compiler/Instruction/Assembly/X86/Tests/BinaryExpression_RegisterToRegister_Operator/BinaryExpression_RegisterToRegister_Operator_Test.cpp
+    src/Domain/Compiler/Instruction/Assembly/X86/Tests/OperatorKind/OperatorKind_Test.cpp
 )
 
 #message(STATUS ${DOMAIN_TEST})

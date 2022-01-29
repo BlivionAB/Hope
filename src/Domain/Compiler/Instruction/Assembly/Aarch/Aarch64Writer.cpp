@@ -281,6 +281,20 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
+    Aarch64Writer::writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+    {
+        writeInstructionInFunction(
+            Aarch64Instruction::Add_ShiftedRegister |
+            shift(Shift::LSL) |
+            Rm(getAarch64RegisterFromOperandRegister(addRegisterInstruction->target)) |
+            uimm6(0) |
+            Rn(getAarch64RegisterFromOperandRegister(addRegisterInstruction->value)) |
+            Rt(getAarch64RegisterFromOperandRegister(addRegisterInstruction->destination)),
+            addRegisterInstruction, function);
+    }
+
+
+    void
     Aarch64Writer::writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function)
     {
         Aarch64Register rd = static_cast<Aarch64Register>(Rd(getAarch64RegisterFromOperandRegister(moveImmediateInstruction->destination)));
@@ -509,9 +523,26 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function)
+    Aarch64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* instruction, FunctionRoutine* function)
     {
-
+        MoveImmediateInstruction mov(OperandRegister::Scratch0, instruction->value, instruction->registerSize);
+        writeMoveImmediateInstruction(&mov, function);
+        uint32_t sf;
+        uint16_t stackOffset;
+        if (instruction->registerSize == RegisterSize::Quad)
+        {
+            sf = 1 << 30;
+            stackOffset = instruction->stackOffset / 8;
+        }
+        else
+        {
+            sf = 0;
+            stackOffset = instruction->stackOffset / 4;
+        }
+        bw->writeDoubleWordInFunction(
+            Aarch64Instruction::StrImmediateUnsignedOffset | sf |
+            uimm12(stackOffset) |
+            Rn(Aarch64Register::sp) | Rt(getAarch64RegisterFromOperandRegister(OperandRegister::Scratch0)), function);
     }
 
 
@@ -536,6 +567,25 @@ namespace elet::domain::compiler::instruction::output
         _strings.add(string);
     }
 
+
+    void
+    Aarch64Writer::writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
+    {
+        if (moveRegisterInstruction->destination == OperandRegister::Return && moveRegisterInstruction->target == OperandRegister::Scratch0)
+        {
+            return;
+        }
+        writeInstructionInFunction(
+            Aarch64Instruction::Add_ShiftedRegister |
+            shift(Shift::LSL) |
+            Rm(getAarch64RegisterFromOperandRegister(moveRegisterInstruction->target)) |
+            uimm6(0) |
+            Rn(getAarch64RegisterFromOperandRegister(moveRegisterInstruction->target)) |
+            Rt(getAarch64RegisterFromOperandRegister(moveRegisterInstruction->destination)),
+            moveRegisterInstruction, function);
+    }
+
+
     void
     Aarch64Writer::writeInstructionsPadding(FunctionRoutine* function)
     {
@@ -550,10 +600,20 @@ namespace elet::domain::compiler::instruction::output
     void
     Aarch64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
     {
+        uint16_t stackOffset;
+        if (loadInstruction->registerSize == RegisterSize::Quad)
+        {
+            stackOffset = loadInstruction->stackOffset / 8;
+        }
+        else
+        {
+            stackOffset = loadInstruction->stackOffset / 4;
+        }
         bw->writeDoubleWordInFunction(
-            Aarch64Instruction::LdrImmediateBaseOffset64 |
-            uimm12((function->stackSize - loadInstruction->stackOffset) / 8) |
-            Rn(Aarch64Register::sp) | Rt(getAarch64RegisterFromOperandRegister(loadInstruction->destination)), function);
+            Aarch64Instruction::LdrImmediateUnsignedOffset |
+            uimm12(stackOffset) |
+            Rn(Aarch64Register::sp) |
+            Rt(getAarch64RegisterFromOperandRegister(loadInstruction->destination)), function);
     }
 
 
@@ -572,6 +632,12 @@ namespace elet::domain::compiler::instruction::output
                 return Aarch64Register::r2;
             case OperandRegister::Arg3:
                 return Aarch64Register::r3;
+            case OperandRegister::Scratch0:
+                return Aarch64Register::r0;
+            case OperandRegister::Scratch1:
+                return Aarch64Register::r1;
+            case OperandRegister::Scratch2:
+                return Aarch64Register::r2;
             default:
                 throw std::runtime_error("Cannot get aarch64 register.");
         }
@@ -694,5 +760,18 @@ namespace elet::domain::compiler::instruction::output
         {
             throw std::runtime_error("Value is too large in writeInstruction.");
         }
+    }
+
+    uint32_t
+    Aarch64Writer::shift(Shift shift)
+    {
+        return static_cast<uint32_t>(shift) << 22;
+    }
+
+    void
+    Aarch64Writer::writeInstructionInFunction(uint32_t instruction, Instruction* referenceInstruction, FunctionRoutine* function)
+    {
+        uint32_t sf = referenceInstruction->registerSize == RegisterSize::Quad ? 1 : 0;
+        bw->writeDoubleWordInFunction(instruction | sf, function);
     }
 }

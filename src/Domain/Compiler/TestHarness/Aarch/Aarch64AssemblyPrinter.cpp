@@ -21,6 +21,9 @@ namespace elet::domain::compiler::test::aarch
                 case Aarch64Instruction::Adrp:
                     writeAdrpInstruction(reinterpret_cast<const AdrpInstruction*>(instruction));
                     break;
+                case Aarch64Instruction::Add_ShiftedRegister:
+                    writeAdd_ShiftedRegisterInstruction(reinterpret_cast<const Add_ShiftedRegisterInstruction*>(instruction));
+                    break;
                 case Aarch64Instruction::Ldr32:
                 case Aarch64Instruction::Ldr64:
                     writeLdr(reinterpret_cast<const LdrInstruction*>(instruction));
@@ -34,6 +37,11 @@ namespace elet::domain::compiler::test::aarch
                 case Aarch64Instruction::LdpPostIndex64:
                 case Aarch64Instruction::LdpBaseOffset64:
                     writeLoadStorePairInstruction(reinterpret_cast<const LoadStorePairInstruction*>(instruction));
+                    break;
+                case Aarch64Instruction::StrImmediateUnsignedOffset:
+                case Aarch64Instruction::LdrImmediateUnsignedOffset:
+                    writeLdrStrImmediateUnsignedOffsetInstruction(
+                        reinterpret_cast<const StrUnsignedOffsetInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::AddImmediate64:
                 case Aarch64Instruction::SubImmediate64:
@@ -57,16 +65,16 @@ namespace elet::domain::compiler::test::aarch
                 case Aarch64Instruction::Bl:
                     writeBl(reinterpret_cast<const BlInstruction*>(instruction));
                     break;
-                case Br:
+                case Aarch64Instruction::Br:
                     writeBr(reinterpret_cast<const BrInstruction*>(instruction));
                     break;
-                case Ret:
+                case Aarch64Instruction::Ret:
                     writeBranchExceptionSyscallInstruction(reinterpret_cast<const BrInstruction*>(instruction));
                     break;
-                case Nop:
+                case Aarch64Instruction::Nop:
                     writeNopInstruction();
                     break;
-                case Udf:
+                case Aarch64Instruction::Udf:
                     writeUdf(reinterpret_cast<const UdfInstruction*>(instruction));
                     break;
                 default:
@@ -136,6 +144,33 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
+    Aarch64AssemblyPrinter::writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrUnsignedOffsetInstruction* instruction)
+    {
+        if (instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset)
+        {
+            _tw.write("ldr ");
+        }
+        else
+        {
+            _tw.write("str ");
+        }
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
+        _tw.write(", [");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", #");
+        if (instruction->is64Bit)
+        {
+            _tw.writeUnsignedHexValue(instruction->imm12 * 8);
+        }
+        else
+        {
+            _tw.writeUnsignedHexValue(instruction->imm12 * 4);
+        }
+        _tw.write("]");
+    }
+
+
+    void
     Aarch64AssemblyPrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset)
     {
         switch (addressMode)
@@ -153,6 +188,8 @@ namespace elet::domain::compiler::test::aarch
             case AddressMode::PostIndex:
                 _tw.write("], #");
                 _tw.writeSignedHexValue(offset);
+                break;
+            case AddressMode::UnsignedOffset:
                 break;
             default:
                 throw std::runtime_error("Unknown address mode.");
@@ -264,9 +301,10 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64AssemblyPrinter::writeByteInstruction(const Instruction* instruction)
     {
-        for (const auto byte : instruction->bytes)
+        // Aarch is little endian. So we have to reverse the bytes.
+        for (auto it = instruction->bytes.rbegin(); it != instruction->bytes.rend(); ++it)
         {
-            _tw.writeByteHex(byte);
+            _tw.writeByteHex(*it);
             ++textSectionStartOffset;
         }
     }
@@ -443,6 +481,23 @@ namespace elet::domain::compiler::test::aarch
                 break;
             default:
                 throw std::runtime_error("Unknown hw case.");
+        }
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeAdd_ShiftedRegisterInstruction(const Add_ShiftedRegisterInstruction* add)
+    {
+        _tw.write("add ");
+        writeGeneralPurposeRegister(add->Rd, add);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(add->Rn, add);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(add->Rm, add);
+        if (add->imm6)
+        {
+            _tw.write(", ");
+            _tw.writeUnsignedHexValue(add->imm6);
         }
     }
 }

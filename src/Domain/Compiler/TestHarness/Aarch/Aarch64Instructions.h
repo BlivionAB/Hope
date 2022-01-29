@@ -89,8 +89,30 @@ namespace elet::domain::compiler::test::aarch
         PreIndex,
         BaseOffset,
         PostIndex,
+        UnsignedOffset,
     };
 
+    struct LdrStrUnsignedOffsetInstruction : Instruction
+    {
+        Register
+        Rt;
+
+        Register
+        Rn;
+
+        uint16_t
+        imm12;
+    };
+
+    struct StrUnsignedOffsetInstruction : LdrStrUnsignedOffsetInstruction
+    {
+    };
+
+
+
+    struct LdrUnsignedOffsetInstruction : LdrStrUnsignedOffsetInstruction
+    {
+    };
 
     struct LdrInstruction : Instruction
     {
@@ -282,6 +304,36 @@ namespace elet::domain::compiler::test::aarch
     };
 
 
+    struct Add_ShiftedRegisterInstruction : Instruction
+    {
+        Register
+        Rd;
+
+        Register
+        Rn;
+
+        Register
+        Rm;
+
+        uint8_t
+        shift;
+
+        uint8_t
+        imm6;
+
+        Add_ShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
+            Instruction(Aarch64Instruction::Add_ShiftedRegister),
+            Rd(Rd),
+            Rn(Rn),
+            Rm(Rm),
+            shift(shift),
+            imm6(imm6)
+        {
+
+        }
+    };
+
+
     union OneOfInstruction
     {
         DataProcessImmediateInstruction dp;
@@ -292,6 +344,7 @@ namespace elet::domain::compiler::test::aarch
         MovInstruction mov;
         OrrImmediateInstruction orr;
         MovnInstruction movn;
+        Add_ShiftedRegisterInstruction add_shiftedRegister;
 
         OneOfInstruction()
         {

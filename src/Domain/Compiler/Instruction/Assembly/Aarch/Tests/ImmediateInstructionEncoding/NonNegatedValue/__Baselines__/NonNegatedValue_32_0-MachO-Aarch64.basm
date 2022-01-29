@@ -4,9 +4,9 @@ Address           Bytes                 Instruction
 __TEXT,__text:
 
 _main:
-0000000100003fc0  fd7bbfa9              stp fp, lr, [sp, #-0x10]!
-0000000100003fc4  fd030091              add fp, sp, #0x0
-0000000100003fc8  600080d2              mov x0, #0x3
-0000000100003fcc  2000c0f2              movk x0, #0x1, lsl #32
-0000000100003fd0  fd7bc1a8              ldp fp, lr, [sp], #0x10
-0000000100003fd4  c0035fd6              ret lr
+0000000100003fc0  a9bf7bfd              stp fp, lr, [sp, #-0x10]!
+0000000100003fc4  910003fd              add fp, sp, #0x0
+0000000100003fc8  d2800060              mov x0, #0x3
+0000000100003fcc  f2c00020              movk x0, #0x1, lsl #32
+0000000100003fd0  a8c17bfd              ldp fp, lr, [sp], #0x10
+0000000100003fd4  d65f03c0              ret lr

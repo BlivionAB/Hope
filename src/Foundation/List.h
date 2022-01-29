@@ -65,6 +65,45 @@ namespace elet::foundation
     {
     public:
 
+        class ReverseIterator {
+            friend class List;
+        public:
+            T&
+            operator *() const
+            {
+                return *(value);
+            }
+
+            const ReverseIterator&
+            operator ++ ()
+            {
+                value--;
+                return *this;
+            }
+
+            bool
+            operator == (const ReverseIterator &other) const
+            {
+                return value == other.value;
+            }
+
+            bool
+            operator != (const ReverseIterator &other) const
+            {
+                return value != other.value;
+            }
+
+            ReverseIterator(T* value):
+                value(value)
+            { }
+
+        private:
+
+            T*
+            value;
+        };
+
+
         class Iterator {
             friend class List;
         public:
@@ -107,7 +146,7 @@ namespace elet::foundation
             }
 
             Iterator(T* value):
-                value(value)
+            value(value)
             { }
 
         private:
@@ -214,6 +253,12 @@ namespace elet::foundation
 
         Iterator
         end() const;
+
+        ReverseIterator
+        rbegin() const;
+
+        ReverseIterator
+        rend() const;
 
         bool
         has(T key) const;

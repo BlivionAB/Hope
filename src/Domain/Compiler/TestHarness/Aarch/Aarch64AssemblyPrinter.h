@@ -75,6 +75,12 @@ public:
 
     void
     writeHw(const MovkInstruction* movInstruction);
+
+    void
+    writeAdd_ShiftedRegisterInstruction(const Add_ShiftedRegisterInstruction* pInstruction);
+
+    void
+    writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrUnsignedOffsetInstruction* instruction);
 };
 
 }

@@ -17,13 +17,6 @@ namespace elet::domain::compiler::instruction::output::test
         {
             return "src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue";
         }
-
-
-        std::filesystem::path
-        localTestPath() override
-        {
-            return "";
-        }
     };
 }
 

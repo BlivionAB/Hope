@@ -195,7 +195,7 @@ namespace elet::domain::compiler::test
         std::filesystem::path
         localTestPath()
         {
-            throw std::runtime_error("You have not specified test path.");
+            return "";
         }
 
 

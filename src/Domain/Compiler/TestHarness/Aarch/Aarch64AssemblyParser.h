@@ -124,6 +124,15 @@ private:
 
     void
     parseMovkInstruction(MovkInstruction* movk, uint32_t dw);
+
+    uint8_t
+    imm6(uint32_t dw);
+
+    uint8_t
+    shift(uint32_t dw);
+
+    void
+    parseStrLdrImmediateUnsignedOffsetInstruction(StrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22);
 };
 
 

@@ -50,16 +50,6 @@ namespace elet::domain::compiler::test::aarch
             {
                 continue;
             }
-            if (Aarch64Instruction::Adr == (dw & Aarch64Instruction::AdrMask))
-            {
-                parseAdrInstruction(instruction, dw);
-                continue;;
-            }
-            if (Aarch64Instruction::Adrp == (dw & Aarch64Instruction::AdrpMask))
-            {
-                parseAdrpInstruction(instruction, dw);
-                continue;
-            }
             if (Aarch64Instruction::Udf == (dw && Aarch64Instruction::Mask16))
             {
                 parseUdfInstruction(instruction, dw);
@@ -147,6 +137,33 @@ namespace elet::domain::compiler::test::aarch
                 LdrInstruction* instr = reinterpret_cast<LdrInstruction*>(instruction);
                 instr->kind = Aarch64Instruction::Ldr32;
                 instr->rt = Rt(dw);
+                return true;
+            }
+            case Aarch64Instruction::Adr:
+            {
+                AdrInstruction* adrp = reinterpret_cast<AdrInstruction*>(instruction);
+                adrp->kind = Aarch64Instruction::Adr;
+                adrp->rd = Rd(dw);
+                adrp->immhilo = immhilo(dw);
+                return true;
+            }
+            case Aarch64Instruction::Adrp:
+            {
+                AdrInstruction* adrp = reinterpret_cast<AdrInstruction*>(instruction);
+                adrp->kind = Aarch64Instruction::Adrp;
+                adrp->rd = Rd(dw);
+                adrp->immhilo = immhilo(dw);
+                return true;
+            }
+            case Aarch64Instruction::Add_ShiftedRegister:
+            {
+                Add_ShiftedRegisterInstruction* add = reinterpret_cast<Add_ShiftedRegisterInstruction*>(instruction);
+                add->kind = Aarch64Instruction::Add_ShiftedRegister;
+                add->Rd = Rd(dw);
+                add->Rn = Rn(dw);
+                add->Rm = Rm(dw);
+                add->imm6 = imm6(dw);
+                add->shift = shift(dw);
                 return true;
             }
         }
@@ -244,8 +261,23 @@ namespace elet::domain::compiler::test::aarch
             case Aarch64Instruction::SubImmediate64:
                 parseDataProcessImmediateInstruction(instruction, dw, kind22);
                 return true;
+            case Aarch64Instruction::LdrImmediateUnsignedOffset:
+            case Aarch64Instruction::StrImmediateUnsignedOffset:
+                parseStrLdrImmediateUnsignedOffsetInstruction(reinterpret_cast<StrUnsignedOffsetInstruction*>(instruction), dw, kind22);
+                return true;
+
         }
         return false;
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseStrLdrImmediateUnsignedOffsetInstruction(StrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22)
+    {
+        instruction->kind = static_cast<Aarch64Instruction>(kind22);
+        instruction->Rn = Rn(dw);
+        instruction->Rt = Rt(dw);
+        instruction->imm12 = imm12(dw);
     }
 
 
@@ -512,6 +544,19 @@ namespace elet::domain::compiler::test::aarch
     Aarch64AssemblyParser::hw(uint32_t dw)
     {
         return (Aarch64Instruction::HwMask & dw) >> 21;
+    }
+
+    uint8_t
+    Aarch64AssemblyParser::imm6(uint32_t dw)
+    {
+        return (Aarch64Instruction::Imm6Mask & dw) >> 10;
+    }
+
+
+    uint8_t
+    Aarch64AssemblyParser::shift(uint32_t dw)
+    {
+        return (Aarch64Instruction::ShiftMask & dw) >> 22;
     }
 
 

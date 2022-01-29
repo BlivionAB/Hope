@@ -7,6 +7,13 @@
 
 namespace elet::domain::compiler::instruction::output
 {
+    enum class Shift : uint32_t
+    {
+        LSL = 0,
+        LSR = 1,
+        ASR = 2,
+    };
+
     class Aarch64Writer final : public AssemblyWriterInterface
     {
 
@@ -54,8 +61,16 @@ namespace elet::domain::compiler::instruction::output
         writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function) override;
 
         void
+        writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
+
+        void
         writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
 
+        void
+        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
+
+        void
+        writeInstructionInFunction(uint32_t instruction, Instruction* referenceInstruction, FunctionRoutine* function);
     private:
 
         List<Aarch64Register>
@@ -134,7 +149,7 @@ namespace elet::domain::compiler::instruction::output
         writeInstructionsPadding(uint64_t i);
 
         void
-        writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
+        writeStoreImmediateInstruction(StoreImmediateInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
@@ -165,6 +180,9 @@ namespace elet::domain::compiler::instruction::output
         void
         processPositiveValues(uint64_t value, const Aarch64Register& rd, const RegisterBitSize& registerSize,
                               FunctionRoutine* function);
+
+        uint32_t
+        shift(Shift shift);
     };
 }
 
