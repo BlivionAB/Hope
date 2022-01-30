@@ -40,10 +40,10 @@ namespace elet::domain::compiler::test
         writeOperandRegister(output::OperandRegister operandRegister);
 
         void
-        writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction);
+        writeMoveRegisterInstruction(const output::MoveRegisterToRegisterInstruction* moveRegisterInstruction);
 
         void
-        writeMoveAddressInstruction(const output::MoveAddressInstruction* moveAddressInstruction);
+        writeMoveAddressInstruction(const output::MoveAddressToRegisterInstruction* moveAddressInstruction);
 
         void
         writeCallInstruction(const output::CallInstruction* callInstruction, output::FunctionRoutine* function);

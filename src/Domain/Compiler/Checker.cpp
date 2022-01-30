@@ -470,6 +470,7 @@ namespace elet::domain::compiler::ast
     {
         ast::Type* expressionType = checkExpression(returnStatement->expression);
         checkTypeAssignability(expressionType, functionDeclaration->signature->type);
+        returnStatement->expectedType = functionDeclaration->signature->type;
     }
 
 

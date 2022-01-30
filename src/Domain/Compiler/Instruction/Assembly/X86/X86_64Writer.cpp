@@ -303,7 +303,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
+    X86_64Writer::writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
     {
         // It's an unnecessary move, since they are the same register.
         if (moveRegisterInstruction->destination == OperandRegister::Return && moveRegisterInstruction->target == OperandRegister::Scratch0)
@@ -432,7 +432,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
     {
         uint8_t rexByte = 0;
-        if (loadInstruction->allocationSize == RegisterSize::Quad)
+        if (loadInstruction->registerSize == RegisterSize::Quad)
         {
             rexByte |= OpCodePrefix::RexMagic | OpCodePrefix::RexW;
         }
@@ -536,7 +536,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* addRegisterAddressInstruction, FunctionRoutine* function)
     {
         bw->writeInstructionInFunction(OneByteOpCode::Add_Gv_Ev, function);
-        writeEbpReferenceBytes(addRegisterAddressInstruction->value_stackOffset, addRegisterAddressInstruction->destination, function);
+        writeEbpReferenceBytes(addRegisterAddressInstruction->stackOffset, addRegisterAddressInstruction->destination, function);
     }
 
 
@@ -544,7 +544,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({ OneByteOpCode::TwoByteOpCodePrefix, OneByteOpCode::Imul_Gv_Ev }, function);
-        writeEbpReferenceBytes(multiplyRegisterAddressInstruction->value_stackOffset, multiplyRegisterAddressInstruction->destination, function);
+        writeEbpReferenceBytes(multiplyRegisterAddressInstruction->stackOffset, multiplyRegisterAddressInstruction->destination, function);
     }
 
 
@@ -555,7 +555,7 @@ namespace elet::domain::compiler::instruction::output::x86
             OneByteOpCode::Xor_Ev_Gv,
             ModBits::Mod3 | RegisterBits::Reg_RDX | RmBits::Rm2,
             OneByteOpCode::ExtGroup3 }, function);
-        writeEbpReferenceBytes(instruction->value_stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_DivBits), function);
+        writeEbpReferenceBytes(instruction->stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_DivBits), function);
     }
 
 
@@ -563,7 +563,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeDivideSignedRegisterAddressInstruction(DivideSignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({ OneByteOpCode::Cdq, OneByteOpCode::ExtGroup3 }, function);
-        writeEbpReferenceBytes(instruction->value_stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_IdivBits), function);
+        writeEbpReferenceBytes(instruction->stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_IdivBits), function);
     }
 
 
@@ -574,8 +574,8 @@ namespace elet::domain::compiler::instruction::output::x86
             OneByteOpCode::Xor_Ev_Gv,
             ModBits::Mod3 | RegisterBits::Reg_RDX | RmBits::Rm2,
             OneByteOpCode::ExtGroup3 }, function);
-        writeEbpReferenceBytes(instruction->value_stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_DivBits), function);
-        MoveRegisterInstruction move(OperandRegister::Scratch0, OperandRegister::Scratch2);
+        writeEbpReferenceBytes(instruction->stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_DivBits), function);
+        MoveRegisterToRegisterInstruction move(OperandRegister::Scratch0, OperandRegister::Scratch2, instruction->registerSize);
         writeMoveRegisterInstruction(&move, function);
     }
 
@@ -584,8 +584,8 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeModuloSignedRegisterAddressInstruction(ModuloSignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({ OneByteOpCode::Cdq, OneByteOpCode::ExtGroup3 }, function);
-        writeEbpReferenceBytes(instruction->value_stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_IdivBits), function);
-        MoveRegisterInstruction move(OperandRegister::Scratch0, OperandRegister::Scratch2);
+        writeEbpReferenceBytes(instruction->stackOffset, static_cast<uint8_t>(OneByteOpCode::ExtGroup3_IdivBits), function);
+        MoveRegisterToRegisterInstruction move(OperandRegister::Scratch0, OperandRegister::Scratch2, instruction->registerSize);
         writeMoveRegisterInstruction(&move, function);
     }
 
@@ -656,7 +656,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function)
     {
         bw->writeInstructionInFunction(OneByteOpCode::Sub_Gv_Ev, function);
-        writeEbpReferenceBytes(subtractRegisterAddressInstruction->value_stackOffset, subtractRegisterAddressInstruction->destination, function);
+        writeEbpReferenceBytes(subtractRegisterAddressInstruction->stackOffset, subtractRegisterAddressInstruction->destination, function);
     }
 
 
@@ -752,7 +752,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function)
+    X86_64Writer::writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function)
     {
         Register _register = getRegisterFromOperandRegister(moveAddressInstruction->destination);
         uint8_t registerBits = getRegisterBitsFromRegister(_register);

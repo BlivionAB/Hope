@@ -86,6 +86,21 @@ namespace elet::domain::compiler::ast::type
             }
         }
 
+
+        bool
+        operator != (TypeKind typeKind)
+        {
+            return kind != typeKind;
+        }
+
+
+        bool
+        operator == (TypeKind typeKind)
+        {
+            return kind == typeKind;
+        }
+
+
         Signedness
         sign()
         {

@@ -80,19 +80,19 @@ namespace elet::domain::compiler::instruction::output
         switch (operationRegisterInstruction->kind)
         {
             case InstructionKind::AddRegisterToRegister:
-                return new AddAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+                return new AddAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, loadInstruction->registerSize);
             case InstructionKind::SubtractRegisterToRegister:
-                return new SubtractRegisterToAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+                return new SubtractRegisterToAddressInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, loadInstruction->registerSize);
             case InstructionKind::MultiplySignedRegisterToRegister:
-                return new MultiplySignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+                return new MultiplySignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, loadInstruction->registerSize);
             case InstructionKind::DivideUnsignedRegisterToRegister:
-                return new DivideUnsignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+                return new DivideUnsignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, loadInstruction->registerSize);
             case InstructionKind::DivideSignedRegisterToRegister:
-                return new DivideSignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+                return new DivideSignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, loadInstruction->registerSize);
             case InstructionKind::ModuloUnsignedRegisterToRegister:
-                return new ModuloUnsignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+                return new ModuloUnsignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, loadInstruction->registerSize);
             case InstructionKind::ModuloSignedRegisterToRegister:
-                return new ModuloSignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, static_cast<uint64_t>(loadInstruction->allocationSize));
+                return new ModuloSignedAddressToRegisterInstruction(operationRegisterInstruction->destination, operationRegisterInstruction->target, loadInstruction->stackOffset, loadInstruction->registerSize);
             default:
                 throw std::runtime_error("Unknown operationRegisterInstruction");
         }

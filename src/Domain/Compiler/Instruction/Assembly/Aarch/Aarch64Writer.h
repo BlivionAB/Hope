@@ -55,13 +55,13 @@ namespace elet::domain::compiler::instruction::output
         writeFunctionEpilogue(FunctionRoutine* function) override;
 
         void
-        writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function) override;
+        writeMoveImmediateInstruction(MoveImmediateInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function) override;
+        writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function) override;
 
         void
-        writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
+        writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
 
         void
         writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
@@ -70,7 +70,13 @@ namespace elet::domain::compiler::instruction::output
         writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
 
         void
-        writeInstructionInFunction(uint32_t instruction, Instruction* referenceInstruction, FunctionRoutine* function);
+        writeSubtractRegisterToRegisterInstruction(SubtractRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeMultiplySignedRegisterToRegisterInstruction(MultiplySignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeSfInstructionInFunction(uint32_t instruction, Instruction* referenceInstruction, FunctionRoutine* function) const;
     private:
 
         List<Aarch64Register>
@@ -119,6 +125,9 @@ namespace elet::domain::compiler::instruction::output
         Rm(uint8_t reg) const;
 
         uint32_t
+        Ra(uint8_t reg) const;
+
+        uint32_t
         uimm6(uint8_t value) const;
 
         uint32_t
@@ -164,22 +173,19 @@ namespace elet::domain::compiler::instruction::output
         moveWideIsPreferred(uint8_t sf, uint8_t N, uint8_t imms, uint8_t immr) const;
 
         bool
-        processLogicalImmediate(uint64_t imm, const Aarch64Register& rd, RegisterBitSize registerSize,
-                                output::FunctionRoutine* function);
+        processLogicalImmediate(uint64_t imm, const Aarch64Register& rd, RegisterSize registerSize, MoveImmediateInstruction* instruction, output::FunctionRoutine* function);
 
         void
         writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function);
 
         void
-        writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, RegisterBitSize registerSize, FunctionRoutine* function);
+        writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, FunctionRoutine* function);
 
         bool
-        processNegatedImmediateEncoding(uint64_t value, const Aarch64Register& rd, const RegisterBitSize& registerSize,
-                                        output::FunctionRoutine* function) const;
+        processNegatedImmediateEncoding(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, output::FunctionRoutine* function);
 
         void
-        processPositiveValues(uint64_t value, const Aarch64Register& rd, const RegisterBitSize& registerSize,
-                              FunctionRoutine* function);
+        processPositiveValues(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, FunctionRoutine* function);
 
         uint32_t
         shift(Shift shift);

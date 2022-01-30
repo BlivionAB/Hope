@@ -21,17 +21,21 @@ namespace elet::domain::compiler::test::aarch
                 case Aarch64Instruction::Adrp:
                     writeAdrpInstruction(reinterpret_cast<const AdrpInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Add_ShiftedRegister:
-                    writeAdd_ShiftedRegisterInstruction(reinterpret_cast<const Add_ShiftedRegisterInstruction*>(instruction));
+                case Aarch64Instruction::AddShiftedRegister:
+                case Aarch64Instruction::SubShiftedRegister:
+                    writeShiftedRegisterInstruction(reinterpret_cast<const ShiftedRegisterInstruction*>(instruction));
+                    break;
+                case Aarch64Instruction::Madd:
+                    writeMaddInstruction(reinterpret_cast<const MaddInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::Ldr32:
                 case Aarch64Instruction::Ldr64:
                     writeLdr(reinterpret_cast<const LdrInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::StrImmediateBaseOffset64:
-                case Aarch64Instruction::LdrImmediateBaseOffset64:
-                    writeLoadStoreInstruction(reinterpret_cast<const LoadStoreInstruction*>(instruction));
-                    break;
+//                case Aarch64Instruction::StrImmediateBaseOffset64:
+//                case Aarch64Instruction::LdrImmediateBaseOffset64:
+//                    writeLoadStoreInstruction(reinterpret_cast<const LoadStoreInstruction*>(instruction));
+//                    break;
                 case Aarch64Instruction::StpPreIndex64:
                 case Aarch64Instruction::StpBaseOffset64:
                 case Aarch64Instruction::LdpPostIndex64:
@@ -40,8 +44,9 @@ namespace elet::domain::compiler::test::aarch
                     break;
                 case Aarch64Instruction::StrImmediateUnsignedOffset:
                 case Aarch64Instruction::LdrImmediateUnsignedOffset:
-                    writeLdrStrImmediateUnsignedOffsetInstruction(
-                        reinterpret_cast<const StrUnsignedOffsetInstruction*>(instruction));
+                case Aarch64Instruction::StrImmediateUnsignedOffset64:
+                case Aarch64Instruction::LdrImmediateUnsignedOffset64:
+                    writeLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<const StrUnsignedOffsetInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::AddImmediate64:
                 case Aarch64Instruction::SubImmediate64:
@@ -125,28 +130,28 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64AssemblyPrinter::writeLoadStoreInstruction(const LoadStoreInstruction* instruction)
     {
-        switch (instruction->kind)
-        {
-            case Aarch64Instruction::StrImmediateBaseOffset64:
-                _tw.write("str ");
-                break;
-            case Aarch64Instruction::LdrImmediateBaseOffset64:
-                _tw.write("ldr ");
-                break;
-            default:
-                throw std::runtime_error("Unknown load store instruction.");
-        }
-        writeGeneralPurposeRegister(instruction->rt, instruction);
-        _tw.write(", [");
-        writeGeneralPurposeRegister(instruction->rn, instruction);
-        writeIndexedAddressSuffix(instruction->addressMode, instruction->imm12);
+//        switch (instruction->kind)
+//        {
+//            case Aarch64Instruction::StrImmediateBaseOffset64:
+//                _tw.write("str ");
+//                break;
+//            case Aarch64Instruction::LdrImmediateBaseOffset64:
+//                _tw.write("ldr ");
+//                break;
+//            default:
+//                throw std::runtime_error("Unknown load store instruction.");
+//        }
+//        writeGeneralPurposeRegister(instruction->rt, instruction);
+//        _tw.write(", [");
+//        writeGeneralPurposeRegister(instruction->rn, instruction);
+//        writeIndexedAddressSuffix(instruction->addressMode, instruction->imm12);
     }
 
 
     void
     Aarch64AssemblyPrinter::writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrUnsignedOffsetInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset)
+        if (instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset || instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset64)
         {
             _tw.write("ldr ");
         }
@@ -202,9 +207,6 @@ namespace elet::domain::compiler::test::aarch
     {
         switch (instruction->kind)
         {
-            case Aarch64Instruction::StrImmediateBaseOffset64:
-                _tw.write("str ");
-                break;
             case Aarch64Instruction::LdpBaseOffset64:
             case Aarch64Instruction::LdpPostIndex64:
                 _tw.write("ldp ");
@@ -486,18 +488,49 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeAdd_ShiftedRegisterInstruction(const Add_ShiftedRegisterInstruction* add)
+    Aarch64AssemblyPrinter::writeShiftedRegisterInstruction(const ShiftedRegisterInstruction* instruction)
     {
-        _tw.write("add ");
-        writeGeneralPurposeRegister(add->Rd, add);
+        if (instruction->kind == Aarch64Instruction::AddShiftedRegister)
+        {
+            _tw.write("add ");
+        }
+        else
+        {
+            _tw.write("sub ");
+        }
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
-        writeGeneralPurposeRegister(add->Rn, add);
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", ");
-        writeGeneralPurposeRegister(add->Rm, add);
-        if (add->imm6)
+        writeGeneralPurposeRegister(instruction->Rm, instruction);
+        if (instruction->imm6)
         {
             _tw.write(", ");
-            _tw.writeUnsignedHexValue(add->imm6);
+            _tw.writeUnsignedHexValue(instruction->imm6);
+        }
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeMaddInstruction(const MaddInstruction* instruction)
+    {
+        if (instruction->Ra == Register::Zero)
+        {
+            _tw.write("mul ");
+        }
+        else
+        {
+            _tw.write("madd ");
+        }
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rm, instruction);
+        if (instruction->Ra != Register::Zero)
+        {
+            _tw.write(", ");
+            writeGeneralPurposeRegister(instruction->Ra, instruction);
         }
     }
 }

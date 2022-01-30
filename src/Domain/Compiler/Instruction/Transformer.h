@@ -51,7 +51,7 @@ namespace elet::domain::compiler::instruction
         typedef std::variant<std::size_t, String*, ParameterDeclaration*, StoreRegisterInstruction*> ArgumentValue;
         struct InternalRoutine;
         struct FunctionRoutine;
-        struct MoveRegisterInstruction;
+        struct MoveRegisterToRegisterInstruction;
         struct ImmediateValue;
         enum class OperandRegister;
         typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
@@ -177,29 +177,28 @@ namespace elet::domain::compiler::instruction
         addInstruction(output::Instruction* instruction);
 
         output::CanonicalExpression
-        transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize);
+        transformExpression(ast::Expression* expression, uint64_t& stackOffset);
 
         output::CanonicalExpression
-        transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize, ast::Type* forcedType);
+        transformExpression(ast::Expression* expression, uint64_t& stackOffset, ast::Type* forcedType);
 
         output::ImmediateValue
         transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right);
 
         output::OperandRegister
-        transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryOperatorKind binaryOperatorKind);
+        transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryExpression* binaryExpression);
 
         void
         transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset);
 
         output::OperandRegister
-        transformPropertyExpression(ast::PropertyExpression* propertyExpression, RegisterSize& registerSize);
+        transformPropertyExpression(ast::PropertyExpression* propertyExpression);
 
         output::OperandRegister
         transformRegisterToRegisterBinaryExpression(ast::BinaryExpression* binaryExpression, output::OperandRegister target, output::OperandRegister value);
 
         output::CanonicalExpression
-        transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset,
-                                  RegisterSize& registerSize, ast::Type* forcedType);
+        transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset, ast::Type* forcedType);
 
         output::OperandRegister
         getOperandRegisterFromArgumentIndex(uint64_t argumentIndex);
@@ -215,7 +214,7 @@ namespace elet::domain::compiler::instruction
         setStartFunctionSymbolName(output::FunctionRoutine* function,
                                    const ast::FunctionDeclaration* functionDeclaration) const;
 
-        IntegerType
+        IntegerKind
         getIntegerTypeFromTypeKind(TypeKind typeKind);
     };
 

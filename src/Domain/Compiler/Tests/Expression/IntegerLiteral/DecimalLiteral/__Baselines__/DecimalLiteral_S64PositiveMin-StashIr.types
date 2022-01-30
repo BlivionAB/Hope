@@ -3,7 +3,7 @@ domain Common::MyApplication implements IConsoleApplication
 
 public:
 
-    fn OnApplicationStart(): void
+    fn OnApplicationStart(): s64
     {
 return 2147483648;    }
        ~~~~~~~~~~  s64

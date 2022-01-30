@@ -12,16 +12,58 @@ namespace fs = std::filesystem;
 
 namespace elet::domain::compiler
 {
-    enum class IntegerType
+    enum class RegisterSize : uint8_t
     {
-        U8,
-        S8,
-        U16,
-        S16,
-        U32,
-        S32,
-        U64,
-        S64,
+        None,
+        Byte = 1,
+        Word = 2,
+        Dword = 4,
+        Quad = 8,
+        Pointer = Quad,
+    };
+
+
+    enum class IntegerKind : uint8_t
+    {
+        U8 = 1,
+        S8 = 2,
+        U16 = 3,
+        S16 = 4,
+        U32 = 5,
+        S32 = 6,
+        U64 = 7,
+        S64 = 8,
+    };
+
+
+    struct IntegerType
+    {
+        IntegerKind
+        kind;
+
+        IntegerType(IntegerKind kind):
+            kind(kind)
+        { }
+
+        RegisterSize
+        size()
+        {
+            switch (kind)
+            {
+                case IntegerKind::U8:
+                case IntegerKind::S8:
+                    return RegisterSize::Byte;
+                case IntegerKind::S16:
+                case IntegerKind::U16:
+                    return RegisterSize::Word;
+                case IntegerKind::S32:
+                case IntegerKind::U32:
+                    return RegisterSize::Dword;
+                case IntegerKind::S64:
+                case IntegerKind::U64:
+                    return RegisterSize::Quad;
+            }
+        }
     };
 
 
@@ -49,26 +91,6 @@ namespace elet::domain::compiler
         Void,
         Custom,
         Length,
-    };
-
-
-    enum class RegisterSize : uint8_t
-    {
-        None,
-        Byte = 1,
-        Word = 2,
-        Dword = 4,
-        Quad = 8,
-        Pointer = Quad,
-    };
-
-
-    enum class RegisterBitSize
-    {
-        Byte = 8,
-        Word = 16,
-        Dword = 32,
-        Quad = 64,
     };
 
 

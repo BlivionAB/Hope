@@ -35,16 +35,31 @@ namespace elet::domain::compiler::instruction::output
 
     struct ImmediateValue
     {
-        TypeKind
-        type;
+        IntegerType
+        integerType;
 
         uint64_t
         value;
 
-        ImmediateValue(TypeKind type, uint64_t value):
-            type(type),
+
+        ImmediateValue(IntegerKind integerKind, uint64_t value):
+            integerType(integerKind),
             value(value)
-        { }
+        {
+
+        }
+
+        ImmediateValue(TypeKind typeKind, uint64_t value):
+            ImmediateValue(static_cast<IntegerKind>(typeKind), value)
+        {
+
+        }
+
+        ImmediateValue(IntegerType type, uint64_t value):
+            ImmediateValue(type.kind, value)
+        {
+
+        }
     };
 
 
@@ -130,11 +145,7 @@ namespace elet::domain::compiler::instruction::output
         kind;
 
         RegisterSize
-        registerSize = RegisterSize::None;
-
-        Instruction(InstructionKind kind):
-            kind(kind)
-        { }
+        registerSize;
 
         Instruction(InstructionKind kind, RegisterSize registerSize):
             kind(kind),
@@ -143,31 +154,31 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    struct PushInstruction : Instruction
-    {
-        OperandRegister
-        target;
-
-        uint64_t
-        stackSize = 0;
-
-        PushInstruction(OperandRegister target):
-            Instruction(InstructionKind::Push),
-            target(target)
-        { }
-    };
-
-
-    struct PopInstruction : Instruction
-    {
-        OperandRegister
-        target;
-
-        PopInstruction(OperandRegister target):
-            Instruction(InstructionKind::Pop),
-            target(target)
-        { }
-    };
+//    struct PushInstruction : Instruction
+//    {
+//        OperandRegister
+//        target;
+//
+//        uint64_t
+//        stackSize = 0;
+//
+//        PushInstruction(OperandRegister target):
+//            Instruction(InstructionKind::Push),
+//            target(target)
+//        { }
+//    };
+//
+//
+//    struct PopInstruction : Instruction
+//    {
+//        OperandRegister
+//        target;
+//
+//        PopInstruction(OperandRegister target):
+//            Instruction(InstructionKind::Pop),
+//            target(target)
+//        { }
+//    };
 
 
     struct LoadInstruction : Instruction
@@ -178,14 +189,10 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         destination;
 
-        RegisterSize
-        allocationSize;
-
-        LoadInstruction(OperandRegister destination, uint64_t stackOffset, RegisterSize allocationSize):
-            Instruction(InstructionKind::Load),
+        LoadInstruction(OperandRegister destination, uint64_t stackOffset, RegisterSize registerSize):
+            Instruction(InstructionKind::Load, registerSize),
             destination(destination),
-            stackOffset(stackOffset),
-            allocationSize(allocationSize)
+            stackOffset(stackOffset)
         { }
     };
 
@@ -209,7 +216,7 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    struct MoveAddressInstruction : Instruction
+    struct MoveAddressToRegisterInstruction : Instruction
     {
         OperandRegister
         destination;
@@ -220,15 +227,15 @@ namespace elet::domain::compiler::instruction::output
         std::variant<std::monostate, output::Constant*, output::String*>
         constant;
 
-        MoveAddressInstruction(OperandRegister destination, uint64_t offset):
-            Instruction(InstructionKind::MoveAddress),
+        MoveAddressToRegisterInstruction(OperandRegister destination, uint64_t offset, RegisterSize registerSize):
+            Instruction(InstructionKind::MoveAddress, registerSize),
             destination(destination),
             offset(offset)
         { }
     };
 
 
-    struct MoveRegisterInstruction : Instruction
+    struct MoveRegisterToRegisterInstruction : Instruction
     {
         OperandRegister
         destination;
@@ -236,8 +243,8 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         target;
 
-        MoveRegisterInstruction(OperandRegister destination, OperandRegister target):
-            Instruction(InstructionKind::MoveRegister),
+        MoveRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, RegisterSize registerSize):
+            Instruction(InstructionKind::MoveRegister, registerSize),
             destination(destination),
             target(target)
         { }
@@ -256,7 +263,7 @@ namespace elet::domain::compiler::instruction::output
         offset;
 
         CallInstruction():
-            Instruction(InstructionKind::Call)
+            Instruction(InstructionKind::Call, RegisterSize::None)
         { }
     };
 
@@ -446,23 +453,18 @@ namespace elet::domain::compiler::instruction::output
 
     struct MemoryAllocation : Instruction
     {
-        RegisterSize
-        allocationSize;
-
         uint64_t
         stackOffset;
 
-        MemoryAllocation(InstructionKind kind, RegisterSize size):
-            Instruction(kind, allocationSize),
-            allocationSize(size)
+        MemoryAllocation(InstructionKind kind, RegisterSize registerSize):
+        Instruction(kind, registerSize)
         { }
 
-        MemoryAllocation(InstructionKind kind, uint64_t& stackOffset, RegisterSize allocationSize):
-            Instruction(kind, allocationSize),
-            allocationSize(allocationSize),
-            stackOffset(stackOffset + static_cast<uint64_t>(allocationSize))
+        MemoryAllocation(InstructionKind kind, uint64_t& stackOffset, RegisterSize registerSize):
+            Instruction(kind, registerSize),
+            stackOffset(stackOffset + static_cast<uint64_t>(registerSize))
         {
-            stackOffset += static_cast<uint64_t>(allocationSize);
+            stackOffset += static_cast<uint64_t>(registerSize);
         }
     };
 
@@ -769,7 +771,7 @@ namespace elet::domain::compiler::instruction::output
     struct ReturnInstruction : Instruction
     {
         ReturnInstruction():
-            Instruction(InstructionKind::Return)
+            Instruction(InstructionKind::Return, RegisterSize::None)
         { }
     };
 
@@ -780,7 +782,7 @@ namespace elet::domain::compiler::instruction::output
         target;
 
         ResetRegisterInstruction(OperandRegister target):
-            Instruction(InstructionKind::ResetRegister),
+            Instruction(InstructionKind::ResetRegister, RegisterSize::None),
             target(target)
         { }
     };

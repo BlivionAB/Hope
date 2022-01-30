@@ -25,6 +25,9 @@ namespace elet::domain::compiler::ast
     {
         Expression*
         expression;
+
+        Type*
+        expectedType;
     };
 }
 

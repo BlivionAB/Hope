@@ -23,7 +23,7 @@ namespace elet::domain::compiler::test
         _tw.write("(");
         for (const output::ParameterDeclaration* parameterDeclaration : function->parameters)
         {
-            _tw.write(static_cast<int>(parameterDeclaration->allocationSize));
+            _tw.write(static_cast<int>(parameterDeclaration->registerSize));
         }
         _tw.write("):");
         _tw.newline();
@@ -59,10 +59,10 @@ namespace elet::domain::compiler::test
                 writeLoadInstruction(reinterpret_cast<const output::LoadInstruction*>(instruction));
                 break;
             case output::InstructionKind::MoveAddress:
-                writeMoveAddressInstruction(reinterpret_cast<const output::MoveAddressInstruction*>(instruction));
+                writeMoveAddressInstruction(reinterpret_cast<const output::MoveAddressToRegisterInstruction*>(instruction));
                 break;
             case output::InstructionKind::MoveRegister:
-                writeMoveRegisterInstruction(reinterpret_cast<const output::MoveRegisterInstruction*>(instruction));
+                writeMoveRegisterInstruction(reinterpret_cast<const output::MoveRegisterToRegisterInstruction*>(instruction));
                 break;
             case output::InstructionKind::MoveImmediate:
                 writeMoveImmediateInstruction(reinterpret_cast<const output::MoveImmediateInstruction*>(instruction));
@@ -125,7 +125,7 @@ namespace elet::domain::compiler::test
     }
 
     void
-    StashIRPrinter::writeMoveRegisterInstruction(const output::MoveRegisterInstruction* moveRegisterInstruction)
+    StashIRPrinter::writeMoveRegisterInstruction(const output::MoveRegisterToRegisterInstruction* moveRegisterInstruction)
     {
         _tw.write("Mov ");
         writeOperandRegister(moveRegisterInstruction->destination);
@@ -191,7 +191,7 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeMoveAddressInstruction(const output::MoveAddressInstruction* moveAddressInstruction)
+    StashIRPrinter::writeMoveAddressInstruction(const output::MoveAddressToRegisterInstruction* moveAddressInstruction)
     {
         _tw.write("Mov ");
         writeOperandRegister(moveAddressInstruction->destination);

@@ -26,6 +26,7 @@ namespace elet::domain::compiler::test::aarch
         fp = 29,
         lr = 30,
         sp = 31,
+        Zero = sp,
     };
 
 
@@ -103,6 +104,7 @@ namespace elet::domain::compiler::test::aarch
         uint16_t
         imm12;
     };
+
 
     struct StrUnsignedOffsetInstruction : LdrStrUnsignedOffsetInstruction
     {
@@ -303,8 +305,7 @@ namespace elet::domain::compiler::test::aarch
         { }
     };
 
-
-    struct Add_ShiftedRegisterInstruction : Instruction
+    struct ShiftedRegisterInstruction : Instruction
     {
         Register
         Rd;
@@ -321,13 +322,55 @@ namespace elet::domain::compiler::test::aarch
         uint8_t
         imm6;
 
-        Add_ShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
-            Instruction(Aarch64Instruction::Add_ShiftedRegister),
+        ShiftedRegisterInstruction(Aarch64Instruction instruction, Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
+            Instruction(instruction),
             Rd(Rd),
             Rn(Rn),
             Rm(Rm),
             shift(shift),
             imm6(imm6)
+        {
+
+        }
+    };
+
+
+    struct AddShiftedRegisterInstruction : ShiftedRegisterInstruction
+    {
+        AddShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
+            ShiftedRegisterInstruction(Aarch64Instruction::AddShiftedRegister, Rd, Rn, Rm, shift, imm6)
+        { }
+    };
+
+
+    struct SubShiftedRegisterInstruction : ShiftedRegisterInstruction
+    {
+        SubShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
+            ShiftedRegisterInstruction(Aarch64Instruction::SubShiftedRegister, Rd, Rn, Rm, shift, imm6)
+        { }
+    };
+
+
+    struct MaddInstruction : Instruction
+    {
+        Register
+        Rm;
+
+        Register
+        Ra;
+
+        Register
+        Rn;
+
+        Register
+        Rd;
+
+        MaddInstruction(Register Rm, Register Ra, Register Rn, Register Rd):
+            Instruction(Aarch64Instruction::Madd),
+            Rm(Rm),
+            Ra(Ra),
+            Rn(Rn),
+            Rd(Rd)
         {
 
         }
@@ -344,7 +387,7 @@ namespace elet::domain::compiler::test::aarch
         MovInstruction mov;
         OrrImmediateInstruction orr;
         MovnInstruction movn;
-        Add_ShiftedRegisterInstruction add_shiftedRegister;
+        AddShiftedRegisterInstruction add_shiftedRegister;
 
         OneOfInstruction()
         {

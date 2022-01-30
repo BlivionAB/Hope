@@ -50,13 +50,13 @@ namespace elet::domain::compiler::test
         writeExecutable;
 
         std::optional<bool>
-        acceptBaselines;
-
-        std::optional<bool>
         printTypeBaseline;
 
         std::optional<OptimizationLevel>
         optimizationLevel;
+
+        std::optional<bool>
+        acceptBaselines;
     };
 
 
@@ -222,7 +222,7 @@ namespace elet::domain::compiler::test
 
 
         void
-        testMainFunction(Utf8String source)
+        testMainFunction(Utf8String source, Utf8String returnType = "s32")
         {
             project.setEntrySourceFile("main.hs",
                 Utf8String() + "domain Common::MyApplication implements IConsoleApplication\n"
@@ -230,7 +230,7 @@ namespace elet::domain::compiler::test
                 "\n"
                 "public:\n"
                 "\n"
-                "    fn OnApplicationStart(): void\n"
+                "    fn OnApplicationStart(): " + returnType + "\n"
                 "    {\n"
                 + source +
                 "    }\n"

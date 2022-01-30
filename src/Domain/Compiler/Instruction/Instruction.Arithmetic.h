@@ -18,8 +18,8 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         value;
 
-        OperationRegisterToRegisterInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, OperandRegister value):
-            Instruction(operandKind),
+        OperationRegisterToRegisterInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            Instruction(operandKind, registerSize),
             destination(destination),
             target(target),
             value(value)
@@ -38,8 +38,8 @@ namespace elet::domain::compiler::instruction::output
         uint64_t
         value;
 
-        OperationImmediateToRegisterInstruction(InstructionKind instructionKind, OperandRegister destination, OperandRegister target, uint64_t value):
-            Instruction(instructionKind),
+        OperationImmediateToRegisterInstruction(InstructionKind instructionKind, OperandRegister destination, OperandRegister target, uint64_t value, RegisterSize registerSize):
+            Instruction(instructionKind, registerSize),
             destination(destination),
             target(target),
             value(value)
@@ -56,153 +56,149 @@ namespace elet::domain::compiler::instruction::output
         target;
 
         uint64_t
-        value_stackOffset;
+        stackOffset;
 
-        uint64_t
-        value_size;
-
-        OperationAddressToRegisterInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, uint64_t value_stackOffset, uint64_t value_size):
-            Instruction(operandKind),
+        OperationAddressToRegisterInstruction(InstructionKind operandKind, OperandRegister destination, OperandRegister target, uint64_t stackOffset, RegisterSize registerSize):
+            Instruction(operandKind, registerSize),
             destination(destination),
             target(target),
-            value_stackOffset(value_stackOffset),
-            value_size(value_size)
+            stackOffset(stackOffset)
         { }
     };
 
 
     struct AddRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        AddRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::AddRegisterToRegister, destination, target, value)
+        AddRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::AddRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct AddAddressToRegisterInstruction : OperationAddressToRegisterInstruction
     {
-        AddAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
-            OperationAddressToRegisterInstruction(InstructionKind::AddAddressToRegister, destination, target, value_stackOffset, value_size)
+        AddAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t stackOffset, RegisterSize registerSize):
+            OperationAddressToRegisterInstruction(InstructionKind::AddAddressToRegister, destination, target, stackOffset, registerSize)
         { }
     };
 
 
     struct SubtractRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        SubtractRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::SubtractRegisterToRegister, destination, target, value)
+        SubtractRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::SubtractRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct SubtractImmediateToRegisterInstruction : OperationImmediateToRegisterInstruction
     {
-        SubtractImmediateToRegisterInstruction(OperandRegister destination, OperandRegister target, uint64_t value):
-            OperationImmediateToRegisterInstruction(InstructionKind::SubtractImmediateToRegister, destination, target, value)
+        SubtractImmediateToRegisterInstruction(OperandRegister destination, OperandRegister target, uint64_t value, RegisterSize registerSize):
+            OperationImmediateToRegisterInstruction(InstructionKind::SubtractImmediateToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct SubtractRegisterToAddressInstruction : OperationAddressToRegisterInstruction
     {
-        SubtractRegisterToAddressInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
-            OperationAddressToRegisterInstruction(InstructionKind::SubtractRegisterToAddress, destination, target, value_stackOffset, value_size)
+        SubtractRegisterToAddressInstruction(OperandRegister destination, OperandRegister target, size_t stackOffset, RegisterSize registerSize):
+            OperationAddressToRegisterInstruction(InstructionKind::SubtractRegisterToAddress, destination, target, stackOffset, registerSize)
         { }
     };
 
 
     struct MultiplySignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        MultiplySignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::MultiplySignedRegisterToRegister, destination, target, value)
+        MultiplySignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::MultiplySignedRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct MultiplySignedAddressToRegisterInstruction : OperationAddressToRegisterInstruction
     {
-        MultiplySignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
-            OperationAddressToRegisterInstruction(InstructionKind::MultiplySignedAddressToRegister, destination, target, value_stackOffset, value_size)
+        MultiplySignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t stackOffset, RegisterSize registerSize):
+            OperationAddressToRegisterInstruction(InstructionKind::MultiplySignedAddressToRegister, destination, target, stackOffset, registerSize)
         { }
     };
 
 
     struct DivideUnsignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        DivideUnsignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::DivideUnsignedRegisterToRegister, destination, target, value)
+        DivideUnsignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::DivideUnsignedRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct DivideUnsignedAddressToRegisterInstruction : OperationAddressToRegisterInstruction
     {
-        DivideUnsignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
-            OperationAddressToRegisterInstruction(InstructionKind::DivideUnsignedAddressToRegister, destination, target, value_stackOffset, value_size)
+        DivideUnsignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t stackOffset, RegisterSize registerSize):
+            OperationAddressToRegisterInstruction(InstructionKind::DivideUnsignedAddressToRegister, destination, target, stackOffset, registerSize)
         { }
     };
 
 
     struct DivideSignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        DivideSignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::DivideSignedRegisterToRegister, destination, target, value)
+        DivideSignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::DivideSignedRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct DivideSignedAddressToRegisterInstruction : OperationAddressToRegisterInstruction
     {
-        DivideSignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
-        OperationAddressToRegisterInstruction(InstructionKind::DivideSignedAddressToRegister, destination, target, value_stackOffset, value_size)
+        DivideSignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, uint64_t stackOffset, RegisterSize registerSize):
+            OperationAddressToRegisterInstruction(InstructionKind::DivideSignedAddressToRegister, destination, target, stackOffset, registerSize)
         { }
     };
 
 
     struct ModuloUnsignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        ModuloUnsignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::ModuloUnsignedRegisterToRegister, destination, target, value)
+        ModuloUnsignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::ModuloUnsignedRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct ModuloUnsignedAddressToRegisterInstruction : OperationAddressToRegisterInstruction
     {
-        ModuloUnsignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
-            OperationAddressToRegisterInstruction(InstructionKind::ModuloUnsignedAddressToRegister, destination, target, value_stackOffset, value_size)
+        ModuloUnsignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, uint64_t stackOffset, RegisterSize registerSize):
+            OperationAddressToRegisterInstruction(InstructionKind::ModuloUnsignedAddressToRegister, destination, target, stackOffset, registerSize)
         { }
     };
 
 
     struct ModuloSignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        ModuloSignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::ModuloSignedRegisterToRegister, destination, target, value)
+        ModuloSignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::ModuloSignedRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct ModuloSignedAddressToRegisterInstruction : OperationAddressToRegisterInstruction
     {
-        ModuloSignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, size_t value_size):
-            OperationAddressToRegisterInstruction(InstructionKind::ModuloSignedAddressToRegister, destination, target, value_stackOffset, value_size)
+        ModuloSignedAddressToRegisterInstruction(OperandRegister destination, OperandRegister target, size_t value_stackOffset, RegisterSize registerSize):
+            OperationAddressToRegisterInstruction(InstructionKind::ModuloSignedAddressToRegister, destination, target, value_stackOffset, registerSize)
         { }
     };
 
 
     struct AndRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        AndRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::AndRegisterToRegister, destination, target, value)
+        AndRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::AndRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct XorRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        XorRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::XorRegisterToRegister, destination, target, value)
+        XorRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::XorRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
@@ -210,16 +206,16 @@ namespace elet::domain::compiler::instruction::output
 
     struct OrRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        OrRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value):
-            OperationRegisterToRegisterInstruction(InstructionKind::OrRegisterToRegister, destination, target, value)
+        OrRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::OrRegisterToRegister, destination, target, value, registerSize)
         { }
     };
 
 
     struct AddImmediateToRegisterInstruction : OperationImmediateToRegisterInstruction
     {
-        AddImmediateToRegisterInstruction(OperandRegister destination, OperandRegister target, uint64_t value):
-        OperationImmediateToRegisterInstruction(InstructionKind::AddImmediateToRegister, destination, target, value)
+        AddImmediateToRegisterInstruction(OperandRegister destination, OperandRegister target, uint64_t value, RegisterSize registerSize):
+            OperationImmediateToRegisterInstruction(InstructionKind::AddImmediateToRegister, destination, target, value, registerSize)
         { }
     };
 }

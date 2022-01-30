@@ -534,6 +534,15 @@ namespace elet::domain::compiler::ast
             case Token::U32Keyword:
                 typeAssignment->type = TypeKind::U32;
                 break;
+            case Token::S32Keyword:
+                typeAssignment->type = TypeKind::S32;
+                break;
+            case Token::U64Keyword:
+                typeAssignment->type = TypeKind::U64;
+                break;
+            case Token::S64Keyword:
+                typeAssignment->type = TypeKind::S64;
+                break;
             case Token::StringKeyword:
             case Token::Identifier:
                 typeAssignment->type = TypeKind::Custom;

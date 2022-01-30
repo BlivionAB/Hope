@@ -39,6 +39,9 @@ private:
     Rm(uint32_t dw);
 
     Register
+    Ra(uint32_t dw);
+
+    Register
     Rt(uint32_t dw);
 
     Register
@@ -132,7 +135,19 @@ private:
     shift(uint32_t dw);
 
     void
-    parseStrLdrImmediateUnsignedOffsetInstruction(StrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22);
+    parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22);
+
+    void
+    parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw);
+
+    void
+    parseSubShiftedRegister(SubShiftedRegisterInstruction* instruction, uint32_t dw);
+
+    bool
+    tryParse15Instructions(Instruction* instruction, uint32_t dw);
+
+    void
+    parseMaddInstruction(MaddInstruction* instruction, uint32_t dw);
 };
 
 

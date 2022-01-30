@@ -25,7 +25,7 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .printTypeBaseline = true
+            .printTypeBaseline = true,
         }));
     }
 
@@ -45,7 +45,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(DecimalLiteralFixture, DecimalLiteral_S64NegativeMax)
     {
-        testMainFunction("return -2147483649;");
+        testMainFunction("return -2147483649;", "s64");
 
         EXPECT_TRUE(testProject({
             .baselineName = "DecimalLiteral_S64NegativeMax",
@@ -59,7 +59,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(DecimalLiteralFixture, DecimalLiteral_S64NegativeMin)
     {
-        testMainFunction("return -9223372036854775808;");
+        testMainFunction("return -9223372036854775808;", "s64");
 
         EXPECT_TRUE(testProject({
             .baselineName = "DecimalLiteral_S64NegativeMin",
@@ -86,7 +86,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(DecimalLiteralFixture, DecimalLiteral_S64PositiveMin)
     {
-        testMainFunction("return 2147483648;");
+        testMainFunction("return 2147483648;", "s64");
 
         EXPECT_TRUE(testProject({
             .baselineName = "DecimalLiteral_S64PositiveMin",
@@ -98,16 +98,16 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(DecimalLiteralFixture, DecimalLiteral_S64Max)
+    TEST_F(DecimalLiteralFixture, DecimalLiteral_S64PositiveMax)
     {
-        testMainFunction("return 9223372036854775807;");
+        testMainFunction("return 9223372036854775807;", "s64");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "DecimalLiteral_S64Max",
+            .baselineName = "DecimalLiteral_S64PositiveMax",
             .targets = {
                 CompilationTarget::StashIR
             },
-            .printTypeBaseline = true,
+            .printTypeBaseline = true
         }));
     }
 

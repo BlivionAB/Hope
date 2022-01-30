@@ -94,13 +94,13 @@ namespace elet::domain::compiler::instruction
             List<output::ParameterDeclaration*> parameterList = segmentParameterDeclaration(parameterDeclaration);
             for (const auto& param : parameterList)
             {
-                output::StoreRegisterInstruction* store = new output::StoreRegisterInstruction(static_cast<output::OperandRegister>(static_cast<int>(output::OperandRegister::Arg0) + i), stackOffset, param->allocationSize);
+                output::StoreRegisterInstruction* store = new output::StoreRegisterInstruction(static_cast<output::OperandRegister>(static_cast<int>(output::OperandRegister::Arg0) + i), stackOffset, param->registerSize);
                 addInstruction(store);
 
                 // TODO: The reference instruction should be on property basis.
                 parameterDeclaration->referenceInstruction = store;
-                stackOffset += static_cast<uint64_t>(param->allocationSize);
-                function->parameterSize += static_cast<uint8_t>(param->allocationSize);
+                stackOffset += static_cast<uint64_t>(param->registerSize);
+                function->parameterSize += static_cast<uint8_t>(param->registerSize);
             }
         }
     }
@@ -134,16 +134,16 @@ namespace elet::domain::compiler::instruction
     void
     Transformer::transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset)
     {
-        RegisterSize registerSize;
-        output::CanonicalExpression expression = transformExpression(returnStatement->expression, stackOffset, registerSize);
+        output::CanonicalExpression expression = transformExpression(returnStatement->expression, stackOffset);
         if (std::holds_alternative<output::ImmediateValue>(expression))
         {
-            uint64_t immediateValue = std::get<output::ImmediateValue>(expression).value;
-            addInstruction(new output::MoveImmediateInstruction(output::OperandRegister::Return, immediateValue, registerSize));
+            output::ImmediateValue immediateValue = std::get<output::ImmediateValue>(expression);
+            addInstruction(new output::MoveImmediateInstruction(output::OperandRegister::Return, immediateValue.value, returnStatement->expectedType->size()));
         }
         else if (std::holds_alternative<output::OperandRegister>(expression))
         {
-            addInstruction(new output::MoveRegisterInstruction(output::OperandRegister::Return, output::OperandRegister::Scratch0));
+            assert((*returnStatement->expectedType != TypeKind::Void) && "Type should not equal void here. The type checker should have already failed.");
+            addInstruction(new output::MoveRegisterToRegisterInstruction(output::OperandRegister::Return, output::OperandRegister::Scratch0, returnStatement->expectedType->size()));
         }
         else
         {
@@ -155,16 +155,18 @@ namespace elet::domain::compiler::instruction
     void
     Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, output::FunctionRoutine* function, uint64_t& stackOffset)
     {
-        RegisterSize registerSize;
-        output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset, registerSize);
+        RegisterSize registerSize = variable->resolvedType->size();
+        output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset);
         if (std::holds_alternative<output::ImmediateValue>(canonicalExpression))
         {
-            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(std::get<output::ImmediateValue>(canonicalExpression).value, stackOffset, registerSize);
+            auto immediateValue = std::get<output::ImmediateValue>(canonicalExpression);
+            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(immediateValue.value, stackOffset, registerSize);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
         else
         {
+            output::OperandRegister operandRegister = std::get<output::OperandRegister>(canonicalExpression);
             output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(output::OperandRegister::Scratch0, stackOffset, registerSize);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
@@ -174,24 +176,23 @@ namespace elet::domain::compiler::instruction
 
 
     output::CanonicalExpression
-    Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize)
+    Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset)
     {
-        return transformExpression(expression, stackOffset, registerSize, nullptr);
+        return transformExpression(expression, stackOffset, nullptr);
     }
 
 
     output::CanonicalExpression
-    Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, RegisterSize& registerSize, ast::Type* forcedType)
+    Transformer::transformExpression(ast::Expression* expression, uint64_t& stackOffset, ast::Type* forcedType)
     {
         switch (expression->kind)
         {
             case ast::SyntaxKind::BinaryExpression:
-                return transformBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression), stackOffset,registerSize, forcedType);
+                return transformBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression), stackOffset, forcedType);
             case ast::SyntaxKind::IntegerLiteral:
             {
                 ast::IntegerLiteral* integerLiteral = reinterpret_cast<ast::IntegerLiteral*>(expression);
                 ast::Type* type = forcedType ? forcedType : integerLiteral->resolvedType;
-                registerSize = type->size();
                 if (integerLiteral->isNegative)
                 {
                     return output::ImmediateValue(type->kind, -integerLiteral->value);
@@ -204,12 +205,11 @@ namespace elet::domain::compiler::instruction
             case ast::SyntaxKind::CharacterLiteral:
             {
                 ast::TypeKind typeKind = forcedType ? forcedType->kind : TypeKind::U8;
-                registerSize = RegisterSize::Byte;
                 ast::CharacterLiteral* characterLiteral = reinterpret_cast<ast::CharacterLiteral*>(expression);
                 return output::ImmediateValue(typeKind, characterLiteral->value);
             }
             case ast::SyntaxKind::PropertyExpression:
-                return transformPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression),registerSize);
+                return transformPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression));
             default:
                 throw std::runtime_error("Unknown expression for transformation.");
         }
@@ -217,17 +217,18 @@ namespace elet::domain::compiler::instruction
 
 
     output::OperandRegister
-    Transformer::transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryOperatorKind binaryOperatorKind)
+    Transformer::transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryExpression* binaryExpression)
     {
         _scratchRegisterIndex--;
         output::OperandRegister scratchRegister = borrowScratchRegister();
-        switch (binaryOperatorKind)
+        RegisterSize registerSize = binaryExpression->resolvedType->size();
+        switch (binaryExpression->binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
-                addInstruction(new output::AddImmediateToRegisterInstruction(scratchRegister, left, right));
+                addInstruction(new output::AddImmediateToRegisterInstruction(scratchRegister, left, right, registerSize));
                 break;
             case ast::BinaryOperatorKind::Minus:
-                addInstruction(new output::SubtractImmediateToRegisterInstruction(scratchRegister, left, right));
+                addInstruction(new output::SubtractImmediateToRegisterInstruction(scratchRegister, left, right, registerSize));
                 break;
             default:
                 assert("Not implemented binary operator in 'transformImmediateToRegisterExpression'.");
@@ -239,23 +240,23 @@ namespace elet::domain::compiler::instruction
     output::ImmediateValue
     Transformer::transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right)
     {
-        IntegerType integerType = getIntegerTypeFromTypeKind(left.type);
-        output::ImmediateValue immediateValue(left.type, 0);
+        IntegerKind integerKind = left.integerType.kind;
+        output::ImmediateValue immediateValue(left.integerType, 0);
         switch (binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::BitwiseAnd:
-                switch (integerType)
+                switch (integerKind)
                 {
-                    case IntegerType::S32:
+                    case IntegerKind::S32:
                         immediateValue.value = static_cast<int32_t>(left.value) & static_cast<int32_t>(right.value);
                         break;
-                    case IntegerType::S64:
+                    case IntegerKind::S64:
                         immediateValue.value = static_cast<int64_t>(left.value) & static_cast<int64_t>(right.value);
                         break;
-                    case IntegerType::U32:
+                    case IntegerKind::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) & static_cast<uint32_t>(right.value);
                         break;
-                    case IntegerType::U64:
+                    case IntegerKind::U64:
                         immediateValue.value = left.value & right.value;
                         break;
                     default:
@@ -264,18 +265,18 @@ namespace elet::domain::compiler::instruction
                 return immediateValue;
 
             case ast::BinaryOperatorKind::BitwiseXor:
-                switch (integerType)
+                switch (integerKind)
                 {
-                    case IntegerType::S32:
+                    case IntegerKind::S32:
                         immediateValue.value = static_cast<int32_t>(left.value) ^ static_cast<int32_t>(right.value);
                         break;
-                    case IntegerType::S64:
+                    case IntegerKind::S64:
                         immediateValue.value = static_cast<int64_t>(left.value) ^ static_cast<int64_t>(right.value);
                         break;
-                    case IntegerType::U32:
+                    case IntegerKind::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) ^ static_cast<uint32_t>(right.value);
                         break;
-                    case IntegerType::U64:
+                    case IntegerKind::U64:
                         immediateValue.value = left.value ^ right.value;
                         break;
                     default:
@@ -283,18 +284,18 @@ namespace elet::domain::compiler::instruction
                 }
                 return immediateValue;
             case ast::BinaryOperatorKind::BitwiseOr:
-                switch (integerType)
+                switch (integerKind)
                 {
-                    case IntegerType::S32:
+                    case IntegerKind::S32:
                         immediateValue.value = static_cast<int32_t>(left.value) | static_cast<int32_t>(right.value);
                         break;
-                    case IntegerType::S64:
+                    case IntegerKind::S64:
                         immediateValue.value = static_cast<int64_t>(left.value) | static_cast<int64_t>(right.value);
                         break;
-                    case IntegerType::U32:
+                    case IntegerKind::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) | static_cast<uint32_t>(right.value);
                         break;
-                    case IntegerType::U64:
+                    case IntegerKind::U64:
                         immediateValue.value = left.value | right.value;
                         break;
                     default:
@@ -303,18 +304,18 @@ namespace elet::domain::compiler::instruction
                 return immediateValue;
             case ast::BinaryOperatorKind::Multiply:
             {
-                switch (integerType)
+                switch (integerKind)
                 {
-                    case IntegerType::S32:
+                    case IntegerKind::S32:
                         immediateValue.value = left.value * right.value;
                         break;
-                    case IntegerType::S64:
+                    case IntegerKind::S64:
                         immediateValue.value = static_cast<uint64_t>(static_cast<int32_t>(left.value) * static_cast<int32_t>(right.value));
                         break;
-                    case IntegerType::U32:
+                    case IntegerKind::U32:
                         immediateValue.value = static_cast<uint64_t>(left.value) * static_cast<uint64_t>(right.value);
                         break;
-                    case IntegerType::U64:
+                    case IntegerKind::U64:
                         immediateValue.value = static_cast<uint32_t>(left.value) * static_cast<uint32_t>(right.value);
                         break;
                     default:
@@ -325,30 +326,30 @@ namespace elet::domain::compiler::instruction
 
             case ast::BinaryOperatorKind::Plus:
             {
-                switch (integerType)
+                switch (integerKind)
                 {
-                    case IntegerType::U8:
+                    case IntegerKind::U8:
                         immediateValue.value = static_cast<uint8_t>(left.value) + static_cast<uint8_t>(right.value);
                         break;
-                    case IntegerType::S8:
+                    case IntegerKind::S8:
                         immediateValue.value = static_cast<int8_t>(left.value) + static_cast<int8_t>(right.value);
                         break;
-                    case IntegerType::U16:
+                    case IntegerKind::U16:
                         immediateValue.value = static_cast<uint16_t>(left.value) + static_cast<uint16_t>(right.value);
                         break;
-                    case IntegerType::S16:
+                    case IntegerKind::S16:
                         immediateValue.value = static_cast<int16_t>(left.value) + static_cast<int16_t>(right.value);
                         break;
-                    case IntegerType::U32:
+                    case IntegerKind::U32:
                         immediateValue.value = static_cast<uint32_t>(left.value) + static_cast<uint32_t>(right.value);
                         break;
-                    case IntegerType::S32:
+                    case IntegerKind::S32:
                         immediateValue.value = static_cast<int32_t>(left.value) + static_cast<int32_t>(right.value);
                         break;
-                    case IntegerType::S64:
+                    case IntegerKind::S64:
                         immediateValue.value = static_cast<int64_t>(left.value) + static_cast<int64_t>(right.value);
                         break;
-                    case IntegerType::U64:
+                    case IntegerKind::U64:
                         immediateValue.value = static_cast<uint64_t>(left.value) + static_cast<uint64_t>(right.value);
                         break;
                 }
@@ -430,7 +431,7 @@ namespace elet::domain::compiler::instruction
         output::LoadInstruction* loadInstruction = new output::LoadInstruction(
             getOperandRegisterFromArgumentIndex(argumentIndex),
             referenceInstruction->stackOffset,
-            referenceInstruction->allocationSize);
+            referenceInstruction->registerSize);
         addInstruction(loadInstruction);
     }
 
@@ -439,8 +440,8 @@ namespace elet::domain::compiler::instruction
     Transformer::transformArgumentStringLiteral(ast::StringLiteral* stringLiteral, uint64_t argumentIndex)
     {
         output::String* cstring = addStaticConstantString(stringLiteral);
-        output::MoveAddressInstruction* store = new output::MoveAddressInstruction(
-            getOperandRegisterFromArgumentIndex(argumentIndex), 0);
+        output::MoveAddressToRegisterInstruction* store = new output::MoveAddressToRegisterInstruction(
+            getOperandRegisterFromArgumentIndex(argumentIndex), 0, RegisterSize::Pointer);
         store->constant = cstring;
         addInstruction(store);
     }
@@ -484,10 +485,10 @@ namespace elet::domain::compiler::instruction
 
 
     output::OperandRegister
-    Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression, RegisterSize& registerSize)
+    Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression)
     {
         output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
-        output::LoadInstruction* loadInstruction = new output::LoadInstruction(borrowScratchRegister(), referenceInstruction->stackOffset, referenceInstruction->allocationSize);
+        output::LoadInstruction* loadInstruction = new output::LoadInstruction(borrowScratchRegister(), referenceInstruction->stackOffset, referenceInstruction->registerSize);
         addInstruction(loadInstruction);
         return loadInstruction->destination;
     }
@@ -511,45 +512,46 @@ namespace elet::domain::compiler::instruction
         _scratchRegisterIndex -= 2;
 
         output::OperandRegister destination = borrowScratchRegister();
+        RegisterSize registerSize = binaryExpression->resolvedType->size();
         switch (binaryExpression->binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
-                addInstruction(new output::AddRegisterToRegisterInstruction(destination, target, value));
+                addInstruction(new output::AddRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::Minus:
-                addInstruction(new output::SubtractRegisterToRegisterInstruction(destination, target, value));
+                addInstruction(new output::SubtractRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::Multiply:
-                addInstruction(new output::MultiplySignedRegisterToRegisterInstruction(destination, target, value));
+                addInstruction(new output::MultiplySignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::Divide:
                 if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
                 {
-                    addInstruction(new output::DivideSignedRegisterToRegisterInstruction(destination, target, value));
+                    addInstruction(new output::DivideSignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 }
                 else
                 {
-                    addInstruction(new output::DivideUnsignedRegisterToRegisterInstruction(destination, target, value));
+                    addInstruction(new output::DivideUnsignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 }
                 break;
             case ast::BinaryOperatorKind::Modulo:
                 if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
                 {
-                    addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value));
+                    addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 }
                 else
                 {
-                    addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value));
+                    addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 }
                 break;
             case ast::BinaryOperatorKind::BitwiseAnd:
-                addInstruction(new output::AndRegisterToRegisterInstruction(destination, target, value));
+                addInstruction(new output::AndRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::BitwiseXor:
-                addInstruction(new output::XorRegisterToRegisterInstruction(destination, target, value));
+                addInstruction(new output::XorRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::BitwiseOr:
-                addInstruction(new output::OrRegisterToRegisterInstruction(destination, target, value));
+                addInstruction(new output::OrRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             default:
                 throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
@@ -559,7 +561,7 @@ namespace elet::domain::compiler::instruction
 
 
     output::CanonicalExpression
-    Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset, RegisterSize& registerSize, ast::Type* forcedType)
+    Transformer::transformBinaryExpression(ast::BinaryExpression* binaryExpression, uint64_t& stackOffset, ast::Type* forcedType)
     {
         // (1) if both hand-sides are binary expressions evaluate both. left first.
         // (2) Continue (1) until you find a binary expression without binary expression.
@@ -605,19 +607,19 @@ namespace elet::domain::compiler::instruction
         // Transform binary expressions first and then regular expressions.
         if (binaryExpression->left->kind == ast::SyntaxKind::BinaryExpression)
         {
-            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize, type);
+            leftOutput = transformExpression(binaryExpression->left, stackOffset, type);
         }
         if (binaryExpression->right->kind == ast::SyntaxKind::BinaryExpression)
         {
-            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize, type);
+            rightOutput = transformExpression(binaryExpression->right, stackOffset, type);
         }
         if (std::holds_alternative<std::monostate>(leftOutput))
         {
-            leftOutput = transformExpression(binaryExpression->left, stackOffset, registerSize, type);
+            leftOutput = transformExpression(binaryExpression->left, stackOffset, type);
         }
         if (std::holds_alternative<std::monostate>(rightOutput))
         {
-            rightOutput = transformExpression(binaryExpression->right, stackOffset, registerSize, type);
+            rightOutput = transformExpression(binaryExpression->right, stackOffset, type);
         }
 
         if (std::holds_alternative<output::OperandRegister>(leftOutput) && std::holds_alternative<output::OperandRegister>(rightOutput))
@@ -641,11 +643,11 @@ namespace elet::domain::compiler::instruction
         }
         else if (std::holds_alternative<output::OperandRegister>(leftOutput))
         {
-            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(leftOutput), std::get<output::ImmediateValue>(rightOutput).value, binaryExpression->binaryOperatorKind);
+            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(leftOutput), std::get<output::ImmediateValue>(rightOutput).value, binaryExpression);
         }
         else // if (std::holds_alternative<output::OperandRegister>(rightOutput))
         {
-            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(rightOutput), std::get<output::ImmediateValue>(leftOutput).value, binaryExpression->binaryOperatorKind);
+            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(rightOutput), std::get<output::ImmediateValue>(leftOutput).value, binaryExpression);
         }
     }
 
@@ -686,28 +688,28 @@ namespace elet::domain::compiler::instruction
     }
 
 
-    IntegerType
+    IntegerKind
     Transformer::getIntegerTypeFromTypeKind(TypeKind typeKind)
     {
         switch (typeKind)
         {
             case TypeKind::Char:
             case TypeKind::U8:
-                return IntegerType::U8;
+                return IntegerKind::U8;
             case TypeKind::S8:
-                return IntegerType::S8;
+                return IntegerKind::S8;
             case TypeKind::U16:
-                return IntegerType::U16;
+                return IntegerKind::U16;
             case TypeKind::S16:
-                return IntegerType::S16;
+                return IntegerKind::S16;
             case TypeKind::U32:
-                return IntegerType::U32;
+                return IntegerKind::U32;
             case TypeKind::S32:
-                return IntegerType::S32;
+                return IntegerKind::S32;
             case TypeKind::U64:
-                return IntegerType::U64;
+                return IntegerKind::U64;
             case TypeKind::S64:
-                return IntegerType::S64;
+                return IntegerKind::S64;
         }
         assert("Cannot convert typekind to integer type.");
     }

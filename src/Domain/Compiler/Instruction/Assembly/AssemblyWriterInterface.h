@@ -67,15 +67,35 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
-        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function);
+        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
-        writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* addRegisterAddressInstruction, FunctionRoutine* function);
+        writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
-        writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function);
+        writeAddImmediateInstruction(AddImmediateToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeSubtractImmediateInstruction(SubtractImmediateToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeSubtractRegisterToRegisterInstruction(SubtractRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeMultiplySignedRegisterToRegisterInstruction(MultiplySignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
@@ -95,27 +115,15 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
-        writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function);
+        writeMoveImmediateInstruction(MoveImmediateInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
-        writeMoveRegisterInstruction(MoveRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function);
+        writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
-        writeMoveAddressInstruction(MoveAddressInstruction* moveAddressInstruction, FunctionRoutine* function);
-
-        virtual
-        void
-        writeAddImmediateInstruction(AddImmediateToRegisterInstruction* subtractImmediateInstruction, FunctionRoutine* function);
-
-        virtual
-        void
-        writeSubtractImmediateInstruction(SubtractImmediateToRegisterInstruction* subtractImmediateInstruction, FunctionRoutine* function);
-
-        virtual
-        void
-        writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function);
+        writeMoveAddressInstruction(MoveAddressToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
@@ -223,6 +231,7 @@ namespace elet::domain::compiler::instruction::output
 
         bool
         nextInstructionIs(InstructionKind kind) const;
+
 };
 }
 

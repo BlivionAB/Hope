@@ -50,6 +50,20 @@ namespace elet::domain::compiler::test::aarch
             {
                 continue;
             }
+            if (tryParse15Instructions(instruction, dw))
+            {
+                continue;
+            }
+            if (Aarch64Instruction::Adr == (dw & Aarch64Instruction::AdrMask))
+            {
+                parseAdrInstruction(instruction, dw);
+                continue;;
+            }
+            if (Aarch64Instruction::Adrp == (dw & Aarch64Instruction::AdrpMask))
+            {
+                parseAdrpInstruction(instruction, dw);
+                continue;
+            }
             if (Aarch64Instruction::Udf == (dw && Aarch64Instruction::Mask16))
             {
                 parseUdfInstruction(instruction, dw);
@@ -139,33 +153,10 @@ namespace elet::domain::compiler::test::aarch
                 instr->rt = Rt(dw);
                 return true;
             }
-            case Aarch64Instruction::Adr:
-            {
-                AdrInstruction* adrp = reinterpret_cast<AdrInstruction*>(instruction);
-                adrp->kind = Aarch64Instruction::Adr;
-                adrp->rd = Rd(dw);
-                adrp->immhilo = immhilo(dw);
+            case Aarch64Instruction::AddShiftedRegister:
+            case Aarch64Instruction::AddShiftedRegister64:
+                parseAddShiftedRegister(reinterpret_cast<AddShiftedRegisterInstruction*>(instruction), dw);
                 return true;
-            }
-            case Aarch64Instruction::Adrp:
-            {
-                AdrInstruction* adrp = reinterpret_cast<AdrInstruction*>(instruction);
-                adrp->kind = Aarch64Instruction::Adrp;
-                adrp->rd = Rd(dw);
-                adrp->immhilo = immhilo(dw);
-                return true;
-            }
-            case Aarch64Instruction::Add_ShiftedRegister:
-            {
-                Add_ShiftedRegisterInstruction* add = reinterpret_cast<Add_ShiftedRegisterInstruction*>(instruction);
-                add->kind = Aarch64Instruction::Add_ShiftedRegister;
-                add->Rd = Rd(dw);
-                add->Rn = Rn(dw);
-                add->Rm = Rm(dw);
-                add->imm6 = imm6(dw);
-                add->shift = shift(dw);
-                return true;
-            }
         }
         return false;
     }
@@ -247,10 +238,6 @@ namespace elet::domain::compiler::test::aarch
 
         switch (kind22)
         {
-            case Aarch64Instruction::StrImmediateBaseOffset64:
-            case Aarch64Instruction::LdrImmediateBaseOffset64:
-                parseLoadStoreInstruction(instruction, dw, kind22);
-                return true;
             case Aarch64Instruction::StpPreIndex64:
             case Aarch64Instruction::StpBaseOffset64:
             case Aarch64Instruction::LdpPostIndex64:
@@ -263,18 +250,20 @@ namespace elet::domain::compiler::test::aarch
                 return true;
             case Aarch64Instruction::LdrImmediateUnsignedOffset:
             case Aarch64Instruction::StrImmediateUnsignedOffset:
-                parseStrLdrImmediateUnsignedOffsetInstruction(reinterpret_cast<StrUnsignedOffsetInstruction*>(instruction), dw, kind22);
+            case Aarch64Instruction::LdrImmediateUnsignedOffset64:
+            case Aarch64Instruction::StrImmediateUnsignedOffset64:
+                parseLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrStrUnsignedOffsetInstruction*>(instruction), dw, kind22);
                 return true;
-
         }
         return false;
     }
 
 
     void
-    Aarch64AssemblyParser::parseStrLdrImmediateUnsignedOffsetInstruction(StrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22)
+    Aarch64AssemblyParser::parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22)
     {
         instruction->kind = static_cast<Aarch64Instruction>(kind22);
+        instruction->is64Bit = dw & (0b01 << 30);
         instruction->Rn = Rn(dw);
         instruction->Rt = Rt(dw);
         instruction->imm12 = imm12(dw);
@@ -304,10 +293,10 @@ namespace elet::domain::compiler::test::aarch
 
         switch (loadStoreInstruction->kind)
         {
-            case Aarch64Instruction::StrImmediateBaseOffset64:
-            case Aarch64Instruction::LdrImmediateBaseOffset64:
-                loadStoreInstruction->addressMode = AddressMode::BaseOffset;
-                break;
+//            case Aarch64Instruction::StrImmediateBaseOffset64:
+//            case Aarch64Instruction::LdrImmediateBaseOffset64:
+//                loadStoreInstruction->addressMode = AddressMode::BaseOffset;
+//                break;
             default:
                 throw std::runtime_error("Unknown load store instruction.");
         }
@@ -329,7 +318,6 @@ namespace elet::domain::compiler::test::aarch
             case Aarch64Instruction::StpPreIndex64:
                 loadStoreInstruction->addressMode = AddressMode::PreIndex;
                 break;
-            case Aarch64Instruction::StrImmediateBaseOffset64:
             case Aarch64Instruction::StpBaseOffset64:
             case Aarch64Instruction::LdpBaseOffset64:
                 loadStoreInstruction->addressMode = AddressMode::BaseOffset;
@@ -353,8 +341,27 @@ namespace elet::domain::compiler::test::aarch
             case Aarch64Instruction::Movz:
                 parseMovzInstruction(reinterpret_cast<MovzInstruction*>(instruction), dw);
                 return true;
+            case Aarch64Instruction::SubShiftedRegister:
+            case Aarch64Instruction::SubShiftedRegister64:
+                parseSubShiftedRegister(reinterpret_cast<SubShiftedRegisterInstruction*>(instruction), dw);
+                return true;
         }
 
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::tryParse15Instructions(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t kind = dw & Mask15;
+        switch (kind)
+        {
+            case Aarch64Instruction::Madd:
+            case Aarch64Instruction::Madd64:
+                parseMaddInstruction(reinterpret_cast<MaddInstruction*>(instruction), dw);
+                return true;
+        }
         return false;
     }
 
@@ -430,6 +437,13 @@ namespace elet::domain::compiler::test::aarch
 
 
     Register
+    Aarch64AssemblyParser::Ra(uint32_t dw)
+    {
+        return static_cast<Register>((dw & Aarch64Instruction::RaMask) >> 10);
+    }
+
+
+    Register
     Aarch64AssemblyParser::Rn(uint32_t dw)
     {
         return static_cast<Register>((dw & Aarch64Instruction::RnMask) >> 5);
@@ -489,6 +503,44 @@ namespace elet::domain::compiler::test::aarch
     Aarch64AssemblyParser::uimm16(uint32_t dw)
     {
         return (dw & Aarch64Instruction::Imm16Mask) >> 5;
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseSubShiftedRegister(SubShiftedRegisterInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::SubShiftedRegister;
+        instruction->is64Bit = sf(dw);
+        instruction->Rd = Rd(dw);
+        instruction->Rn = Rn(dw);
+        instruction->Rm = Rm(dw);
+        instruction->shift = shift(dw);
+        instruction->imm6 = imm6(dw);
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::AddShiftedRegister;
+        instruction->is64Bit = sf(dw);
+        instruction->Rd = Rd(dw);
+        instruction->Rn = Rn(dw);
+        instruction->Rm = Rm(dw);
+        instruction->shift = shift(dw);
+        instruction->imm6 = imm6(dw);
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseMaddInstruction(MaddInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::Madd;
+        instruction->is64Bit = sf(dw);
+        instruction->Rm = Rm(dw);
+        instruction->Ra = Ra(dw);
+        instruction->Rn = Rn(dw);
+        instruction->Rd = Rd(dw);
     }
 
 

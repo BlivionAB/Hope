@@ -27,13 +27,13 @@ CommandLine<C, F>::CommandLine(int argc, char **argv, CommandDefinition<C, F> ro
             {
                 if (flag->second.hasValue)
                 {
-                    pendingCaptureFlag = flag->second.type;
+                    pendingCaptureFlag = flag->second.integerType;
                     captureValue = true;
                     continue;
                 }
                 else
                 {
-                    _flags.insert(std::pair(flag->second.type, nullptr));
+                    _flags.insert(std::pair(flag->second.integerType, nullptr));
                 }
             }
             else

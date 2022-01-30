@@ -5,7 +5,7 @@ namespace elet::domain::compiler::instruction::output::test
 {
     TEST_F(BitmaskImmediateFixture, ImmediateInstructionEncoding_BitmaskImmediate_ElementSize16)
     {
-        testMainFunction("return 0b0000_0000_0000_0001_0000_0000_0000_0001;");
+        testMainFunction("return 0b0000_0000_0000_0001_0000_0000_0000_0001;", "s32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "ImmediateInstructionEncoding_BitmaskImmediate_ElementSize16",

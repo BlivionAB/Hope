@@ -21,6 +21,7 @@ namespace elet::domain::compiler::instruction::output
         fp = r29,
         lr = r30,
         sp = r31,
+        zero = r31,
     };
 
 
@@ -35,6 +36,7 @@ namespace elet::domain::compiler::instruction::output
         Rt2Mask = static_cast<uint32_t>(0x1f) << 10,
         RnMask = static_cast<uint32_t>(0x1f) << 5,
         RmMask = static_cast<uint32_t>(0x1f) << 16,
+        RaMask = static_cast<uint32_t>(0x1f) << 10,
         RdMask = static_cast<uint32_t>(0x1f) << 0,
         Imm7Mask = static_cast<uint32_t>(0x7f) << 15,
         Imm12Mask = static_cast<uint32_t>(0xfff) << 10,
@@ -42,6 +44,7 @@ namespace elet::domain::compiler::instruction::output
         Imm26Mask = MASK(6, 0),
         Imm6Mask = MASK(16, 10),
         ShiftMask = MASK(8, 22),
+        Mask15 = MASK(0, 15),
         Mask16 = MASK(0, 16),
         Mask21 = MASK(0, 21),
         Mask22 = MASK(0, 22),
@@ -56,10 +59,10 @@ namespace elet::domain::compiler::instruction::output
         // Load & Stores
         Ldr64 = static_cast<uint32_t>(0b01011000) << 24,
         Ldr32 = static_cast<uint32_t>(0b00011000) << 24,
-        StrImmediateBaseOffset64 = static_cast<uint32_t>(0b1111100100) << 22,
-        LdrImmediateBaseOffset64 = static_cast<uint32_t>(0b1111100101) << 22,
         StrImmediateUnsignedOffset = static_cast<uint32_t>(0b1011100100) << 22,
         LdrImmediateUnsignedOffset = static_cast<uint32_t>(0b1011100101) << 22,
+        StrImmediateUnsignedOffset64 = static_cast<uint32_t>(0b1111100100) << 22,
+        LdrImmediateUnsignedOffset64 = static_cast<uint32_t>(0b1111100101) << 22,
         StpPreIndex64 = static_cast<uint32_t>(0b1010100110) << 22,
         StpBaseOffset64 = static_cast<uint32_t>(0b1010100100) << 22,
         LdpPostIndex64 = static_cast<uint32_t>(0b1010100011) << 22,
@@ -69,8 +72,13 @@ namespace elet::domain::compiler::instruction::output
         Adr = static_cast<uint32_t>(0b00010000) << 24,
         Adrp = static_cast<uint32_t>(0b10010000) << 24,
         AddImmediate64 = static_cast<uint32_t>(0b1001000100) << 22,
-        Add_ShiftedRegister = static_cast<uint32_t>(0b00001011) << 24,
+        AddShiftedRegister = static_cast<uint32_t>(0b00001011) << 24,
+        AddShiftedRegister64 = static_cast<uint32_t>(0b10001011) << 24,
+        SubShiftedRegister = static_cast<uint32_t>(0b01001011000) << 21,
+        SubShiftedRegister64 = static_cast<uint32_t>(0b11001011000) << 21,
         SubImmediate64 = static_cast<uint32_t>(0b1101000100) << 22,
+        Madd = static_cast<uint32_t>(0b00011011000'00000'0) << 15, // Between single quotes are Rm field
+        Madd64 = static_cast<uint32_t>(0b10011011000'00000'0) << 15, // Between single quotes are Rm field
         OrrImmediate = static_cast<uint32_t>(0b01100100) << 23,
 
         Movz = static_cast<uint32_t>(0b010100101) << 23,
