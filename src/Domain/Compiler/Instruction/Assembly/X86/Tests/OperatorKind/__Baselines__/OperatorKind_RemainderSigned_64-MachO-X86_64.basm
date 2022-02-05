@@ -1,0 +1,19 @@
+Address           Bytes                 Instruction
+============================================================
+
+__TEXT,__text:
+
+_main:
+0000000100003fc0  55                    pushq %rbp
+0000000100003fc1  4889e5                movq %rsp, %rbp
+0000000100003fc4  4883ec10              subq #0x10, %rsp
+0000000100003fc8  48c745f803000000      movq #0x3, -0x8(%rbp)
+0000000100003fd0  48c745f003000000      movq #0x3, -0x10(%rbp)
+0000000100003fd8  488b45f8              movq -0x8(%rbp), %rax
+0000000100003fdc  4899                  cdo
+0000000100003fde  48f77df0              idivq -0x10(%rbp)
+0000000100003fe2  4889c2                movq %rax, %rdx
+0000000100003fe5  4883c410              addq #0x10, %rsp
+0000000100003fe9  5d                    popq %rbp
+0000000100003fea  c3                    ret
+0000000100003feb  0f1f440000            nopl (%eax,%eax)
