@@ -61,7 +61,7 @@ namespace elet::domain::compiler::instruction::output
         writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function) override;
 
         void
-        writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
+        writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
 
         void
         writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
@@ -74,6 +74,18 @@ namespace elet::domain::compiler::instruction::output
 
         void
         writeMultiplySignedRegisterToRegisterInstruction(MultiplySignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeDivideSignedRegisterToRegisterInstruction(DivideSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeDivideUnsignedRegisterToRegisterInstruction(DivideUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeModuloUnsignedRegisterToRegisterInstruction(ModuloUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeModuloSignedRegisterToRegisterInstruction(ModuloSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeSfInstructionInFunction(uint32_t instruction, Instruction* referenceInstruction, FunctionRoutine* function) const;

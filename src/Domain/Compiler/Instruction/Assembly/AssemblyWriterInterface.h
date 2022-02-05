@@ -71,7 +71,7 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
-        writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* instruction, FunctionRoutine* function);
+        writeAddAddressToRegisterInstruction(AddAddressToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
@@ -107,6 +107,22 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
+        writeDivideSignedRegisterToRegisterInstruction(DivideSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeDivideUnsignedRegisterToRegisterInstruction(DivideUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeModuloSignedRegisterToRegisterInstruction(ModuloSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeModuloUnsignedRegisterToRegisterInstruction(ModuloUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
         writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
@@ -119,7 +135,7 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
-        writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
+        writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void
@@ -231,7 +247,6 @@ namespace elet::domain::compiler::instruction::output
 
         bool
         nextInstructionIs(InstructionKind kind) const;
-
 };
 }
 

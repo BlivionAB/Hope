@@ -153,7 +153,8 @@ namespace elet::domain::compiler::instruction::output
                     writeMoveImmediateInstruction(reinterpret_cast<MoveImmediateInstruction*>(instruction), function);
                     break;
                 case InstructionKind::MoveRegister:
-                    writeMoveRegisterInstruction(reinterpret_cast<MoveRegisterToRegisterInstruction*>(instruction), function);
+                    writeMoveRegisterToRegisterInstruction(
+                        reinterpret_cast<MoveRegisterToRegisterInstruction*>(instruction), function);
                     break;
                 case InstructionKind::MoveAddress:
                     writeMoveAddressInstruction(reinterpret_cast<MoveAddressToRegisterInstruction*>(instruction), function);
@@ -165,7 +166,8 @@ namespace elet::domain::compiler::instruction::output
                     writeAddImmediateInstruction(reinterpret_cast<AddImmediateToRegisterInstruction*>(instruction), function);
                     break;
                 case InstructionKind::AddAddressToRegister:
-                    writeAddRegisterAddressInstruction(reinterpret_cast<AddAddressToRegisterInstruction*>(instruction), function);
+                    writeAddAddressToRegisterInstruction(
+                        reinterpret_cast<AddAddressToRegisterInstruction*>(instruction), function);
                     break;
                 case InstructionKind::MultiplySignedAddressToRegister:
                     writeMultiplySignedRegisterAddressInstruction(reinterpret_cast<MultiplySignedAddressToRegisterInstruction*>(instruction), function);
@@ -179,11 +181,25 @@ namespace elet::domain::compiler::instruction::output
                 case InstructionKind::DivideSignedAddressToRegister:
                     writeDivideSignedRegisterAddressInstruction(reinterpret_cast<DivideSignedAddressToRegisterInstruction*>(instruction), function);
                     break;
+                case InstructionKind::DivideSignedRegisterToRegister:
+                    writeDivideSignedRegisterToRegisterInstruction(
+                        reinterpret_cast<DivideSignedRegisterToRegisterInstruction*>(instruction), function);
+                    break;
+                case InstructionKind::DivideUnsignedRegisterToRegister:
+                    writeDivideUnsignedRegisterToRegisterInstruction(
+                        reinterpret_cast<DivideUnsignedRegisterToRegisterInstruction*>(instruction), function);
+                    break;
                 case InstructionKind::ModuloUnsignedAddressToRegister:
                     writeModuloUnsignedRegisterAddressInstruction(reinterpret_cast<ModuloUnsignedAddressToRegisterInstruction*>(instruction), function);
                     break;
+                case InstructionKind::ModuloUnsignedRegisterToRegister:
+                    writeModuloUnsignedRegisterToRegisterInstruction(reinterpret_cast<ModuloUnsignedRegisterToRegisterInstruction*>(instruction), function);
+                    break;
                 case InstructionKind::ModuloSignedAddressToRegister:
                     writeModuloSignedRegisterAddressInstruction(reinterpret_cast<ModuloSignedAddressToRegisterInstruction*>(instruction), function);
+                    break;
+                case InstructionKind::ModuloSignedRegisterToRegister:
+                    writeModuloSignedRegisterToRegisterInstruction(reinterpret_cast<ModuloSignedRegisterToRegisterInstruction*>(instruction), function);
                     break;
                 case InstructionKind::SubtractImmediateToRegister:
                     writeSubtractImmediateInstruction(reinterpret_cast<SubtractImmediateToRegisterInstruction*>(instruction), function);
@@ -206,9 +222,9 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    AssemblyWriterInterface::writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* addRegisterAddressInstruction, FunctionRoutine* function)
+    AssemblyWriterInterface::writeAddAddressToRegisterInstruction(AddAddressToRegisterInstruction* addRegisterAddressInstruction, FunctionRoutine* function)
     {
-        throw std::runtime_error("Not implemented \"writeAddRegisterAddressInstruction\" method.");
+        throw std::runtime_error("Not implemented \"writeAddAddressToRegisterInstruction\" method.");
     }
 
 
@@ -239,6 +255,33 @@ namespace elet::domain::compiler::instruction::output
         throw std::runtime_error("Not implemented \"writeDivideSignedRegisterAddressInstruction\" method.");
     }
 
+
+    void
+    AssemblyWriterInterface::writeDivideSignedRegisterToRegisterInstruction(DivideSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeDivideSignedRegisterToRegisterInstruction\" method.");
+    }
+
+
+    void
+    AssemblyWriterInterface::writeDivideUnsignedRegisterToRegisterInstruction(DivideUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeDivideUnsignedRegisterToRegisterInstruction\" method.");
+    }
+
+
+    void
+    AssemblyWriterInterface::writeModuloSignedRegisterToRegisterInstruction(ModuloSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeModuloSignedRegisterToRegisterInstruction\" method.");
+    }
+
+
+    void
+    AssemblyWriterInterface::writeModuloUnsignedRegisterToRegisterInstruction(ModuloUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeModuloUnsignedRegisterToRegisterInstruction\" method.");
+    }
 
     void
     AssemblyWriterInterface::writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
@@ -297,9 +340,9 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    AssemblyWriterInterface::writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
+    AssemblyWriterInterface::writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
     {
-        throw std::runtime_error("Not implemented \"writeMoveRegisterInstruction\" method.");
+        throw std::runtime_error("Not implemented \"writeMoveRegisterToRegisterInstruction\" method.");
     }
 
 

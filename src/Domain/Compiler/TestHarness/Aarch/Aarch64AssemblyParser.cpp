@@ -54,6 +54,10 @@ namespace elet::domain::compiler::test::aarch
             {
                 continue;
             }
+            if (tryParse10Instructions(instruction, dw))
+            {
+                continue;
+            }
             if (Aarch64Instruction::Adr == (dw & Aarch64Instruction::AdrMask))
             {
                 parseAdrInstruction(instruction, dw);
@@ -354,12 +358,29 @@ namespace elet::domain::compiler::test::aarch
     bool
     Aarch64AssemblyParser::tryParse15Instructions(Instruction* instruction, uint32_t dw)
     {
-        uint32_t kind = dw & Mask15;
+        if ((Aarch64Instruction::Msub & dw) == Aarch64Instruction::Msub)
+        {
+            parseMaddSubInstruction(reinterpret_cast<MsubInstruction*>(instruction), dw, Aarch64Instruction::Msub);
+            return true;
+        }
+        if ((Aarch64Instruction::Madd & dw) == Aarch64Instruction::Madd)
+        {
+            parseMaddSubInstruction(reinterpret_cast<MaddInstruction*>(instruction), dw, Aarch64Instruction::Madd);
+            return true;
+        }
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::tryParse10Instructions(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t kind = dw & Mask10;
         switch (kind)
         {
-            case Aarch64Instruction::Madd:
-            case Aarch64Instruction::Madd64:
-                parseMaddInstruction(reinterpret_cast<MaddInstruction*>(instruction), dw);
+            case Aarch64Instruction::Sdiv:
+            case Aarch64Instruction::Udiv:
+                parseDivInstruction(reinterpret_cast<DivInstruction*>(instruction), dw, static_cast<Aarch64Instruction>(kind));
                 return true;
         }
         return false;
@@ -533,9 +554,9 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parseMaddInstruction(MaddInstruction* instruction, uint32_t dw)
+    Aarch64AssemblyParser::parseMaddSubInstruction(MaddSubInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
     {
-        instruction->kind = Aarch64Instruction::Madd;
+        instruction->kind = kind;
         instruction->is64Bit = sf(dw);
         instruction->Rm = Rm(dw);
         instruction->Ra = Ra(dw);
@@ -573,6 +594,17 @@ namespace elet::domain::compiler::test::aarch
         result |= (dw & (0b11 << 29)) >> 29;
         return result;
 
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseDivInstruction(DivInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    {
+        instruction->kind = kind;
+        instruction->is64Bit = sf(dw);
+        instruction->Rm = Rm(dw);
+        instruction->Rn = Rn(dw);
+        instruction->Rd = Rd(dw);
     }
 
 

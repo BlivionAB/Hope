@@ -92,6 +92,14 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
+    ByteWriter::writeByteInFunction(uint8_t instruction, output::FunctionRoutine* function)
+    {
+        writeByte(instruction);
+        function->codeSize++;
+    }
+
+
+    void
     ByteWriter::writeInstructionInFunction(uint8_t instruction, output::FunctionRoutine* function)
     {
         writeByte(instruction);

@@ -509,10 +509,25 @@ namespace elet::domain::compiler::instruction
 
 
         // Decrease scratch register index, since we should leave them back after usage
-        _scratchRegisterIndex -= 2;
 
-        output::OperandRegister destination = borrowScratchRegister();
         RegisterSize registerSize = binaryExpression->resolvedType->size();
+        if (binaryExpression->binaryOperatorKind == ast::BinaryOperatorKind::Modulo)
+        {
+            output::OperandRegister divisionResultRegister = borrowScratchRegister();
+            _scratchRegisterIndex -= 3;
+            output::OperandRegister destination = borrowScratchRegister();
+            if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
+            {
+                addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
+            }
+            else
+            {
+                addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
+            }
+            return destination;
+        }
+        _scratchRegisterIndex -= 2;
+        output::OperandRegister destination = borrowScratchRegister();
         switch (binaryExpression->binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
@@ -534,16 +549,6 @@ namespace elet::domain::compiler::instruction
                     addInstruction(new output::DivideUnsignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 }
                 break;
-            case ast::BinaryOperatorKind::Modulo:
-                if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
-                {
-                    addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value, registerSize));
-                }
-                else
-                {
-                    addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value, registerSize));
-                }
-                break;
             case ast::BinaryOperatorKind::BitwiseAnd:
                 addInstruction(new output::AndRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
@@ -554,8 +559,13 @@ namespace elet::domain::compiler::instruction
                 addInstruction(new output::OrRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             default:
+                if (binaryExpression->binaryOperatorKind == ast::BinaryOperatorKind::Modulo)
+                {
+                    break;
+                }
                 throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
         }
+
         return destination;
     }
 
@@ -600,6 +610,20 @@ namespace elet::domain::compiler::instruction
         // ldr x2, v // Mark x2 as busy
         // or x1, x1, x2 // Mark x2 as available
         //
+        // Case x % y:
+        // ldr x1, y // Mark x1 as busy
+        // ldr x2, z // Mark x2 as busy
+        // smod x1, x3, x2, x1 // Mark x3 as busy. Mark x3, x2 as available.
+        //
+        //
+        // Case var a = x / y; var b = x % y
+        // ldr x1, x // Mark x1 as busy
+        // ldr x2, y // Mark x2 as busy
+        // sdiv x3, x2, x1
+        // str x3, a
+        // ssub x1, x3, x2, x1 // Mark x3, x2 as available.
+        // str x1, b
+
 
         output::CanonicalExpression leftOutput;
         output::CanonicalExpression rightOutput;

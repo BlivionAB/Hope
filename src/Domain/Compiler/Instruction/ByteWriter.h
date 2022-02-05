@@ -45,6 +45,9 @@ public:
     writeByte(uint8_t instruction);
 
     void
+    writeByteInFunction(uint8_t instruction, output::FunctionRoutine* function);
+
+    void
     writeInstructionInFunction(uint8_t instruction, output::FunctionRoutine* function);
 
     void

@@ -351,7 +351,7 @@ namespace elet::domain::compiler::test::aarch
     };
 
 
-    struct MaddInstruction : Instruction
+    struct MaddSubInstruction : Instruction
     {
         Register
         Rm;
@@ -365,12 +365,74 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        MaddInstruction(Register Rm, Register Ra, Register Rn, Register Rd):
-            Instruction(Aarch64Instruction::Madd),
+        MaddSubInstruction(Aarch64Instruction kind, Register Rm, Register Ra, Register Rn, Register Rd):
+            Instruction(kind),
             Rm(Rm),
             Ra(Ra),
             Rn(Rn),
             Rd(Rd)
+        {
+
+        }
+    };
+
+
+    struct MaddInstruction : MaddSubInstruction
+    {
+        MaddInstruction(Register Rm, Register Ra, Register Rn, Register Rd):
+            MaddSubInstruction(Aarch64Instruction::Madd, Rm, Ra, Rn, Rd)
+        {
+
+        }
+    };
+
+
+    struct MsubInstruction : MaddSubInstruction
+    {
+        MsubInstruction(Register Rm, Register Ra, Register Rn, Register Rd):
+            MaddSubInstruction(Aarch64Instruction::Msub, Rm, Ra, Rn, Rd)
+        {
+
+        }
+    };
+
+
+    struct DivInstruction : Instruction
+    {
+        Register
+        Rm;
+
+        Register
+        Rn;
+
+        Register
+        Rd;
+
+        DivInstruction(Aarch64Instruction kind, Register Rm, Register Rn, Register Rd):
+            Instruction(kind),
+            Rm(Rm),
+            Rn(Rn),
+            Rd(Rd)
+        {
+
+        }
+    };
+
+
+    struct SdivInstruction : DivInstruction
+    {
+        SdivInstruction(Register Rm, Register Rn, Register Rd):
+            DivInstruction(Aarch64Instruction::Sdiv, Rm, Rn, Rd)
+        {
+
+        }
+    };
+
+
+    struct UdivInstruction : DivInstruction
+    {
+        UdivInstruction(Register Rm, Register Rn, Register Rd):
+            DivInstruction(Aarch64Instruction::Udiv, Rm, Rn, Rd)
         {
 
         }

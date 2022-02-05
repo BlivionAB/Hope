@@ -81,7 +81,7 @@ namespace elet::domain::compiler::test::x86
                     case static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Add):
                         instruction.kind = InstructionKind::Add;
                         break;
-                        case static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Sub):
+                    case static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Sub):
                         instruction.kind = InstructionKind::Sub;
                         break;
                     default:
@@ -326,7 +326,8 @@ namespace elet::domain::compiler::test::x86
                     }
                     else
                     {
-                        throw std::runtime_error("Unimplemented Ev register");
+                        std::array<uint8_t, 4> disp = getDoubleWord(instruction);
+                        ev->emplace<LongDisplacement>(mapQuadWordRegisterIndex(rm), disp);
                     }
                     return ev;
                 case ModBits::Mod3:

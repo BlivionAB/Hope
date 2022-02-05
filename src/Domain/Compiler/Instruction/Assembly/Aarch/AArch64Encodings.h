@@ -44,7 +44,8 @@ namespace elet::domain::compiler::instruction::output
         Imm26Mask = MASK(6, 0),
         Imm6Mask = MASK(16, 10),
         ShiftMask = MASK(8, 22),
-        Mask15 = MASK(0, 15),
+        Mask10 = MASK(1, 10),
+        Mask15 = MASK(1, 15),
         Mask16 = MASK(0, 16),
         Mask21 = MASK(0, 21),
         Mask22 = MASK(0, 22),
@@ -79,6 +80,9 @@ namespace elet::domain::compiler::instruction::output
         SubImmediate64 = static_cast<uint32_t>(0b1101000100) << 22,
         Madd = static_cast<uint32_t>(0b00011011000'00000'0) << 15, // Between single quotes are Rm field
         Madd64 = static_cast<uint32_t>(0b10011011000'00000'0) << 15, // Between single quotes are Rm field
+        Msub = static_cast<uint32_t>(0b00011011000'00000'1) << 15, // Between single quotes are Rm field
+        Sdiv = static_cast<uint32_t>(0b0001'1010'1100'0000'0000'11) << 10,
+        Udiv = static_cast<uint32_t>(0b0001'1010'1100'0000'0000'10) << 10,
         OrrImmediate = static_cast<uint32_t>(0b01100100) << 23,
 
         Movz = static_cast<uint32_t>(0b010100101) << 23,

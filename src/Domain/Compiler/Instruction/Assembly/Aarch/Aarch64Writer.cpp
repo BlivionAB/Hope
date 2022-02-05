@@ -330,6 +330,71 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
+    Aarch64Writer::writeDivideSignedRegisterToRegisterInstruction(DivideSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        writeSfInstructionInFunction(
+            Aarch64Instruction::Sdiv |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
+            instruction, function);
+    }
+
+
+
+    void
+    Aarch64Writer::writeDivideUnsignedRegisterToRegisterInstruction(DivideUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        writeSfInstructionInFunction(
+            Aarch64Instruction::Udiv |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
+            instruction, function);
+    }
+
+
+    void
+    Aarch64Writer::writeModuloUnsignedRegisterToRegisterInstruction(ModuloUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        writeSfInstructionInFunction(
+            Aarch64Instruction::Udiv |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rd(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)),
+            instruction, function);
+
+        writeSfInstructionInFunction(
+            Aarch64Instruction::Msub |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Ra(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
+            instruction, function);
+    }
+
+
+    void
+    Aarch64Writer::writeModuloSignedRegisterToRegisterInstruction(ModuloSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        writeSfInstructionInFunction(
+            Aarch64Instruction::Sdiv |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rd(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)),
+            instruction, function);
+
+        writeSfInstructionInFunction(
+            Aarch64Instruction::Msub |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Ra(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
+            instruction, function);
+    }
+
+
+    void
     Aarch64Writer::writeMoveImmediateInstruction(MoveImmediateInstruction* instruction, FunctionRoutine* function)
     {
         Aarch64Register rd = static_cast<Aarch64Register>(Rd(getAarch64RegisterFromOperandRegister(instruction->destination)));
@@ -604,7 +669,7 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
+    Aarch64Writer::writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
     {
         if (moveRegisterInstruction->destination == OperandRegister::Return && moveRegisterInstruction->target == OperandRegister::Scratch0)
         {

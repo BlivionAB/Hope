@@ -26,16 +26,17 @@ namespace elet::domain::compiler::test::aarch
                     writeShiftedRegisterInstruction(reinterpret_cast<const ShiftedRegisterInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::Madd:
-                    writeMaddInstruction(reinterpret_cast<const MaddInstruction*>(instruction));
+                case Aarch64Instruction::Msub:
+                    writeMaddSubInstruction(reinterpret_cast<const MaddSubInstruction*>(instruction));
+                    break;
+                case Aarch64Instruction::Sdiv:
+                case Aarch64Instruction::Udiv:
+                    writeDivInstruction(reinterpret_cast<const DivInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::Ldr32:
                 case Aarch64Instruction::Ldr64:
                     writeLdr(reinterpret_cast<const LdrInstruction*>(instruction));
                     break;
-//                case Aarch64Instruction::StrImmediateBaseOffset64:
-//                case Aarch64Instruction::LdrImmediateBaseOffset64:
-//                    writeLoadStoreInstruction(reinterpret_cast<const LoadStoreInstruction*>(instruction));
-//                    break;
                 case Aarch64Instruction::StpPreIndex64:
                 case Aarch64Instruction::StpBaseOffset64:
                 case Aarch64Instruction::LdpPostIndex64:
@@ -124,27 +125,6 @@ namespace elet::domain::compiler::test::aarch
         writeGeneralPurposeRegister(instruction->rd, instruction);
         _tw.write(", #");
         _tw.writeSignedHexValue(instruction->immediateValue);
-    }
-
-
-    void
-    Aarch64AssemblyPrinter::writeLoadStoreInstruction(const LoadStoreInstruction* instruction)
-    {
-//        switch (instruction->kind)
-//        {
-//            case Aarch64Instruction::StrImmediateBaseOffset64:
-//                _tw.write("str ");
-//                break;
-//            case Aarch64Instruction::LdrImmediateBaseOffset64:
-//                _tw.write("ldr ");
-//                break;
-//            default:
-//                throw std::runtime_error("Unknown load store instruction.");
-//        }
-//        writeGeneralPurposeRegister(instruction->rt, instruction);
-//        _tw.write(", [");
-//        writeGeneralPurposeRegister(instruction->rn, instruction);
-//        writeIndexedAddressSuffix(instruction->addressMode, instruction->imm12);
     }
 
 
@@ -512,15 +492,29 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeMaddInstruction(const MaddInstruction* instruction)
+    Aarch64AssemblyPrinter::writeMaddSubInstruction(const MaddSubInstruction* instruction)
     {
-        if (instruction->Ra == Register::Zero)
+        if (instruction->kind == Aarch64Instruction::Madd)
         {
-            _tw.write("mul ");
+            if (instruction->Ra == Register::Zero)
+            {
+                _tw.write("mul ");
+            }
+            else
+            {
+                _tw.write("madd ");
+            }
         }
         else
         {
-            _tw.write("madd ");
+            if (instruction->Ra == Register::Zero)
+            {
+                _tw.write("mneg ");
+            }
+            else
+            {
+                _tw.write("msub ");
+            }
         }
         writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
@@ -532,5 +526,23 @@ namespace elet::domain::compiler::test::aarch
             _tw.write(", ");
             writeGeneralPurposeRegister(instruction->Ra, instruction);
         }
+    }
+
+    void
+    Aarch64AssemblyPrinter::writeDivInstruction(const DivInstruction* instruction)
+    {
+        if (instruction->kind == Aarch64Instruction::Sdiv)
+        {
+            _tw.write("sdiv ");
+        }
+        else
+        {
+            _tw.write("udiv ");
+        }
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rm, instruction);
     }
 }

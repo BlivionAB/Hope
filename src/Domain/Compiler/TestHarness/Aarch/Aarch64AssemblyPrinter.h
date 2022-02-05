@@ -38,9 +38,6 @@ public:
     writeMovz(const MovzInstruction* instruction);
 
     void
-    writeLoadStoreInstruction(const LoadStoreInstruction* instruction);
-
-    void
     writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset);
 
     void
@@ -83,7 +80,10 @@ public:
     writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrUnsignedOffsetInstruction* instruction);
 
     void
-    writeMaddInstruction(const MaddInstruction* instruction);
+    writeMaddSubInstruction(const MaddSubInstruction* instruction);
+
+    void
+    writeDivInstruction(const DivInstruction* instruction);
 };
 
 }

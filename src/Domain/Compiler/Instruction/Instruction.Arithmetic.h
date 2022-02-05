@@ -157,8 +157,12 @@ namespace elet::domain::compiler::instruction::output
 
     struct ModuloUnsignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        ModuloUnsignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
-            OperationRegisterToRegisterInstruction(InstructionKind::ModuloUnsignedRegisterToRegister, destination, target, value, registerSize)
+        OperandRegister
+        divisionDestinationRegister;
+
+        ModuloUnsignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, OperandRegister divisionDestinationRegister, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::ModuloUnsignedRegisterToRegister, destination, target, value, registerSize),
+            divisionDestinationRegister(divisionDestinationRegister)
         { }
     };
 
@@ -173,8 +177,12 @@ namespace elet::domain::compiler::instruction::output
 
     struct ModuloSignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
-        ModuloSignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, RegisterSize registerSize):
-            OperationRegisterToRegisterInstruction(InstructionKind::ModuloSignedRegisterToRegister, destination, target, value, registerSize)
+        OperandRegister
+        divisionDestinationRegister;
+
+        ModuloSignedRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, OperandRegister value, OperandRegister divisionDestinationRegister, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::ModuloSignedRegisterToRegister, destination, target, value, registerSize),
+            divisionDestinationRegister(divisionDestinationRegister)
         { }
     };
 

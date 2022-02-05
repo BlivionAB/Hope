@@ -84,7 +84,16 @@ private:
     parseDataProcessImmediateInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
 
     bool
+    tryParse10Instructions(Instruction* instruction, uint32_t dw);
+
+    bool
+    tryParse15Instructions(Instruction* instruction, uint32_t dw);
+
+    bool
     tryParse22Instructions(Instruction* instruction, uint32_t dw);
+
+    bool
+    tryParse24Instructions(Instruction* instruction, uint32_t dw);
 
     bool
     tryParse25Instructions(Instruction* instruction, uint32_t dw);
@@ -94,9 +103,6 @@ private:
 
     void
     parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
-
-    bool
-    tryParse24Instructions(Instruction* instruction, uint32_t dw);
 
     void
     parseAdrInstruction(Instruction* instruction, uint32_t dw);
@@ -143,11 +149,11 @@ private:
     void
     parseSubShiftedRegister(SubShiftedRegisterInstruction* instruction, uint32_t dw);
 
-    bool
-    tryParse15Instructions(Instruction* instruction, uint32_t dw);
+    void
+    parseMaddSubInstruction(MaddSubInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
 
     void
-    parseMaddInstruction(MaddInstruction* instruction, uint32_t dw);
+    parseDivInstruction(DivInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
 };
 
 

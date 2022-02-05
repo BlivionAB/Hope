@@ -10,10 +10,11 @@ _main:
 0000000100003fc8  c745fc03000000        movl #0x3, -0x4(%ebp)
 0000000100003fcf  c745f803000000        movl #0x3, -0x8(%ebp)
 0000000100003fd6  8b45fc                movl -0x4(%ebp), %eax
-0000000100003fd9  31d2                  xorl %edx, %edx
-0000000100003fdb  f775f8                divl -0x8(%ebp)
-0000000100003fde  4889c2                movq %rax, %rdx
-0000000100003fe1  4883c410              addq #0x10, %rsp
-0000000100003fe5  5d                    popq %rbp
-0000000100003fe6  c3                    ret
-0000000100003fe7  660f1f840000000000    nopw (%ax,%ax)
+0000000100003fd9  99                    cdq
+0000000100003fda  f77df8                idivl -0x8(%ebp)
+0000000100003fdd  89c2                  movl %eax, %edx
+0000000100003fdf  4883c410              addq #0x10, %rsp
+0000000100003fe3  5d                    popq %rbp
+0000000100003fe4  c3                    ret
+0000000100003fe5  660f1f840000000000    nopw (%ax,%ax)
+0000000100003fee  6690                  nopw 

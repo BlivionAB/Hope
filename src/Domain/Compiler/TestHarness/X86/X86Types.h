@@ -104,6 +104,11 @@ struct LongDisplacement
     std::array<uint8_t, 4>
     displacement;
 
+    LongDisplacement(Register base, std::array<uint8_t, 4> displacement):
+        base(base),
+        displacement(displacement)
+    { }
+
     LongDisplacement(std::variant<Register, SibDisplacement*> base, std::array<uint8_t, 4> displacement):
         base(base),
         displacement(displacement)

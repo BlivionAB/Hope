@@ -37,10 +37,11 @@ fn f2()
 
 ## Identifications
 It will record expressions using identifiers:
+  * Canonicalization: Sort operators if they are commutative.
   * For binary expressions:
     * (typeId + instanceId) + operatorId + (typeId + instanceId)
       * Note for literals (int) it is the immediateValue itself that is the id.
-  * Variable has a variableId that is unique in local scope.
+  * Variable has a variableId that is unique in local scope. 
 
 ## Temporary Variable Assignment
 
@@ -48,7 +49,7 @@ It will record expressions using identifiers:
   * Check if expression can be substituted with temp variables. 
     * Mark each temp variable as used
   * Assign temporary variables to all possible expression an expression can hold.
-* Clean up unused temporary variables.
+* Clean up unused temporary variables from bottom up.
 
 
 Please note that variable aliases will be removed:

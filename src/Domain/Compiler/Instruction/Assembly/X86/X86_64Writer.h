@@ -119,7 +119,7 @@ namespace elet::domain::compiler::instruction::output::x86
         writeMoveImmediateInstruction(MoveImmediateInstruction* moveImmediateInstruction, FunctionRoutine* function) override;
 
         void
-        writeMoveRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
+        writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function) override;
@@ -134,7 +134,7 @@ namespace elet::domain::compiler::instruction::output::x86
         writeAddImmediateInstruction(AddImmediateToRegisterInstruction* addImmediateInstruction, FunctionRoutine* function) override;
 
         void
-        writeAddRegisterAddressInstruction(AddAddressToRegisterInstruction* addRegisterAddressInstruction, FunctionRoutine* function) override;
+        writeAddAddressToRegisterInstruction(AddAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeAddImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
@@ -149,7 +149,7 @@ namespace elet::domain::compiler::instruction::output::x86
         writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function) override;
 
         void
-        writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* multiplyRegisterAddressInstruction, FunctionRoutine* function) override;
+        writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
@@ -210,6 +210,12 @@ namespace elet::domain::compiler::instruction::output::x86
 
         uint8_t
         getRegisterBitsFromRegister(Register _register);
+
+        void
+        writeQuadInstructionMultipleInFunction(std::initializer_list<uint8_t> encodingMultiple, Instruction* instruction, FunctionRoutine* function);
+
+        void
+        writeQuadInstructionInFunction(uint8_t encoding, Instruction* instruction, FunctionRoutine* function);
     };
 }
 

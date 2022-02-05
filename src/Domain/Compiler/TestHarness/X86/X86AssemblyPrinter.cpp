@@ -47,7 +47,14 @@ namespace elet::domain::compiler::test::x86
                 writeInstructionWithName("div", instruction);
                 break;
             case InstructionKind::Cdq:
-                _tw.write("cdq");
+                if (instruction.size == SizeKind::Quad)
+                {
+                    _tw.write("cdo");
+                }
+                else
+                {
+                    _tw.write("cdq");
+                }
                 break;
             case InstructionKind::Nop:
                 writeInstructionWithName("nop", instruction);
@@ -287,9 +294,12 @@ namespace elet::domain::compiler::test::x86
             }
             _tw.write(")");
         }
-        else
+        else if (auto reg = std::get_if<Register>(&displacement->base))
         {
-            throw std::runtime_error("Not implemented four byte displacement on register");
+            _tw.writeSignedHexValue(displacement->displacement);
+            _tw.write("(");
+            writeGeneralPurposeRegister(*reg, instruction);
+            _tw.write(")");
         }
     }
 
