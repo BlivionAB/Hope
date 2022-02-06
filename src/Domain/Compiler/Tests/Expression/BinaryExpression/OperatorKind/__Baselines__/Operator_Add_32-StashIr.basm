@@ -1,0 +1,8 @@
+_main():
+    StrL [Sp + #-4], #0x3
+    StrL [Sp + #-8], #0x3
+    LdrL X0, [Sp + #-4]
+    LdrL X1, [Sp + #-8]
+    AddL X0, X0, X1
+    MovL OpRet, X0
+
