@@ -67,6 +67,9 @@ namespace elet::domain::compiler::test
             case output::InstructionKind::MoveImmediate:
                 writeMoveImmediateInstruction(reinterpret_cast<const output::MoveImmediateInstruction*>(instruction));
                 break;
+            case output::InstructionKind::MoveZeroExtend:
+                writeMoveZeroExtendInstruction(reinterpret_cast<const output::MoveZeroExtendInstruction*>(instruction));
+                break;
             case output::InstructionKind::Return:
                 _tw.write("Ret");
                 break;
@@ -125,22 +128,35 @@ namespace elet::domain::compiler::test
     }
 
     void
-    StashIRPrinter::writeMoveRegisterInstruction(const output::MoveRegisterToRegisterInstruction* moveRegisterInstruction)
+    StashIRPrinter::writeMoveRegisterInstruction(const output::MoveRegisterToRegisterInstruction* instruction)
     {
-        _tw.write("Mov ");
-        writeOperandRegister(moveRegisterInstruction->destination);
+        writeOperationName("Mov", instruction);
+        _tw.write(" ");
+        writeOperandRegister(instruction->destination);
         _tw.write(", ");
-        writeOperandRegister(moveRegisterInstruction->target);
+        writeOperandRegister(instruction->target);
     }
 
 
     void
-    StashIRPrinter::writeLoadInstruction(const output::LoadInstruction* loadInstruction)
+    StashIRPrinter::writeMoveZeroExtendInstruction(const output::MoveZeroExtendInstruction* instruction)
     {
-        _tw.write("Ldr ");
-        writeOperandRegister(loadInstruction->destination);
+        writeOperationName("Movzx", instruction);
+        _tw.write(" ");
+        writeOperandRegister(instruction->destination);
+        _tw.write(", ");
+        writeOperandRegister(instruction->target);
+    }
+
+
+    void
+    StashIRPrinter::writeLoadInstruction(const output::LoadInstruction* instruction)
+    {
+        writeOperationName("Ldr", instruction);
+        _tw.write(" ");
+        writeOperandRegister(instruction->destination);
         _tw.write(", [Sp + #");
-        _tw.write(-static_cast<int64_t>(loadInstruction->stackOffset));
+        _tw.write(-static_cast<int64_t>(instruction->stackOffset));
         _tw.write("]");
     }
 
@@ -181,12 +197,13 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction)
+    StashIRPrinter::writeStoreImmediateInstruction(const output::StoreImmediateInstruction* instruction)
     {
-        _tw.write("Str [Sp + #");
-        _tw.write(-static_cast<int64_t>(storeImmediateInstruction->stackOffset));
+        writeOperationName("Str", instruction);
+        _tw.write(" [Sp + #");
+        _tw.write(-static_cast<int64_t>(instruction->stackOffset));
         _tw.write("], ");
-        _tw.writeSignedImmediateValue(storeImmediateInstruction->value);
+        _tw.writeSignedImmediateValue(instruction->value);
     }
 
 
@@ -221,11 +238,11 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeRegisterToRegisterOperation(Utf8String operationString, const output::OperationRegisterToRegisterInstruction* operationInstruction)
+    StashIRPrinter::writeRegisterToRegisterOperation(Utf8String operationName, const output::OperationRegisterToRegisterInstruction* instruction)
     {
-        _tw.write(operationString);
+        writeOperationName(operationName, instruction);
         _tw.write(" ");
-        writeOperationRegisters(operationInstruction);
+        writeOperationRegisters(instruction);
     }
 
 
@@ -249,5 +266,26 @@ namespace elet::domain::compiler::test
         writeOperandRegister(instruction->target);
         _tw.write(", ");
         _tw.writeUnsignedHexValue(instruction->value);
+    }
+
+    void
+    StashIRPrinter::writeOperationName(Utf8String name, const output::Instruction* instruction)
+    {
+        _tw.write(name);
+        switch (instruction->registerSize)
+        {
+            case RegisterSize::Quad:
+                _tw.write("Q");
+                break;
+            case RegisterSize::Dword:
+                _tw.write("L");
+                break;
+            case RegisterSize::Word:
+                _tw.write("W");
+                break;
+            case RegisterSize::Byte:
+                _tw.write("B");
+                break;
+        }
     }
 }

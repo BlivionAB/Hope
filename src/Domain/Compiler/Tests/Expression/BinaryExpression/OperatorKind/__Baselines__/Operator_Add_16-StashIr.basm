@@ -1,0 +1,8 @@
+_main():
+    StrW [Sp + #-2], #0x3
+    StrW [Sp + #-4], #0x3
+    LdrW X0, [Sp + #-2]
+    LdrW X1, [Sp + #-4]
+    AddL X0, X0, X1
+    MovzxW OpRet, X0
+

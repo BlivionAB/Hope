@@ -141,7 +141,10 @@ private:
     shift(uint32_t dw);
 
     void
-    parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22);
+    parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22);
+
+    void
+    parseLdrbStrbImmediateUnsignedOffsetInstruction(LdrbStrbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
 
     void
     parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw);
@@ -154,6 +157,9 @@ private:
 
     void
     parseDivInstruction(DivInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
+
+    void
+    parseAndImmediateInstruction(AndImmediateInstruction* instruction, uint32_t dw);
 };
 
 

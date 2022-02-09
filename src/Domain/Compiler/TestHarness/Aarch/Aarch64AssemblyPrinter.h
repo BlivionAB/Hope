@@ -77,13 +77,19 @@ public:
     writeShiftedRegisterInstruction(const ShiftedRegisterInstruction* add);
 
     void
-    writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrUnsignedOffsetInstruction* instruction);
+    writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrImmediateUnsignedOffsetInstruction* instruction);
 
     void
     writeMaddSubInstruction(const MaddSubInstruction* instruction);
 
     void
     writeDivInstruction(const DivInstruction* instruction);
+
+    void
+    writeLdrbStrbImmediateUnsignedOffsetInstruction(const LdrbStrbImmediateUnsignedOffsetInstruction* instruction);
+
+    void
+    writeAndImmediateInstruction(const AndImmediateInstruction* pInstruction);
 };
 
 }

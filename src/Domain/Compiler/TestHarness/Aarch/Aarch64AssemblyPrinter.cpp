@@ -15,6 +15,9 @@ namespace elet::domain::compiler::test::aarch
             _tw.tab();
             switch (instruction->kind)
             {
+                case Aarch64Instruction::AndImmediate:
+                    writeAndImmediateInstruction(reinterpret_cast<const AndImmediateInstruction*>(instruction));
+                    break;
                 case Aarch64Instruction::Adr:
                     writeAdrInstruction(reinterpret_cast<const AdrInstruction*>(instruction));
                     break;
@@ -48,6 +51,10 @@ namespace elet::domain::compiler::test::aarch
                 case Aarch64Instruction::StrImmediateUnsignedOffset64:
                 case Aarch64Instruction::LdrImmediateUnsignedOffset64:
                     writeLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<const StrUnsignedOffsetInstruction*>(instruction));
+                    break;
+                case Aarch64Instruction::LdrbImmediateUnsignedOffset:
+                case Aarch64Instruction::StrbImmediateUnsignedOffset:
+                    writeLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::AddImmediate64:
                 case Aarch64Instruction::SubImmediate64:
@@ -129,7 +136,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrUnsignedOffsetInstruction* instruction)
+    Aarch64AssemblyPrinter::writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrImmediateUnsignedOffsetInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset || instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset64)
         {
@@ -151,6 +158,26 @@ namespace elet::domain::compiler::test::aarch
         {
             _tw.writeUnsignedHexValue(instruction->imm12 * 4);
         }
+        _tw.write("]");
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeLdrbStrbImmediateUnsignedOffsetInstruction(const LdrbStrbImmediateUnsignedOffsetInstruction* instruction)
+    {
+        if (instruction->kind == Aarch64Instruction::LdrbImmediateUnsignedOffset)
+        {
+            _tw.write("ldrb ");
+        }
+        else
+        {
+            _tw.write("strb ");
+        }
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
+        _tw.write(", [");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", #");
+        _tw.writeUnsignedHexValue(instruction->imm12);
         _tw.write("]");
     }
 
@@ -544,5 +571,17 @@ namespace elet::domain::compiler::test::aarch
         writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", ");
         writeGeneralPurposeRegister(instruction->Rm, instruction);
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeAndImmediateInstruction(const AndImmediateInstruction* instruction)
+    {
+        _tw.write("and ");
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", ");
+        _tw.writeUnsignedHexValue(instruction->value);
     }
 }

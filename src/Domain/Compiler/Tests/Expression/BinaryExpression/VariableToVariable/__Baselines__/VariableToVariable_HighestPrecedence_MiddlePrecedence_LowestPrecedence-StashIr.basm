@@ -1,13 +1,13 @@
 _main():
-    Str [Sp + #-4], #0x1
-    Str [Sp + #-8], #0x2
-    Str [Sp + #-12], #0x3
-    Ldr X0, [Sp + #-4]
-    Ldr X1, [Sp + #-8]
-    And X0, X0, X1
-    Ldr X1, [Sp + #-12]
-    Xor X0, X0, X1
-    Ldr X1, [Sp + #-4]
-    Or X0, X0, X1
-    Mov OpRet, X0
+    StrL [Sp + #-4], #0x1
+    StrL [Sp + #-8], #0x2
+    StrL [Sp + #-12], #0x3
+    LdrL X0, [Sp + #-4]
+    LdrL X1, [Sp + #-8]
+    AndL X0, X0, X1
+    LdrL X1, [Sp + #-12]
+    XorL X0, X0, X1
+    LdrL X1, [Sp + #-4]
+    OrL X0, X0, X1
+    MovL OpRet, X0
 

@@ -222,7 +222,7 @@ namespace elet::domain::compiler::test::aarch
         uint64_t pattern = (1ULL << (S + 1)) - 1;
         for (unsigned int i = 0; i < R; ++i)
         {
-            pattern |= Bit::rotateRight(pattern, elementSize);
+            pattern = Bit::rotateRight(pattern, elementSize);
         }
 
         while (elementSize != registrySize)
@@ -256,7 +256,14 @@ namespace elet::domain::compiler::test::aarch
             case Aarch64Instruction::StrImmediateUnsignedOffset:
             case Aarch64Instruction::LdrImmediateUnsignedOffset64:
             case Aarch64Instruction::StrImmediateUnsignedOffset64:
-                parseLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrStrUnsignedOffsetInstruction*>(instruction), dw, kind22);
+                parseLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrStrImmediateUnsignedOffsetInstruction*>(instruction), dw, kind22);
+                return true;
+            case Aarch64Instruction::LdrbImmediateUnsignedOffset:
+            case Aarch64Instruction::StrbImmediateUnsignedOffset:
+                parseLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction), dw, static_cast<Aarch64Instruction>(kind22));
+                return true;
+            case Aarch64Instruction::AndImmediate:
+                parseAndImmediateInstruction(reinterpret_cast<AndImmediateInstruction*>(instruction), dw);
                 return true;
         }
         return false;
@@ -264,10 +271,20 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22)
+    Aarch64AssemblyParser::parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22)
     {
         instruction->kind = static_cast<Aarch64Instruction>(kind22);
         instruction->is64Bit = dw & (0b01 << 30);
+        instruction->Rn = Rn(dw);
+        instruction->Rt = Rt(dw);
+        instruction->imm12 = imm12(dw);
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseLdrbStrbImmediateUnsignedOffsetInstruction(LdrbStrbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    {
+        instruction->kind = static_cast<Aarch64Instruction>(kind);
         instruction->Rn = Rn(dw);
         instruction->Rt = Rt(dw);
         instruction->imm12 = imm12(dw);
@@ -375,7 +392,7 @@ namespace elet::domain::compiler::test::aarch
     bool
     Aarch64AssemblyParser::tryParse10Instructions(Instruction* instruction, uint32_t dw)
     {
-        uint32_t kind = dw & Mask10;
+        uint32_t kind = dw & Mask10 & ~(((1 << 5) - 1) << 16);
         switch (kind)
         {
             case Aarch64Instruction::Sdiv:
@@ -648,5 +665,23 @@ namespace elet::domain::compiler::test::aarch
     Aarch64AssemblyParser::getLeftShiftFromHv(uint32_t dw)
     {
         return (((0b11 << 21) & dw) >> 21) * 16;
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseAndImmediateInstruction(AndImmediateInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::AndImmediate;
+        instruction->is64Bit = sf(dw);
+        instruction->Rd = Rd(dw);
+        instruction->Rn = Rn(dw);
+        if (instruction->is64Bit)
+        {
+            instruction->value = decodeBitmaskImmediate(dw, RegistrySize::_64);
+        }
+        else
+        {
+            instruction->value = decodeBitmaskImmediate(dw, RegistrySize::_32);
+        }
     }
 }

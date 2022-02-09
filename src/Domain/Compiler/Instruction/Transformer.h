@@ -41,20 +41,16 @@ namespace elet::domain::compiler::instruction
         struct Parameter;
         struct Operand;
         struct FunctionReference;
-        struct  LoadInstruction;
+        struct LoadInstruction;
         struct StoreRegisterInstruction;
         struct ParameterDeclaration;
         struct String;
         struct Register;
         struct StoreRegisterInstruction;
         struct ArgumentDeclaration;
-        typedef std::variant<std::size_t, String*, ParameterDeclaration*, StoreRegisterInstruction*> ArgumentValue;
         struct InternalRoutine;
         struct FunctionRoutine;
         struct MoveRegisterToRegisterInstruction;
-        struct ImmediateValue;
-        enum class OperandRegister;
-        typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
     }
 
 
@@ -185,16 +181,16 @@ namespace elet::domain::compiler::instruction
         output::ImmediateValue
         transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right);
 
-        output::OperandRegister
+        output::RegisterResult
         transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryExpression* binaryExpression);
 
         void
         transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset);
 
-        output::OperandRegister
+        output::RegisterResult
         transformPropertyExpression(ast::PropertyExpression* propertyExpression);
 
-        output::OperandRegister
+        output::RegisterResult
         transformRegisterToRegisterBinaryExpression(ast::BinaryExpression* binaryExpression, output::OperandRegister target, output::OperandRegister value);
 
         output::CanonicalExpression
@@ -216,6 +212,12 @@ namespace elet::domain::compiler::instruction
 
         IntegerKind
         getIntegerTypeFromTypeKind(TypeKind typeKind);
+
+        uint64_t
+        getRegisterSizeBitmask(RegisterSize size);
+
+        RegisterSize
+        getSupportedRegisterSize(RegisterSize size);
     };
 
 

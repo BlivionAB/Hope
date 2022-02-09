@@ -1,6 +1,6 @@
 _main():
-    Str [Sp + #-4], #0x3
-    Ldr X0, [Sp + #-4]
+    StrL [Sp + #-4], #0x3
+    LdrL X0, [Sp + #-4]
     Add X0, X0, 0x1
-    Mov OpRet, X0
+    MovL OpRet, X0
 

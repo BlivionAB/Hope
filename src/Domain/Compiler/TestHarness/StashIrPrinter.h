@@ -31,16 +31,16 @@ namespace elet::domain::compiler::test
         writeInstruction(const output::Instruction* instruction, output::FunctionRoutine* function);
 
         void
-        writeStoreImmediateInstruction(const output::StoreImmediateInstruction* storeImmediateInstruction);
+        writeStoreImmediateInstruction(const output::StoreImmediateInstruction* instruction);
 
         void
-        writeLoadInstruction(const output::LoadInstruction* loadInstruction);
+        writeLoadInstruction(const output::LoadInstruction* instruction);
 
         void
         writeOperandRegister(output::OperandRegister operandRegister);
 
         void
-        writeMoveRegisterInstruction(const output::MoveRegisterToRegisterInstruction* moveRegisterInstruction);
+        writeMoveRegisterInstruction(const output::MoveRegisterToRegisterInstruction* instruction);
 
         void
         writeMoveAddressInstruction(const output::MoveAddressToRegisterInstruction* moveAddressInstruction);
@@ -55,13 +55,19 @@ namespace elet::domain::compiler::test
         writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction);
 
         void
-        writeRegisterToRegisterOperation(Utf8String operationString, const output::OperationRegisterToRegisterInstruction* operationInstruction);
+        writeRegisterToRegisterOperation(Utf8String operationName, const output::OperationRegisterToRegisterInstruction* instruction);
 
         void
         writeOperationRegisters(const output::OperationRegisterToRegisterInstruction* operationInstruction);
 
         void
         writeImmediateToRegisterOperation(const char* operationName, const output::OperationImmediateToRegisterInstruction* instruction);
+
+        void
+        writeOperationName(Utf8String name, const output::Instruction* instruction);
+
+        void
+        writeMoveZeroExtendInstruction(const output::MoveZeroExtendInstruction* instruction);
     };
 }
 #endif //ELET_STASHIRPRINTER_H

@@ -24,13 +24,15 @@ namespace elet::domain::compiler::ast
 
 namespace elet::domain::compiler::instruction::output
 {
+    using namespace foundation;
+
+
     struct Constant;
     struct Routine;
     struct ParameterDeclaration;
     struct ArgumentDeclaration;
     struct String;
     struct SubtractImmediateToRegisterInstruction;
-    enum class OperandRegister;
 
 
     struct ImmediateValue
@@ -61,10 +63,6 @@ namespace elet::domain::compiler::instruction::output
 
         }
     };
-
-
-    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
-    using namespace foundation;
 
 
     enum class OperandKind : std::uint64_t
@@ -102,6 +100,22 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
+    struct RegisterResult
+    {
+        OperandRegister
+        _register;
+
+        RegisterSize
+        size;
+
+        RegisterResult(OperandRegister _register, RegisterSize size):
+            _register(_register),
+            size(size)
+        { }
+    };
+
+    typedef std::variant<std::monostate, RegisterResult, ImmediateValue> CanonicalExpression;
+
     enum class InstructionKind
     {
         Push,
@@ -132,6 +146,7 @@ namespace elet::domain::compiler::instruction::output
         MoveImmediate,
         MoveRegister,
         MoveAddress,
+        MoveZeroExtend,
         ArgumentDeclaration,
         ParameterDeclaration,
         Return,
@@ -251,6 +266,22 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
+    struct MoveZeroExtendInstruction : Instruction
+    {
+        OperandRegister
+        target;
+
+        OperandRegister
+        destination;
+
+        MoveZeroExtendInstruction(OperandRegister target, OperandRegister destination, RegisterSize size):
+            Instruction(InstructionKind::MoveZeroExtend, size),
+            target(target),
+            destination(destination)
+        { }
+    };
+
+
     struct CallInstruction : Instruction
     {
         List<ArgumentDeclaration*>
@@ -263,7 +294,7 @@ namespace elet::domain::compiler::instruction::output
         offset;
 
         CallInstruction():
-            Instruction(InstructionKind::Call, RegisterSize::None)
+            Instruction(InstructionKind::Call, RegisterSize::Dword)
         { }
     };
 
@@ -582,9 +613,6 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    typedef std::variant<std::monostate, OperandRegister, ImmediateValue> CanonicalExpression;
-
-
     struct ImmediateToMemoryOperation : Operation
     {
         ScratchRegister*
@@ -771,19 +799,7 @@ namespace elet::domain::compiler::instruction::output
     struct ReturnInstruction : Instruction
     {
         ReturnInstruction():
-            Instruction(InstructionKind::Return, RegisterSize::None)
-        { }
-    };
-
-
-    struct ResetRegisterInstruction : Instruction
-    {
-        OperandRegister
-        target;
-
-        ResetRegisterInstruction(OperandRegister target):
-            Instruction(InstructionKind::ResetRegister, RegisterSize::None),
-            target(target)
+            Instruction(InstructionKind::Return, RegisterSize::Dword)
         { }
     };
 }

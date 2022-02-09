@@ -162,7 +162,7 @@ namespace elet::domain::compiler::instruction::output
     {
         if (function->inferReturnZero)
         {
-            bw->writeDoubleWordInFunction(Aarch64Instruction::Movz | Rd(Aarch64Register::r0) | uimm16(0), function);
+            bw->writeDoubleWordInFunction(Aarch64Instruction::Movz | Rd(Aarch64Register::r0) | imm16(0), function);
         }
         if (function->stackSize == 16)
         {
@@ -220,7 +220,7 @@ namespace elet::domain::compiler::instruction::output
 
 
     uint32_t
-    Aarch64Writer::uimm12(uint16_t value) const
+    Aarch64Writer::imm12(uint16_t value) const
     {
         return static_cast<uint32_t>(0x0fff & value) << 10;
     }
@@ -235,7 +235,7 @@ namespace elet::domain::compiler::instruction::output
 
 
     uint32_t
-    Aarch64Writer::uimm16(uint16_t value) const
+    Aarch64Writer::imm16(uint16_t value) const
     {
         return static_cast<uint32_t>(value) << 5;
     }
@@ -274,42 +274,54 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function)
+    Aarch64Writer::writeAddImmediate64(
+        Aarch64Register rd,
+        Aarch64Register rn,
+        int16_t value,
+        output::FunctionRoutine* function)
     {
-        bw->writeDoubleWordInFunction(Aarch64Instruction::AddImmediate64 | uimm12(value) | Rn(rn) | Rd(rd), function);
+        bw->writeDoubleWordInFunction(Aarch64Instruction::AddImmediate64 | imm12(value) | Rn(rn) | Rd(rd), function);
     }
 
 
     void
-    Aarch64Writer::writeSubImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function)
+    Aarch64Writer::writeSubImmediate64(
+        Aarch64Register rd,
+        Aarch64Register rn,
+        int16_t value,
+        output::FunctionRoutine* function)
     {
-        bw->writeDoubleWordInFunction(Aarch64Instruction::SubImmediate64 | uimm12(value) | Rn(rn) | Rd(rd), function);
+        bw->writeDoubleWordInFunction(Aarch64Instruction::SubImmediate64 | imm12(value) | Rn(rn) | Rd(rd), function);
     }
 
 
     void
-    Aarch64Writer::writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+    Aarch64Writer::writeAddRegisterInstruction(
+        AddRegisterToRegisterInstruction* instruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::AddShiftedRegister |
             shift(Shift::LSL) |
-            Rm(getAarch64RegisterFromOperandRegister(addRegisterInstruction->target)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
             uimm6(0) |
-            Rn(getAarch64RegisterFromOperandRegister(addRegisterInstruction->value)) |
-            Rt(getAarch64RegisterFromOperandRegister(addRegisterInstruction->destination)),
-            addRegisterInstruction, function);
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rt(getAarch64RegisterFromOperandRegister(instruction->destination)),
+            instruction, function);
     }
 
 
     void
-    Aarch64Writer::writeSubtractRegisterToRegisterInstruction(SubtractRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeSubtractRegisterToRegisterInstruction(
+        SubtractRegisterToRegisterInstruction* instruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::SubShiftedRegister |
             shift(Shift::LSL) |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
             uimm6(0) |
-            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
             Rt(getAarch64RegisterFromOperandRegister(instruction->destination)),
             instruction, function);
     }
@@ -317,25 +329,29 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeMultiplySignedRegisterToRegisterInstruction(MultiplySignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeMultiplySignedRegisterToRegisterInstruction(
+        MultiplySignedRegisterToRegisterInstruction* instruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::Madd |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
             Ra(Aarch64Register::zero) |
-            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
             Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
             instruction, function);
     }
 
 
     void
-    Aarch64Writer::writeDivideSignedRegisterToRegisterInstruction(DivideSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeDivideSignedRegisterToRegisterInstruction(
+        DivideSignedRegisterToRegisterInstruction* instruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::Sdiv |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
-            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
             Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
             instruction, function);
     }
@@ -343,65 +359,73 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeDivideUnsignedRegisterToRegisterInstruction(DivideUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeDivideUnsignedRegisterToRegisterInstruction(
+        DivideUnsignedRegisterToRegisterInstruction* instruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::Udiv |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
-            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
             Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
             instruction, function);
     }
 
 
     void
-    Aarch64Writer::writeModuloUnsignedRegisterToRegisterInstruction(ModuloUnsignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeModuloUnsignedRegisterToRegisterInstruction(
+        ModuloUnsignedRegisterToRegisterInstruction* instruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::Udiv |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
-            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
             Rd(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)),
             instruction, function);
 
         writeSfInstructionInFunction(
             Aarch64Instruction::Msub |
             Rn(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)) |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
-            Ra(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Ra(getAarch64RegisterFromOperandRegister(instruction->value)) |
             Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
             instruction, function);
     }
 
 
     void
-    Aarch64Writer::writeModuloSignedRegisterToRegisterInstruction(ModuloSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeModuloSignedRegisterToRegisterInstruction(
+        ModuloSignedRegisterToRegisterInstruction* instruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::Sdiv |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
-            Rn(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
             Rd(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)),
             instruction, function);
 
         writeSfInstructionInFunction(
             Aarch64Instruction::Msub |
             Rn(getAarch64RegisterFromOperandRegister(instruction->divisionDestinationRegister)) |
-            Rm(getAarch64RegisterFromOperandRegister(instruction->value)) |
-            Ra(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rm(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Ra(getAarch64RegisterFromOperandRegister(instruction->value)) |
             Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
             instruction, function);
     }
 
 
     void
-    Aarch64Writer::writeMoveImmediateInstruction(MoveImmediateInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeMoveImmediateInstruction(
+        MoveImmediateInstruction* instruction,
+        FunctionRoutine* function)
     {
         Aarch64Register rd = static_cast<Aarch64Register>(Rd(getAarch64RegisterFromOperandRegister(instruction->destination)));
         uint64_t value = instruction->value;
         if (value <= UINT16_MAX)
         {
-            return writeSfInstructionInFunction(Aarch64Instruction::Movz | uimm16(value) | rd, instruction, function);
+            return writeSfInstructionInFunction(Aarch64Instruction::Movz | imm16(value) | rd, instruction, function);
         }
         else if (value <= UINT32_MAX)
         {
@@ -416,29 +440,148 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeNegatedOrRegularShiftMoves(
+        uint64_t value,
+        Aarch64Register rd,
+        MoveImmediateInstruction* instruction,
+        FunctionRoutine* function)
     {
-        if (processLogicalImmediate(value, rd, instruction->registerSize, instruction, function))
+        if (tryWriteSingleMovInstruction(value, rd, instruction, function))
         {
             return;
         }
-        if (processNegatedImmediateEncoding(value, rd, instruction, function))
+        if (tryWriteMovnWithMovkInstruction(value, rd, instruction, function))
         {
             return;
         }
-        processPositiveValues(value, rd, instruction, function);
+        writePositiveValuesKeepInstructions(value, rd, instruction, function);
+    }
+
+
+    bool
+    Aarch64Writer::tryWriteSingleMovInstruction(
+        uint64_t value,
+        const Aarch64Register& rd,
+        MoveImmediateInstruction* instruction,
+        FunctionRoutine* function)
+    {
+        if (tryWriteSingleMovzInstruction(value, rd, instruction, function))
+        {
+            return true;
+        }
+        return tryWriteSingleMovBitmaskImmediate(value, rd, instruction, function);
+    }
+
+
+    bool
+    Aarch64Writer::tryWriteSingleMovBitmaskImmediate(
+        uint64_t value,
+        const Aarch64Register& rd,
+        MoveImmediateInstruction* instruction,
+        FunctionRoutine* function)
+    {
+        uint32_t logicalBitmask;
+        if (tryGetBitmaskImmediate(value, logicalBitmask, instruction->registerSize))
+        {
+            writeSfInstructionInFunction(
+                MovBitmaskImmediate |
+                logicalBitmask |
+                Rn(r31) |
+                rd,
+                instruction, function);
+            return true;
+        }
+        return false;
+    }
+
+
+    bool
+    Aarch64Writer::tryWriteSingleMovzInstruction(
+        uint64_t value,
+        Aarch64Register rd,
+        const Instruction* instruction,
+        FunctionRoutine* function) const
+    {
+        return tryWriteSingleMovzInstructionWithRegisterSize(
+            value,
+            rd,
+            instruction->registerSize,
+            instruction,
+            function);
+    }
+
+
+    bool
+    Aarch64Writer::tryWriteSingleMovzInstructionWithRegisterSize(
+        uint64_t value,
+        Aarch64Register rd,
+        RegisterSize registerSize,
+        const Instruction* instruction,
+        FunctionRoutine* function) const
+    {
+        int nonZeroWordCount = 0;
+        uint32_t i = 0;
+        uint32_t leftBitShifts = 0;
+        uint32_t result_value;
+        uint32_t result_leftBitShift;
+        for (; i < static_cast<int>(getSupportedBinopSize(registerSize)); i += 2)
+        {
+            leftBitShifts = 8 * i;
+            uint64_t wordBitmask = (1 << 16) - 1;
+            uint64_t bitmask = wordBitmask << leftBitShifts;
+            if ((value & bitmask) >> leftBitShifts)
+            {
+                result_value = (value & bitmask) >> leftBitShifts;
+                result_leftBitShift = leftBitShifts;
+                nonZeroWordCount++;
+            }
+        }
+        if (nonZeroWordCount == 1)
+        {
+            writeSfInstructionInFunction(
+                Aarch64Instruction::Movz |
+                hw(result_leftBitShift) |
+                imm16(result_value) |
+                Rd(rd),
+                instruction, function);
+            return true;
+        }
+        return false;
     }
 
 
     void
-    Aarch64Writer::processPositiveValues(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writePositiveValuesKeepInstructions(
+        uint64_t value,
+        const Aarch64Register& rd,
+        MoveImmediateInstruction* instruction,
+        FunctionRoutine* function)
     {
-        bool hasWrittenMovz = false;
+        bool hasWrittenMov = false;
         uint64_t i = 0;
         if (instruction->registerSize == RegisterSize::Quad)
         {
-            bool hasBitmaskImmediate = hasWrittenMovz = processLogicalImmediate(0xffff'ffff & value, rd, RegisterSize::Dword, instruction, function);
-            if (hasBitmaskImmediate)
+            if (tryWriteSingleMovzInstructionWithRegisterSize(value, rd, RegisterSize::Dword, instruction, function))
+            {
+                hasWrittenMov = true;
+            }
+            else
+            {
+                uint32_t logicalBitmask;
+                bool hasBitmaskImmediate = tryGetBitmaskImmediate(0xffff'ffff & value, logicalBitmask,
+                    RegisterSize::Dword);
+                if (hasBitmaskImmediate)
+                {
+                    bw->writeDoubleWordInFunction(
+                        Aarch64Instruction::MovBitmaskImmediate |
+                        logicalBitmask |
+                        Rn(Aarch64Register::r31) |
+                        rd, function);
+
+                    hasWrittenMov = true;
+                }
+            }
+            if (hasWrittenMov)
             {
                 i = 32;
             }
@@ -447,28 +590,28 @@ namespace elet::domain::compiler::instruction::output
         for (; i < registerSize; i += 16)
         {
             uint64_t elementValue = ((0xffffui64 << i) & value) >> i;
-            if (!hasWrittenMovz && elementValue != 0ui64)
+            if (!hasWrittenMov && elementValue != 0ui64)
             {
-                writeSfInstructionInFunction(Aarch64Instruction::Movz | hw(i) | uimm16(elementValue) | rd, instruction, function);
-                hasWrittenMovz = true;
+                writeSfInstructionInFunction(Aarch64Instruction::Movz | hw(i) | imm16(elementValue) | rd, instruction, function);
+                hasWrittenMov = true;
                 continue;
             }
             if (elementValue != 0)
             {
-                writeSfInstructionInFunction(Aarch64Instruction::Movk | uimm16(elementValue) | hw(i) | rd, instruction, function);
+                writeSfInstructionInFunction(Aarch64Instruction::Movk | imm16(elementValue) | hw(i) | rd, instruction, function);
             }
         }
 
         // We can only reach here if value == 0.
-        if (!hasWrittenMovz)
+        if (!hasWrittenMov)
         {
-            writeSfInstructionInFunction(Aarch64Instruction::Movz | hw(0) | uimm16(0) | rd, instruction, function);
+            writeSfInstructionInFunction(Aarch64Instruction::Movz | hw(0) | imm16(0) | rd, instruction, function);
         }
     }
 
 
     bool
-    Aarch64Writer::processNegatedImmediateEncoding(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, output::FunctionRoutine* function)
+    Aarch64Writer::tryWriteMovnWithMovkInstruction(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, output::FunctionRoutine* function)
     {
         enum class Stage
         {
@@ -523,13 +666,13 @@ namespace elet::domain::compiler::instruction::output
 
         uint16_t maskedValue = ((0xffffui64 << negationIndex) & value) >> negationIndex;
         uint16_t elementValue = ~maskedValue;
-        writeSfInstructionInFunction(Aarch64Instruction::Movn | hw(negationIndex) | uimm16(elementValue) | rd, instruction, function);
+        writeSfInstructionInFunction(Aarch64Instruction::Movn | hw(negationIndex) | imm16(elementValue) | rd, instruction, function);
         for (int i = 0; i < negationIndex; i += 16)
         {
             elementValue = ((0xffffui64 << i) & value) >> i;
             if (elementValue != 0xffff)
             {
-                writeSfInstructionInFunction(Aarch64Instruction::Movk | uimm16(elementValue) | hw(i) | rd, instruction, function);
+                writeSfInstructionInFunction(Aarch64Instruction::Movk | imm16(elementValue) | hw(i) | rd, instruction, function);
             }
         }
         return true;
@@ -570,14 +713,18 @@ namespace elet::domain::compiler::instruction::output
         for (const auto& string : _strings)
         {
             uint32_t numberOfPageSizes = ((textSegmentStartOffset + string->relocationAddress.value1) / 0x1000) * 0x1000;
-            uint32_t dw = bw->getDoubleWord(textSegmentStartOffset + string->relocationAddress.offset) | uimm12((textSegmentStartOffset + string->relocationAddress.value2) - numberOfPageSizes);
+            uint32_t dw = bw->getDoubleWord(textSegmentStartOffset + string->relocationAddress.offset) |
+                imm12((textSegmentStartOffset + string->relocationAddress.value2) - numberOfPageSizes);
             bw->writeDoubleWordAtAddress(dw, textSegmentStartOffset + string->relocationAddress.offset);
         }
     }
 
 
     void
-    Aarch64Writer::relocateStub(uint64_t offset, uint64_t textSegmentStartOffset, ExternalRoutine* externalRoutine)
+    Aarch64Writer::relocateStub(
+        uint64_t offset,
+        uint64_t textSegmentStartOffset,
+        ExternalRoutine* externalRoutine)
     {
         uint64_t stubAddress = textSegmentStartOffset + externalRoutine->stubAddress;
         uint32_t dw = bw->getDoubleWord(stubAddress);
@@ -616,17 +763,47 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeB(int32_t offset)
+    Aarch64Writer::writeB(
+        int32_t offset)
     {
         bw->writeDoubleWord(Aarch64Instruction::B | simm26(offset / 4));
     }
 
 
     void
-    Aarch64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* instruction, FunctionRoutine* function)
+    Aarch64Writer::writeStoreImmediateInstruction(
+        StoreImmediateInstruction* instruction,
+        FunctionRoutine* function)
     {
         MoveImmediateInstruction mov(OperandRegister::Scratch0, instruction->value, instruction->registerSize);
         writeMoveImmediateInstruction(&mov, function);
+        if (isAtLeastDword(instruction))
+        {
+            writeStoreImmediateUnsignedOffsetAtLeastDword(
+                instruction,
+                OperandRegister::Scratch0,
+                function);
+        }
+        else if (instruction->registerSize == RegisterSize::Byte)
+        {
+            bw->writeDoubleWordInFunction(Aarch64Instruction::StrbImmediateUnsignedOffset |
+                imm12(instruction->stackOffset) |
+                Rn(Aarch64Register::sp) |
+                Rt(getAarch64RegisterFromOperandRegister(OperandRegister::Scratch0)), function);
+        }
+        else if (instruction->registerSize == RegisterSize::Word)
+        {
+            throw std::runtime_error("Not implemented word size in writeStoreImmediateInstruction");
+        }
+    }
+
+
+    void
+    Aarch64Writer::writeStoreImmediateUnsignedOffsetAtLeastDword(
+        const StoreImmediateInstruction* instruction,
+        OperandRegister destination,
+        FunctionRoutine* function)
+    {
         uint32_t sf;
         uint16_t stackOffset;
         if (instruction->registerSize == RegisterSize::Quad)
@@ -640,24 +817,29 @@ namespace elet::domain::compiler::instruction::output
             stackOffset = instruction->stackOffset / 4;
         }
         bw->writeDoubleWordInFunction(
-            Aarch64Instruction::StrImmediateUnsignedOffset | sf |
-            uimm12(stackOffset) |
-            Rn(Aarch64Register::sp) | Rt(getAarch64RegisterFromOperandRegister(OperandRegister::Scratch0)), function);
+            StrImmediateUnsignedOffset | sf |
+            imm12(stackOffset) |
+            Rn(sp) | Rt(getAarch64RegisterFromOperandRegister(destination)), function);
     }
 
 
     void
-    Aarch64Writer::writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function)
+    Aarch64Writer::writeStoreRegisterInstruction(
+        StoreRegisterInstruction* storeRegisterInstruction,
+        FunctionRoutine* function)
     {
         writeSfInstructionInFunction(
             Aarch64Instruction::StrImmediateUnsignedOffset |
-            uimm12(storeRegisterInstruction->stackOffset) |
+            imm12(storeRegisterInstruction->stackOffset) |
             Rn(Aarch64Register::sp) |
             Rt(getAarch64RegisterFromOperandRegister(storeRegisterInstruction->target)), storeRegisterInstruction, function);
     }
 
+
     void
-    Aarch64Writer::writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function)
+    Aarch64Writer::writeMoveAddressInstruction(
+        MoveAddressToRegisterInstruction* moveAddressInstruction,
+        FunctionRoutine* function)
     {
         output::String* string = std::get<output::String*>(moveAddressInstruction->constant);
         string->relocationAddress.value1 = _offset;
@@ -669,7 +851,45 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function)
+    Aarch64Writer::writeMoveZeroExtendInstruction(
+        MoveZeroExtendInstruction* instruction,
+        FunctionRoutine* function)
+    {
+        uint32_t bitmaskImmediate;
+        if (!tryGetBitmaskImmediate(getRegisterSizeBitmask(instruction->registerSize), bitmaskImmediate, getSupportedBinopSize(instruction->registerSize)))
+        {
+            assert("Could not get bitmask immediate");
+        }
+        writeSfInstructionInFunction(
+            Aarch64Instruction::AndImmediate |
+            bitmaskImmediate |
+            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
+            Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
+            instruction, function);
+    }
+
+
+    uint32_t
+    Aarch64Writer::getRegisterSizeBitmask(
+        RegisterSize size)
+    {
+        switch (size)
+        {
+            case RegisterSize::Dword:
+                return 0xffff'ffff;
+            case RegisterSize::Word:
+                return 0xffff;
+            case RegisterSize::Byte:
+                return 0xff;
+        }
+        assert("Unknown register size.");
+    }
+
+
+    void
+    Aarch64Writer::writeMoveRegisterToRegisterInstruction(
+        MoveRegisterToRegisterInstruction* moveRegisterInstruction,
+        FunctionRoutine* function)
     {
         if (moveRegisterInstruction->destination == OperandRegister::Return && moveRegisterInstruction->target == OperandRegister::Scratch0)
         {
@@ -698,30 +918,47 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    Aarch64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
+    Aarch64Writer::writeLoadInstruction(
+        LoadInstruction* instruction,
+        FunctionRoutine* function)
     {
         uint16_t stackOffset;
         uint32_t sf;
-        if (loadInstruction->registerSize == RegisterSize::Quad)
+        if (isAtLeastDword(instruction))
         {
-            sf = 1 << 30;
-            stackOffset = loadInstruction->stackOffset / 8;
+            if (instruction->registerSize == RegisterSize::Quad)
+            {
+                sf = 1 << 30;
+                stackOffset = instruction->stackOffset / 8;
+            }
+            else
+            {
+                sf = 0;
+                stackOffset = instruction->stackOffset / 4;
+            }
+            bw->writeDoubleWordInFunction(
+                Aarch64Instruction::LdrImmediateUnsignedOffset | sf |
+                imm12(stackOffset) |
+                Rn(Aarch64Register::sp) |
+                Rt(getAarch64RegisterFromOperandRegister(instruction->destination)), function);
         }
-        else
+        else if (instruction->registerSize == RegisterSize::Byte)
         {
-            sf = 0;
-            stackOffset = loadInstruction->stackOffset / 4;
+            bw->writeDoubleWordInFunction(Aarch64Instruction::LdrbImmediateUnsignedOffset |
+                imm12(instruction->stackOffset) |
+                Rn(Aarch64Register::sp) |
+                Rt(getAarch64RegisterFromOperandRegister(instruction->destination)), function);
         }
-        writeSfInstructionInFunction(
-            Aarch64Instruction::LdrImmediateUnsignedOffset | sf |
-            uimm12(stackOffset) |
-            Rn(Aarch64Register::sp) |
-            Rt(getAarch64RegisterFromOperandRegister(loadInstruction->destination)), loadInstruction, function);
+        else // Word
+        {
+            throw std::runtime_error("not implemented word instruction.");
+        }
     }
 
 
     int
-    Aarch64Writer::getAarch64RegisterFromOperandRegister(OperandRegister operandRegister) const
+    Aarch64Writer::getAarch64RegisterFromOperandRegister(
+        OperandRegister operandRegister) const
     {
         switch (operandRegister)
         {
@@ -748,7 +985,11 @@ namespace elet::domain::compiler::instruction::output
 
 
     bool
-    Aarch64Writer::moveWideIsPreferred(uint8_t sf, uint8_t immN, uint8_t imms, uint8_t immr) const
+    Aarch64Writer::moveWideIsPreferred(
+        uint8_t sf,
+        uint8_t immN,
+        uint8_t imms,
+        uint8_t immr) const
     {
         uint8_t S = imms;
         uint8_t R = immr;
@@ -775,7 +1016,10 @@ namespace elet::domain::compiler::instruction::output
 
 
     bool
-    Aarch64Writer::processLogicalImmediate(uint64_t imm, const Aarch64Register& rd, RegisterSize registerSize, MoveImmediateInstruction* instruction, output::FunctionRoutine* function)
+    Aarch64Writer::tryGetBitmaskImmediate(
+        uint64_t imm,
+        uint32_t& logicalImmediate,
+        RegisterSize registerSize)
     {
         // Ensures that it is not only zero bit pattern or only one bit pattern.
         if (imm == 0ULL || imm == ~0ULL)
@@ -803,11 +1047,6 @@ namespace elet::domain::compiler::instruction::output
         }
         while (elementSize > 2);
 
-        if (elementSize == static_cast<int>(registerSize) * 8)
-        {
-            return false;
-        }
-
         // Determine the rotation
         uint32_t trailingOnesCount;
         uint32_t trailingZeroesCount;
@@ -830,19 +1069,22 @@ namespace elet::domain::compiler::instruction::output
             trailingZeroesCount = static_cast<int>(RegisterSize::Quad) * 8 - leadingOnesCount;
             trailingOnesCount = leadingOnesCount + Bit::countTrailingOnes(imm) - (static_cast<int>(RegisterSize::Quad) * 8 - elementSize);
         }
+        // Cannot fit Nimms
+        if (elementSize == 64 || trailingOnesCount > 32)
+        {
+            return false;
+        }
+        // Cannot fit immr
+        if (elementSize - trailingZeroesCount > 32)
+        {
+            return false;
+        }
 
         uint64_t immr = (elementSize - trailingZeroesCount) & (elementSize - 1);
         uint64_t Nimms = ~(elementSize - 1) << 1;
         Nimms |= (trailingOnesCount - 1);
         uint64_t N = ((Nimms >> 6) & 1) ^ 1;
-        uint32_t logicalBitmask = (N << 22) | (immr << 16) | ((Nimms & 0x3f) << 10);
-
-        uint32_t instructionBytes = Aarch64Instruction::MovBitmaskImmediate | logicalBitmask | Rn(Aarch64Register::r31) | rd;
-        if (registerSize == RegisterSize::Quad)
-        {
-            instructionBytes |= Aarch64Instruction::sf;
-        }
-        bw->writeDoubleWordInFunction(instructionBytes, function);
+        logicalImmediate = (N << 22) | (immr << 16) | ((Nimms & 0x3f) << 10);
         return true;
     }
 
@@ -864,16 +1106,43 @@ namespace elet::domain::compiler::instruction::output
         }
     }
 
+
     uint32_t
     Aarch64Writer::shift(Shift shift)
     {
         return static_cast<uint32_t>(shift) << 22;
     }
 
+
     void
-    Aarch64Writer::writeSfInstructionInFunction(uint32_t instruction, Instruction* referenceInstruction, FunctionRoutine* function) const
+    Aarch64Writer::writeSfInstructionInFunction(
+        uint32_t instruction,
+        const Instruction* referenceInstruction,
+        FunctionRoutine* function) const
     {
         uint32_t sf = referenceInstruction->registerSize == RegisterSize::Quad ? 1 << 31 : 0;
         bw->writeDoubleWordInFunction(instruction | sf, function);
+    }
+
+
+    inline
+    bool
+    Aarch64Writer::isAtLeastDword(Instruction* instruction) const
+    {
+        return instruction->registerSize >= RegisterSize::Dword;
+    }
+
+
+    RegisterSize
+    Aarch64Writer::getSupportedBinopSize(RegisterSize registerSize) const
+    {
+        switch (registerSize)
+        {
+            case RegisterSize::Quad:
+            case RegisterSize::Dword:
+                return registerSize;
+            default:
+                return RegisterSize::Dword;
+        }
     }
 }

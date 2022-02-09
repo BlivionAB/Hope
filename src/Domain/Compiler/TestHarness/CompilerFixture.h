@@ -270,6 +270,11 @@ namespace elet::domain::compiler::test
         testing::AssertionResult
         testProject(TestProjectOptions options)
         {
+            const char* envvar = std::getenv("ACCEPT_BASELINES");
+            if (std::strcmp(envvar, "true") == 0)
+            {
+                options.acceptBaselines = true;
+            }
             testing::AssertionResult result(true);
             for (const auto target : options.targets)
             {

@@ -140,10 +140,24 @@ namespace elet::domain::compiler::instruction
             output::ImmediateValue immediateValue = std::get<output::ImmediateValue>(expression);
             addInstruction(new output::MoveImmediateInstruction(output::OperandRegister::Return, immediateValue.value, returnStatement->expectedType->size()));
         }
-        else if (std::holds_alternative<output::OperandRegister>(expression))
+        else if (std::holds_alternative<output::RegisterResult>(expression))
         {
             assert((*returnStatement->expectedType != TypeKind::Void) && "Type should not equal void here. The type checker should have already failed.");
-            addInstruction(new output::MoveRegisterToRegisterInstruction(output::OperandRegister::Return, output::OperandRegister::Scratch0, returnStatement->expectedType->size()));
+            output::RegisterResult result = std::get<output::RegisterResult>(expression);
+            if (returnStatement->expectedType->size() != result.size)
+            {
+                addInstruction(new output::MoveZeroExtendInstruction(
+                    output::OperandRegister::Scratch0,
+                    output::OperandRegister::Return,
+                    returnStatement->expectedType->size()));
+            }
+            else
+            {
+                addInstruction(new output::MoveRegisterToRegisterInstruction(
+                    output::OperandRegister::Return,
+                    output::OperandRegister::Scratch0,
+                    returnStatement->expectedType->size()));
+            }
         }
         else
         {
@@ -166,8 +180,8 @@ namespace elet::domain::compiler::instruction
         }
         else
         {
-            output::OperandRegister operandRegister = std::get<output::OperandRegister>(canonicalExpression);
-            output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(output::OperandRegister::Scratch0, stackOffset, registerSize);
+            output::RegisterResult result = std::get<output::RegisterResult>(canonicalExpression);
+            output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(result._register, stackOffset, registerSize);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
@@ -216,7 +230,7 @@ namespace elet::domain::compiler::instruction
     }
 
 
-    output::OperandRegister
+    output::RegisterResult
     Transformer::transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryExpression* binaryExpression)
     {
         _scratchRegisterIndex--;
@@ -233,7 +247,7 @@ namespace elet::domain::compiler::instruction
             default:
                 assert("Not implemented binary operator in 'transformImmediateToRegisterExpression'.");
         }
-        return scratchRegister;
+        return output::RegisterResult(scratchRegister, registerSize);
     }
 
 
@@ -484,17 +498,17 @@ namespace elet::domain::compiler::instruction
     }
 
 
-    output::OperandRegister
+    output::RegisterResult
     Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression)
     {
         output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
         output::LoadInstruction* loadInstruction = new output::LoadInstruction(borrowScratchRegister(), referenceInstruction->stackOffset, referenceInstruction->registerSize);
         addInstruction(loadInstruction);
-        return loadInstruction->destination;
+        return output::RegisterResult(loadInstruction->destination, referenceInstruction->registerSize);
     }
 
 
-    output::OperandRegister
+    output::RegisterResult
     Transformer::transformRegisterToRegisterBinaryExpression(ast::BinaryExpression* binaryExpression, output::OperandRegister target, output::OperandRegister value)
     {
         // Str [Sp + 0], 3
@@ -510,7 +524,7 @@ namespace elet::domain::compiler::instruction
 
         // Decrease scratch register index, since we should leave them back after usage
 
-        RegisterSize registerSize = binaryExpression->resolvedType->size();
+        RegisterSize registerSize = getSupportedRegisterSize(binaryExpression->resolvedType->size());
         if (binaryExpression->binaryOperatorKind == ast::BinaryOperatorKind::Modulo)
         {
             output::OperandRegister divisionResultRegister = borrowScratchRegister();
@@ -524,7 +538,7 @@ namespace elet::domain::compiler::instruction
             {
                 addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
             }
-            return destination;
+            return output::RegisterResult(destination, registerSize);
         }
         _scratchRegisterIndex -= 2;
         output::OperandRegister destination = borrowScratchRegister();
@@ -566,7 +580,7 @@ namespace elet::domain::compiler::instruction
                 throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
         }
 
-        return destination;
+        return output::RegisterResult(destination, registerSize);
     }
 
 
@@ -624,7 +638,6 @@ namespace elet::domain::compiler::instruction
         // ssub x1, x3, x2, x1 // Mark x3, x2 as available.
         // str x1, b
 
-
         output::CanonicalExpression leftOutput;
         output::CanonicalExpression rightOutput;
         ast::Type* type = forcedType ? forcedType : binaryExpression->resolvedType;
@@ -646,32 +659,24 @@ namespace elet::domain::compiler::instruction
             rightOutput = transformExpression(binaryExpression->right, stackOffset, type);
         }
 
-        if (std::holds_alternative<output::OperandRegister>(leftOutput) && std::holds_alternative<output::OperandRegister>(rightOutput))
+        if (std::holds_alternative<output::RegisterResult>(leftOutput) && std::holds_alternative<output::RegisterResult>(rightOutput))
         {
-            output::OperandRegister target = std::get<output::OperandRegister>(leftOutput);
-            output::OperandRegister value = std::get<output::OperandRegister>(rightOutput);
+            output::RegisterResult target = std::get<output::RegisterResult>(leftOutput);
+            output::RegisterResult value = std::get<output::RegisterResult>(rightOutput);
 
-            // Make operand registers have an ascending order
-            if (target < value)
-            {
-                return transformRegisterToRegisterBinaryExpression(binaryExpression, target, value);
-            }
-            else
-            {
-                return transformRegisterToRegisterBinaryExpression(binaryExpression, value, target);
-            }
+            return transformRegisterToRegisterBinaryExpression(binaryExpression, target._register, value._register);
         }
         else if (std::holds_alternative<output::ImmediateValue>(leftOutput) && std::holds_alternative<output::ImmediateValue>(rightOutput))
         {
             return transformImmediateToImmediateBinaryExpression(binaryExpression->binaryOperatorKind, std::get<output::ImmediateValue>(leftOutput), std::get<output::ImmediateValue>(rightOutput));
         }
-        else if (std::holds_alternative<output::OperandRegister>(leftOutput))
+        else if (std::holds_alternative<output::RegisterResult>(leftOutput))
         {
-            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(leftOutput), std::get<output::ImmediateValue>(rightOutput).value, binaryExpression);
+            return transformImmediateToRegisterExpression(std::get<output::RegisterResult>(leftOutput)._register, std::get<output::ImmediateValue>(rightOutput).value, binaryExpression);
         }
-        else // if (std::holds_alternative<output::OperandRegister>(rightOutput))
+        else // if (std::holds_alternative<output::RegisterResult>(rightOutput))
         {
-            return transformImmediateToRegisterExpression(std::get<output::OperandRegister>(rightOutput), std::get<output::ImmediateValue>(leftOutput).value, binaryExpression);
+            return transformImmediateToRegisterExpression(std::get<output::RegisterResult>(rightOutput)._register, std::get<output::ImmediateValue>(leftOutput).value, binaryExpression);
         }
     }
 
@@ -736,5 +741,19 @@ namespace elet::domain::compiler::instruction
                 return IntegerKind::S64;
         }
         assert("Cannot convert typekind to integer type.");
+    }
+
+
+    RegisterSize
+    Transformer::getSupportedRegisterSize(RegisterSize size)
+    {
+        switch (size)
+        {
+            case RegisterSize::Quad:
+            case RegisterSize::Dword:
+                return size;
+            default:
+                return RegisterSize::Dword;
+        }
     }
 }

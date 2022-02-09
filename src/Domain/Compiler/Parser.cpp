@@ -531,6 +531,18 @@ namespace elet::domain::compiler::ast
             case Token::USizeKeyword:
                 typeAssignment->type = TypeKind::USize;
                 break;
+            case Token::U8Keyword:
+                typeAssignment->type = TypeKind::U8;
+                break;
+            case Token::S8Keyword:
+                typeAssignment->type = TypeKind::S8;
+                break;
+            case Token::U16Keyword:
+                typeAssignment->type = TypeKind::U16;
+                break;
+            case Token::S16Keyword:
+                typeAssignment->type = TypeKind::S16;
+                break;
             case Token::U32Keyword:
                 typeAssignment->type = TypeKind::U32;
                 break;

@@ -18,6 +18,7 @@ namespace elet::domain::compiler::instruction::output::test
         }));
     }
 
+
     TEST_F(X86OperatorKindFixture, OperatorKind_Add_64)
     {
         testMainFunction(

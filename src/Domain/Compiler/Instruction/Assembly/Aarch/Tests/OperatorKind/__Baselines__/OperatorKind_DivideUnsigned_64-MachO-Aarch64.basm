@@ -13,7 +13,7 @@ _main:
 0000000100003fb8  f90013e0              str x0, [sp, #0x20]
 0000000100003fbc  f9400fe0              ldr x0, [sp, #0x18]
 0000000100003fc0  f94013e1              ldr x1, [sp, #0x20]
-0000000100003fc4  9ac00820              udiv x0, x1, x0
+0000000100003fc4  9ac10800              udiv x0, x0, x1
 0000000100003fc8  a9417bfd              ldp fp, lr, [sp, #0x10]
 0000000100003fcc  910083ff              add sp, sp, #0x20
 0000000100003fd0  d65f03c0              ret lr

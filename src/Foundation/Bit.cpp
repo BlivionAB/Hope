@@ -9,9 +9,9 @@ namespace elet::foundation
     {
         int count = 0;
         uint64_t nimm = ~imm;
-        for (int i = 0; i < 63; i++)
+        for (uint64_t i = 0; i < 63; i++)
         {
-            if (nimm & (1 << i))
+            if (nimm & (1ui64 << i))
             {
                 count++;
                 continue;
@@ -26,9 +26,9 @@ namespace elet::foundation
     Bit::countTrailingOnes(uint64_t imm)
     {
         int count = 0;
-        for (int i = 0; i < 63; i++)
+        for (uint64_t i = 0; i < 63; i++)
         {
-            if (imm & (1 << i))
+            if (imm & (1ui64 << i))
             {
                 count++;
                 continue;
@@ -43,9 +43,9 @@ namespace elet::foundation
     Bit::countLeadingOnes(uint64_t value)
     {
         int count = 0;
-        for (int i = 63; i >= 0; i--)
+        for (uint64_t i = 63; i >= 0; i--)
         {
-            if (value & (1 << i))
+            if (value & (1ui64 << i))
             {
                 count++;
                 continue;

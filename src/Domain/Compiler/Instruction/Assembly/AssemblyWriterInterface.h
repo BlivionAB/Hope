@@ -143,6 +143,10 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
+        writeMoveZeroExtendInstruction(MoveZeroExtendInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
         writeReturnInstruction(ReturnInstruction* returnInstruction, FunctionRoutine* function);
 
         virtual

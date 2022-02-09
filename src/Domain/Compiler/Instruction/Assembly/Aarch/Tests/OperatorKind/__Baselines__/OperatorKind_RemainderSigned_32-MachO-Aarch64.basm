@@ -13,8 +13,8 @@ _main:
 0000000100003fb8  b9001be0              str w0, [sp, #0x18]
 0000000100003fbc  b94017e0              ldr w0, [sp, #0x14]
 0000000100003fc0  b9401be1              ldr w1, [sp, #0x18]
-0000000100003fc4  1ac00c22              sdiv w2, w1, w0
-0000000100003fc8  1b018040              msub w0, w2, w1, w0
+0000000100003fc4  1ac10c02              sdiv w2, w0, w1
+0000000100003fc8  1b008440              msub w0, w2, w0, w1
 0000000100003fcc  a9417bfd              ldp fp, lr, [sp, #0x10]
 0000000100003fd0  910083ff              add sp, sp, #0x20
 0000000100003fd4  d65f03c0              ret lr

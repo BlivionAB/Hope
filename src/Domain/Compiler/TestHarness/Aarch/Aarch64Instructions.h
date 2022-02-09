@@ -93,7 +93,7 @@ namespace elet::domain::compiler::test::aarch
         UnsignedOffset,
     };
 
-    struct LdrStrUnsignedOffsetInstruction : Instruction
+    struct LdrStrImmediateUnsignedOffsetInstruction : Instruction
     {
         Register
         Rt;
@@ -103,17 +103,31 @@ namespace elet::domain::compiler::test::aarch
 
         uint16_t
         imm12;
+
+        LdrStrImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12):
+            Instruction(kind),
+            Rt(Rt),
+            Rn(Rn),
+            imm12(imm12)
+        { }
     };
 
 
-    struct StrUnsignedOffsetInstruction : LdrStrUnsignedOffsetInstruction
+    struct StrUnsignedOffsetInstruction : LdrStrImmediateUnsignedOffsetInstruction
     {
     };
 
 
 
-    struct LdrUnsignedOffsetInstruction : LdrStrUnsignedOffsetInstruction
+    struct LdrUnsignedOffsetInstruction : LdrStrImmediateUnsignedOffsetInstruction
     {
+    };
+
+    struct LdrbStrbImmediateUnsignedOffsetInstruction : LdrStrImmediateUnsignedOffsetInstruction
+    {
+        LdrbStrbImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
+            LdrStrImmediateUnsignedOffsetInstruction(Aarch64Instruction::StrbImmediateUnsignedOffset, Rt, Rn, imm12)
+        { }
     };
 
     struct LdrInstruction : Instruction
@@ -158,6 +172,18 @@ namespace elet::domain::compiler::test::aarch
 
         AddressMode
         addressMode;
+    };
+
+    struct AndImmediateInstruction : Instruction
+    {
+        uint64_t
+        value;
+
+        Register
+        Rn;
+
+        Register
+        Rd;
     };
 
 

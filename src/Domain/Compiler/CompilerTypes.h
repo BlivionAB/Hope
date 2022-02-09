@@ -14,7 +14,6 @@ namespace elet::domain::compiler
 {
     enum class RegisterSize : uint8_t
     {
-        None,
         Byte = 1,
         Word = 2,
         Dword = 4,

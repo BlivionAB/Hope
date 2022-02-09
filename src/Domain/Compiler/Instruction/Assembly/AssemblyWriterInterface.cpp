@@ -159,6 +159,9 @@ namespace elet::domain::compiler::instruction::output
                 case InstructionKind::MoveAddress:
                     writeMoveAddressInstruction(reinterpret_cast<MoveAddressToRegisterInstruction*>(instruction), function);
                     break;
+                case InstructionKind::MoveZeroExtend:
+                    writeMoveZeroExtendInstruction(reinterpret_cast<MoveZeroExtendInstruction*>(instruction), function);
+                    break;
                 case InstructionKind::AddRegisterToRegister:
                     writeAddRegisterInstruction(reinterpret_cast<AddRegisterToRegisterInstruction*>(instruction), function);
                     break;
@@ -298,9 +301,16 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    AssemblyWriterInterface::writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function)
+    AssemblyWriterInterface::writeMoveAddressInstruction(MoveAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         throw std::runtime_error("Not implemented \"writeMoveAddressInstruction\" method.");
+    }
+
+
+    void
+    AssemblyWriterInterface::writeMoveZeroExtendInstruction(MoveZeroExtendInstruction* instruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeMoveZeroExtendInstruction\" method.");
     }
 
 

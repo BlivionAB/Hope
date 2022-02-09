@@ -1,8 +1,8 @@
 _main():
-    Str [Sp + #-4], #0x3
-    Str [Sp + #-8], #0x3
-    Ldr X0, [Sp + #-4]
-    Ldr X1, [Sp + #-8]
-    Div X0, X0, X1
-    Mov OpRet, X0
+    StrL [Sp + #-4], #0x3
+    StrL [Sp + #-8], #0x3
+    LdrL X0, [Sp + #-4]
+    LdrL X1, [Sp + #-8]
+    DivL X0, X0, X1
+    MovL OpRet, X0
 

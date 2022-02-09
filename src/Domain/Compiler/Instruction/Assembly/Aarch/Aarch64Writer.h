@@ -58,16 +58,20 @@ namespace elet::domain::compiler::instruction::output
         writeMoveImmediateInstruction(MoveImmediateInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function) override;
+        writeMoveAddressInstruction(MoveAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
 
         void
-        writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* moveRegisterInstruction, FunctionRoutine* function) override;
+        writeMoveZeroExtendInstruction(MoveZeroExtendInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
+        writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
+        writeLoadInstruction(LoadInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeSubtractRegisterToRegisterInstruction(SubtractRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
@@ -88,7 +92,7 @@ namespace elet::domain::compiler::instruction::output
         writeModuloSignedRegisterToRegisterInstruction(ModuloSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeSfInstructionInFunction(uint32_t instruction, Instruction* referenceInstruction, FunctionRoutine* function) const;
+        writeSfInstructionInFunction(uint32_t instruction, const Instruction* referenceInstruction, FunctionRoutine* function) const;
     private:
 
         List<Aarch64Register>
@@ -143,10 +147,10 @@ namespace elet::domain::compiler::instruction::output
         uimm6(uint8_t value) const;
 
         uint32_t
-        uimm12(uint16_t value) const;
+        imm12(uint16_t value) const;
 
         uint32_t
-        uimm16(uint16_t value) const;
+        imm16(uint16_t value) const;
 
         uint32_t
         simm7(int8_t value) const;
@@ -185,22 +189,83 @@ namespace elet::domain::compiler::instruction::output
         moveWideIsPreferred(uint8_t sf, uint8_t N, uint8_t imms, uint8_t immr) const;
 
         bool
-        processLogicalImmediate(uint64_t imm, const Aarch64Register& rd, RegisterSize registerSize, MoveImmediateInstruction* instruction, output::FunctionRoutine* function);
+        tryGetBitmaskImmediate(uint64_t imm, uint32_t& logicalImmediate, RegisterSize registerSize);
 
         void
         writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function);
 
+
         void
-        writeNegatedOrRegularShiftMoves(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, FunctionRoutine* function);
+        writeNegatedOrRegularShiftMoves(
+            uint64_t value,
+            Aarch64Register rd,
+            MoveImmediateInstruction* instruction,
+            FunctionRoutine* function);
+
 
         bool
-        processNegatedImmediateEncoding(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, output::FunctionRoutine* function);
+        tryWriteMovnWithMovkInstruction(
+            uint64_t value,
+            const Aarch64Register& rd,
+            MoveImmediateInstruction* instruction,
+            output::FunctionRoutine* function);
+
 
         void
-        processPositiveValues(uint64_t value, const Aarch64Register& rd, MoveImmediateInstruction* instruction, FunctionRoutine* function);
+        writePositiveValuesKeepInstructions(
+            uint64_t value,
+            const Aarch64Register& rd,
+            MoveImmediateInstruction* instruction,
+            FunctionRoutine* function);
 
         uint32_t
         shift(Shift shift);
+
+        inline
+        bool
+        isAtLeastDword(Instruction* instruction) const;
+
+        void
+        writeStoreImmediateUnsignedOffsetAtLeastDword(
+            const StoreImmediateInstruction* instruction,
+            OperandRegister destination,
+            FunctionRoutine* function);
+
+        uint32_t
+        getRegisterSizeBitmask(RegisterSize size);
+
+
+        bool
+        tryWriteSingleMovInstruction(
+            uint64_t value,
+            const Aarch64Register& rd,
+            MoveImmediateInstruction* instruction,
+            FunctionRoutine* function);
+
+
+        inline
+        RegisterSize
+        getSupportedBinopSize(RegisterSize registerSize) const;
+
+
+        bool
+        tryWriteSingleMovzInstruction(
+            uint64_t value,
+            Aarch64Register rd,
+            const Instruction* instruction,
+            FunctionRoutine* function) const;
+
+
+        bool
+        tryWriteSingleMovzInstructionWithRegisterSize(uint64_t value, Aarch64Register rd, RegisterSize registerSize, const Instruction* instruction, FunctionRoutine* function) const;
+
+
+        bool
+        tryWriteSingleMovBitmaskImmediate(
+            uint64_t value,
+            const Aarch64Register& rd,
+            MoveImmediateInstruction* instruction,
+            FunctionRoutine* function);
     };
 }
 
