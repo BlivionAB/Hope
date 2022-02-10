@@ -147,6 +147,9 @@ private:
     parseLdrbStrbImmediateUnsignedOffsetInstruction(LdrbStrbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
 
     void
+    parseLdrhStrhImmediateUnsignedOffsetInstruction(LdrhStrhImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
+
+    void
     parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw);
 
     void

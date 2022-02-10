@@ -56,6 +56,10 @@ namespace elet::domain::compiler::test::aarch
                 case Aarch64Instruction::StrbImmediateUnsignedOffset:
                     writeLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction));
                     break;
+                case Aarch64Instruction::LdrhImmediateUnsignedOffset:
+                case Aarch64Instruction::StrhImmediateUnsignedOffset:
+                    writeLdrhStrhImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrhStrhImmediateUnsignedOffsetInstruction*>(instruction));
+                    break;
                 case Aarch64Instruction::AddImmediate64:
                 case Aarch64Instruction::SubImmediate64:
                     writeDataProcessImmediateInstruction(reinterpret_cast<const DataProcessImmediateInstruction*>(instruction));
@@ -172,6 +176,26 @@ namespace elet::domain::compiler::test::aarch
         else
         {
             _tw.write("strb ");
+        }
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
+        _tw.write(", [");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", #");
+        _tw.writeUnsignedHexValue(instruction->imm12);
+        _tw.write("]");
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeLdrhStrhImmediateUnsignedOffsetInstruction(const LdrhStrhImmediateUnsignedOffsetInstruction* instruction)
+    {
+        if (instruction->kind == Aarch64Instruction::LdrhImmediateUnsignedOffset)
+        {
+            _tw.write("ldrh ");
+        }
+        else
+        {
+            _tw.write("strh ");
         }
         writeGeneralPurposeRegister(instruction->Rt, instruction);
         _tw.write(", [");

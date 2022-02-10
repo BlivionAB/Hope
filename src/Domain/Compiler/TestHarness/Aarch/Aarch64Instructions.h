@@ -123,12 +123,26 @@ namespace elet::domain::compiler::test::aarch
     {
     };
 
+
     struct LdrbStrbImmediateUnsignedOffsetInstruction : LdrStrImmediateUnsignedOffsetInstruction
     {
+        LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12):
+            LdrStrImmediateUnsignedOffsetInstruction(kind, Rt, Rn, imm12)
+        { }
+
         LdrbStrbImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
             LdrStrImmediateUnsignedOffsetInstruction(Aarch64Instruction::StrbImmediateUnsignedOffset, Rt, Rn, imm12)
         { }
     };
+
+
+    struct LdrhStrhImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
+    {
+        LdrhStrhImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
+            LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::StrbImmediateUnsignedOffset, Rt, Rn, imm12)
+        { }
+    };
+
 
     struct LdrInstruction : Instruction
     {

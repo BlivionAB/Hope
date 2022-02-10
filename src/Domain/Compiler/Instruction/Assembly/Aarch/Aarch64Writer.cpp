@@ -793,7 +793,10 @@ namespace elet::domain::compiler::instruction::output
         }
         else if (instruction->registerSize == RegisterSize::Word)
         {
-            throw std::runtime_error("Not implemented word size in writeStoreImmediateInstruction");
+            bw->writeDoubleWordInFunction(Aarch64Instruction::StrhImmediateUnsignedOffset |
+                imm12(instruction->stackOffset) |
+                Rn(Aarch64Register::sp) |
+                Rt(getAarch64RegisterFromOperandRegister(OperandRegister::Scratch0)), function);
         }
     }
 
@@ -951,7 +954,10 @@ namespace elet::domain::compiler::instruction::output
         }
         else // Word
         {
-            throw std::runtime_error("not implemented word instruction.");
+            bw->writeDoubleWordInFunction(Aarch64Instruction::LdrhImmediateUnsignedOffset |
+                imm12(instruction->stackOffset) |
+                Rn(Aarch64Register::sp) |
+                Rt(getAarch64RegisterFromOperandRegister(instruction->destination)), function);
         }
     }
 

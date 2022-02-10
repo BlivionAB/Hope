@@ -89,6 +89,9 @@ public:
     writeLdrbStrbImmediateUnsignedOffsetInstruction(const LdrbStrbImmediateUnsignedOffsetInstruction* instruction);
 
     void
+    writeLdrhStrhImmediateUnsignedOffsetInstruction(const LdrhStrhImmediateUnsignedOffsetInstruction* instruction);
+
+    void
     writeAndImmediateInstruction(const AndImmediateInstruction* pInstruction);
 };
 

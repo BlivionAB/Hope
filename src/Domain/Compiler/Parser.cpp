@@ -85,7 +85,6 @@ namespace elet::domain::compiler::ast
             }
             if (declaration->symbol)
             {
-//                sourceFile->symbols.insert({ declaration->symbol->name, declaration });
                 sourceFile->declarations.insert({ declaration->symbol->name, declaration });
             }
             declaration->sourceFile = sourceFile;

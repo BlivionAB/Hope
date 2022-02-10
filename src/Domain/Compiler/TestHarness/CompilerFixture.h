@@ -271,7 +271,7 @@ namespace elet::domain::compiler::test
         testProject(TestProjectOptions options)
         {
             const char* envvar = std::getenv("ACCEPT_BASELINES");
-            if (std::strcmp(envvar, "true") == 0)
+            if (envvar && std::strcmp(envvar, "true") == 0)
             {
                 options.acceptBaselines = true;
             }

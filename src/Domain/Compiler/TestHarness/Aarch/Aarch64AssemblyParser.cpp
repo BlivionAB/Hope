@@ -262,6 +262,10 @@ namespace elet::domain::compiler::test::aarch
             case Aarch64Instruction::StrbImmediateUnsignedOffset:
                 parseLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction), dw, static_cast<Aarch64Instruction>(kind22));
                 return true;
+            case Aarch64Instruction::LdrhImmediateUnsignedOffset:
+            case Aarch64Instruction::StrhImmediateUnsignedOffset:
+                parseLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction), dw, static_cast<Aarch64Instruction>(kind22));
+                return true;
             case Aarch64Instruction::AndImmediate:
                 parseAndImmediateInstruction(reinterpret_cast<AndImmediateInstruction*>(instruction), dw);
                 return true;
@@ -283,6 +287,16 @@ namespace elet::domain::compiler::test::aarch
 
     void
     Aarch64AssemblyParser::parseLdrbStrbImmediateUnsignedOffsetInstruction(LdrbStrbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    {
+        instruction->kind = static_cast<Aarch64Instruction>(kind);
+        instruction->Rn = Rn(dw);
+        instruction->Rt = Rt(dw);
+        instruction->imm12 = imm12(dw);
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseLdrhStrhImmediateUnsignedOffsetInstruction(LdrhStrhImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
     {
         instruction->kind = static_cast<Aarch64Instruction>(kind);
         instruction->Rn = Rn(dw);
