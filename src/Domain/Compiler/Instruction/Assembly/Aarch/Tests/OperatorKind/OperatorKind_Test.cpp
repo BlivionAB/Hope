@@ -31,7 +31,6 @@ namespace elet::domain::compiler::instruction::output::test
             .targets = {
                 CompilationTarget::MachO_Aarch64,
             },
-            .acceptBaselines = true
         }));
     }
 
@@ -369,7 +368,6 @@ namespace elet::domain::compiler::instruction::output::test
             },
         }));
     }
-
 
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderSigned_64)

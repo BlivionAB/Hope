@@ -117,6 +117,14 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
+    ByteWriter::writeWordInFunction(uint16_t instruction, FunctionRoutine* function)
+    {
+        writeWord(instruction);
+        function->codeSize += 2;
+    }
+
+
+    void
     ByteWriter::writeWord(uint16_t instruction)
     {
         (*offset) += 2;

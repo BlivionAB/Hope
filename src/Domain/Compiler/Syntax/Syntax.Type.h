@@ -30,13 +30,6 @@ namespace elet::domain::compiler::ast::type
     };
 
 
-    enum class Signedness
-    {
-        Unsigned,
-        Signed,
-    };
-
-
     struct Type
     {
         TypeKind
@@ -101,7 +94,7 @@ namespace elet::domain::compiler::ast::type
         }
 
 
-        Signedness
+        Sign
         sign()
         {
             switch (kind)
@@ -111,12 +104,12 @@ namespace elet::domain::compiler::ast::type
                 case TypeKind::S16:
                 case TypeKind::S32:
                 case TypeKind::S64:
-                    return Signedness::Signed;
+                    return Sign::Signed;
                 case TypeKind::U8:
                 case TypeKind::U16:
                 case TypeKind::U32:
                 case TypeKind::U64:
-                    return Signedness::Unsigned;
+                    return Sign::Unsigned;
                 default:
                     throw std::runtime_error("Cannot get signedness from type.");
             }

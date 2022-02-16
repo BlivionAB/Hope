@@ -262,6 +262,12 @@ namespace elet::domain::compiler::test::aarch
             case Aarch64Instruction::StrbImmediateUnsignedOffset:
                 parseLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction), dw, static_cast<Aarch64Instruction>(kind22));
                 return true;
+            case Aarch64Instruction::LdrsbImmediateUnsignedOffset:
+                parseLdrsbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrsbImmediateUnsignedOffsetInstruction*>(instruction), dw);
+                return true;
+            case Aarch64Instruction::LdrshImmediateUnsignedOffset:
+                parseLdrshImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrshImmediateUnsignedOffsetInstruction*>(instruction), dw);
+                return true;
             case Aarch64Instruction::LdrhImmediateUnsignedOffset:
             case Aarch64Instruction::StrhImmediateUnsignedOffset:
                 parseLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction), dw, static_cast<Aarch64Instruction>(kind22));
@@ -296,9 +302,29 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
+    Aarch64AssemblyParser::parseLdrsbImmediateUnsignedOffsetInstruction(LdrsbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::LdrsbImmediateUnsignedOffset;
+        instruction->Rn = Rn(dw);
+        instruction->Rt = Rt(dw);
+        instruction->imm12 = imm12(dw);
+    }
+
+
+    void
     Aarch64AssemblyParser::parseLdrhStrhImmediateUnsignedOffsetInstruction(LdrhStrhImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
     {
         instruction->kind = static_cast<Aarch64Instruction>(kind);
+        instruction->Rn = Rn(dw);
+        instruction->Rt = Rt(dw);
+        instruction->imm12 = imm12(dw);
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseLdrshImmediateUnsignedOffsetInstruction(LdrshImmediateUnsignedOffsetInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::LdrshImmediateUnsignedOffset;
         instruction->Rn = Rn(dw);
         instruction->Rt = Rt(dw);
         instruction->imm12 = imm12(dw);
@@ -412,6 +438,12 @@ namespace elet::domain::compiler::test::aarch
             case Aarch64Instruction::Sdiv:
             case Aarch64Instruction::Udiv:
                 parseDivInstruction(reinterpret_cast<DivInstruction*>(instruction), dw, static_cast<Aarch64Instruction>(kind));
+                return true;
+            case Aarch64Instruction::Sxtb:
+                parseSxtbInstruction(reinterpret_cast<SxtbInstruction*>(instruction), dw);
+                return true;
+            case Aarch64Instruction::Sxth:
+                parseSxthInstruction(reinterpret_cast<SxthInstruction*>(instruction), dw);
                 return true;
         }
         return false;
@@ -697,5 +729,23 @@ namespace elet::domain::compiler::test::aarch
         {
             instruction->value = decodeBitmaskImmediate(dw, RegistrySize::_32);
         }
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseSxtbInstruction(SxtbInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::Sxtb;
+        instruction->Rn = Rn(dw);
+        instruction->Rd = Rd(dw);
+    }
+
+
+    void
+    Aarch64AssemblyParser::parseSxthInstruction(SxthInstruction* instruction, uint32_t dw)
+    {
+        instruction->kind = Aarch64Instruction::Sxth;
+        instruction->Rn = Rn(dw);
+        instruction->Rd = Rd(dw);
     }
 }

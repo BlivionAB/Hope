@@ -34,9 +34,14 @@ enum OneByteOpCode : uint8_t
 
     Lea_Gv_M = 0x8d,
 
+    Mov_Eb_Ib = 0xc6,
     Mov_Ev_Iz = 0xc7,
     Mov_Ev_Gv = 0x89,
     Mov_Gv_Ev = 0x8b,
+    Movzx_Gv_Eb = 0xb6,
+    Movzx_Gv_Ew = 0xb7,
+    Movsx_Gv_Eb = 0xbe,
+    Movsx_Gv_Ew = 0xbf,
 
     Nop = 0x90,
     TwoByteNop = 0x1f,
@@ -44,8 +49,11 @@ enum OneByteOpCode : uint8_t
 
     Sub = 0xec,
     Sub_Gv_Ev = 0x2b,
+    Sub_Ev_Gv = 0x29,
+    Add_Ev_Gv = 0x01,
     Add_Gv_Ev = 0x03,
     Imul_Gv_Ev = 0xaf,
+    Cwde = 0x98,
     Cdq = 0x99,
 
     // Immediate Group 1
@@ -56,10 +64,10 @@ enum OneByteOpCode : uint8_t
 
 
     ExtGroup3 = 0xf7,
-    ExtGroup3_DivBits = 0b00110000,
-    ExtGroup3_IdivBits = 0b00111000,
+    ExtGroup3_DivRegBits = 0b00110000,
+    ExtGroup3_IdivRegBits = 0b00111000,
     ExtGroup5 = 0xff,
-    ExtGroup5_NearCallRegisterBits = 0b00010000,
+    ExtGroup5_NearCallRegBits = 0b00010000,
 
     TwoByteOpCodePrefix = 0x0f,
 };

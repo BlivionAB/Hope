@@ -35,6 +35,13 @@ namespace elet::domain::compiler
     };
 
 
+    enum class Sign
+    {
+        Unsigned,
+        Signed,
+    };
+
+
     struct IntegerType
     {
         IntegerKind

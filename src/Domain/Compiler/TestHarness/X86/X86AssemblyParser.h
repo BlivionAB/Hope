@@ -28,11 +28,14 @@ namespace elet::domain::compiler::test::x86
         uint8_t
         getByte(Instruction& instruction);
 
+        std::array<uint8_t, 2>
+        getWord(Instruction& instruction);
+
         std::array<uint8_t, 4>
         getDoubleWord(Instruction& instruction);
 
         Ev*
-        createEv(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField);
+        createE(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField);
 
         Gv*
         createGv(uint8_t opcode, bool isQuadWord);

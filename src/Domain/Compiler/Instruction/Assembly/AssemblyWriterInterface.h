@@ -63,11 +63,15 @@ namespace elet::domain::compiler::instruction::output
 
         virtual
         void
-        writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function);
+        writeLoadUnsignedInstruction(LoadUnsignedInstruction* loadInstruction, FunctionRoutine* function);
 
         virtual
         void
-        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* instruction, FunctionRoutine* function);
+        writeLoadSignedInstruction(LoadSignedInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeAddRegisterToRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function);
 
         virtual
         void
@@ -144,6 +148,10 @@ namespace elet::domain::compiler::instruction::output
         virtual
         void
         writeMoveZeroExtendInstruction(MoveZeroExtendInstruction* instruction, FunctionRoutine* function);
+
+        virtual
+        void
+        writeMoveSignExtendInstruction(MoveSignExtendInstruction* instruction, FunctionRoutine* function);
 
         virtual
         void

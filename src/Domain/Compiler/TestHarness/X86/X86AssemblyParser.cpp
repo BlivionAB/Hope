@@ -78,17 +78,17 @@ namespace elet::domain::compiler::test::x86
                 uint8_t op = (modrmByte & ModRmMask::Reg);
                 switch (op)
                 {
-                    case static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Add):
+                    case static_cast<uint8_t>(RegBits::ImmediateGroup1_Add):
                         instruction.kind = InstructionKind::Add;
                         break;
-                    case static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Sub):
+                    case static_cast<uint8_t>(RegBits::ImmediateGroup1_Sub):
                         instruction.kind = InstructionKind::Sub;
                         break;
                     default:
                         throw std::runtime_error("Unknown destination code from modrmByte.");
                 }
-                instruction.operand1 = createEv(modrmByte, instruction, true);
-                instruction.operand2 = new Ib(offset);
+                instruction.operand1 = createE(modrmByte, instruction, true);
+                instruction.operand2 = Ib(offset);
                 break;
             }
             case OneByteOpCode::Ret:
@@ -103,7 +103,7 @@ namespace elet::domain::compiler::test::x86
             {
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Xor;
-                instruction.operand1 = createEv(modrmByte, instruction, true);
+                instruction.operand1 = createE(modrmByte, instruction, true);
                 instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
                 break;
             }
@@ -155,19 +155,34 @@ namespace elet::domain::compiler::test::x86
                 instruction.operand1 = Register::rBP;
                 instruction.size = SizeKind::Quad;
                 break;
+            case OneByteOpCode::Mov_Eb_Ib:
+            {
+                uint8_t modrmByte = getByte(instruction);
+                instruction.kind = InstructionKind::Mov;
+                instruction.operand1 = createE(modrmByte, instruction, true);
+                instruction.operand2.emplace<Ib>(getByte(instruction));
+                break;
+            }
             case OneByteOpCode::Mov_Ev_Iz:
             {
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Mov;
-                instruction.operand1 = createEv(modrmByte, instruction, true);
-                instruction.operand2.emplace<Iz>(getDoubleWord(instruction));
+                instruction.operand1 = createE(modrmByte, instruction, true);
+                if (instruction.size >= SizeKind::Long)
+                {
+                    instruction.operand2.emplace<Iz>(getDoubleWord(instruction));
+                }
+                else if (instruction.size == SizeKind::Word)
+                {
+                    instruction.operand2.emplace<Iz>(getWord(instruction));
+                }
                 break;
             }
             case OneByteOpCode::Mov_Ev_Gv:
             {
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Mov;
-                instruction.operand1 = createEv(modrmByte, instruction, true);
+                instruction.operand1 = createE(modrmByte, instruction, true);
                 instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
                 break;
             }
@@ -176,7 +191,7 @@ namespace elet::domain::compiler::test::x86
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Mov;
                 instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
-                instruction.operand2 = createEv(modrmByte, instruction, true);
+                instruction.operand2 = createE(modrmByte, instruction, true);
                 break;
             }
             case OneByteOpCode::ExtGroup3:
@@ -185,13 +200,13 @@ namespace elet::domain::compiler::test::x86
                 uint8_t regBits = ModRmMask::Reg & modrmByte;
                 switch (regBits)
                 {
-                    case OneByteOpCode::ExtGroup3_DivBits:
+                    case OneByteOpCode::ExtGroup3_DivRegBits:
                         instruction.kind = InstructionKind::Div;
-                        instruction.operand1 = createEv(modrmByte, instruction, true);
+                        instruction.operand1 = createE(modrmByte, instruction, true);
                         break;
-                    case OneByteOpCode::ExtGroup3_IdivBits:
+                    case OneByteOpCode::ExtGroup3_IdivRegBits:
                         instruction.kind = InstructionKind::Idiv;
-                        instruction.operand1 = createEv(modrmByte, instruction, true);
+                        instruction.operand1 = createE(modrmByte, instruction, true);
                         break;
                     default:
                         assert("Unknown regbits.");
@@ -202,7 +217,7 @@ namespace elet::domain::compiler::test::x86
             {
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Jmp;
-                instruction.operand1 = createEv(modrmByte, instruction, true);
+                instruction.operand1 = createE(modrmByte, instruction, true);
 
                 // Note, it is forced(f64) 64-bits, See opcode map for reference.
                 instruction.size = SizeKind::Quad;
@@ -214,12 +229,31 @@ namespace elet::domain::compiler::test::x86
             case OneByteOpCode::Cdq:
                 instruction.kind = InstructionKind::Cdq;
                 break;
+            case OneByteOpCode::Cwde:
+                instruction.kind = InstructionKind::Cwde;
+                break;
+            case OneByteOpCode::Add_Ev_Gv:
+            {
+                uint8_t modrmByte = getByte(instruction);
+                instruction.kind = InstructionKind::Add;
+                instruction.operand1 = createE(modrmByte, instruction, true);
+                instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
+                break;
+            }
             case OneByteOpCode::Add_Gv_Ev:
             {
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Add;
                 instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
-                instruction.operand2 = createEv(modrmByte, instruction, true);
+                instruction.operand2 = createE(modrmByte, instruction, true);
+                break;
+            }
+            case OneByteOpCode::Sub_Ev_Gv:
+            {
+                uint8_t modrmByte = getByte(instruction);
+                instruction.kind = InstructionKind::Sub;
+                instruction.operand1 = createE(modrmByte, instruction, true);
+                instruction.operand2 = createGv(modrmByte, instruction.size == SizeKind::Quad);
                 break;
             }
             case OneByteOpCode::Sub_Gv_Ev:
@@ -227,7 +261,7 @@ namespace elet::domain::compiler::test::x86
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Sub;
                 instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
-                instruction.operand2 = createEv(modrmByte, instruction, true);
+                instruction.operand2 = createE(modrmByte, instruction, true);
                 break;
             }
             default:
@@ -242,19 +276,83 @@ namespace elet::domain::compiler::test::x86
     {
         switch (opcode)
         {
+            case OneByteOpCode::Movzx_Gv_Eb:
+            {
+                uint8_t modrmByte = getByte(instruction);
+                instruction.kind = InstructionKind::Movzx;
+                instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
+                instruction.operand2 = createE(modrmByte, instruction, true);
+                if (std::holds_alternative<Ev*>(instruction.operand2))
+                {
+                    Ev* ev = std::get<Ev*>(instruction.operand2);
+                    if (std::holds_alternative<Register>(*ev))
+                    {
+                        instruction.targetOperandSize = SizeKind::Byte;
+                    }
+                }
+                break;
+            }
+            case OneByteOpCode::Movzx_Gv_Ew:
+            {
+                uint8_t modrmByte = getByte(instruction);
+                instruction.kind = InstructionKind::Movzx;
+                instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
+                instruction.operand2 = createE(modrmByte, instruction, true);
+                if (std::holds_alternative<Ev*>(instruction.operand2))
+                {
+                    Ev* ev = std::get<Ev*>(instruction.operand2);
+                    if (std::holds_alternative<Register>(*ev))
+                    {
+                        instruction.targetOperandSize = SizeKind::Word;
+                    }
+                }
+                break;
+            }
+            case OneByteOpCode::Movsx_Gv_Eb:
+            {
+                uint8_t modrmByte = getByte(instruction);
+                instruction.kind = InstructionKind::Movsx;
+                instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
+                instruction.operand2 = createE(modrmByte, instruction, true);
+                if (std::holds_alternative<Ev*>(instruction.operand2))
+                {
+                    Ev* ev = std::get<Ev*>(instruction.operand2);
+                    if (std::holds_alternative<Register>(*ev))
+                    {
+                        instruction.targetOperandSize = SizeKind::Byte;
+                    }
+                }
+                break;
+            }
+            case OneByteOpCode::Movsx_Gv_Ew:
+            {
+                uint8_t modrmByte = getByte(instruction);
+                instruction.kind = InstructionKind::Movsx;
+                instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
+                instruction.operand2 = createE(modrmByte, instruction, true);
+                if (std::holds_alternative<Ev*>(instruction.operand2))
+                {
+                    Ev* ev = std::get<Ev*>(instruction.operand2);
+                    if (std::holds_alternative<Register>(*ev))
+                    {
+                        instruction.targetOperandSize = SizeKind::Word;
+                    }
+                }
+                break;
+            }
             case OneByteOpCode::Imul_Gv_Ev:
             {
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Imul;
                 instruction.operand1 = createGv(modrmByte, instruction.size == SizeKind::Quad);
-                instruction.operand2 = createEv(modrmByte, instruction, true);
+                instruction.operand2 = createE(modrmByte, instruction, true);
                 break;
             }
             case ThreeByteOpCode::Nop_0_Ev:
             {
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Nop;
-                instruction.operand1 = createEv(modrmByte, instruction, true);
+                instruction.operand1 = createE(modrmByte, instruction, true);
                 break;
             }
         }
@@ -269,14 +367,14 @@ namespace elet::domain::compiler::test::x86
             case ThreeByteOpCode::Nop_0_Ev:
                 uint8_t modrmByte = getByte(instruction);
                 instruction.kind = InstructionKind::Nop;
-                instruction.operand1 = createEv(modrmByte, instruction, true);
+                instruction.operand1 = createE(modrmByte, instruction, true);
                 break;
         }
     }
 
 
     Ev*
-    X86AssemblyParser::createEv(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField)
+    X86AssemblyParser::createE(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField)
     {
         auto ev = new Ev();
         if (useOnlyRmField)
@@ -411,6 +509,18 @@ namespace elet::domain::compiler::test::x86
     {
         std::array<uint8_t, 4> result = { 0, 0, 0, 0 };
         for (unsigned int i = 0; i < 4; ++i)
+        {
+            uint8_t opcode = getByte(instruction);
+            result[i] = opcode;
+        }
+        return result;
+    }
+
+    std::array<uint8_t, 2>
+    X86AssemblyParser::getWord(Instruction& instruction)
+    {
+        std::array<uint8_t, 2> result = { 0, 0,  };
+        for (unsigned int i = 0; i < 2; ++i)
         {
             uint8_t opcode = getByte(instruction);
             result[i] = opcode;

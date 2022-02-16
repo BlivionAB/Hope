@@ -60,6 +60,9 @@ public:
     writeByteAtAddress(uint8_t instruction, size_t offset);
 
     void
+    writeWordInFunction(uint16_t instruction, FunctionRoutine* function);
+
+    void
     writeWord(uint16_t instruction);
 
     uint32_t

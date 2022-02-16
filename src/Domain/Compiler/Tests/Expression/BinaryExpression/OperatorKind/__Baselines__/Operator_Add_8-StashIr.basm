@@ -1,8 +1,0 @@
-_main():
-    StrB [Sp + #-1], #0x3
-    StrB [Sp + #-2], #0x3
-    LdrB X0, [Sp + #-1]
-    LdrB X1, [Sp + #-2]
-    AddL X0, X0, X1
-    MovzxB OpRet, X0
-

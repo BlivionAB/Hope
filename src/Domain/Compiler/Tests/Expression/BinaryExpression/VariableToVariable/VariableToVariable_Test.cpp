@@ -31,7 +31,7 @@ namespace elet::domain::compiler::test
             .baselineName = "VariableToVariable_MultiTerms",
             .targets = {
                 CompilationTarget::StashIR
-            }
+            },
         }));
     }
 
@@ -65,7 +65,7 @@ namespace elet::domain::compiler::test
             .baselineName = "VariableToVariable_LowerPrecedence_HigherPrecedence",
             .targets = {
                 CompilationTarget::StashIR
-            },
+            }
         }));
     }
 
@@ -99,7 +99,7 @@ namespace elet::domain::compiler::test
             .baselineName = "VariableToVariable_LowestPrecedence_MiddlePrecedence_HighestPrecedence",
             .targets = {
                 CompilationTarget::StashIR
-            },
+            }
         }));
     }
 
@@ -133,7 +133,7 @@ namespace elet::domain::compiler::test
             .baselineName = "VariableToVariable_LowestPrecedence_HighestPrecedence_MiddlePrecedence",
             .targets = {
                 CompilationTarget::StashIR
-            },
+            }
         }));
     }
 

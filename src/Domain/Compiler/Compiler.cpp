@@ -99,8 +99,8 @@ namespace elet::domain::compiler
         acceptOptimizationWork();
         acceptAssemblyWritingWork();
         _display_mutex.lock();
-    //    std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
-    //    std::cout << "cleanup phase"<< std::endl;
+        //    std::cout << "thread %d" << std::this_thread::get_id() << std::endl;
+        //    std::cout << "cleanup phase"<< std::endl;
         _display_mutex.unlock();
 
         // We have to notify all conditions due to some awaiting while one thread can finish all work.
@@ -438,6 +438,7 @@ namespace elet::domain::compiler
             catch (std::exception& e)
             {
                 std::cerr << e.what() << std::endl;
+                throw e;
             }
             _routines.pop();
         }

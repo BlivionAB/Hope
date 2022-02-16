@@ -34,6 +34,8 @@ file(GLOB DOMAIN_TEST
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/Aarch/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/Tests/*
+    src/Domain/Compiler/Tests/Declaration/VariableDeclaration/VariableDeclaration_Test.cpp
+    src/Domain/Compiler/Tests/Declaration/VariableDeclaration/VariableDeclarationFixture.h
     src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteral_Test.cpp
     src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteralFixture.h
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/ImmediateKindFixture.h.cpp

@@ -94,13 +94,13 @@ namespace elet::domain::compiler::instruction
             List<output::ParameterDeclaration*> parameterList = segmentParameterDeclaration(parameterDeclaration);
             for (const auto& param : parameterList)
             {
-                output::StoreRegisterInstruction* store = new output::StoreRegisterInstruction(static_cast<output::OperandRegister>(static_cast<int>(output::OperandRegister::Arg0) + i), stackOffset, param->registerSize);
+                output::StoreRegisterInstruction* store = new output::StoreRegisterInstruction(static_cast<output::OperandRegister>(static_cast<int>(output::OperandRegister::Arg0) + i), stackOffset, param->destinationSize, param->sign);
                 addInstruction(store);
 
                 // TODO: The reference instruction should be on property basis.
                 parameterDeclaration->referenceInstruction = store;
-                stackOffset += static_cast<uint64_t>(param->registerSize);
-                function->parameterSize += static_cast<uint8_t>(param->registerSize);
+                stackOffset += static_cast<uint64_t>(param->destinationSize);
+                function->parameterSize += static_cast<uint8_t>(param->destinationSize);
             }
         }
     }
@@ -144,14 +144,41 @@ namespace elet::domain::compiler::instruction
         {
             assert((*returnStatement->expectedType != TypeKind::Void) && "Type should not equal void here. The type checker should have already failed.");
             output::RegisterResult result = std::get<output::RegisterResult>(expression);
-            if (returnStatement->expectedType->size() != result.size)
+            bool writtenExtension = false;
+            // Note: we have to sign extend if:
+            //  * placeholder-type s64 expression-type 32
+            //  * placeholder-type s8 expression-type 16
+            //  * placeholder-type s16 expression-type 32
+            if (returnStatement->expectedType->sign() == Sign::Signed)
             {
-                addInstruction(new output::MoveZeroExtendInstruction(
-                    output::OperandRegister::Scratch0,
-                    output::OperandRegister::Return,
-                    returnStatement->expectedType->size()));
+                if (returnStatement->expectedType->size() != result.size)
+                {
+                    addInstruction(new output::MoveSignExtendInstruction(
+                        output::OperandRegister::Scratch0,
+                        output::OperandRegister::Return,
+                        returnStatement->expectedType->size(),
+                        result.size));
+                    writtenExtension = true;
+                }
             }
             else
+            {
+                // Note: we have to zero extend if:
+                //  * placeholder-type u8 expression-type 16
+                //  * placeholder-type u8 expression-type 32
+                //  * placeholder-type u16 expression-type 32
+                //  * placeholder-type u32 expression-type 64
+                if (returnStatement->expectedType->size() != result.size)
+                {
+                    addInstruction(new output::MoveZeroExtendInstruction(
+                        output::OperandRegister::Scratch0,
+                        output::OperandRegister::Return,
+                        returnStatement->expectedType->size(),
+                        result.size));
+                    writtenExtension = true;
+                }
+            }
+            if (!writtenExtension)
             {
                 addInstruction(new output::MoveRegisterToRegisterInstruction(
                     output::OperandRegister::Return,
@@ -169,19 +196,21 @@ namespace elet::domain::compiler::instruction
     void
     Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, output::FunctionRoutine* function, uint64_t& stackOffset)
     {
-        RegisterSize registerSize = variable->resolvedType->size();
+        ast::Type* type = variable->resolvedType;
+        RegisterSize registerSize = type->size();
+        Sign sign = type->sign();
         output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset);
         if (std::holds_alternative<output::ImmediateValue>(canonicalExpression))
         {
             auto immediateValue = std::get<output::ImmediateValue>(canonicalExpression);
-            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(immediateValue.value, stackOffset, registerSize);
+            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(immediateValue.value, stackOffset, registerSize, sign);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
         else
         {
             output::RegisterResult result = std::get<output::RegisterResult>(canonicalExpression);
-            output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(result._register, stackOffset, registerSize);
+            output::StoreRegisterInstruction* storeInstruction = new output::StoreRegisterInstruction(result._register, stackOffset, registerSize, sign);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
@@ -442,10 +471,10 @@ namespace elet::domain::compiler::instruction
     Transformer::transformArgumentPropertyExpression(ast::PropertyExpression* propertyExpression, uint64_t argumentIndex)
     {
         output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
-        output::LoadInstruction* loadInstruction = new output::LoadInstruction(
+        output::LoadUnsignedInstruction* loadInstruction = new output::LoadUnsignedInstruction(
             getOperandRegisterFromArgumentIndex(argumentIndex),
             referenceInstruction->stackOffset,
-            referenceInstruction->registerSize);
+            referenceInstruction->destinationSize);
         addInstruction(loadInstruction);
     }
 
@@ -490,8 +519,7 @@ namespace elet::domain::compiler::instruction
         List<output::ParameterDeclaration*> parameterList;
         if (parameter->resolvedType->pointers > 0)
         {
-            output::ParameterDeclaration* parameterDeclaration = new output::ParameterDeclaration(0, RegisterSize::Quad);
-            parameter->referenceInstruction = parameterDeclaration;
+            output::ParameterDeclaration* parameterDeclaration = new output::ParameterDeclaration(0, RegisterSize::Quad, parameter->resolvedType->sign());
             parameterList.add(parameterDeclaration);
         }
         return parameterList;
@@ -502,9 +530,18 @@ namespace elet::domain::compiler::instruction
     Transformer::transformPropertyExpression(ast::PropertyExpression* propertyExpression)
     {
         output::MemoryAllocation* referenceInstruction = propertyExpression->referenceDeclaration->referenceInstruction;
-        output::LoadInstruction* loadInstruction = new output::LoadInstruction(borrowScratchRegister(), referenceInstruction->stackOffset, referenceInstruction->registerSize);
-        addInstruction(loadInstruction);
-        return output::RegisterResult(loadInstruction->destination, referenceInstruction->registerSize);
+        if (referenceInstruction->sign == Sign::Signed && referenceInstruction->destinationSize < RegisterSize::Dword)
+        {
+            output::LoadSignedInstruction* loadInstruction = new output::LoadSignedInstruction(borrowScratchRegister(), referenceInstruction->stackOffset, referenceInstruction->destinationSize);
+            addInstruction(loadInstruction);
+            return output::RegisterResult(loadInstruction->destination, getSupportedRegisterSize(referenceInstruction->destinationSize));
+        }
+        else
+        {
+            output::LoadUnsignedInstruction* loadInstruction = new output::LoadUnsignedInstruction(borrowScratchRegister(), referenceInstruction->stackOffset, referenceInstruction->destinationSize);
+            addInstruction(loadInstruction);
+            return output::RegisterResult(loadInstruction->destination, getSupportedRegisterSize(referenceInstruction->destinationSize));
+        }
     }
 
 
@@ -530,7 +567,7 @@ namespace elet::domain::compiler::instruction
             output::OperandRegister divisionResultRegister = borrowScratchRegister();
             _scratchRegisterIndex -= 3;
             output::OperandRegister destination = borrowScratchRegister();
-            if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
+            if (binaryExpression->resolvedType->sign() == Sign::Signed)
             {
                 addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
             }
@@ -554,7 +591,7 @@ namespace elet::domain::compiler::instruction
                 addInstruction(new output::MultiplySignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::Divide:
-                if (binaryExpression->resolvedType->sign() == ast::type::Signedness::Signed)
+                if (binaryExpression->resolvedType->sign() == Sign::Signed)
                 {
                     addInstruction(new output::DivideSignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 }

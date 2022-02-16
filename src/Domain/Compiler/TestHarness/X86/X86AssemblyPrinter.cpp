@@ -56,6 +56,16 @@ namespace elet::domain::compiler::test::x86
                     _tw.write("cdq");
                 }
                 break;
+            case InstructionKind::Cwde:
+                if (instruction.size == SizeKind::Quad)
+                {
+                    _tw.write("cdqe");
+                }
+                else
+                {
+                    _tw.write("cwde");
+                }
+                break;
             case InstructionKind::Nop:
                 writeInstructionWithName("nop", instruction);
                 break;
@@ -79,6 +89,12 @@ namespace elet::domain::compiler::test::x86
                 break;
             case InstructionKind::Mov:
                 writeInstructionWithName("mov", instruction);
+                break;
+            case InstructionKind::Movzx:
+                writeMovzx(instruction);
+                break;
+            case InstructionKind::Movsx:
+                writeMovsx(instruction);
                 break;
             case InstructionKind::Jmp:
                 writeInstructionWithName("jmp", instruction);
@@ -109,11 +125,19 @@ namespace elet::domain::compiler::test::x86
     void
     X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& instruction)
     {
+        writeOperand(operand, instruction, SizeKind::None);
+    }
+
+
+    void
+    X86AssemblyPrinter::writeOperand(const Operand* operand, const Instruction& instruction, SizeKind overrideSize)
+    {
+        SizeKind size = overrideSize != SizeKind::None ? overrideSize : instruction.size;
         if (auto ev = std::get_if<Ev*>(operand))
         {
             if (auto reg = std::get_if<Register>(*ev))
             {
-                writeGeneralPurposeRegister(*reg, instruction);
+                writeGeneralPurposeRegister(*reg, size);
             }
             else if (auto disp = std::get_if<ByteDisplacement>(*ev))
             {
@@ -143,11 +167,11 @@ namespace elet::domain::compiler::test::x86
         else if (auto gv = std::get_if<Gv*>(operand))
         {
             auto s = std::get<Register>(**gv);
-            writeGeneralPurposeRegister(s, instruction);
+            writeGeneralPurposeRegister(s, size);
         }
-        else if (auto ib = std::get_if<Ib*>(operand))
+        else if (auto ib = std::get_if<Ib>(operand))
         {
-            _tw.writeSignedImmediateValue((*ib)->offset);
+            _tw.writeSignedImmediateValue(ib->offset);
         }
         else if (auto mem = std::get_if<MemoryAddress32>(operand))
         {
@@ -155,7 +179,7 @@ namespace elet::domain::compiler::test::x86
         }
         else if (auto reg = std::get_if<Register>(operand))
         {
-            writeGeneralPurposeRegister(*reg, instruction);
+            writeGeneralPurposeRegister(*reg, size);
         }
         else
         {
@@ -202,10 +226,10 @@ namespace elet::domain::compiler::test::x86
 
 
     void
-    X86AssemblyPrinter::writeGeneralPurposeRegister(const Register _register, const Instruction& instruction)
+    X86AssemblyPrinter::writeGeneralPurposeRegister(const Register _register, SizeKind size)
     {
         _tw.write("%");
-        switch (instruction.size)
+        switch (size)
         {
             case SizeKind::Quad:
                 _tw.write("r");
@@ -214,37 +238,72 @@ namespace elet::domain::compiler::test::x86
                 _tw.write("e");
                 break;
         }
-        switch (_register)
+        if (size >= SizeKind::Word)
         {
-            case Register::rAX:
-                _tw.write("ax");
-                break;
-            case Register::rCX:
-                _tw.write("cx");
-                break;
-            case Register::rDX:
-                _tw.write("dx");
-                break;
-            case Register::rBX:
-                _tw.write("bx");
-                break;
-            case Register::rSP:
-                _tw.write("sp");
-                break;
-            case Register::rBP:
-                _tw.write("bp");
-                break;
-            case Register::rSI:
-                _tw.write("si");
-                break;
-            case Register::rDI:
-                _tw.write("di");
-                break;
-            case Register::r11:
-                _tw.write("11");
-                break;
-            default:
-                throw std::runtime_error("Unknown register.");
+            switch (_register)
+            {
+                case Register::rAX:
+                    _tw.write("ax");
+                    break;
+                case Register::rCX:
+                    _tw.write("cx");
+                    break;
+                case Register::rDX:
+                    _tw.write("dx");
+                    break;
+                case Register::rBX:
+                    _tw.write("bx");
+                    break;
+                case Register::rSP:
+                    _tw.write("sp");
+                    break;
+                case Register::rBP:
+                    _tw.write("bp");
+                    break;
+                case Register::rSI:
+                    _tw.write("si");
+                    break;
+                case Register::rDI:
+                    _tw.write("di");
+                    break;
+                case Register::r11:
+                    _tw.write("11");
+                    break;
+                default:
+                    throw std::runtime_error("Unknown register.");
+            }
+        }
+        else
+        {
+            switch (_register)
+            {
+                case Register::rAX:
+                    _tw.write("al");
+                    break;
+                case Register::rCX:
+                    _tw.write("cl");
+                    break;
+                case Register::rDX:
+                    _tw.write("dl");
+                    break;
+                case Register::rBX:
+                    _tw.write("bl");
+                    break;
+                case Register::rSP:
+                    _tw.write("ah");
+                    break;
+                case Register::rBP:
+                    _tw.write("ch");
+                    break;
+                case Register::rSI:
+                    _tw.write("dh");
+                    break;
+                case Register::rDI:
+                    _tw.write("bh");
+                    break;
+                default:
+                    throw std::runtime_error("Unknown register.");
+            }
         }
     }
 
@@ -253,7 +312,7 @@ namespace elet::domain::compiler::test::x86
     X86AssemblyPrinter::writeRegisterDisplacement(RegisterDisplacement* displacement, const Instruction& instruction)
     {
         _tw.write("(");
-        writeGeneralPurposeRegister(displacement->base, instruction);
+        writeGeneralPurposeRegister(displacement->base, instruction.size);
         _tw.write(")");
     }
 
@@ -271,9 +330,9 @@ namespace elet::domain::compiler::test::x86
             }
             auto sib = (*sibDisplacement);
             _tw.write("(");
-            writeGeneralPurposeRegister(sib->base, instruction);
+            writeGeneralPurposeRegister(sib->base, instruction.size);
             _tw.write(",");
-            writeGeneralPurposeRegister(sib->index, instruction);
+            writeGeneralPurposeRegister(sib->index, instruction.size);
             if (sib->scale != 1)
             {
                 _tw.write(",");
@@ -298,7 +357,7 @@ namespace elet::domain::compiler::test::x86
         {
             _tw.writeSignedHexValue(displacement->displacement);
             _tw.write("(");
-            writeGeneralPurposeRegister(*reg, instruction);
+            writeGeneralPurposeRegister(*reg, instruction.size);
             _tw.write(")");
         }
     }
@@ -316,9 +375,9 @@ namespace elet::domain::compiler::test::x86
         if (auto sibDisplacement = std::get_if<SibDisplacement*>(&displacement->base))
         {
             auto sib = *sibDisplacement;
-            writeGeneralPurposeRegister(sib->base, instruction);
+            writeGeneralPurposeRegister(sib->base, instruction.size);
             _tw.write(",");
-            writeGeneralPurposeRegister(sib->index, instruction);
+            writeGeneralPurposeRegister(sib->index, instruction.size);
             if (sib->scale != 1)
             {
                 _tw.write(",");
@@ -340,7 +399,7 @@ namespace elet::domain::compiler::test::x86
         }
         else if (auto reg = std::get_if<Register>(&displacement->base))
         {
-            writeGeneralPurposeRegister(*reg, instruction);
+            writeGeneralPurposeRegister(*reg, instruction.size);
 
         }
         _tw.write(")");
@@ -377,6 +436,37 @@ namespace elet::domain::compiler::test::x86
         {
             _tw.writeByteHex(byte);
             ++textSectionStartOffset;
+        }
+    }
+
+    void
+    X86AssemblyPrinter::writeMovzx(const Instruction& instruction)
+    {
+        _tw.write("movzx");
+        writeTargetOperandSizeOverridableOperands(instruction);
+    }
+
+
+    void
+    X86AssemblyPrinter::writeMovsx(const Instruction& instruction)
+    {
+        _tw.write("movsx");
+        writeTargetOperandSizeOverridableOperands(instruction);
+    }
+
+
+    void
+    X86AssemblyPrinter::writeTargetOperandSizeOverridableOperands(const Instruction& instruction)
+    {
+        writeSizeSuffix(instruction);
+        if (!std::holds_alternative<std::monostate>(instruction.operand2))
+        {
+            writeOperand(&instruction.operand2, instruction, instruction.targetOperandSize);
+            _tw.write(", ");
+        }
+        if (!std::holds_alternative<std::monostate>(instruction.operand1))
+        {
+            writeOperand(&instruction.operand1, instruction);
         }
     }
 }

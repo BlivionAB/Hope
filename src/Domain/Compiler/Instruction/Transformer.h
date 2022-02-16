@@ -41,7 +41,7 @@ namespace elet::domain::compiler::instruction
         struct Parameter;
         struct Operand;
         struct FunctionReference;
-        struct LoadInstruction;
+        struct LoadUnsignedInstruction;
         struct StoreRegisterInstruction;
         struct ParameterDeclaration;
         struct String;

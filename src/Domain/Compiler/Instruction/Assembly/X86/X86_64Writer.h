@@ -64,7 +64,7 @@ namespace elet::domain::compiler::instruction::output::x86
         size_t
         _subtractStackAddress;
 
-        List<RegisterBits>
+        List<RegBits>
         _parameterRegisters;
 
     //    void
@@ -110,7 +110,7 @@ namespace elet::domain::compiler::instruction::output::x86
         relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
 
         void
-        writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function) override;
+        writeStoreImmediateInstruction(StoreImmediateInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeStoreRegisterInstruction(StoreRegisterInstruction* storeRegisterInstruction, FunctionRoutine* function) override;
@@ -122,13 +122,25 @@ namespace elet::domain::compiler::instruction::output::x86
         writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
+        writeMoveZeroExtendInstruction(MoveZeroExtendInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeMoveSignExtendInstruction(MoveSignExtendInstruction* instruction, FunctionRoutine* function) override;
+
+        void
         writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function) override;
 
         void
-        writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function) override;
+        writeLoadUnsignedInstruction(LoadUnsignedInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
+        writeLoadSignedInstruction(LoadSignedInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeAddRegisterToRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function) override;
+
+        void
+        writeSubtractRegisterToRegisterInstruction(SubtractRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeAddImmediateInstruction(AddImmediateToRegisterInstruction* addImmediateInstruction, FunctionRoutine* function) override;
@@ -146,16 +158,22 @@ namespace elet::domain::compiler::instruction::output::x86
         writeSubtractImmediateInstruction(OperandRegister destination, uint64_t value, FunctionRoutine* function);
 
         void
-        writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* subtractRegisterAddressInstruction, FunctionRoutine* function) override;
+        writeSubtractRegisterAddressInstruction(SubtractRegisterToAddressInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeMultiplySignedRegisterAddressInstruction(MultiplySignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeMultiplySignedRegisterToRegisterInstruction(MultiplySignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeDivideSignedRegisterAddressInstruction(DivideSignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeDivideSignedRegisterToRegisterInstruction(DivideSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeModuloUnsignedRegisterAddressInstruction(ModuloUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function) override;
@@ -181,8 +199,11 @@ namespace elet::domain::compiler::instruction::output::x86
         RmBits
         getRmBitsFromOperandRegister(OperandRegister operandRegister);
 
+        RegBits
+        getRegBitsFromOperandRegister(OperandRegister operandRegister);
+
         void
-        writeModRmAndStackOffset(LoadInstruction* loadInstruction, FunctionRoutine* function);
+        writeModRmAndStackOffset(LoadUnsignedInstruction* loadInstruction, FunctionRoutine* function);
 
         void
         writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister operandRegister, FunctionRoutine* function);
@@ -209,13 +230,16 @@ namespace elet::domain::compiler::instruction::output::x86
         getMicrosoftX64StackAllocationSize(const FunctionRoutine* function) const;
 
         uint8_t
-        getRegisterBitsFromRegister(Register _register);
+        getRegBitsFromRegister(Register _register);
 
         void
         writeQuadInstructionMultipleInFunction(std::initializer_list<uint8_t> encodingMultiple, Instruction* instruction, FunctionRoutine* function);
 
         void
         writeQuadInstructionInFunction(uint8_t encoding, Instruction* instruction, FunctionRoutine* function);
+
+        void
+        writeStackReferenceBytes(StackOffsetInstruction* instruction, FunctionRoutine* function);
     };
 }
 

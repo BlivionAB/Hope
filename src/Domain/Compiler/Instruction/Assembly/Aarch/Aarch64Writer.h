@@ -65,13 +65,19 @@ namespace elet::domain::compiler::instruction::output
         writeMoveZeroExtendInstruction(MoveZeroExtendInstruction* instruction, FunctionRoutine* function) override;
 
         void
+        writeMoveSignExtendInstruction(MoveSignExtendInstruction* instruction, FunctionRoutine* function) override;
+
+        void
         writeMoveRegisterToRegisterInstruction(MoveRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeLoadInstruction(LoadInstruction* instruction, FunctionRoutine* function) override;
+        writeLoadUnsignedInstruction(LoadUnsignedInstruction* instruction, FunctionRoutine* function) override;
 
         void
-        writeAddRegisterInstruction(AddRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
+        writeLoadSignedInstruction(LoadSignedInstruction* instruction, FunctionRoutine* function) override;
+
+        void
+        writeAddRegisterToRegisterInstruction(AddRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
 
         void
         writeSubtractRegisterToRegisterInstruction(SubtractRegisterToRegisterInstruction* instruction, FunctionRoutine* function) override;
@@ -190,10 +196,6 @@ namespace elet::domain::compiler::instruction::output
 
         bool
         tryGetBitmaskImmediate(uint64_t imm, uint32_t& logicalImmediate, RegisterSize registerSize);
-
-        void
-        writeInstruction(uint32_t instruction, uint64_t value, FunctionRoutine* function);
-
 
         void
         writeNegatedOrRegularShiftMoves(

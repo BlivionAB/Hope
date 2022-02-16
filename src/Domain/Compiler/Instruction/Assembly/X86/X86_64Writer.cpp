@@ -34,7 +34,7 @@ namespace elet::domain::compiler::instruction::output::x86
                 OneByteOpCode::Push_rBP,
                 OpCodePrefix::RexMagic | OpCodePrefix::RexW,
                 OneByteOpCode::Mov_Ev_Gv,
-                ModBits::Mod3 | RegisterBits::Reg_RSP | RmBits::Rm_RBP
+                ModBits::Mod3 | RegBits::Reg_RSP | RmBits::Rm_RBP
             },
             function);
 
@@ -78,7 +78,7 @@ namespace elet::domain::compiler::instruction::output::x86
             bw->writeInstructionsInFunction(
                 {
                     OneByteOpCode::Xor_Ev_Gv,
-                    ModBits::Mod3 | RegisterBits::Reg_RAX | RmBits::Rm_RAX
+                    ModBits::Mod3 | RegBits::Reg_RAX | RmBits::Rm_RAX
                 },
                 function);
         }
@@ -125,7 +125,7 @@ namespace elet::domain::compiler::instruction::output::x86
                 bw->writeDoubleWordAtAddress(_offset - (relocationAddress + 4), relocationAddress);
             }
             bw->writeByte(ExtGroup5);
-            bw->writeByte(ExtGroup5_NearCallRegisterBits | ModBits::Mod0 | Rm5);
+            bw->writeByte(ExtGroup5_NearCallRegBits | ModBits::Mod0 | Rm5);
             routine->stubAddress = _offset;
             bw->writeDoubleWord(0);
         }
@@ -139,7 +139,7 @@ namespace elet::domain::compiler::instruction::output::x86
         // leaq dyld_private, r11
         bw->writeByte(RexMagic | RexW | RexR);
         bw->writeByte(OneByteOpCode::Lea_Gv_M);
-        bw->writeByte(ModBits::Mod0 | RmBits::Rm5 | RegisterBits::Reg3);
+        bw->writeByte(ModBits::Mod0 | RmBits::Rm5 | RegBits::Reg3);
         dyldPrivateOffset = _offset;
         bw->writeDoubleWord(0);
 
@@ -149,7 +149,7 @@ namespace elet::domain::compiler::instruction::output::x86
 
         // jmpq dyld_stub_binder
         bw->writeByte(OneByteOpCode::ExtGroup5);
-        bw->writeByte(OneByteOpCode::ExtGroup5_NearCallRegisterBits | ModBits::Mod0 | Rm5);
+        bw->writeByte(OneByteOpCode::ExtGroup5_NearCallRegBits | ModBits::Mod0 | Rm5);
         Utf8String* dyldStubBinderString = new Utf8String("dyld_stub_binder");
         Utf8StringView string = Utf8StringView(*dyldStubBinderString);
         ExternalRoutine* dyldStubBinderRoutine = new ExternalRoutine(string);
@@ -224,14 +224,37 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* storeImmediateInstruction, FunctionRoutine* function)
+    X86_64Writer::writeStoreImmediateInstruction(StoreImmediateInstruction* instruction, FunctionRoutine* function)
     {
-        writeQuadInstructionMultipleInFunction({
-            OneByteOpCode::Mov_Ev_Iz,
-            ModBits::Mod1 | RmBits::Rm5 },
-            storeImmediateInstruction, function);
-        bw->writeByteInFunction(-storeImmediateInstruction->stackOffset, function);
-        bw->writeDoubleWordInFunction(storeImmediateInstruction->value, function);
+        if (instruction->destinationSize >= RegisterSize::Dword)
+        {
+            writeQuadInstructionMultipleInFunction({
+                OneByteOpCode::Mov_Ev_Iz,
+                ModBits::Mod1 | RmBits::Rm5 },
+                    instruction, function);
+            bw->writeByteInFunction(-instruction->stackOffset, function);
+            bw->writeDoubleWordInFunction(instruction->value, function);
+        }
+        else if (instruction->destinationSize == RegisterSize::Byte)
+        {
+            writeQuadInstructionMultipleInFunction({
+                OneByteOpCode::Mov_Eb_Ib,
+                ModBits::Mod1 | RmBits::Rm5 },
+                instruction, function);
+            bw->writeByteInFunction(-instruction->stackOffset, function);
+            bw->writeByteInFunction(instruction->value, function);
+        }
+        else
+        {
+            writeQuadInstructionMultipleInFunction({
+                OpCodePrefix::OperandSizePrefix,
+                OneByteOpCode::Mov_Ev_Iz,
+                ModBits::Mod1 | RmBits::Rm5 },
+                    instruction, function);
+            bw->writeByteInFunction(-instruction->stackOffset, function);
+            bw->writeWordInFunction(instruction->value, function);
+
+        }
     }
 
 
@@ -241,7 +264,7 @@ namespace elet::domain::compiler::instruction::output::x86
         if (_callingConvention == CallingConvention::MicrosoftX64 && callInstruction->routine->kind == RoutineKind::External)
         {
             bw->writeByte(OneByteOpCode::ExtGroup5);
-            bw->writeByte(OneByteOpCode::ExtGroup5_NearCallRegisterBits | ModBits::Mod0 | RmBits::Rm5);
+            bw->writeByte(OneByteOpCode::ExtGroup5_NearCallRegBits | ModBits::Mod0 | RmBits::Rm5);
         }
         else
         {
@@ -429,32 +452,84 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
+    X86_64Writer::writeLoadUnsignedInstruction(LoadUnsignedInstruction* instruction, FunctionRoutine* function)
     {
         uint8_t rexByte = 0;
-        if (loadInstruction->registerSize == RegisterSize::Quad)
+        RegisterSize registerSize = instruction->destinationSize;
+        if (registerSize == RegisterSize::Quad || registerSize == RegisterSize::Dword)
         {
-            rexByte |= OpCodePrefix::RexMagic | OpCodePrefix::RexW;
+            if (instruction->destinationSize == RegisterSize::Quad)
+            {
+                rexByte |= OpCodePrefix::RexMagic | OpCodePrefix::RexW;
+            }
+            if (rexByte != 0)
+            {
+                bw->writeInstructionInFunction(rexByte, function);
+            }
+            bw->writeInstructionInFunction(OneByteOpCode::Mov_Gv_Ev, function);
         }
-        Register _register = getRegisterFromOperandRegister(loadInstruction->destination);
-        if (_register == Register::R8 || _register == Register::R9)
+        else if (registerSize == RegisterSize::Byte)
         {
-            rexByte |= OpCodePrefix::RexMagic | OpCodePrefix::RexR;
-        }
-        if (rexByte != 0)
-        {
-            bw->writeInstructionInFunction(rexByte, function);
-        }
-        bw->writeInstructionInFunction(OneByteOpCode::Mov_Gv_Ev, function);
-        if (_callingConvention == CallingConvention::MicrosoftX64)
-        {
-            writeEspReferenceBytes(loadInstruction->stackOffset, loadInstruction->destination, function);
+            bw->writeInstructionsInFunction({
+                OneByteOpCode::TwoByteOpCodePrefix,
+                OneByteOpCode::Movzx_Gv_Eb }, function);
         }
         else
         {
-            writeEbpReferenceBytes(loadInstruction->stackOffset, loadInstruction->destination, function);
+            bw->writeInstructionsInFunction({
+                OneByteOpCode::TwoByteOpCodePrefix,
+                OneByteOpCode::Movzx_Gv_Ew }, function);
+        }
+        writeStackReferenceBytes(instruction, function);
+    }
+
+
+    void
+    X86_64Writer::writeLoadSignedInstruction(LoadSignedInstruction* instruction, FunctionRoutine* function)
+    {
+        uint8_t rexByte = 0;
+        RegisterSize registerSize = instruction->destinationSize;
+        if (registerSize == RegisterSize::Quad || registerSize == RegisterSize::Dword)
+        {
+            if (instruction->destinationSize == RegisterSize::Quad)
+            {
+                rexByte |= OpCodePrefix::RexMagic | OpCodePrefix::RexW;
+            }
+            if (rexByte != 0)
+            {
+                bw->writeInstructionInFunction(rexByte, function);
+            }
+            bw->writeInstructionInFunction(OneByteOpCode::Mov_Gv_Ev, function);
+        }
+        else if (registerSize == RegisterSize::Byte)
+        {
+            bw->writeInstructionsInFunction({
+                OneByteOpCode::TwoByteOpCodePrefix,
+                OneByteOpCode::Movsx_Gv_Eb }, function);
+        }
+        else
+        {
+            bw->writeInstructionsInFunction({
+                OneByteOpCode::TwoByteOpCodePrefix,
+                OneByteOpCode::Movsx_Gv_Ew }, function);
+        }
+        writeStackReferenceBytes(instruction, function);
+    }
+
+
+    void
+    X86_64Writer::writeStackReferenceBytes(StackOffsetInstruction* instruction, FunctionRoutine* function)
+    {
+        if (_callingConvention == CallingConvention::MicrosoftX64)
+        {
+            writeEspReferenceBytes(instruction->stackOffset, instruction->destination, function);
+        }
+        else
+        {
+            writeEbpReferenceBytes(instruction->stackOffset, instruction->destination, function);
         }
     }
+
 
     void
     X86_64Writer::writeEspReferenceBytes(uint64_t stackOffset, OperandRegister operandRegister, FunctionRoutine* function)
@@ -465,7 +540,7 @@ namespace elet::domain::compiler::instruction::output::x86
         {
             bw->writeInstructionsInFunction(
                 {
-                    static_cast<uint8_t>(ModBits::Mod1 | getRegisterBitsFromRegister(_register) | RmBits::Rm4),
+                    static_cast<uint8_t>(ModBits::Mod1 | getRegBitsFromRegister(_register) | RmBits::Rm4),
                     static_cast<uint8_t>(Sib_ScaleBits::SB_Scale0 | Sib_IndexBits::IB_Index4 | Sib_RegBits::RB_ESP),
                     static_cast<uint8_t>(getMicrosoftX64StackAllocationSize(function) - convertedStackOffset)
                 }, function);
@@ -474,7 +549,7 @@ namespace elet::domain::compiler::instruction::output::x86
         {
             bw->writeInstructionsInFunction(
                 {
-                    static_cast<uint8_t>(ModBits::Mod2 | getRegisterBitsFromRegister(_register) | RmBits::Rm4),
+                    static_cast<uint8_t>(ModBits::Mod2 | getRegBitsFromRegister(_register) | RmBits::Rm4),
                     static_cast<uint8_t>(Sib_ScaleBits::SB_Scale0 | Sib_IndexBits::IB_Index4 | Sib_RegBits::RB_ESP),
                 }, function);
             bw->writeDoubleWordInFunction(getMicrosoftX64StackAllocationSize(function) - convertedStackOffset, function);
@@ -490,7 +565,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeEbpReferenceBytes(uint64_t stackOffset, OperandRegister operandRegister, FunctionRoutine* function)
     {
         Register _register = getRegisterFromOperandRegister(operandRegister);
-        uint8_t registerBits = getRegisterBitsFromRegister(_register);
+        uint8_t registerBits = getRegBitsFromRegister(_register);
         writeEbpReferenceBytes(stackOffset, registerBits, function);
     }
 
@@ -519,16 +594,19 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
-    X86_64Writer::writeModRmAndStackOffset(LoadInstruction* loadInstruction, FunctionRoutine* function)
+    X86_64Writer::writeModRmAndStackOffset(LoadUnsignedInstruction* loadInstruction, FunctionRoutine* function)
     {
         writeEbpReferenceBytes(loadInstruction->stackOffset, loadInstruction->destination, function);
     }
 
 
     void
-    X86_64Writer::writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+    X86_64Writer::writeAddRegisterToRegisterInstruction(AddRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
     {
-        throw std::runtime_error("Not implemented");
+        writeQuadInstructionInFunction(OneByteOpCode::Add_Ev_Gv, instruction, function);
+        RmBits target = getRmBitsFromOperandRegister(instruction->value);
+        RegBits destination = getRegBitsFromOperandRegister(instruction->destination);
+        bw->writeInstructionInFunction(ModBits::Mod3 | target | destination, function);
     }
 
 
@@ -549,14 +627,26 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     void
+    X86_64Writer::writeMultiplySignedRegisterToRegisterInstruction(MultiplySignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        writeQuadInstructionMultipleInFunction({
+            OpCodePrefix::TwoByteEscape,
+            OneByteOpCode::Imul_Gv_Ev }, instruction, function);
+        RmBits target = getRmBitsFromOperandRegister(instruction->value);
+        RegBits destination = getRegBitsFromOperandRegister(instruction->destination);
+        bw->writeInstructionInFunction(ModBits::Mod3 | target | destination, function);
+    }
+
+
+    void
     X86_64Writer::writeDivideUnsignedRegisterAddressInstruction(DivideUnsignedAddressToRegisterInstruction* instruction, FunctionRoutine* function)
     {
         bw->writeInstructionsInFunction({
             OneByteOpCode::Xor_Ev_Gv,
-            ModBits::Mod3 | RegisterBits::Reg_RDX | RmBits::Rm2 },
+                ModBits::Mod3 | RegBits::Reg_RDX | RmBits::Rm2 },
             function);
         writeQuadInstructionInFunction(OneByteOpCode::ExtGroup3, instruction, function);
-        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_DivBits, function);
+        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_DivRegBits, function);
     }
 
 
@@ -565,7 +655,17 @@ namespace elet::domain::compiler::instruction::output::x86
     {
         writeQuadInstructionInFunction(OneByteOpCode::Cdq, instruction, function);
         writeQuadInstructionInFunction(OneByteOpCode::ExtGroup3, instruction, function);
-        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_IdivBits, function);
+        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_IdivRegBits, function);
+    }
+
+
+    void
+    X86_64Writer::writeDivideSignedRegisterToRegisterInstruction(DivideSignedRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        writeQuadInstructionMultipleInFunction({ OneByteOpCode::Cdq, OneByteOpCode::ExtGroup3 }, instruction, function);
+        bw->writeByteInFunction(
+            ModBits::Mod3 | OneByteOpCode::ExtGroup3_IdivRegBits |
+            getRmBitsFromOperandRegister(instruction->value), function);
     }
 
 
@@ -574,11 +674,11 @@ namespace elet::domain::compiler::instruction::output::x86
     {
         writeQuadInstructionMultipleInFunction({
             OneByteOpCode::Xor_Ev_Gv,
-            ModBits::Mod3 | RegisterBits::Reg_RDX | RmBits::Rm2 },
+                ModBits::Mod3 | RegBits::Reg_RDX | RmBits::Rm2 },
             instruction, function);
         writeQuadInstructionInFunction(OneByteOpCode::ExtGroup3, instruction, function);
-        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_DivBits, function);
-        MoveRegisterToRegisterInstruction move(OperandRegister::Scratch2, instruction->destination, instruction->registerSize);
+        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_DivRegBits, function);
+        MoveRegisterToRegisterInstruction move(OperandRegister::Scratch2, instruction->destination, instruction->destinationSize);
         writeMoveRegisterToRegisterInstruction(&move, function);
     }
 
@@ -588,8 +688,8 @@ namespace elet::domain::compiler::instruction::output::x86
     {
         writeQuadInstructionInFunction(OneByteOpCode::Cdq, instruction, function);
         writeQuadInstructionInFunction(OneByteOpCode::ExtGroup3, instruction, function);
-        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_IdivBits, function);
-        MoveRegisterToRegisterInstruction move(OperandRegister::Scratch2, instruction->destination, instruction->registerSize);
+        writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_IdivRegBits, function);
+        MoveRegisterToRegisterInstruction move(OperandRegister::Scratch2, instruction->destination, instruction->destinationSize);
         writeMoveRegisterToRegisterInstruction(&move, function);
     }
 
@@ -609,7 +709,7 @@ namespace elet::domain::compiler::instruction::output::x86
             bw->writeInstructionsInFunction({
                 OpCodePrefix::RexMagic | OpCodePrefix::RexW,
                 OneByteOpCode::ImmediateGroup1_Ev_Ib,
-                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Add) | getRmBitsFromOperandRegister(destination))
+                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegBits::ImmediateGroup1_Add) | getRmBitsFromOperandRegister(destination))
                 }, function);
             bw->writeInstructionInFunction(value, function);
         }
@@ -618,7 +718,7 @@ namespace elet::domain::compiler::instruction::output::x86
             bw->writeInstructionsInFunction({
                 OpCodePrefix::RexMagic | OpCodePrefix::RexW,
                 OneByteOpCode::ImmediateGroup1_Ev_Iz,
-                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Add) | getRmBitsFromOperandRegister(destination))
+                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegBits::ImmediateGroup1_Add) | getRmBitsFromOperandRegister(destination))
                 }, function);
             bw->writeDoubleWordInFunction(value, function);
         }
@@ -640,7 +740,7 @@ namespace elet::domain::compiler::instruction::output::x86
             bw->writeInstructionsInFunction({
                 OpCodePrefix::RexMagic | OpCodePrefix::RexW,
                 OneByteOpCode::ImmediateGroup1_Ev_Ib,
-                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Sub) | getRmBitsFromOperandRegister(destination))
+                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegBits::ImmediateGroup1_Sub) | getRmBitsFromOperandRegister(destination))
                 }, function);
             bw->writeInstructionInFunction(value, function);
         }
@@ -649,7 +749,7 @@ namespace elet::domain::compiler::instruction::output::x86
             bw->writeInstructionsInFunction({
                 OpCodePrefix::RexMagic | OpCodePrefix::RexW,
                 OneByteOpCode::ImmediateGroup1_Ev_Iz,
-                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegisterBits::ImmediateGroup1_Sub) | getRmBitsFromOperandRegister(destination))
+                static_cast<uint8_t>(ModBits::Mod3 | static_cast<uint8_t>(RegBits::ImmediateGroup1_Sub) | getRmBitsFromOperandRegister(destination))
                 }, function);
             bw->writeDoubleWordInFunction(value, function);
         }
@@ -661,6 +761,16 @@ namespace elet::domain::compiler::instruction::output::x86
     {
         writeQuadInstructionInFunction(OneByteOpCode::Sub_Gv_Ev, subtractRegisterAddressInstruction, function);
         writeEbpReferenceBytes(subtractRegisterAddressInstruction->stackOffset, subtractRegisterAddressInstruction->destination, function);
+    }
+
+
+    void
+    X86_64Writer::writeSubtractRegisterToRegisterInstruction(SubtractRegisterToRegisterInstruction* instruction, FunctionRoutine* function)
+    {
+        writeQuadInstructionInFunction(OneByteOpCode::Sub_Ev_Gv, instruction, function);
+        RmBits target = getRmBitsFromOperandRegister(instruction->value);
+        RegBits destination = getRegBitsFromOperandRegister(instruction->destination);
+        bw->writeInstructionInFunction(ModBits::Mod3 | target | destination, function);
     }
 
 
@@ -717,6 +827,31 @@ namespace elet::domain::compiler::instruction::output::x86
     }
 
 
+    RegBits
+    X86_64Writer::getRegBitsFromOperandRegister(OperandRegister operandRegister)
+    {
+        switch (operandRegister)
+        {
+            case OperandRegister::Arg0:
+                return RegBits::Reg_RDI;
+            case OperandRegister::Scratch0:
+                return RegBits::Reg_RAX;
+            case OperandRegister::Scratch1:
+                return RegBits::Reg_RCX;
+            case OperandRegister::Scratch2:
+                return RegBits::Reg_RDX;
+            case OperandRegister::FramePointer:
+                return RegBits::Reg_RBP;
+            case OperandRegister::StackPointer:
+                return RegBits::Reg_RSP;
+            case OperandRegister::Return:
+                return RegBits::Reg_RAX;
+            default:
+                throw std::runtime_error("Not implemented operand register.");
+        }
+    }
+
+
     RmBits
     X86_64Writer::getRmBitsFromOperandRegister(OperandRegister operandRegister)
     {
@@ -758,7 +893,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeMoveAddressInstruction(MoveAddressToRegisterInstruction* moveAddressInstruction, FunctionRoutine* function)
     {
         Register _register = getRegisterFromOperandRegister(moveAddressInstruction->destination);
-        uint8_t registerBits = getRegisterBitsFromRegister(_register);
+        uint8_t registerBits = getRegBitsFromRegister(_register);
         bw->writeInstructionsInFunction({
             OpCodePrefix::RexMagic | OpCodePrefix::RexW,
             OneByteOpCode::Lea_Gv_M,
@@ -796,10 +931,10 @@ namespace elet::domain::compiler::instruction::output::x86
         switch (callingConvention)
         {
             case CallingConvention::SysV:
-                _parameterRegisters = { RegisterBits::Reg_RDI, RegisterBits::Reg_RSI, RegisterBits::Reg_RCX, RegisterBits::Reg_RDX };
+                _parameterRegisters = { RegBits::Reg_RDI, RegBits::Reg_RSI, RegBits::Reg_RCX, RegBits::Reg_RDX };
                 break;
             case CallingConvention::MicrosoftX64:
-                _parameterRegisters = { RegisterBits::Reg_RCX, RegisterBits::Reg_RDX, RegisterBits::Reg_R8, RegisterBits::Reg_R9 };
+                _parameterRegisters = { RegBits::Reg_RCX, RegBits::Reg_RDX, RegBits::Reg_R8, RegBits::Reg_R9 };
                 break;
             default:
                 assert("Unknown calling convention.");
@@ -808,34 +943,34 @@ namespace elet::domain::compiler::instruction::output::x86
 
 
     uint8_t
-    X86_64Writer::getRegisterBitsFromRegister(Register _register)
+    X86_64Writer::getRegBitsFromRegister(Register _register)
     {
         switch (_register)
         {
             case Register::Rax:
             case Register::R8:
-                return RegisterBits::Reg_RAX;
+                return RegBits::Reg_RAX;
             case Register::Rcx:
             case Register::R9:
-                return RegisterBits::Reg_RCX;
+                return RegBits::Reg_RCX;
             case Register::Rdx:
             case Register::R10:
-                return RegisterBits::Reg_RDX;
+                return RegBits::Reg_RDX;
             case Register::Rbx:
             case Register::R11:
-                return RegisterBits::Reg_RBX;
+                return RegBits::Reg_RBX;
             case Register::Rbp:
             case Register::R12:
-                return RegisterBits::Reg_RBP;
+                return RegBits::Reg_RBP;
             case Register::Rsp:
             case Register::R13:
-                return RegisterBits::Reg_RSP;
+                return RegBits::Reg_RSP;
             case Register::Rsi:
             case Register::R14:
-                return RegisterBits::Reg_RSI;
+                return RegBits::Reg_RSI;
             case Register::Rdi:
             case Register::R15:
-                return RegisterBits::Reg_RDI;
+                return RegBits::Reg_RDI;
         }
     }
 
@@ -843,7 +978,7 @@ namespace elet::domain::compiler::instruction::output::x86
     void
     X86_64Writer::writeQuadInstructionInFunction(uint8_t encoding, Instruction* instruction, FunctionRoutine* function)
     {
-        if (instruction->registerSize == RegisterSize::Quad)
+        if (instruction->destinationSize == RegisterSize::Quad)
         {
             bw->writeInstructionInFunction(OpCodePrefix::RexMagic | OpCodePrefix::RexW, function);
         }
@@ -855,7 +990,7 @@ namespace elet::domain::compiler::instruction::output::x86
     X86_64Writer::writeQuadInstructionMultipleInFunction(std::initializer_list<uint8_t> encodingMultiple, Instruction* instruction,
         FunctionRoutine* function)
     {
-        if (instruction->registerSize == RegisterSize::Quad)
+        if (instruction->destinationSize == RegisterSize::Quad)
         {
             bw->writeInstructionInFunction(OpCodePrefix::RexMagic | OpCodePrefix::RexW, function);
         }
@@ -864,5 +999,60 @@ namespace elet::domain::compiler::instruction::output::x86
             bw->writeByte(encoding);
         }
         function->codeSize += encodingMultiple.size();
+    }
+
+
+    void
+    X86_64Writer::writeMoveZeroExtendInstruction(MoveZeroExtendInstruction* instruction, FunctionRoutine* function)
+    {
+        if (instruction->targetSize == RegisterSize::Byte && instruction->destinationSize == RegisterSize::Dword)
+        {
+            bw->writeInstructionsInFunction({
+                OneByteOpCode::TwoByteOpCodePrefix,
+                OneByteOpCode::Movzx_Gv_Eb }, function);
+        }
+        else if (instruction->targetSize == RegisterSize::Word && instruction->destinationSize == RegisterSize::Dword)
+        {
+            bw->writeInstructionsInFunction({
+                OneByteOpCode::TwoByteOpCodePrefix,
+                OneByteOpCode::Movzx_Gv_Ew }, function);
+        }
+        else
+        {
+            assert("Unsupported RegisterSize.");
+        }
+        RmBits destination = getRmBitsFromOperandRegister(instruction->destination);
+        RegBits target = getRegBitsFromOperandRegister(instruction->target);
+        bw->writeInstructionInFunction(
+            ModBits::Mod3 | target | destination, function);
+    }
+
+
+    void
+    X86_64Writer::writeMoveSignExtendInstruction(MoveSignExtendInstruction* instruction, FunctionRoutine* function)
+    {
+        if (instruction->targetSize == RegisterSize::Byte && instruction->destinationSize == RegisterSize::Dword)
+        {
+            bw->writeInstructionsInFunction(
+                { OneByteOpCode::TwoByteOpCodePrefix, OneByteOpCode::Movsx_Gv_Eb }, function);
+            RmBits destination = getRmBitsFromOperandRegister(instruction->destination);
+            RegBits target = getRegBitsFromOperandRegister(instruction->target);
+            bw->writeInstructionInFunction(
+                ModBits::Mod3 | target | destination, function);
+        }
+        else if (instruction->targetSize == RegisterSize::Word && instruction->destinationSize == RegisterSize::Dword)
+        {
+            bw->writeInstructionInFunction(OneByteOpCode::Cwde, function);
+        }
+        else if (instruction->targetSize == RegisterSize::Dword && instruction->destinationSize == RegisterSize::Quad)
+        {
+            bw->writeInstructionsInFunction({
+                OpCodePrefix::RexMagic | OpCodePrefix::RexW,
+                OneByteOpCode::Cwde }, function);
+        }
+        else
+        {
+            assert("Unsupported RegisterSize.");
+        }
     }
 }

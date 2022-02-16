@@ -225,15 +225,15 @@ namespace elet::domain::compiler::ast
         {
             return type1;
         }
-        Signedness sign1 = type1->sign();
-        Signedness sign2 = type2->sign();
+        Sign sign1 = type1->sign();
+        Sign sign2 = type2->sign();
         if (sign1 == sign2)
         {
             return getMaxType(type1, type2);
         }
         Type* signedType;
         Type* unsignedType;
-        if (sign1 == Signedness::Signed)
+        if (sign1 == Sign::Signed)
         {
             signedType = type1;
             unsignedType = type2;

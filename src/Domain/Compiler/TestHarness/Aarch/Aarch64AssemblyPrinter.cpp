@@ -60,6 +60,12 @@ namespace elet::domain::compiler::test::aarch
                 case Aarch64Instruction::StrhImmediateUnsignedOffset:
                     writeLdrhStrhImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrhStrhImmediateUnsignedOffsetInstruction*>(instruction));
                     break;
+                case Aarch64Instruction::LdrsbImmediateUnsignedOffset:
+                    writeLdrsbImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrsbImmediateUnsignedOffsetInstruction*>(instruction));
+                    break;
+                case Aarch64Instruction::LdrshImmediateUnsignedOffset:
+                    writeLdrshImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrshImmediateUnsignedOffsetInstruction*>(instruction));
+                    break;
                 case Aarch64Instruction::AddImmediate64:
                 case Aarch64Instruction::SubImmediate64:
                     writeDataProcessImmediateInstruction(reinterpret_cast<const DataProcessImmediateInstruction*>(instruction));
@@ -75,6 +81,12 @@ namespace elet::domain::compiler::test::aarch
                     break;
                 case Aarch64Instruction::Movk:
                     writeMovk(reinterpret_cast<const MovkInstruction*>(instruction));
+                    break;
+                case Aarch64Instruction::Sxtb:
+                    writeSxtb(reinterpret_cast<const SxtbInstruction*>(instruction));
+                    break;
+                case Aarch64Instruction::Sxth:
+                    writeSxth(reinterpret_cast<const SxthInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::B:
                     writeB(reinterpret_cast<const BInstruction*>(instruction));
@@ -187,6 +199,19 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
+    Aarch64AssemblyPrinter::writeLdrsbImmediateUnsignedOffsetInstruction(const LdrsbImmediateUnsignedOffsetInstruction* instruction)
+    {
+        _tw.write("ldrsb ");
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
+        _tw.write(", [");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", #");
+        _tw.writeUnsignedHexValue(instruction->imm12);
+        _tw.write("]");
+    }
+
+
+    void
     Aarch64AssemblyPrinter::writeLdrhStrhImmediateUnsignedOffsetInstruction(const LdrhStrhImmediateUnsignedOffsetInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::LdrhImmediateUnsignedOffset)
@@ -197,6 +222,19 @@ namespace elet::domain::compiler::test::aarch
         {
             _tw.write("strh ");
         }
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
+        _tw.write(", [");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+        _tw.write(", #");
+        _tw.writeUnsignedHexValue(instruction->imm12);
+        _tw.write("]");
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeLdrshImmediateUnsignedOffsetInstruction(const LdrshImmediateUnsignedOffsetInstruction* instruction)
+    {
+        _tw.write("ldrsh ");
         writeGeneralPurposeRegister(instruction->Rt, instruction);
         _tw.write(", [");
         writeGeneralPurposeRegister(instruction->Rn, instruction);
@@ -607,5 +645,25 @@ namespace elet::domain::compiler::test::aarch
         writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", ");
         _tw.writeUnsignedHexValue(instruction->value);
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeSxtb(const SxtbInstruction* instruction)
+    {
+        _tw.write("sxtb ");
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+    }
+
+
+    void
+    Aarch64AssemblyPrinter::writeSxth(const SxthInstruction* instruction)
+    {
+        _tw.write("sxth ");
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
     }
 }

@@ -22,6 +22,8 @@ enum class InstructionKind
     Pop,
     Lea,
     Mov,
+    Movzx,
+    Movsx,
     Call,
     Ret,
     Xor,
@@ -32,6 +34,7 @@ enum class InstructionKind
     Div,
     Idiv,
     Cdq,
+    Cwde,
     Jmp,
 };
 
@@ -129,7 +132,7 @@ struct MemoryAddress32
 
 struct Ib
 {
-    std::uint8_t
+    uint8_t
     offset;
 
     Ib(uint8_t offset):
@@ -154,17 +157,23 @@ struct Iz
     int32_t
     offset;
 
+    Iz(std::array<uint8_t, 2> offset):
+        offset(offset[0] + offset[1] * std::pow(16, 2))
+    {
+    }
+
     Iz(std::array<uint8_t, 4> offset):
         offset(offset[0] + offset[1] * std::pow(16, 2) + offset[2] * std::pow(16, 4) + offset[3] * std::pow(16, 6))
     {
     }
 };
 
+
 typedef std::variant<Register> Gv;
 
 typedef std::variant<Register, ByteDisplacement, LongDisplacement, RegisterDisplacement, MemoryAddress32> Ev;
 
-typedef std::variant<std::monostate, Register, Ev*, Gv*, Jv, Iz, Ib*, MemoryAddress32> Operand;
+typedef std::variant<std::monostate, Register, Ev*, Gv*, Jv, Iz, Ib, MemoryAddress32> Operand;
 
 
 struct ModRMByte
@@ -182,6 +191,7 @@ struct ModRMByte
 
 enum class SizeKind
 {
+    None,
     Byte,
     Word,
     Long,
@@ -200,6 +210,9 @@ struct Instruction
     SizeKind
     size;
 
+    SizeKind
+    targetOperandSize;
+
     bool
     rexb = false;
 
@@ -211,7 +224,8 @@ struct Instruction
 
     Instruction():
         kind(InstructionKind::Unknown),
-        size(SizeKind::Long)
+        size(SizeKind::Long),
+        targetOperandSize(SizeKind::None)
     { }
 };
 

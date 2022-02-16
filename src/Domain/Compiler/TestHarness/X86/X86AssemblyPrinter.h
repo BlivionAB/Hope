@@ -33,10 +33,13 @@ private:
     writeInstruction(const Instruction& instruction);
 
     void
-    writeGeneralPurposeRegister(const Register _register, const Instruction& instruction);
+    writeGeneralPurposeRegister(const Register _register, SizeKind size);
 
     void
     writeOperand(const Operand* operand, const Instruction& instruction);
+
+    void
+    writeOperand(const Operand* operand, const Instruction& instruction, SizeKind overrideSize);
 
     void
     writeByteDisplacement(ByteDisplacement* byteDisp, const Instruction& instruction);
@@ -58,6 +61,15 @@ private:
 
     void
     writeMemoryAddress(const std::array<uint8_t, 4> mem);
+
+    void
+    writeMovzx(const Instruction& instruction);
+
+    void
+    writeMovsx(const Instruction& instruction);
+
+    void
+    writeTargetOperandSizeOverridableOperands(const Instruction& instruction);
 };
 
 }

@@ -11,10 +11,12 @@ _main:
 0000000100003fb0  390047e0              strb w0, [sp, #0x11]
 0000000100003fb4  52800060              mov w0, #0x3
 0000000100003fb8  39004be0              strb w0, [sp, #0x12]
-0000000100003fbc  394047e0              ldrb w0, [sp, #0x11]
-0000000100003fc0  39404be1              ldrb w1, [sp, #0x12]
+0000000100003fbc  39c047e0              ldrsb w0, [sp, #0x11]
+0000000100003fc0  39c04be1              ldrsb w1, [sp, #0x12]
 0000000100003fc4  0b010000              add w0, w0, w1
 0000000100003fc8  12001c00              and w0, w0, 0xff
-0000000100003fcc  a9417bfd              ldp fp, lr, [sp, #0x10]
-0000000100003fd0  910083ff              add sp, sp, #0x20
-0000000100003fd4  d65f03c0              ret lr
+0000000100003fcc  13001c00              sxtb w0, w0
+0000000100003fd0  a9417bfd              ldp fp, lr, [sp, #0x10]
+0000000100003fd4  910083ff              add sp, sp, #0x20
+0000000100003fd8  d65f03c0              ret lr
+0000000100003fdc  d503201f              nop

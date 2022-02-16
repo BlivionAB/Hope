@@ -34,7 +34,7 @@ namespace elet::domain::compiler::test
         writeStoreImmediateInstruction(const output::StoreImmediateInstruction* instruction);
 
         void
-        writeLoadInstruction(const output::LoadInstruction* instruction);
+        writeLoadUnsignedInstruction(const output::LoadUnsignedInstruction* instruction);
 
         void
         writeOperandRegister(output::OperandRegister operandRegister);
@@ -67,7 +67,16 @@ namespace elet::domain::compiler::test
         writeOperationName(Utf8String name, const output::Instruction* instruction);
 
         void
+        writeOperationName(Utf8String name, RegisterSize registerSize);
+
+        void
         writeMoveZeroExtendInstruction(const output::MoveZeroExtendInstruction* instruction);
+
+        void
+        writeMoveSignExtend(const output::MoveSignExtendInstruction* instruction);
+
+        void
+        writeLoadSignedInstruction(const output::LoadSignedInstruction* instruction);
     };
 }
 #endif //ELET_STASHIRPRINTER_H

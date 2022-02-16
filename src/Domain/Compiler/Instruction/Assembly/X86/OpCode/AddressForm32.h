@@ -45,7 +45,7 @@ enum RmBits : uint8_t
 };
 
 
-enum RegisterBits : uint8_t
+enum RegBits : uint8_t
 {
     Reg0 = 0b00000000,
     Reg1 = 0b00001000,

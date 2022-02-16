@@ -144,6 +144,22 @@ namespace elet::domain::compiler::test::aarch
     };
 
 
+    struct LdrsbImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
+    {
+        LdrsbImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
+           LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::LdrsbImmediateUnsignedOffset, Rt, Rn, imm12)
+        { }
+    };
+
+
+    struct LdrshImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
+    {
+        LdrshImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
+            LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::LdrshImmediateUnsignedOffset, Rt, Rn, imm12)
+        { }
+    };
+
+
     struct LdrInstruction : Instruction
     {
         Register
@@ -476,6 +492,38 @@ namespace elet::domain::compiler::test::aarch
         {
 
         }
+    };
+
+
+    struct SxtbSxtbhInstruction : Instruction
+    {
+        Register
+        Rn;
+
+        Register
+        Rd;
+
+        SxtbSxtbhInstruction(Aarch64Instruction kind, Register Rn, Register Rd):
+            Instruction(kind),
+            Rn(Rn),
+            Rd(Rd)
+        { }
+    };
+
+
+    struct SxtbInstruction : SxtbSxtbhInstruction
+    {
+        SxtbInstruction(Register Rn, Register Rd):
+            SxtbSxtbhInstruction(Aarch64Instruction::Sxtb, Rn, Rd)
+        { }
+    };
+
+
+    struct SxthInstruction : SxtbSxtbhInstruction
+    {
+        SxthInstruction(Register Rn, Register Rd):
+            SxtbSxtbhInstruction(Aarch64Instruction::Sxtb, Rn, Rd)
+        { }
     };
 
 

@@ -110,8 +110,22 @@ namespace elet::domain::compiler::instruction::output
 
         RegisterResult(OperandRegister _register, RegisterSize size):
             _register(_register),
-            size(size)
+            size(getSupportedRegisterSize(size))
         { }
+
+
+        RegisterSize
+        getSupportedRegisterSize(RegisterSize size)
+        {
+            switch (size)
+            {
+                case RegisterSize::Quad:
+                case RegisterSize::Dword:
+                    return size;
+                default:
+                    return RegisterSize::Dword;
+            }
+        }
     };
 
     typedef std::variant<std::monostate, RegisterResult, ImmediateValue> CanonicalExpression;
@@ -120,7 +134,8 @@ namespace elet::domain::compiler::instruction::output
     {
         Push,
         Pop,
-        Load,
+        LoadUnsigned,
+        LoadSigned,
         StoreImmediate,
         StoreRegister,
         AddRegisterToRegister,
@@ -147,6 +162,7 @@ namespace elet::domain::compiler::instruction::output
         MoveRegister,
         MoveAddress,
         MoveZeroExtend,
+        MoveSignExtend,
         ArgumentDeclaration,
         ParameterDeclaration,
         Return,
@@ -160,63 +176,57 @@ namespace elet::domain::compiler::instruction::output
         kind;
 
         RegisterSize
-        registerSize;
+        destinationSize;
 
         Instruction(InstructionKind kind, RegisterSize registerSize):
             kind(kind),
-            registerSize(registerSize)
+            destinationSize(registerSize)
         { }
     };
 
 
-//    struct PushInstruction : Instruction
-//    {
-//        OperandRegister
-//        target;
-//
-//        uint64_t
-//        stackSize = 0;
-//
-//        PushInstruction(OperandRegister target):
-//            Instruction(InstructionKind::Push),
-//            target(target)
-//        { }
-//    };
-//
-//
-//    struct PopInstruction : Instruction
-//    {
-//        OperandRegister
-//        target;
-//
-//        PopInstruction(OperandRegister target):
-//            Instruction(InstructionKind::Pop),
-//            target(target)
-//        { }
-//    };
+    struct DestinationInstruction : Instruction
+    {
+        OperandRegister
+        destination;
+
+        DestinationInstruction(OperandRegister destination, InstructionKind kind, RegisterSize registerSize):
+            Instruction(kind, registerSize),
+            destination(destination)
+        { }
+    };
 
 
-    struct LoadInstruction : Instruction
+    struct StackOffsetInstruction : DestinationInstruction
     {
         uint64_t
         stackOffset;
 
-        OperandRegister
-        destination;
-
-        LoadInstruction(OperandRegister destination, uint64_t stackOffset, RegisterSize registerSize):
-            Instruction(InstructionKind::Load, registerSize),
-            destination(destination),
+        StackOffsetInstruction(OperandRegister destination, uint64_t stackOffset, InstructionKind kind, RegisterSize registerSize):
+            DestinationInstruction(destination, kind, registerSize),
             stackOffset(stackOffset)
         { }
     };
 
 
-    struct MoveImmediateInstruction : Instruction
+    struct LoadUnsignedInstruction : StackOffsetInstruction
     {
-        OperandRegister
-        destination;
+        LoadUnsignedInstruction(OperandRegister destination, uint64_t stackOffset, RegisterSize registerSize):
+            StackOffsetInstruction(destination, stackOffset, InstructionKind::LoadUnsigned, registerSize)
+        { }
+    };
 
+
+    struct LoadSignedInstruction : StackOffsetInstruction
+    {
+        LoadSignedInstruction(OperandRegister destination, uint64_t stackOffset, RegisterSize registerSize):
+            StackOffsetInstruction(destination, stackOffset, InstructionKind::LoadSigned, registerSize)
+        { }
+    };
+
+
+    struct MoveImmediateInstruction : DestinationInstruction
+    {
         uint64_t
         value;
 
@@ -224,18 +234,14 @@ namespace elet::domain::compiler::instruction::output
         constant;
 
         MoveImmediateInstruction(OperandRegister destination, uint64_t value, RegisterSize registerSize):
-            Instruction(InstructionKind::MoveImmediate, registerSize),
-            destination(destination),
+            DestinationInstruction(destination, InstructionKind::MoveImmediate, registerSize),
             value(value)
         { }
     };
 
 
-    struct MoveAddressToRegisterInstruction : Instruction
+    struct MoveAddressToRegisterInstruction : DestinationInstruction
     {
-        OperandRegister
-        destination;
-
         uint64_t
         offset;
 
@@ -243,41 +249,52 @@ namespace elet::domain::compiler::instruction::output
         constant;
 
         MoveAddressToRegisterInstruction(OperandRegister destination, uint64_t offset, RegisterSize registerSize):
-            Instruction(InstructionKind::MoveAddress, registerSize),
-            destination(destination),
+            DestinationInstruction(destination, InstructionKind::MoveAddress, registerSize),
             offset(offset)
         { }
     };
 
 
-    struct MoveRegisterToRegisterInstruction : Instruction
+    struct MoveRegisterToRegisterInstruction : DestinationInstruction
     {
-        OperandRegister
-        destination;
-
         OperandRegister
         target;
 
         MoveRegisterToRegisterInstruction(OperandRegister destination, OperandRegister target, RegisterSize registerSize):
-            Instruction(InstructionKind::MoveRegister, registerSize),
-            destination(destination),
+            DestinationInstruction(destination, InstructionKind::MoveRegister, registerSize),
             target(target)
         { }
     };
 
 
-    struct MoveZeroExtendInstruction : Instruction
+    struct MoveZeroExtendInstruction : DestinationInstruction
     {
         OperandRegister
         target;
 
-        OperandRegister
-        destination;
+        RegisterSize
+        targetSize;
 
-        MoveZeroExtendInstruction(OperandRegister target, OperandRegister destination, RegisterSize size):
-            Instruction(InstructionKind::MoveZeroExtend, size),
+        MoveZeroExtendInstruction(OperandRegister target, OperandRegister destination, RegisterSize targetSize, RegisterSize destinationSize):
+            DestinationInstruction(destination, InstructionKind::MoveZeroExtend, destinationSize),
             target(target),
-            destination(destination)
+            targetSize(targetSize)
+        { }
+    };
+
+
+    struct MoveSignExtendInstruction : DestinationInstruction
+    {
+        OperandRegister
+        target;
+
+        RegisterSize
+        targetSize;
+
+        MoveSignExtendInstruction(OperandRegister target, OperandRegister destination, RegisterSize targetSize, RegisterSize destinationSize):
+            DestinationInstruction(destination, InstructionKind::MoveSignExtend, destinationSize),
+            target(target),
+            targetSize(targetSize)
         { }
     };
 
@@ -487,12 +504,12 @@ namespace elet::domain::compiler::instruction::output
         uint64_t
         stackOffset;
 
-        MemoryAllocation(InstructionKind kind, RegisterSize registerSize):
-        Instruction(kind, registerSize)
-        { }
+        Sign
+        sign;
 
-        MemoryAllocation(InstructionKind kind, uint64_t& stackOffset, RegisterSize registerSize):
+        MemoryAllocation(InstructionKind kind, uint64_t& stackOffset, RegisterSize registerSize, Sign sign):
             Instruction(kind, registerSize),
+            sign(sign),
             stackOffset(stackOffset + static_cast<uint64_t>(registerSize))
         {
             stackOffset += static_cast<uint64_t>(registerSize);
@@ -505,8 +522,8 @@ namespace elet::domain::compiler::instruction::output
         OperandRegister
         target;
 
-        StoreRegisterInstruction(OperandRegister target, uint64_t& stackOffset, RegisterSize allocationSize):
-            MemoryAllocation(InstructionKind::StoreRegister, stackOffset, allocationSize),
+        StoreRegisterInstruction(OperandRegister target, uint64_t& stackOffset, RegisterSize allocationSize, Sign sign):
+            MemoryAllocation(InstructionKind::StoreRegister, stackOffset, allocationSize, sign),
             target(target)
         {
 
@@ -522,8 +539,8 @@ namespace elet::domain::compiler::instruction::output
         std::optional<Constant*>
         constant;
 
-        StoreImmediateInstruction(uint64_t value, uint64_t& stackOffset, RegisterSize allocationSize):
-            MemoryAllocation(InstructionKind::StoreImmediate, stackOffset, allocationSize),
+        StoreImmediateInstruction(uint64_t value, uint64_t& stackOffset, RegisterSize allocationSize, Sign sign):
+            MemoryAllocation(InstructionKind::StoreImmediate, stackOffset, allocationSize, sign),
             value(value)
         {
 
@@ -531,14 +548,18 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
-    struct ParameterDeclaration : MemoryAllocation
+    struct ParameterDeclaration : Instruction
     {
         unsigned int
         index;
 
-        ParameterDeclaration(unsigned int index, RegisterSize registerSize):
-            MemoryAllocation(InstructionKind::ParameterDeclaration, registerSize),
-            index(index)
+        Sign
+        sign;
+
+        ParameterDeclaration(unsigned int index, RegisterSize registerSize, Sign sign):
+            Instruction(InstructionKind::ParameterDeclaration, registerSize),
+            index(index),
+            sign(sign)
         { }
     };
 

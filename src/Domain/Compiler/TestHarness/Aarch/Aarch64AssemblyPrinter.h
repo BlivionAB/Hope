@@ -89,10 +89,22 @@ public:
     writeLdrbStrbImmediateUnsignedOffsetInstruction(const LdrbStrbImmediateUnsignedOffsetInstruction* instruction);
 
     void
+    writeLdrsbImmediateUnsignedOffsetInstruction(const LdrsbImmediateUnsignedOffsetInstruction* instruction);
+
+    void
     writeLdrhStrhImmediateUnsignedOffsetInstruction(const LdrhStrhImmediateUnsignedOffsetInstruction* instruction);
 
     void
+    writeLdrshImmediateUnsignedOffsetInstruction(const LdrshImmediateUnsignedOffsetInstruction* instruction);
+
+    void
     writeAndImmediateInstruction(const AndImmediateInstruction* pInstruction);
+
+    void
+    writeSxtb(const SxtbInstruction* instruction);
+
+    void
+    writeSxth(const SxthInstruction* instruction);
 };
 
 }

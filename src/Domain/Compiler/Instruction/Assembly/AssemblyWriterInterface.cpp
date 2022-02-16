@@ -140,8 +140,11 @@ namespace elet::domain::compiler::instruction::output
                 case InstructionKind::Call:
                     writeCallInstruction(reinterpret_cast<CallInstruction*>(instruction), function);
                     break;
-                case InstructionKind::Load:
-                    writeLoadInstruction(reinterpret_cast<LoadInstruction*>(instruction), function);
+                case InstructionKind::LoadSigned:
+                    writeLoadSignedInstruction(reinterpret_cast<LoadSignedInstruction*>(instruction), function);
+                    break;
+                case InstructionKind::LoadUnsigned:
+                    writeLoadUnsignedInstruction(reinterpret_cast<LoadUnsignedInstruction*>(instruction), function);
                     break;
                 case InstructionKind::StoreImmediate:
                     writeStoreImmediateInstruction(reinterpret_cast<StoreImmediateInstruction*>(instruction), function);
@@ -162,11 +165,15 @@ namespace elet::domain::compiler::instruction::output
                 case InstructionKind::MoveZeroExtend:
                     writeMoveZeroExtendInstruction(reinterpret_cast<MoveZeroExtendInstruction*>(instruction), function);
                     break;
+                case InstructionKind::MoveSignExtend:
+                    writeMoveSignExtendInstruction(reinterpret_cast<MoveSignExtendInstruction*>(instruction), function);
+                    break;
                 case InstructionKind::AddRegisterToRegister:
-                    writeAddRegisterInstruction(reinterpret_cast<AddRegisterToRegisterInstruction*>(instruction), function);
+                    writeAddRegisterToRegisterInstruction(reinterpret_cast<AddRegisterToRegisterInstruction*>(instruction), function);
                     break;
                 case InstructionKind::AddImmediateToRegister:
-                    writeAddImmediateInstruction(reinterpret_cast<AddImmediateToRegisterInstruction*>(instruction), function);
+                    writeAddImmediateInstruction(
+                        reinterpret_cast<AddImmediateToRegisterInstruction*>(instruction), function);
                     break;
                 case InstructionKind::AddAddressToRegister:
                     writeAddAddressToRegisterInstruction(
@@ -315,9 +322,16 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    AssemblyWriterInterface::writeAddRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+    AssemblyWriterInterface::writeMoveSignExtendInstruction(MoveSignExtendInstruction* instruction, FunctionRoutine* function)
     {
-        throw std::runtime_error("Not implemented \"writeAddRegisterInstruction\" method.");
+        throw std::runtime_error("Not implemented \"writeMoveSignExtendInstruction\" method.");
+    }
+
+
+    void
+    AssemblyWriterInterface::writeAddRegisterToRegisterInstruction(AddRegisterToRegisterInstruction* addRegisterInstruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeAddRegisterToRegisterInstruction\" method.");
     }
 
 
@@ -343,9 +357,16 @@ namespace elet::domain::compiler::instruction::output
 
 
     void
-    AssemblyWriterInterface::writeLoadInstruction(LoadInstruction* loadInstruction, FunctionRoutine* function)
+    AssemblyWriterInterface::writeLoadUnsignedInstruction(LoadUnsignedInstruction* loadInstruction, FunctionRoutine* function)
     {
-        throw std::runtime_error("Not implemented \"writeLoadInstruction\" method.");
+        throw std::runtime_error("Not implemented \"writeLoadUnsignedInstruction\" method.");
+    }
+
+
+    void
+    AssemblyWriterInterface::writeLoadSignedInstruction(LoadSignedInstruction* instruction, FunctionRoutine* function)
+    {
+        throw std::runtime_error("Not implemented \"writeLoadSignedInstruction\" method.");
     }
 
 

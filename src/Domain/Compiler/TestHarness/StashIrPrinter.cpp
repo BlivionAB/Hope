@@ -23,7 +23,7 @@ namespace elet::domain::compiler::test
         _tw.write("(");
         for (const output::ParameterDeclaration* parameterDeclaration : function->parameters)
         {
-            _tw.write(static_cast<int>(parameterDeclaration->registerSize));
+            _tw.write(static_cast<int>(parameterDeclaration->destinationSize));
         }
         _tw.write("):");
         _tw.newline();
@@ -55,8 +55,11 @@ namespace elet::domain::compiler::test
             case output::InstructionKind::StoreImmediate:
                 writeStoreImmediateInstruction(reinterpret_cast<const output::StoreImmediateInstruction*>(instruction));
                 break;
-            case output::InstructionKind::Load:
-                writeLoadInstruction(reinterpret_cast<const output::LoadInstruction*>(instruction));
+            case output::InstructionKind::LoadUnsigned:
+                writeLoadUnsignedInstruction(reinterpret_cast<const output::LoadUnsignedInstruction*>(instruction));
+                break;
+            case output::InstructionKind::LoadSigned:
+                writeLoadSignedInstruction(reinterpret_cast<const output::LoadSignedInstruction*>(instruction));
                 break;
             case output::InstructionKind::MoveAddress:
                 writeMoveAddressInstruction(reinterpret_cast<const output::MoveAddressToRegisterInstruction*>(instruction));
@@ -69,6 +72,9 @@ namespace elet::domain::compiler::test
                 break;
             case output::InstructionKind::MoveZeroExtend:
                 writeMoveZeroExtendInstruction(reinterpret_cast<const output::MoveZeroExtendInstruction*>(instruction));
+                break;
+            case output::InstructionKind::MoveSignExtend:
+                writeMoveSignExtend(reinterpret_cast<const output::MoveSignExtendInstruction*>(instruction));
                 break;
             case output::InstructionKind::Return:
                 _tw.write("Ret");
@@ -141,7 +147,7 @@ namespace elet::domain::compiler::test
     void
     StashIRPrinter::writeMoveZeroExtendInstruction(const output::MoveZeroExtendInstruction* instruction)
     {
-        writeOperationName("Movzx", instruction);
+        writeOperationName("Movzx", instruction->targetSize);
         _tw.write(" ");
         writeOperandRegister(instruction->destination);
         _tw.write(", ");
@@ -150,9 +156,32 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeLoadInstruction(const output::LoadInstruction* instruction)
+    StashIRPrinter::writeMoveSignExtend(const output::MoveSignExtendInstruction* instruction)
+    {
+        writeOperationName("Movsx", instruction->targetSize);
+        _tw.write(" ");
+        writeOperandRegister(instruction->destination);
+        _tw.write(", ");
+        writeOperandRegister(instruction->target);
+    }
+
+
+    void
+    StashIRPrinter::writeLoadUnsignedInstruction(const output::LoadUnsignedInstruction* instruction)
     {
         writeOperationName("Ldr", instruction);
+        _tw.write(" ");
+        writeOperandRegister(instruction->destination);
+        _tw.write(", [Sp + #");
+        _tw.write(-static_cast<int64_t>(instruction->stackOffset));
+        _tw.write("]");
+    }
+
+
+    void
+    StashIRPrinter::writeLoadSignedInstruction(const output::LoadSignedInstruction* instruction)
+    {
+        writeOperationName("Ldrs", instruction);
         _tw.write(" ");
         writeOperandRegister(instruction->destination);
         _tw.write(", [Sp + #");
@@ -268,11 +297,19 @@ namespace elet::domain::compiler::test
         _tw.writeUnsignedHexValue(instruction->value);
     }
 
+
     void
     StashIRPrinter::writeOperationName(Utf8String name, const output::Instruction* instruction)
     {
+        writeOperationName(name, instruction->destinationSize);
+    }
+
+
+    void
+    StashIRPrinter::writeOperationName(Utf8String name, RegisterSize registerSize)
+    {
         _tw.write(name);
-        switch (instruction->registerSize)
+        switch (registerSize)
         {
             case RegisterSize::Quad:
                 _tw.write("Q");
