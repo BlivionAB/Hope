@@ -95,11 +95,14 @@ private:
     bool
     tryParse24Instructions(Instruction* instruction, uint32_t dw);
 
-    bool
-    tryParse25Instructions(Instruction* instruction, uint32_t dw);
+    void
+    parseBInstruction(Instruction* instruction, uint32_t dw);
 
-    bool
-    tryParse26Instructions(Instruction* instruction, uint32_t dw);
+    void
+    parseBlInstruction(Instruction* instruction, uint32_t dw);
+
+    void
+    parseRetInstruction(Instruction* instruction, uint32_t dw);
 
     void
     parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
@@ -175,6 +178,21 @@ private:
 
     void
     parseSxthInstruction(SxthInstruction* instruction, uint32_t dw);
+
+    bool
+    parseDataProcessingImmediateInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseBranchingExceptionSystemInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseUnconditionalBranchRegister(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseUnconditionalBranchOpcOp2Grp0(Instruction* instruction, uint32_t dw, uint32_t op3, uint32_t op4);
+
+    bool
+    parseUnconditionalBranchImmediate(Instruction* instruction, uint32_t dw);
 };
 
 

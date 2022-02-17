@@ -230,6 +230,11 @@ namespace elet::domain::compiler::test::aarch
         rn;
     };
 
+    struct RetInstruction : BrInstruction
+    {
+
+    };
+
 
     struct BlInstruction : Instruction
     {

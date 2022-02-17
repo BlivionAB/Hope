@@ -21,18 +21,24 @@ namespace elet::domain::compiler::test::aarch
         {
             Instruction* instruction = reinterpret_cast<Instruction*>(instructions.emplace());
             uint32_t dw = getDoubleWord(instruction);
-            if ((dw & Aarch64Instruction::BrMask) == Aarch64Instruction::Br)
+            uint32_t opc = RootInstruction::Op0_Mask & dw;
+            switch (opc)
             {
-                parseBrInstruction(instruction, dw);
-                continue;
-            }
-            if (tryParse26Instructions(instruction, dw))
-            {
-                continue;
-            }
-            if (tryParse25Instructions(instruction, dw))
-            {
-                continue;
+                case static_cast<uint32_t>(RootInstruction::Op0_DataProcessing_Immediate_0):
+                case static_cast<uint32_t>(RootInstruction::Op0_DataProcessing_Immediate_1):
+                    if (parseDataProcessingImmediateInstruction(instruction, dw))
+                    {
+                        continue;
+                    }
+                    break;
+                case static_cast<uint32_t>(RootInstruction::Op0_BranchingExceptionSystem_0):
+                case static_cast<uint32_t>(RootInstruction::Op0_BranchingExceptionSystem_1):
+                    if (parseBranchingExceptionSystemInstruction(instruction, dw))
+                    {
+                        continue;
+                    }
+                    break;
+
             }
             if (tryParse24Instructions(instruction, dw))
             {
@@ -87,53 +93,37 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64AssemblyParser::parseBrInstruction(Instruction* instruction, uint32_t dw)
     {
-        BrInstruction* instr = reinterpret_cast<BrInstruction*>(instruction);
-        instr->kind = Aarch64Instruction::Br;
-        instr->rn = Rn(dw);
+        BrInstruction* br = reinterpret_cast<BrInstruction*>(instruction);
+        br->kind = Aarch64Instruction::Br;
+        br->rn = Rn(dw);
     }
 
 
-    bool
-    Aarch64AssemblyParser::tryParse26Instructions(Instruction* instruction, uint32_t dw)
+    void
+    Aarch64AssemblyParser::parseBInstruction(Instruction* instruction, uint32_t dw)
     {
-        uint32_t kind26 = dw & Mask26;
-
-        switch (kind26)
-        {
-            case Aarch64Instruction::B:
-            {
-                BInstruction* b = reinterpret_cast<BInstruction*>(instruction);
-                b->kind = Aarch64Instruction::B;
-                b->imm26 = imm26(dw);
-                return true;
-            }
-            case Aarch64Instruction::Bl:
-            {
-                BlInstruction* bl = reinterpret_cast<BlInstruction*>(instruction);
-                bl->kind = Aarch64Instruction::Bl;
-                bl->imm26 = imm26(dw);
-                return true;
-            }
-        }
-        return false;
+        BInstruction* b = reinterpret_cast<BInstruction*>(instruction);
+        b->kind = B;
+        b->imm26 = imm26(dw);
     }
 
-    bool
-    Aarch64AssemblyParser::tryParse25Instructions(Instruction* instruction, uint32_t dw)
+
+    void
+    Aarch64AssemblyParser::parseBlInstruction(Instruction* instruction, uint32_t dw)
     {
-        uint32_t kind25 = dw & Mask25;
-
-        if (Aarch64Instruction::UnconditionalBranchRegister == kind25)
-        {
-            BrInstruction* brexsysc = reinterpret_cast<BrInstruction*>(instruction);
-            brexsysc->kind = Aarch64Instruction::Ret;
-            brexsysc->rn = Rn(dw);
-            return true;
-        }
-        return false;
+        BlInstruction* bl = reinterpret_cast<BlInstruction*>(instruction);
+        bl->kind = Bl;
+        bl->imm26 = imm26(dw);
     }
 
 
+    void
+    Aarch64AssemblyParser::parseRetInstruction(Instruction* instruction, uint32_t dw)
+    {
+        RetInstruction* ret = reinterpret_cast<RetInstruction*>(instruction);
+        ret->kind = Ret;
+        ret->rn = Rn(dw);
+    }
 
 
     bool
@@ -747,5 +737,105 @@ namespace elet::domain::compiler::test::aarch
         instruction->kind = Aarch64Instruction::Sxth;
         instruction->Rn = Rn(dw);
         instruction->Rd = Rd(dw);
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseDataProcessingImmediateInstruction(Instruction* instruction, uint32_t dw)
+    {
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseBranchingExceptionSystemInstruction(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t op0 = BranchingExceptionSystem::Op0_Mask & dw;
+        uint32_t op1 = BranchingExceptionSystem::Op1_Mask & dw;
+        switch (op0)
+        {
+            case static_cast<uint32_t>(BranchingExceptionSystem::Op0_Grp6):
+                if (BranchingExceptionSystem::Op1_UnconditionalBranch_Register & op1)
+                {
+                    if (parseUnconditionalBranchRegister(instruction, dw))
+                    {
+                        return true;
+                    }
+                }
+                break;
+            case static_cast<uint32_t>(BranchingExceptionSystem::Op0_GrpUnconditionalBranchImmediate_0):
+            case static_cast<uint32_t>(BranchingExceptionSystem::Op0_GrpUnconditionalBranchImmediate_1):
+                if (parseUnconditionalBranchImmediate(instruction, dw))
+                {
+                    return true;
+                }
+                break;
+
+        }
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseUnconditionalBranchRegister(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t op0 = UnconditionalBranch_Register::Opc_Mask & dw;
+        uint32_t op2 = UnconditionalBranch_Register::Op2_Mask & dw;
+        uint32_t op3 = UnconditionalBranch_Register::Op3_Mask & dw;
+        uint32_t op4 = UnconditionalBranch_Register::Op4_Mask & dw;
+        switch (op0)
+        {
+            case static_cast<uint32_t>(UnconditionalBranch_Register::Opc_Grp0):
+                if (UnconditionalBranch_Register::Op2_True == op2)
+                {
+                    if (parseUnconditionalBranchOpcOp2Grp0(instruction, dw, op3, op4))
+                    {
+                        return true;
+                    }
+                }
+                break;
+            case static_cast<uint32_t>(UnconditionalBranch_Register::Opc_Grp2):
+                if (UnconditionalBranch_Register::Op2_True == op2)
+                {
+                    if (UnconditionalBranch_Register::Op3_0 == op3 && UnconditionalBranch_Register::Op4_0 == op4)
+                    {
+                        parseRetInstruction(instruction, dw);
+                        return true;
+                    }
+                }
+        }
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseUnconditionalBranchOpcOp2Grp0(Instruction* instruction, uint32_t dw, uint32_t op3, uint32_t op4)
+    {
+        switch (op3)
+        {
+            case static_cast<uint32_t>(UnconditionalBranch_Register::Op3_0):
+                if (UnconditionalBranch_Register::Op4_0 == op4)
+                {
+                    parseBrInstruction(instruction, dw);
+                    return true;
+                }
+        }
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseUnconditionalBranchImmediate(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t op0 = UnconditionalBranch_Immediate::Op0_Mask & dw;
+        if (UnconditionalBranch_Immediate::Op0_B & op0)
+        {
+            parseBInstruction(instruction, dw);
+        }
+        else
+        {
+            parseBlInstruction(instruction, dw);
+        }
+        return true;
     }
 }

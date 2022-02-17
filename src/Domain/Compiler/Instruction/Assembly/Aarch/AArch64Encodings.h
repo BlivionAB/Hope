@@ -107,9 +107,136 @@ namespace elet::domain::compiler::instruction::output
         Br = static_cast<uint32_t>(0b11010110000111110000000000000000) << 0,
         BrMask = MASK(0, 10) | 0b11111,
         Nop = static_cast<uint32_t>(0xd503201f) << 0,
-
         UnconditionalBranchRegister = static_cast<uint32_t>(0b1101011) << 25,
     };
+
+
+    enum class RootInstruction : uint32_t
+    {
+        Op0_Mask = static_cast<uint32_t>(0b1111) << 25,
+        Op0_DataProcessing_Immediate_0 = static_cast<uint32_t>(0b1000) << 25,
+        Op0_DataProcessing_Immediate_1 = static_cast<uint32_t>(0b1001) << 25,
+        Op0_BranchingExceptionSystem_0 = static_cast<uint32_t>(0b1010) << 25,
+        Op0_BranchingExceptionSystem_1 = static_cast<uint32_t>(0b1011) << 25,
+        Op0_LoadsAndStores_0 = static_cast<uint32_t>(0b0100) << 25,
+        Op0_LoadsAndStores_1 = static_cast<uint32_t>(0b0110) << 25,
+        Op0_LoadsAndStores_2 = static_cast<uint32_t>(0b1100) << 25,
+        Op0_LoadsAndStores_3 = static_cast<uint32_t>(0b1110) << 25,
+        Op0_DataProcessing_Register_0 = static_cast<uint32_t>(0b0101) << 25,
+        Op0_DataProcessing_Register_1 = static_cast<uint32_t>(0b1101) << 25,
+        Op0_DataProcessing_ScalarFloatingPointAndSimd_0 = static_cast<uint32_t>(0b0111) << 25,
+        Op0_DataProcessing_ScalarFloatingPointAndSimd_1 = static_cast<uint32_t>(0b1111) << 25,
+    };
+
+
+    inline
+    uint32_t
+    operator & (RootInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (RootInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class BranchingExceptionSystem : uint32_t
+    {
+        Op0_Mask = 0b111ui32 << 29,
+        Op1_Mask = 0b1111'1111'1111'11ui32 << 12,
+        Op2_Mask = 0b11111ui32,
+
+        Op0_Grp6 = 0b110ui32 << 29,
+        Op0_GrpUnconditionalBranchImmediate_0 = 0b000ui32 << 29,
+        Op0_GrpUnconditionalBranchImmediate_1 = 0b100ui32 << 29,
+        Op1_UnconditionalBranch_Register = 0b1000'0000'0000'00ui32 << 12,
+    };
+
+
+    inline
+    uint32_t
+    operator & (BranchingExceptionSystem&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (BranchingExceptionSystem&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class UnconditionalBranch_Register : uint32_t
+    {
+        Opc_Mask  = 0b1111ui32 << 21,
+        Op2_Mask  = 0b11111ui32 << 16,
+        Op3_Mask  = 0b111111ui32 << 10,
+        Op4_Mask  = 0b11111ui32 << 0,
+
+        Opc_Grp0 = 0b000ui32 << 21,
+        Opc_Grp1 = 0b001ui32 << 21,
+        Opc_Grp2 = 0b010ui32 << 21,
+        Opc_Grp3 = 0b011ui32 << 21,
+        Opc_Grp4 = 0b100ui32 << 21,
+        Opc_Grp5 = 0b101ui32 << 21,
+
+        Op2_True = 0b11111ui32 << 16,
+        Op3_0 = 000000ui32 << 10,
+        Op3_1 = 000001ui32 << 10,
+        Op3_2 = 000010ui32 << 10,
+        Op3_4 = 000100ui32 << 10,
+        Op3_8 = 001000ui32 << 10,
+        Op4_0 = 0b0000ui32 << 0,
+        Op4_True = 0b11111ui32 << 0,
+    };
+
+
+    inline
+    uint32_t
+    operator & (UnconditionalBranch_Register&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (UnconditionalBranch_Register&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class UnconditionalBranch_Immediate : uint32_t
+    {
+        Op0_Mask = 1ui32 << 31,
+        Op0_B = 0ui32 << 31,
+        Op0_Bl = 1ui32 << 31,
+    };
+
+
+    inline
+    uint32_t
+    operator & (UnconditionalBranch_Immediate&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (UnconditionalBranch_Immediate&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
 }
 
 
