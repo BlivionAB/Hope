@@ -4,6 +4,7 @@
 .DS_Store
 bin/
 cmake-build-debug/
+cmake-build-debug-visual-studio/
 cmake-build-debugwithlogging/
 cmake-build-release/
 debug/
@@ -11,4 +12,3 @@ release/
 **/src/Domain/Tests/Baselines/Current
 CMakeLists.txt.user
 bench/*/out
-/cmake-build-debug-visual-studio/
