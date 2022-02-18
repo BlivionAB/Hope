@@ -100,8 +100,6 @@ namespace elet::domain::compiler::instruction::output
         Movn = static_cast<uint32_t>(0b000100101) << 23,
 
         sf = 1ui32 << 31,
-        op = 1ui32 << 30,
-        S = 1ui32 << 29,
         OpcMask = 0b11ui32 << 30,
         Opc0 = 0b00ui32 << 30,
         Opc1 = 0b01ui32 << 30,

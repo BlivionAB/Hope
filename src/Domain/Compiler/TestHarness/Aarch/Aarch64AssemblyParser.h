@@ -68,12 +68,6 @@ private:
     bool
     sf(uint32_t dw);
 
-    bool
-    op(uint32_t dw);
-
-    bool
-    S(uint32_t dw);
-
     uint32_t
     hw(uint32_t dw);
 

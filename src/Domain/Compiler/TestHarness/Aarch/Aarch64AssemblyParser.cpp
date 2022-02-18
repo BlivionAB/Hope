@@ -662,20 +662,6 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::op(uint32_t dw)
-    {
-        return Aarch64Instruction::op & dw;
-    }
-
-
-    bool
-    Aarch64AssemblyParser::S(uint32_t dw)
-    {
-        return Aarch64Instruction::S & dw;
-    }
-
-
-    bool
     Aarch64AssemblyParser::sf(uint32_t dw)
     {
         return Aarch64Instruction::sf & dw;
@@ -687,6 +673,7 @@ namespace elet::domain::compiler::test::aarch
     {
         return (Aarch64Instruction::HwMask & dw) >> 21;
     }
+
 
     uint8_t
     Aarch64AssemblyParser::imm6(uint32_t dw)
