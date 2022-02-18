@@ -99,7 +99,12 @@ namespace elet::domain::compiler::instruction::output
         Movk = static_cast<uint32_t>(0b011100101) << 23,
         Movn = static_cast<uint32_t>(0b000100101) << 23,
 
-        sf = static_cast<uint32_t>(1) << 31,
+        sf = 1ui32 << 31,
+        op = 1ui32 << 30,
+        S = 1ui32 << 29,
+        OpcMask = 0b11ui32 << 30,
+        Opc0 = 0b00ui32 << 30,
+        Opc1 = 0b01ui32 << 30,
 
         Ret = static_cast<uint32_t>(0xd65f03c0) << 0,
         Bl = static_cast<uint32_t>(0b100101) << 26,
@@ -118,10 +123,10 @@ namespace elet::domain::compiler::instruction::output
         Op0_DataProcessing_Immediate_1 = static_cast<uint32_t>(0b1001) << 25,
         Op0_BranchingExceptionSystem_0 = static_cast<uint32_t>(0b1010) << 25,
         Op0_BranchingExceptionSystem_1 = static_cast<uint32_t>(0b1011) << 25,
-        Op0_LoadsAndStores_0 = static_cast<uint32_t>(0b0100) << 25,
-        Op0_LoadsAndStores_1 = static_cast<uint32_t>(0b0110) << 25,
-        Op0_LoadsAndStores_2 = static_cast<uint32_t>(0b1100) << 25,
-        Op0_LoadsAndStores_3 = static_cast<uint32_t>(0b1110) << 25,
+        Op0_LoadAndStore_0 = static_cast<uint32_t>(0b0100) << 25,
+        Op0_LoadAndStore_1 = static_cast<uint32_t>(0b0110) << 25,
+        Op0_LoadAndStore_2 = static_cast<uint32_t>(0b1100) << 25,
+        Op0_LoadAndStore_3 = static_cast<uint32_t>(0b1110) << 25,
         Op0_DataProcessing_Register_0 = static_cast<uint32_t>(0b0101) << 25,
         Op0_DataProcessing_Register_1 = static_cast<uint32_t>(0b1101) << 25,
         Op0_DataProcessing_ScalarFloatingPointAndSimd_0 = static_cast<uint32_t>(0b0111) << 25,
@@ -234,6 +239,107 @@ namespace elet::domain::compiler::instruction::output
     inline
     bool
     operator == (UnconditionalBranch_Immediate&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class LoadAndStoreInstruction : uint32_t
+    {
+        Op0_Mask = 0b1111ui32 << 28,
+        Op1_Mask = 0b1ui32 << 26,
+        Op2_Mask = 0b11ui32 << 23,
+        Op3_Mask = 0b111111ui32 << 16,
+        Op4_Mask = 0b11ui32 << 10,
+
+        Op0_Grp1_0 = 0b0001ui32 << 28,
+        Op0_Grp1_1 = 0b0101ui32 << 28,
+        Op0_Grp1_2 = 0b1001ui32 << 28,
+        Op0_Grp1_3 = 0b1101ui32 << 28,
+
+        Op2_0 = 0b00ui32 << 23,
+        Op2_1 = 0b01ui32 << 23,
+        Op2_2 = 0b10ui32 << 23,
+        Op2_3 = 0b11ui32 << 23,
+
+    };
+
+
+    inline
+    uint32_t
+    operator & (LoadAndStoreInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (LoadAndStoreInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class DataProcessingRegisterInstruction : uint32_t
+    {
+        Op0_Mask = 0b1ui32 << 30,
+        Op1_Mask = 0b1ui32 << 28,
+        Op2_Mask = 0b1111ui32 << 21,
+        Op3_Mask = 0b111111ui32 << 10,
+
+        Op1_0 = 0b0ui32 << 28,
+        Op1_1 = 0b1ui32 << 28,
+
+        Op2_1xx0_0 = 0b1000ui32 << 21,
+        Op2_1xx0_1 = 0b1010ui32 << 21,
+        Op2_1xx0_2 = 0b1100ui32 << 21,
+        Op2_1xx0_3 = 0b1110ui32 << 21,
+
+    };
+
+
+    inline
+    uint32_t
+    operator & (DataProcessingRegisterInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (DataProcessingRegisterInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class AddSubtractShiftedRegisterInstruction : uint32_t
+    {
+        sf_op_S_Mask = 0b111ui32 << 29,
+        sf_op_S_Add32 = 0b000ui32 << 29,
+        sf_op_S_Adds32 = 0b001ui32 << 29,
+        sf_op_S_Sub32 = 0b010ui32 << 29,
+        sf_op_S_Subs32 = 0b011ui32 << 29,
+        sf_op_S_Add64 = 0b100ui32 << 29,
+        sf_op_S_Adds64 = 0b101ui32 << 29,
+        sf_op_S_Sub64 = 0b110ui32 << 29,
+        sf_op_S_Subs64 = 0b111ui32 << 29,
+    };
+
+
+    inline
+    uint32_t
+    operator & (AddSubtractShiftedRegisterInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (AddSubtractShiftedRegisterInstruction&& bits, uint32_t value)
     {
         return static_cast<uint32_t>(bits) == value;
     }

@@ -38,11 +38,22 @@ namespace elet::domain::compiler::test::aarch
                         continue;
                     }
                     break;
-
-            }
-            if (tryParse24Instructions(instruction, dw))
-            {
-                continue;
+                case static_cast<uint32_t>(RootInstruction::Op0_LoadAndStore_0):
+                case static_cast<uint32_t>(RootInstruction::Op0_LoadAndStore_1):
+                case static_cast<uint32_t>(RootInstruction::Op0_LoadAndStore_2):
+                case static_cast<uint32_t>(RootInstruction::Op0_LoadAndStore_3):
+                    if (parseLoadAndStoreInstruction(instruction, dw))
+                    {
+                        continue;
+                    }
+                    break;
+                case static_cast<uint32_t>(RootInstruction::Op0_DataProcessing_Register_0):
+                case static_cast<uint32_t>(RootInstruction::Op0_DataProcessing_Register_1):
+                    if (parseDataProcessingRegisterInstruction(instruction, dw))
+                    {
+                        continue;
+                    }
+                    break;
             }
             if (tryParse23Instructions(instruction, dw))
             {
@@ -126,33 +137,13 @@ namespace elet::domain::compiler::test::aarch
     }
 
 
-    bool
-    Aarch64AssemblyParser::tryParse24Instructions(Instruction* instruction, uint32_t dw)
+    void
+    Aarch64AssemblyParser::parseLdrLiteralInstruction(Instruction* instruction, uint32_t dw)
     {
-        uint32_t kind24 = dw & Mask24;
-
-        switch (kind24)
-        {
-            case Aarch64Instruction::Ldr64:
-            {
-                LdrInstruction* instr = reinterpret_cast<LdrInstruction*>(instruction);
-                instr->kind = Aarch64Instruction::Ldr64;
-                instr->rt = Rt(dw);
-                return true;
-            }
-            case Aarch64Instruction::Ldr32:
-            {
-                LdrInstruction* instr = reinterpret_cast<LdrInstruction*>(instruction);
-                instr->kind = Aarch64Instruction::Ldr32;
-                instr->rt = Rt(dw);
-                return true;
-            }
-            case Aarch64Instruction::AddShiftedRegister:
-            case Aarch64Instruction::AddShiftedRegister64:
-                parseAddShiftedRegister(reinterpret_cast<AddShiftedRegisterInstruction*>(instruction), dw);
-                return true;
-        }
-        return false;
+        LdrInstruction* ldr = reinterpret_cast<LdrInstruction*>(instruction);
+        ldr->kind = Ldr32;
+        ldr->is64Bit = opc(dw) == Aarch64Instruction::Opc1;
+        ldr->rt = Rt(dw);
     }
 
 
@@ -671,6 +662,20 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
+    Aarch64AssemblyParser::op(uint32_t dw)
+    {
+        return Aarch64Instruction::op & dw;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::S(uint32_t dw)
+    {
+        return Aarch64Instruction::S & dw;
+    }
+
+
+    bool
     Aarch64AssemblyParser::sf(uint32_t dw)
     {
         return Aarch64Instruction::sf & dw;
@@ -837,5 +842,77 @@ namespace elet::domain::compiler::test::aarch
             parseBlInstruction(instruction, dw);
         }
         return true;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseLoadAndStoreInstruction(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t op0 = LoadAndStoreInstruction::Op0_Mask & dw;
+        uint32_t op1 = LoadAndStoreInstruction::Op1_Mask & dw;
+        uint32_t op2 = LoadAndStoreInstruction::Op2_Mask & dw;
+        uint32_t op3 = LoadAndStoreInstruction::Op3_Mask & dw;
+        uint32_t op4 = LoadAndStoreInstruction::Op4_Mask & dw;
+        switch (op0)
+        {
+            case static_cast<uint32_t>(LoadAndStoreInstruction::Op0_Grp1_0):
+            case static_cast<uint32_t>(LoadAndStoreInstruction::Op0_Grp1_1):
+            case static_cast<uint32_t>(LoadAndStoreInstruction::Op0_Grp1_2):
+            case static_cast<uint32_t>(LoadAndStoreInstruction::Op0_Grp1_3):
+                if (op2 == LoadAndStoreInstruction::Op2_0 || op2 == LoadAndStoreInstruction::Op2_1)
+                {
+                    parseLdrLiteralInstruction(instruction, dw);
+                    return true;
+                }
+        }
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseDataProcessingRegisterInstruction(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t op0 = DataProcessingRegisterInstruction::Op0_Mask & dw;
+        uint32_t op1 = DataProcessingRegisterInstruction::Op1_Mask & dw;
+        uint32_t op2 = DataProcessingRegisterInstruction::Op2_Mask & dw;
+        uint32_t op3 = DataProcessingRegisterInstruction::Op3_Mask & dw;
+        if (op1 == DataProcessingRegisterInstruction::Op1_0)
+        {
+            switch (op2)
+            {
+                case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_0):
+                case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_1):
+                case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_2):
+                case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_3):
+                    if (parseAddSubtractShiftedRegister(instruction, dw))
+                    {
+                        return true;
+                    }
+                    break;
+            }
+        }
+        return false;
+    }
+
+
+    bool
+    Aarch64AssemblyParser::parseAddSubtractShiftedRegister(Instruction* instruction, uint32_t dw)
+    {
+        uint32_t sf_op_S = AddSubtractShiftedRegisterInstruction::sf_op_S_Mask & dw;
+        switch (sf_op_S)
+        {
+            case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::sf_op_S_Add64):
+            case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::sf_op_S_Add32):
+                parseAddShiftedRegister(reinterpret_cast<AddShiftedRegisterInstruction*>(instruction), dw);
+                return true;
+        }
+        return false;
+    }
+
+
+    uint32_t
+    Aarch64AssemblyParser::opc(uint32_t dw)
+    {
+        return Aarch64Instruction::OpcMask & dw;
     }
 }

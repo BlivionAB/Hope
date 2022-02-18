@@ -62,8 +62,17 @@ private:
     int32_t
     imm26(uint32_t dw);
 
+    uint32_t
+    opc(uint32_t dw);
+
     bool
     sf(uint32_t dw);
+
+    bool
+    op(uint32_t dw);
+
+    bool
+    S(uint32_t dw);
 
     uint32_t
     hw(uint32_t dw);
@@ -91,9 +100,6 @@ private:
 
     bool
     tryParse22Instructions(Instruction* instruction, uint32_t dw);
-
-    bool
-    tryParse24Instructions(Instruction* instruction, uint32_t dw);
 
     void
     parseBInstruction(Instruction* instruction, uint32_t dw);
@@ -193,6 +199,18 @@ private:
 
     bool
     parseUnconditionalBranchImmediate(Instruction* instruction, uint32_t dw);
+
+    void
+    parseLdrLiteralInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseLoadAndStoreInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseDataProcessingRegisterInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseAddSubtractShiftedRegister(Instruction* instruction, uint32_t dw);
 };
 
 
