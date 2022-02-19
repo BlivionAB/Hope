@@ -240,6 +240,11 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64AssemblyParser::parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind)
     {
+        assert(kind == Aarch64Instruction::StpOffset64 ||
+            kind == Aarch64Instruction::LdpOffset64 ||
+            kind == Aarch64Instruction::LdpPostIndex64 ||
+            kind == Aarch64Instruction::StpPreIndex64 && "Unknown kind");
+
         LoadStorePairInstruction* loadStoreInstruction = reinterpret_cast<LoadStorePairInstruction*>(instruction);
         loadStoreInstruction->kind = kind;
         loadStoreInstruction->rt = Rt(dw);
