@@ -41,9 +41,9 @@ namespace elet::domain::compiler::test::aarch
                     writeLdr(reinterpret_cast<const LdrInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::StpPreIndex64:
-                case Aarch64Instruction::StpBaseOffset64:
+                case Aarch64Instruction::StpOffset64:
                 case Aarch64Instruction::LdpPostIndex64:
-                case Aarch64Instruction::LdpBaseOffset64:
+                case Aarch64Instruction::LdpOffset64:
                     writeLoadStorePairInstruction(reinterpret_cast<const LoadStorePairInstruction*>(instruction));
                     break;
                 case Aarch64Instruction::StrImmediateUnsignedOffset:
@@ -276,12 +276,12 @@ namespace elet::domain::compiler::test::aarch
     {
         switch (instruction->kind)
         {
-            case Aarch64Instruction::LdpBaseOffset64:
+            case Aarch64Instruction::LdpOffset64:
             case Aarch64Instruction::LdpPostIndex64:
                 _tw.write("ldp ");
                 break;
             case Aarch64Instruction::StpPreIndex64:
-            case Aarch64Instruction::StpBaseOffset64:
+            case Aarch64Instruction::StpOffset64:
                 _tw.write("stp ");
                 break;
             default:

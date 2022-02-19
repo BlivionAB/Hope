@@ -151,7 +151,7 @@ namespace elet::domain::compiler::instruction::output
         else
         {
             writeSubImmediate64(Aarch64Register::sp, Aarch64Register::sp, function->stackSize, function);
-            bw->writeDoubleWordInFunction(Aarch64Instruction::StpBaseOffset64 | simm7(function->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
+            bw->writeDoubleWordInFunction(Aarch64Instruction::StpOffset64 | simm7(function->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
             writeAddImmediate64(Aarch64Register::fp, Aarch64Register::sp, 16, function);
         }
     }
@@ -170,7 +170,7 @@ namespace elet::domain::compiler::instruction::output
         }
         else
         {
-            bw->writeDoubleWordInFunction(Aarch64Instruction::LdpBaseOffset64 | simm7(function->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
+            bw->writeDoubleWordInFunction(Aarch64Instruction::LdpOffset64 | simm7(function->stackSize - 16) | Rt2(Aarch64Register::lr) | Rn(Aarch64Register::sp) | Rt(Aarch64Register::fp), function);
             writeAddImmediate64(Aarch64Register::sp, Aarch64Register::sp, function->stackSize, function);
         }
         bw->writeDoubleWordInFunction(Aarch64Instruction::Ret | Rn(Aarch64Register::lr), function);
