@@ -217,27 +217,6 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22)
-    {
-        LoadStoreInstruction* loadStoreInstruction = reinterpret_cast<LoadStoreInstruction*>(instruction);
-        loadStoreInstruction->kind = static_cast<Aarch64Instruction>(kind22);
-        loadStoreInstruction->rt = Rt(dw);
-        loadStoreInstruction->rn = Rn(dw);
-        loadStoreInstruction->imm12 = imm12(dw) * 8;
-
-        switch (loadStoreInstruction->kind)
-        {
-//            case Aarch64Instruction::StrImmediateBaseOffset64:
-//            case Aarch64Instruction::LdrImmediateBaseOffset64:
-//                loadStoreInstruction->addressMode = AddressMode::BaseOffset;
-//                break;
-            default:
-                throw std::runtime_error("Unknown load store instruction.");
-        }
-    }
-
-
-    void
     Aarch64AssemblyParser::parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind)
     {
         assert(kind == Aarch64Instruction::StpOffset64 ||

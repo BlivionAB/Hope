@@ -96,9 +96,6 @@ private:
     parseRetInstruction(Instruction* instruction, uint32_t dw);
 
     void
-    parseLoadStoreInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
-
-    void
     parseAdrInstruction(Instruction* instruction, uint32_t dw);
 
     void
