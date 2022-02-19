@@ -71,13 +71,14 @@ namespace elet::domain::compiler::instruction::output
         LdrhImmediateUnsignedOffset = static_cast<uint32_t>(0b0111100101) << 22,
         LdrshImmediateUnsignedOffset = static_cast<uint32_t>(0b0111100111) << 22,
         StpPreIndex64 = static_cast<uint32_t>(0b1010100110) << 22,
-        StpBaseOffset64 = static_cast<uint32_t>(0b1010100100) << 22,
+        StpOffset64 = static_cast<uint32_t>(0b1010100100) << 22,
         LdpPostIndex64 = static_cast<uint32_t>(0b1010100011) << 22,
-        LdpBaseOffset64 = static_cast<uint32_t>(0b1010100101) << 22,
+        LdpOffset64 = static_cast<uint32_t>(0b1010100101) << 22,
 
         // Data Processing Immediate
         Adr = static_cast<uint32_t>(0b00010000) << 24,
         Adrp = static_cast<uint32_t>(0b10010000) << 24,
+        AddImmediate32 = static_cast<uint32_t>(0b0001000100) << 22,
         AddImmediate64 = static_cast<uint32_t>(0b1001000100) << 22,
         AddShiftedRegister = static_cast<uint32_t>(0b00001011) << 24,
         AddShiftedRegister64 = static_cast<uint32_t>(0b10001011) << 24,
@@ -86,6 +87,7 @@ namespace elet::domain::compiler::instruction::output
         Sxth = static_cast<uint32_t>(0b000'100110'0'000000'001111) << 10,
         SubShiftedRegister = static_cast<uint32_t>(0b01001011000) << 21,
         SubShiftedRegister64 = static_cast<uint32_t>(0b11001011000) << 21,
+        SubImmediate32 = static_cast<uint32_t>(0b0101000100) << 22,
         SubImmediate64 = static_cast<uint32_t>(0b1101000100) << 22,
         Madd = static_cast<uint32_t>(0b00011011000'00000'0) << 15, // Between single quotes are Rm field
         Madd64 = static_cast<uint32_t>(0b10011011000'00000'0) << 15, // Between single quotes are Rm field
@@ -100,6 +102,7 @@ namespace elet::domain::compiler::instruction::output
         Movn = static_cast<uint32_t>(0b000100101) << 23,
 
         sf = 1ui32 << 31,
+        S = 1ui32 << 29,
         OpcMask = 0b11ui32 << 30,
         Opc0 = 0b00ui32 << 30,
         Opc1 = 0b01ui32 << 30,
@@ -116,19 +119,20 @@ namespace elet::domain::compiler::instruction::output
 
     enum class RootInstruction : uint32_t
     {
-        Op0_Mask = static_cast<uint32_t>(0b1111) << 25,
-        Op0_DataProcessing_Immediate_0 = static_cast<uint32_t>(0b1000) << 25,
-        Op0_DataProcessing_Immediate_1 = static_cast<uint32_t>(0b1001) << 25,
-        Op0_BranchingExceptionSystem_0 = static_cast<uint32_t>(0b1010) << 25,
-        Op0_BranchingExceptionSystem_1 = static_cast<uint32_t>(0b1011) << 25,
-        Op0_LoadAndStore_0 = static_cast<uint32_t>(0b0100) << 25,
-        Op0_LoadAndStore_1 = static_cast<uint32_t>(0b0110) << 25,
-        Op0_LoadAndStore_2 = static_cast<uint32_t>(0b1100) << 25,
-        Op0_LoadAndStore_3 = static_cast<uint32_t>(0b1110) << 25,
-        Op0_DataProcessing_Register_0 = static_cast<uint32_t>(0b0101) << 25,
-        Op0_DataProcessing_Register_1 = static_cast<uint32_t>(0b1101) << 25,
-        Op0_DataProcessing_ScalarFloatingPointAndSimd_0 = static_cast<uint32_t>(0b0111) << 25,
-        Op0_DataProcessing_ScalarFloatingPointAndSimd_1 = static_cast<uint32_t>(0b1111) << 25,
+        Op0_Mask                                    = 0b1111ui32 << 25,
+        Reserved                                    = 0b0000ui32 << 25,
+        DataProcessing_Immediate_0                  = 0b1000ui32 << 25,
+        DataProcessing_Immediate_1                  = 0b1001ui32 << 25,
+        BranchingExceptionSystem_0                  = 0b1010ui32 << 25,
+        BranchingExceptionSystem_1                  = 0b1011ui32 << 25,
+        LoadAndStore_0                              = 0b0100ui32 << 25,
+        LoadAndStore_1                              = 0b0110ui32 << 25,
+        LoadAndStore_2                              = 0b1100ui32 << 25,
+        LoadAndStore_3                              = 0b1110ui32 << 25,
+        DataProcessing_Register_0                   = 0b0101ui32 << 25,
+        DataProcessing_Register_1                   = 0b1101ui32 << 25,
+        DataProcessing_ScalarFloatingPointAndSimd_0 = 0b0111ui32 << 25,
+        DataProcessing_ScalarFloatingPointAndSimd_1 = 0b1111ui32 << 25,
     };
 
 
@@ -148,7 +152,7 @@ namespace elet::domain::compiler::instruction::output
     }
 
 
-    enum class BranchingExceptionSystem : uint32_t
+    enum class BranchingExceptionSystemEncoding : uint32_t
     {
         Op0_Mask = 0b111ui32 << 29,
         Op1_Mask = 0b1111'1111'1111'11ui32 << 12,
@@ -163,7 +167,7 @@ namespace elet::domain::compiler::instruction::output
 
     inline
     uint32_t
-    operator & (BranchingExceptionSystem&& bits, uint32_t value)
+    operator & (BranchingExceptionSystemEncoding&& bits, uint32_t value)
     {
         return static_cast<uint32_t>(bits) & value;
     }
@@ -171,7 +175,7 @@ namespace elet::domain::compiler::instruction::output
 
     inline
     bool
-    operator == (BranchingExceptionSystem&& bits, uint32_t value)
+    operator == (BranchingExceptionSystemEncoding&& bits, uint32_t value)
     {
         return static_cast<uint32_t>(bits) == value;
     }
@@ -242,7 +246,7 @@ namespace elet::domain::compiler::instruction::output
     }
 
 
-    enum class LoadAndStoreInstruction : uint32_t
+    enum class LoadAndStoreEncoding : uint32_t
     {
         Op0_Mask = 0b1111ui32 << 28,
         Op1_Mask = 0b1ui32 << 26,
@@ -250,22 +254,31 @@ namespace elet::domain::compiler::instruction::output
         Op3_Mask = 0b111111ui32 << 16,
         Op4_Mask = 0b11ui32 << 10,
 
-        Op0_Grp1_0 = 0b0001ui32 << 28,
-        Op0_Grp1_1 = 0b0101ui32 << 28,
-        Op0_Grp1_2 = 0b1001ui32 << 28,
-        Op0_Grp1_3 = 0b1101ui32 << 28,
+        Op0_xx01_0 = 0b0001ui32 << 28,
+        Op0_xx01_1 = 0b0101ui32 << 28,
+        Op0_xx01_2 = 0b1001ui32 << 28,
+        Op0_xx01_3 = 0b1101ui32 << 28,
+
+        Op0_xx10_0 = 0b0010ui32 << 28,
+        Op0_xx10_1 = 0b0110ui32 << 28,
+        Op0_xx10_2 = 0b1010ui32 << 28,
+        Op0_xx10_3 = 0b1110ui32 << 28,
+
+        Op0_xx11_0 = 0b0011ui32 << 28,
+        Op0_xx11_1 = 0b0111ui32 << 28,
+        Op0_xx11_2 = 0b1011ui32 << 28,
+        Op0_xx11_3 = 0b1111ui32 << 28,
 
         Op2_0 = 0b00ui32 << 23,
         Op2_1 = 0b01ui32 << 23,
         Op2_2 = 0b10ui32 << 23,
         Op2_3 = 0b11ui32 << 23,
-
     };
 
 
     inline
     uint32_t
-    operator & (LoadAndStoreInstruction&& bits, uint32_t value)
+    operator & (LoadAndStoreEncoding&& bits, uint32_t value)
     {
         return static_cast<uint32_t>(bits) & value;
     }
@@ -273,7 +286,53 @@ namespace elet::domain::compiler::instruction::output
 
     inline
     bool
-    operator == (LoadAndStoreInstruction&& bits, uint32_t value)
+    operator == (LoadAndStoreEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class LoadStoreRegister_UnsignedImmediate : uint32_t
+    {
+        size_V_opc_Mask          = 0b1100010011ui32 << 22,
+        Strb_Immediate           = 0b0000000000ui32 << 22,
+        Ldrb_Immediate           = 0b0000000001ui32 << 22,
+        Ldrsb_Immediate64        = 0b0000000010ui32 << 22,
+        Ldrsb_Immediate32        = 0b0000000011ui32 << 22,
+        Str_Immediate_SimdFp_8   = 0b0000010000ui32 << 22,
+        Ldr_Immediate_SimdFp_8   = 0b0000010001ui32 << 22,
+        Str_Immediate_SimdFp_128 = 0b0000010010ui32 << 22,
+        Ldr_Immediate_SimdFp_128 = 0b0000010011ui32 << 22,
+        Strh_Immediate           = 0b0100000000ui32 << 22,
+        Ldrh_Immediate           = 0b0100000001ui32 << 22,
+        Ldrsh_Immediate64        = 0b0100000010ui32 << 22,
+        Ldrsh_Immediate32        = 0b0100000011ui32 << 22,
+        Str_Immediate_SimdFp_16  = 0b0100010000ui32 << 22,
+        Ldr_Immediate_SimdFp_16  = 0b0100010001ui32 << 22,
+        Str_Immediate_32         = 0b1000000000ui32 << 22,
+        Ldr_Immediate_32         = 0b1000000001ui32 << 22,
+        Ldrsw_Immediate          = 0b1000000010ui32 << 22,
+        Str_Immediate_SimdFp_32  = 0b1000010000ui32 << 22,
+        Ldr_Immediate_SimdFp_32  = 0b1000010001ui32 << 22,
+        Str_Immediate_64         = 0b1100000000ui32 << 22,
+        Ldr_Immediate_64         = 0b1100000001ui32 << 22,
+        Prfm_Immediate           = 0b1100000010ui32 << 22,
+        Str_Immediate_SimdFp_64  = 0b1100010000ui32 << 22,
+        Ldr_Immediate_SimdFp_64  = 0b1100010001ui32 << 22,
+    };
+
+
+    inline
+    uint32_t
+    operator & (LoadStoreRegister_UnsignedImmediate&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (LoadStoreRegister_UnsignedImmediate&& bits, uint32_t value)
     {
         return static_cast<uint32_t>(bits) == value;
     }
@@ -286,14 +345,25 @@ namespace elet::domain::compiler::instruction::output
         Op2_Mask = 0b1111ui32 << 21,
         Op3_Mask = 0b111111ui32 << 10,
 
+        Op0_0 = 0b0 << 30,
         Op1_0 = 0b0ui32 << 28,
         Op1_1 = 0b1ui32 << 28,
+
+        Op2_0110   = 0b0110ui32 << 21,
 
         Op2_1xx0_0 = 0b1000ui32 << 21,
         Op2_1xx0_1 = 0b1010ui32 << 21,
         Op2_1xx0_2 = 0b1100ui32 << 21,
         Op2_1xx0_3 = 0b1110ui32 << 21,
 
+        Op2_1xxx_0 = 0b1000ui32 << 21,
+        Op2_1xxx_1 = 0b1001ui32 << 21,
+        Op2_1xxx_2 = 0b1010ui32 << 21,
+        Op2_1xxx_3 = 0b1011ui32 << 21,
+        Op2_1xxx_4 = 0b1100ui32 << 21,
+        Op2_1xxx_5 = 0b1101ui32 << 21,
+        Op2_1xxx_6 = 0b1110ui32 << 21,
+        Op2_1xxx_7 = 0b1111ui32 << 21,
     };
 
 
@@ -316,14 +386,14 @@ namespace elet::domain::compiler::instruction::output
     enum class AddSubtractShiftedRegisterInstruction : uint32_t
     {
         sf_op_S_Mask = 0b111ui32 << 29,
-        sf_op_S_Add32 = 0b000ui32 << 29,
-        sf_op_S_Adds32 = 0b001ui32 << 29,
-        sf_op_S_Sub32 = 0b010ui32 << 29,
-        sf_op_S_Subs32 = 0b011ui32 << 29,
-        sf_op_S_Add64 = 0b100ui32 << 29,
-        sf_op_S_Adds64 = 0b101ui32 << 29,
-        sf_op_S_Sub64 = 0b110ui32 << 29,
-        sf_op_S_Subs64 = 0b111ui32 << 29,
+        Add32        = 0b000ui32 << 29,
+        Adds32       = 0b001ui32 << 29,
+        Sub32        = 0b010ui32 << 29,
+        Subs32       = 0b011ui32 << 29,
+        Add64        = 0b100ui32 << 29,
+        Adds64       = 0b101ui32 << 29,
+        Sub64        = 0b110ui32 << 29,
+        Subs64       = 0b111ui32 << 29,
     };
 
 
@@ -338,6 +408,273 @@ namespace elet::domain::compiler::instruction::output
     inline
     bool
     operator == (AddSubtractShiftedRegisterInstruction&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class DataProcessingImmediateEncoding : uint32_t
+    {
+        Op0_Mask                    = 0b111ui32 << 23,
+        PcRelAddressing_0           = 0b000ui32 << 23,
+        PcRelAddressing_1           = 0b001ui32 << 23,
+        AddSubtractImmediate32      = 0b010ui32 << 23,
+        AddSubtractImmediateWithTag = 0b011ui32 << 23,
+        LogicalImmediate            = 0b100ui32 << 23,
+        MoveWideImmediate           = 0b101ui32 << 23,
+        Bitfield                    = 0b110ui32 << 23,
+        Extract                     = 0b111ui32 << 23,
+
+        op = 0b1ui32 << 31,
+    };
+
+
+    inline
+    uint32_t
+    operator & (DataProcessingImmediateEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (DataProcessingImmediateEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class LogicalImmediateEncoding : uint32_t
+    {
+        sf_opc_Mask     = 0b111ui32 << 29,
+        AndImmediate32  = 0b000ui32 << 29,
+        OrrImmediate32  = 0b001ui32 << 29,
+        EorImmediate32  = 0b010ui32 << 29,
+        AndsImmediate32 = 0b011ui32 << 29,
+        AndImmediate64  = 0b100ui32 << 29,
+        OrrImmediate64  = 0b101ui32 << 29,
+        EorImmediate64  = 0b110ui32 << 29,
+        AndsImmediate64 = 0b111ui32 << 29,
+    };
+
+
+    inline
+    uint32_t
+    operator & (LogicalImmediateEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (LogicalImmediateEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class MoveWideImmediateEncoding : uint32_t
+    {
+        sf_opc_Mask = 0b111ui32 << 29,
+        Movn32      = 0b000ui32 << 29,
+        Movz32      = 0b010ui32 << 29,
+        Movk32      = 0b011ui32 << 29,
+        Movn64      = 0b100ui32 << 29,
+        Movz64      = 0b110ui32 << 29,
+        Movk64      = 0b111ui32 << 29,
+    };
+
+
+    inline
+    uint32_t
+    operator & (MoveWideImmediateEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (MoveWideImmediateEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class LoadStoreEncoding : uint32_t
+    {
+        opc_V_L_Mask = 0b1100010001ui32 << 22,
+        Stp32        = 0b0000000000ui32 << 22,
+        Ldp32        = 0b0000000001ui32 << 22,
+        StpSimdFp32  = 0b0000010000ui32 << 22,
+        LdpSimdFp32  = 0b0000010001ui32 << 22,
+        Stgp         = 0b0100000000ui32 << 22,
+        Ldpsw        = 0b0100000001ui32 << 22,
+        StpSimdFp64  = 0b0100010000ui32 << 22,
+        LdpSimdFp64  = 0b0100010001ui32 << 22,
+        Stp64        = 0b1000000000ui32 << 22,
+        Ldp64        = 0b1000000001ui32 << 22,
+        StpSimdFp128 = 0b1000010000ui32 << 22,
+        LdpSimdFp128 = 0b1000010001ui32 << 22,
+    };
+
+
+    inline
+    uint32_t
+    operator & (LoadStoreEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (LoadStoreEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class AddSubtract_Immediate_Encoding : uint32_t
+    {
+        sf_op_S_Mask     = 0b111ui32 << 29,
+        Add_Immediate32  = 0b000ui32 << 29,
+        Adds_Immediate32 = 0b001ui32 << 29,
+        Sub_Immediate32  = 0b010ui32 << 29,
+        Subs_Immediate32 = 0b011ui32 << 29,
+        Add_Immediate64  = 0b100ui32 << 29,
+        Adds_Immediate64 = 0b101ui32 << 29,
+        Sub_Immediate64  = 0b110ui32 << 29,
+        Subs_Immediate64 = 0b111ui32 << 29,
+    };
+
+
+    inline
+    uint32_t
+    operator & (AddSubtract_Immediate_Encoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (AddSubtract_Immediate_Encoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class DataProcessing3Source : uint32_t
+    {
+        sf_op54_op32_o0_Mask = 0b11100000111000001ui32 << 15,
+        Madd32               = 0b00000000000000000ui32 << 15,
+        Msub32               = 0b00000000000000001ui32 << 15,
+        Madd64               = 0b10000000000000000ui32 << 15,
+        Msub64               = 0b10000000000000001ui32 << 15,
+    };
+
+
+    inline
+    uint32_t
+    operator & (DataProcessing3Source&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (DataProcessing3Source&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class DataProcessing2Source : uint32_t
+    {
+        sf_S_Mask   = 0b101ui32 << 29,
+        opcode_Mask = 0b111111ui32 << 10,
+        opcode_Udiv = 0b000010ui32 << 10,
+        opcode_Sdiv = 0b000011ui32 << 10,
+    };
+
+
+    inline
+    uint32_t
+    operator & (DataProcessing2Source&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (DataProcessing2Source&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class BitfieldEncoding : uint32_t
+    {
+        sf_opc_N_Mask   = 0b1110000001ui32 << 22,
+        Sbfm32          = 0b0000000000ui32 << 22,
+        Bfm32           = 0b0010000000ui32 << 22,
+        Ubfm32          = 0b0100000000ui32 << 22,
+        Sbfm64          = 0b1000000001ui32 << 22,
+        Bfm64           = 0b1010000001ui32 << 22,
+        Ubfm64          = 0b1100000001ui32 << 22,
+
+        imms_Mask       = 0b111111ui32 << 10,
+        imms_Sxtb       = 0b000111ui32 << 10,
+        imms_Sxth       = 0b001111ui32 << 10,
+
+        immr_Mask       = 0b111111ui32 << 16,
+        immr_Sxtb       = 0b000000ui32 << 16,
+        immr_Sxth       = 0b000000ui32 << 16,
+    };
+
+
+    inline
+    uint32_t
+    operator & (BitfieldEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (BitfieldEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) == value;
+    }
+
+
+    enum class ReservedEncoding : uint32_t
+    {
+        Op0_Mask = 0b111ui32 << 29,
+        Op1_Mask = 0b111'111'111 << 16,
+
+        Op0_Udf    = 0b000 << 29,
+        Op1_Udf    = 0b00000000000 << 16,
+    };
+
+
+    inline
+    uint32_t
+    operator & (ReservedEncoding&& bits, uint32_t value)
+    {
+        return static_cast<uint32_t>(bits) & value;
+    }
+
+
+    inline
+    bool
+    operator == (ReservedEncoding&& bits, uint32_t value)
     {
         return static_cast<uint32_t>(bits) == value;
     }

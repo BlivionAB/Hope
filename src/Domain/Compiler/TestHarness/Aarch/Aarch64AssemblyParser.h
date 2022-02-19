@@ -68,8 +68,14 @@ private:
     bool
     sf(uint32_t dw);
 
+    bool
+    S(uint32_t dw);
+
     uint32_t
     hw(uint32_t dw);
+
+    uint32_t
+    immhilo(uint32_t dw);
 
     uint64_t
     getLeftShiftFromHv(uint32_t dw);
@@ -77,23 +83,8 @@ private:
     void
     parseMovzInstruction(MovzInstruction* instruction, uint32_t dw);
 
-    bool
-    tryParse21Instructions(Instruction* instruction, uint32_t dw);
-
     void
-    parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
-
-    void
-    parseDataProcessImmediateInstruction(Instruction* instruction, uint32_t dw, uint32_t kind22);
-
-    bool
-    tryParse10Instructions(Instruction* instruction, uint32_t dw);
-
-    bool
-    tryParse15Instructions(Instruction* instruction, uint32_t dw);
-
-    bool
-    tryParse22Instructions(Instruction* instruction, uint32_t dw);
+    parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind);
 
     void
     parseBInstruction(Instruction* instruction, uint32_t dw);
@@ -113,8 +104,8 @@ private:
     void
     parseAdrpInstruction(Instruction* instruction, uint32_t dw);
 
-    uint32_t
-    immhilo(uint32_t dw);
+    void
+    parseAddSubtractImmediateInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind);
 
     void
     parseUdfInstruction(Instruction* instruction, uint32_t dw);
@@ -122,11 +113,8 @@ private:
     void
     parseBrInstruction(Instruction* instruction, uint32_t dw);
 
-    bool
-    tryParse23Instructions(Instruction* instruction, uint32_t dw);
-
     void
-    parseOrrInstruction(OrrImmediateInstruction* orrInstruction, uint32_t dw);
+    parseOrrInstruction(OrrImmediateInstruction* instruction, uint32_t dw);
 
     uint64_t
     decodeBitmaskImmediate(uint32_t dw, RegistrySize registrySize);
@@ -205,6 +193,45 @@ private:
 
     bool
     parseAddSubtractShiftedRegister(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseLogicalImmediateInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseMoveWideImmediateInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseLoadStorePair_PreIndexed_Instruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseLoadStorePair_Offset_Instruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseLoadStorePair_PostIndexed_Instruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseAddSubtractImmediateInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parse_Op0_xx10(uint32_t op2, Instruction* instruction, uint32_t dw);
+
+    bool
+    parseLoadStore_UnsignedImmediate(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseDataProcessing3Source(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseDataProcessing2Source(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseBitfieldInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parsePcRelAddressingInstruction(Instruction* instruction, uint32_t dw);
+
+    bool
+    parseReservedInstruction(Instruction* instruction, uint32_t dw);
 };
 
 

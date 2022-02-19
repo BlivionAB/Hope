@@ -71,6 +71,19 @@ namespace elet::domain::compiler::test::aarch
     };
 
 
+    struct AddSubImmediateInstruction : Instruction
+    {
+        Register
+        rd;
+
+        Register
+        rn;
+
+        uint16_t
+        imm12;
+    };
+
+
     struct DataProcessImmediateInstruction : Instruction
     {
         Register
