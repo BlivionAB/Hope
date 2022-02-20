@@ -7,8 +7,8 @@
 #include <Domain/Compiler/Instruction/ObjectFileWriter/MachoFileWriter.h>
 #include "Domain/Compiler/TestHarness/X86/X86AssemblyParser.h"
 #include "Domain/Compiler/TestHarness/X86/X86AssemblyPrinter.h"
-#include "Domain/Compiler/TestHarness/Aarch/Aarch64AssemblyParser.h"
-#include "Domain/Compiler/TestHarness/Aarch/Aarch64AssemblyPrinter.h"
+#include "Domain/Compiler/TestHarness/Aarch/Aarch64Parser.h"
+#include "Domain/Compiler/TestHarness/Aarch/Aarch64Printer.h"
 #include "./BaselinePrinter.h"
 #include "./ObjectFileBaselineParser.h"
 
@@ -53,7 +53,7 @@ namespace elet::domain::compiler::test
         void
         parseSegment64();
 
-        Aarch64AssemblyPrinter*
+        Aarch64Printer*
         _aarch64BaselinePrinter;
 
         x86::X86AssemblyPrinter*
