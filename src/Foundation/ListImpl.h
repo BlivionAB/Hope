@@ -71,7 +71,7 @@ namespace elet::foundation
             _items = reinterpret_cast<T*>(realloc(_items, _capacity * sizeOfType));
             _cursor = _items + oldSize;
         }
-        auto obj = new (_cursor) T(args...);
+        T* obj = new (_cursor) T(args...);
         _cursor++;
         return obj;
     }
@@ -458,7 +458,7 @@ namespace elet::foundation
     void
     List<T>::setCursor(T* cursor)
     {
-        assert(_items >= _cursor && cursor <= _cursor && "Cursor must be in range of the current items.");
+        assert(_items <= cursor && cursor <= _cursor && "Cursor must be in range of the current items.");
         _cursor = cursor;
     }
 

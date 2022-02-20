@@ -30,15 +30,11 @@ namespace elet::domain::compiler::test::aarch
     };
 
 
-    typedef int8_t imm7;
-    typedef int16_t imm12;
-    typedef Register Rn;
-    typedef Register Rt;
-    typedef Register Rt2;
-
-
-    typedef std::variant<std::monostate, imm7, imm12, Rn, Rt, Rt2> Operand;
-
+    // TODO: Used for new rewrite.
+    enum class InstructionKind
+    {
+        Udf,
+    };
 
     struct Instruction
     {
@@ -52,7 +48,13 @@ namespace elet::domain::compiler::test::aarch
         bytes;
 
         Instruction(Aarch64Instruction kind):
-            kind(kind)
+            kind(kind),
+            is64Bit(false)
+        { }
+
+        Instruction(Aarch64Instruction kind, bool is64Bit):
+            kind(kind),
+            is64Bit(is64Bit)
         { }
     };
 
@@ -62,6 +64,11 @@ namespace elet::domain::compiler::test::aarch
     {
         int16_t
         imm16;
+
+        UdfInstruction(int16_t imm16):
+            Instruction(Aarch64Instruction::Udf),
+            imm16(imm16)
+        { }
     };
 
 
@@ -74,13 +81,20 @@ namespace elet::domain::compiler::test::aarch
     struct AddSubImmediateInstruction : Instruction
     {
         Register
-        rd;
+        Rd;
 
         Register
-        rn;
+        Rn;
 
         uint16_t
         imm12;
+
+        AddSubImmediateInstruction(Aarch64Instruction kind, Register Rd, Register Rn, uint16_t imm12, bool is64Bit):
+            Instruction(kind, is64Bit),
+            Rd(Rd),
+            Rn(Rn),
+            imm12(imm12)
+        { }
     };
 
 
@@ -117,12 +131,14 @@ namespace elet::domain::compiler::test::aarch
         uint16_t
         imm12;
 
-        LdrStrImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12):
-            Instruction(kind),
+        LdrStrImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12, bool is64Bit):
+            Instruction(kind, is64Bit),
             Rt(Rt),
             Rn(Rn),
             imm12(imm12)
-        { }
+        {
+
+        }
     };
 
 
@@ -140,27 +156,27 @@ namespace elet::domain::compiler::test::aarch
     struct LdrbStrbImmediateUnsignedOffsetInstruction : LdrStrImmediateUnsignedOffsetInstruction
     {
         LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12):
-            LdrStrImmediateUnsignedOffsetInstruction(kind, Rt, Rn, imm12)
-        { }
+            LdrStrImmediateUnsignedOffsetInstruction(kind, Rt, Rn, imm12, false)
+        {
 
-        LdrbStrbImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
-            LdrStrImmediateUnsignedOffsetInstruction(Aarch64Instruction::StrbImmediateUnsignedOffset, Rt, Rn, imm12)
-        { }
+        }
     };
 
 
     struct LdrhStrhImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
     {
-        LdrhStrhImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
-            LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::StrbImmediateUnsignedOffset, Rt, Rn, imm12)
-        { }
+        LdrhStrhImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12):
+            LdrbStrbImmediateUnsignedOffsetInstruction(kind, Rt, Rn, imm12)
+        {
+
+        }
     };
 
 
     struct LdrsbImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
     {
         LdrsbImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
-           LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::LdrsbImmediateUnsignedOffset, Rt, Rn, imm12)
+            LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::LdrsbImmediateUnsignedOffset, Rt, Rn, imm12)
         { }
     };
 
@@ -176,10 +192,16 @@ namespace elet::domain::compiler::test::aarch
     struct LdrInstruction : Instruction
     {
         Register
-        rt;
+        Rt;
 
         int32_t
         imm19;
+
+        LdrInstruction(Register Rt, int32_t imm19, bool is64Bit):
+            Instruction(Aarch64Instruction::Ldr32, is64Bit),
+            Rt(Rt),
+            imm19(imm19)
+        { }
     };
 
 
@@ -202,20 +224,35 @@ namespace elet::domain::compiler::test::aarch
     struct LoadStorePairInstruction : Instruction
     {
         Register
-        rt;
+        Rt;
 
         Register
-        rt2;
+        Rt2;
 
         Register
-        rn;
+        Rn;
 
         int8_t
         imm7;
 
         AddressMode
         addressMode;
+
+        LoadStorePairInstruction(Aarch64Instruction kind, Register Rt, Register Rt2, Register Rn, int8_t imm7, AddressMode addressMode, bool is64Bit):
+            Instruction(kind, is64Bit),
+            Rt(Rt),
+            Rt2(Rt2),
+            Rn(Rn),
+            imm7(imm7),
+            addressMode(addressMode)
+        {
+            assert(kind == Aarch64Instruction::StpOffset64 ||
+                kind == Aarch64Instruction::LdpOffset64 ||
+                kind == Aarch64Instruction::LdpPostIndex64 ||
+                kind == Aarch64Instruction::StpPreIndex64 && "Unknown kind");
+        }
     };
+
 
     struct AndImmediateInstruction : Instruction
     {
@@ -227,6 +264,13 @@ namespace elet::domain::compiler::test::aarch
 
         Register
         Rd;
+
+        AndImmediateInstruction(uint64_t value, Register Rn, Register Rd, bool is64Bit):
+            Instruction(Aarch64Instruction::AndImmediate, is64Bit),
+            value(value),
+            Rn(Rn),
+            Rd(Rd)
+        { }
     };
 
 
@@ -234,18 +278,35 @@ namespace elet::domain::compiler::test::aarch
     {
         int32_t
         imm26;
+
+        BInstruction(int32_t imm26):
+            Instruction(Aarch64Instruction::B),
+            imm26(imm26)
+        { }
     };
 
 
     struct BrInstruction : Instruction
     {
         Register
-        rn;
+        Rn;
+
+        BrInstruction(Register Rn):
+            Instruction(Aarch64Instruction::Br),
+            Rn(Rn)
+        { }
     };
 
-    struct RetInstruction : BrInstruction
+    struct RetInstruction : Instruction
     {
 
+        Register
+        Rn;
+
+        RetInstruction(Register Rn):
+            Instruction(Aarch64Instruction::Ret),
+            Rn(Rn)
+        { }
     };
 
 
@@ -268,18 +329,19 @@ namespace elet::domain::compiler::test::aarch
     struct OrrImmediateInstruction : Instruction
     {
         Register
-        rd;
+        Rd;
 
         Register
-        rn;
+        Rn;
 
         uint64_t
-        immediateValue;
+        value;
 
-        OrrImmediateInstruction(Register rd, uint64_t value):
-            Instruction(Aarch64Instruction::OrrImmediate),
-            rd(rd),
-            immediateValue(value)
+        OrrImmediateInstruction(Register Rd, Register Rn, uint64_t value, bool is64Bit):
+            Instruction(Aarch64Instruction::OrrImmediate, is64Bit),
+            Rd(Rd),
+            Rn(Rn),
+            value(value)
         { }
     };
 
@@ -296,7 +358,7 @@ namespace elet::domain::compiler::test::aarch
     struct MovInstruction : Instruction
     {
         Register
-        rd;
+        Rd;
 
         uint16_t
         imm16;
@@ -304,9 +366,9 @@ namespace elet::domain::compiler::test::aarch
         Hw
         hw;
 
-        MovInstruction(Aarch64Instruction kind, Register rd, uint16_t imm16, Hw hw):
-            Instruction(kind),
-            rd(rd),
+        MovInstruction(Aarch64Instruction kind, Register rd, uint16_t imm16, Hw hw, bool is64Bit):
+            Instruction(kind, is64Bit),
+            Rd(rd),
             imm16(imm16),
             hw(hw)
         { }
@@ -318,9 +380,11 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         immediateValue;
 
-        MovzInstruction(Register rd, uint16_t imm16, Hw hw):
-            MovInstruction(Aarch64Instruction::Movz, rd, imm16, hw)
-        { }
+        MovzInstruction(Register Rd, uint16_t imm16, Hw hw, bool is64Bit):
+            MovInstruction(Aarch64Instruction::Movz, Rd, imm16, hw, is64Bit)
+        {
+            immediateValue = static_cast<uint64_t>(imm16) << (static_cast<uint64_t>(hw) * 16);
+        }
     };
 
 
@@ -330,9 +394,24 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         immediateValue;
 
-        MovnInstruction(Register rd, uint16_t imm16, Hw hw):
-            MovInstruction(Aarch64Instruction::Movn, rd, imm16, hw)
-        { }
+        MovnInstruction(Register rd, uint16_t imm16, Hw hw, bool is64Bit):
+            MovInstruction(Aarch64Instruction::Movn, rd, imm16, hw, is64Bit)
+        {
+            uint16_t s = ~imm16;
+            int64_t rimm16 = static_cast<int64_t>(s);
+            uint64_t lsh = static_cast<uint64_t>(hw) * 16;
+            uint64_t result = (rimm16 << lsh);
+            if (rimm16 >= 0)
+            {
+                // For some reason when lsh + 16 == 64. The left shift yields -1 instead of 0. Let's guard against that.
+                if (lsh != 48)
+                {
+                    result |= -1i64 << (lsh + 16);
+                }
+                result |= (1ui64 << lsh) - 1ui64;
+            }
+            immediateValue = result;
+        }
     };
 
 
@@ -343,9 +422,12 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         immediateValue;
 
-        MovkInstruction(Register rd, uint16_t imm16, Hw hw):
-            MovInstruction(Aarch64Instruction::Movk, rd, imm16, hw)
-        { }
+        MovkInstruction(Register Rd, uint16_t imm16, Hw hw, bool is64Bit):
+            MovInstruction(Aarch64Instruction::Movk, Rd, imm16, hw, is64Bit),
+            immediateValue(imm16)
+        {
+
+        }
     };
 
 
@@ -516,46 +598,174 @@ namespace elet::domain::compiler::test::aarch
     struct SxtbSxtbhInstruction : Instruction
     {
         Register
-        Rn;
-
-        Register
         Rd;
 
-        SxtbSxtbhInstruction(Aarch64Instruction kind, Register Rn, Register Rd):
+        Register
+        Rn;
+
+        SxtbSxtbhInstruction(Aarch64Instruction kind, Register Rd, Register Rn):
             Instruction(kind),
-            Rn(Rn),
-            Rd(Rd)
+            Rd(Rd),
+            Rn(Rn)
         { }
     };
 
 
     struct SxtbInstruction : SxtbSxtbhInstruction
     {
-        SxtbInstruction(Register Rn, Register Rd):
-            SxtbSxtbhInstruction(Aarch64Instruction::Sxtb, Rn, Rd)
+        SxtbInstruction(Register Rd, Register Rn):
+            SxtbSxtbhInstruction(Aarch64Instruction::Sxtb, Rd, Rn)
         { }
     };
 
 
     struct SxthInstruction : SxtbSxtbhInstruction
     {
-        SxthInstruction(Register Rn, Register Rd):
-            SxtbSxtbhInstruction(Aarch64Instruction::Sxtb, Rn, Rd)
+        SxthInstruction(Register Rd, Register Rn):
+            SxtbSxtbhInstruction(Aarch64Instruction::Sxth, Rd, Rn)
         { }
     };
 
 
     union OneOfInstruction
     {
-        DataProcessImmediateInstruction dp;
-        LoadStoreInstruction ldstpr;
-        LoadStorePairInstruction lst;
-        BrInstruction brexcpsysc;
-        BlInstruction unbrimm;
-        MovInstruction mov;
-        OrrImmediateInstruction orr;
-        MovnInstruction movn;
         AddShiftedRegisterInstruction add_shiftedRegister;
+        AddSubImmediateInstruction addSubImmediate;
+        AdrInstruction adr;
+        AdrpInstruction adrp;
+        AndImmediateInstruction _and;
+        BInstruction b;
+        BrInstruction br;
+        BlInstruction bl;
+        DataProcessImmediateInstruction dp;
+        LdrInstruction ldr;
+        LdrStrImmediateUnsignedOffsetInstruction ldrstr;
+        LdrbStrbImmediateUnsignedOffsetInstruction ldrbstrb;
+        LdrhStrhImmediateUnsignedOffsetInstruction ldrhstrh;
+        LdrsbImmediateUnsignedOffsetInstruction ldrsb;
+        LdrshImmediateUnsignedOffsetInstruction ldrsh;
+        LoadStoreInstruction ldstpr;
+        LoadStorePairInstruction ldrpstrp;
+        MovInstruction mov;
+        MovkInstruction movk;
+        MovnInstruction movn;
+        MovzInstruction movz;
+        OrrImmediateInstruction orr;
+        RetInstruction ret;
+        SxtbInstruction sxtb;
+        SxthInstruction sxth;
+        UdfInstruction udf;
+
+        OneOfInstruction(AddSubImmediateInstruction addSubImmediate)
+        {
+            this->addSubImmediate = addSubImmediate;
+        }
+
+        OneOfInstruction(AdrInstruction adr)
+        {
+            this->adr = adr;
+        }
+
+        OneOfInstruction(AdrpInstruction adrp)
+        {
+            this->adrp = adrp;
+        }
+
+        OneOfInstruction(AndImmediateInstruction _and)
+        {
+            this->_and = _and;
+        }
+
+        OneOfInstruction(BInstruction b)
+        {
+            this->b = b;
+        }
+
+        OneOfInstruction(BlInstruction bl)
+        {
+            this->bl = bl;
+        }
+
+        OneOfInstruction(BrInstruction br)
+        {
+            this->br = br;
+        }
+
+        OneOfInstruction(LdrInstruction ldr)
+        {
+            this->ldr = ldr;
+        }
+
+        OneOfInstruction(LdrStrImmediateUnsignedOffsetInstruction ldrstr)
+        {
+            this->ldrstr = ldrstr;
+        }
+
+        OneOfInstruction(LdrbStrbImmediateUnsignedOffsetInstruction ldrbstrb)
+        {
+            this->ldrbstrb = ldrbstrb;
+        }
+
+        OneOfInstruction(LdrhStrhImmediateUnsignedOffsetInstruction ldrhstrh)
+        {
+            this->ldrhstrh = ldrhstrh;
+        }
+
+        OneOfInstruction(LoadStorePairInstruction ldrpstrp)
+        {
+            this->ldrpstrp = ldrpstrp;
+        }
+
+        OneOfInstruction(LdrshImmediateUnsignedOffsetInstruction ldrsh)
+        {
+            this->ldrsh = ldrsh;
+        }
+
+        OneOfInstruction(LdrsbImmediateUnsignedOffsetInstruction ldrsb)
+        {
+            this->ldrsb = ldrsb;
+        }
+
+        OneOfInstruction(MovkInstruction movk)
+        {
+            this->movk = movk;
+        }
+
+        OneOfInstruction(MovnInstruction movn)
+        {
+            this->movn = movn;
+        }
+
+        OneOfInstruction(MovzInstruction movz)
+        {
+            this->movz = movz;
+        }
+
+        OneOfInstruction(OrrImmediateInstruction orr)
+        {
+            this->orr = orr;
+        }
+
+        OneOfInstruction(RetInstruction ret)
+        {
+            this->ret = ret;
+        }
+
+        OneOfInstruction(SxtbInstruction sxtb)
+        {
+            this->sxtb = sxtb;
+        }
+
+        OneOfInstruction(SxthInstruction sxth)
+        {
+            this->sxth = sxth;
+        }
+
+        OneOfInstruction(UdfInstruction udf)
+        {
+            this->udf = udf;
+        }
+
 
         OneOfInstruction()
         {

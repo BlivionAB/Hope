@@ -145,7 +145,7 @@ namespace elet::domain::compiler::test::aarch
         {
             _tw.write("movz ");
         }
-        writeGeneralPurposeRegister(instruction->rd, instruction);
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", #");
         _tw.writeSignedHexValue(instruction->immediateValue);
     }
@@ -287,12 +287,12 @@ namespace elet::domain::compiler::test::aarch
             default:
                 throw std::runtime_error("Unknown load store instruction.");
         }
-        writeGeneralPurposeRegister(instruction->rt, instruction);
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
         _tw.write(", ");
-        writeGeneralPurposeRegister(instruction->rt2, instruction);
+        writeGeneralPurposeRegister(instruction->Rt2, instruction);
         _tw.write(", ");
         _tw.write("[");
-        writeGeneralPurposeRegister(instruction->rn, instruction);
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
         writeIndexedAddressSuffix(instruction->addressMode, instruction->imm7);
     }
 
@@ -386,7 +386,7 @@ namespace elet::domain::compiler::test::aarch
         if (instruction->kind == Aarch64Instruction::Ret)
         {
             _tw.write("ret ");
-            writeGeneralPurposeRegister(instruction->rn, instruction);
+            writeGeneralPurposeRegister(instruction->Rn, instruction);
         }
     }
 
@@ -448,7 +448,7 @@ namespace elet::domain::compiler::test::aarch
     Aarch64Printer::writeLdr(const LdrInstruction* instruction)
     {
         _tw.write("ldr ");
-        writeGeneralPurposeRegister(instruction->rt, instruction);
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
         _tw.write(", ");
         _tw.writeSignedImmediateValue(instruction->imm19);
     }
@@ -490,18 +490,18 @@ namespace elet::domain::compiler::test::aarch
     Aarch64Printer::writeBr(const BrInstruction* instruction)
     {
         _tw.write("br ");
-        writeGeneralPurposeRegister(instruction->rn, instruction);
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
     }
 
     void
     Aarch64Printer::writeOrrImmediate(const OrrImmediateInstruction* instruction)
     {
-        if (instruction->rn == Aarch64Register::r31)
+        if (instruction->Rn == Aarch64Register::r31)
         {
             _tw.write("mov ");
-            writeGeneralPurposeRegister(instruction->rd, instruction);
+            writeGeneralPurposeRegister(instruction->Rd, instruction);
             _tw.write(", ");
-            _tw.writeSignedImmediateValue(instruction->immediateValue);
+            _tw.writeSignedImmediateValue(instruction->value);
         }
         else
         {
@@ -514,7 +514,7 @@ namespace elet::domain::compiler::test::aarch
     Aarch64Printer::writeMovn(const MovnInstruction* instruction)
     {
         _tw.write("movn ");
-        writeGeneralPurposeRegister(instruction->rd, instruction);
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
         _tw.writeUnsignedHexValue(instruction->immediateValue);
     }
@@ -524,7 +524,7 @@ namespace elet::domain::compiler::test::aarch
     Aarch64Printer::writeMovk(const MovkInstruction* instruction)
     {
         _tw.write("movk ");
-        writeGeneralPurposeRegister(instruction->rd, instruction);
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
         _tw.writeSignedImmediateValue(instruction->immediateValue);
         writeHw(instruction);

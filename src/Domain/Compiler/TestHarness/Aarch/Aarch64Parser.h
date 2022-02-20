@@ -4,6 +4,7 @@
 
 #include "Domain/Compiler/TestHarness/AssemblyParser.h"
 #include "Aarch64Instructions.h"
+#include <array>
 
 namespace elet::domain::compiler::test::aarch
 {
@@ -30,6 +31,9 @@ namespace elet::domain::compiler::test::aarch
 
     private:
 
+        std::array<uint8_t, 4>
+        _currentDw;
+
         Register
         Rn(uint32_t dw);
 
@@ -55,7 +59,7 @@ namespace elet::domain::compiler::test::aarch
         imm12(uint32_t dw);
 
         uint16_t
-        uimm16(uint32_t dw);
+        imm16(uint32_t dw);
 
         int32_t
         imm26(uint32_t dw);
@@ -69,7 +73,7 @@ namespace elet::domain::compiler::test::aarch
         bool
         S(uint32_t dw);
 
-        uint32_t
+        Hw
         hw(uint32_t dw);
 
         uint32_t
@@ -78,47 +82,51 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         getLeftShiftFromHv(uint32_t dw);
 
-        void
-        parseMovzInstruction(MovzInstruction* instruction, uint32_t dw);
+        template<typename T>
+        T*
+        emplaceInstruction(T instruction, List<OneOfInstruction>& instructions);
 
         void
-        parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind);
+        parseMovzInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseBInstruction(Instruction* instruction, uint32_t dw);
+        parseLoadStorePairInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
 
         void
-        parseBlInstruction(Instruction* instruction, uint32_t dw);
+        parseBInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseRetInstruction(Instruction* instruction, uint32_t dw);
+        parseBlInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseAdrInstruction(Instruction* instruction, uint32_t dw);
+        parseRetInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseAdrpInstruction(Instruction* instruction, uint32_t dw);
+        parseAdrInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseAddSubtractImmediateInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind);
+        parseAdrpInstruction(List<OneOfInstruction>& instruction, uint32_t dw);
 
         void
-        parseUdfInstruction(Instruction* instruction, uint32_t dw);
+        parseAddSubtractImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
 
         void
-        parseBrInstruction(Instruction* instruction, uint32_t dw);
+        parseUdfInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseOrrInstruction(OrrImmediateInstruction* instruction, uint32_t dw);
+        parseBrInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
+
+        void
+        parseOrrInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         uint64_t
         decodeBitmaskImmediate(uint32_t dw, RegistrySize registrySize);
 
         void
-        parseMovnInstruction(MovnInstruction* movInstruction, uint32_t dw);
+        parseMovnInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseMovkInstruction(MovkInstruction* movk, uint32_t dw);
+        parseMovkInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         uint8_t
         imm6(uint32_t dw);
@@ -127,19 +135,19 @@ namespace elet::domain::compiler::test::aarch
         shift(uint32_t dw);
 
         void
-        parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22);
+        parseLdrStrImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
 
         void
-        parseLdrbStrbImmediateUnsignedOffsetInstruction(LdrbStrbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
+        parseLdrbStrbImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
 
         void
-        parseLdrsbImmediateUnsignedOffsetInstruction(LdrsbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw);
+        parseLdrsbImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseLdrhStrhImmediateUnsignedOffsetInstruction(LdrhStrhImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
+        parseLdrhStrhImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
 
         void
-        parseLdrshImmediateUnsignedOffsetInstruction(LdrshImmediateUnsignedOffsetInstruction* instruction, uint32_t dw);
+        parseLdrshImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
 
         void
         parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw);
@@ -154,34 +162,34 @@ namespace elet::domain::compiler::test::aarch
         parseDivInstruction(DivInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
 
         void
-        parseAndImmediateInstruction(AndImmediateInstruction* instruction, uint32_t dw);
+        parseAndImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseSxtbInstruction(SxtbInstruction* instruction, uint32_t dw);
+        parseSxtbInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseSxthInstruction(SxthInstruction* instruction, uint32_t dw);
+        parseSxthInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseDataProcessingImmediateInstruction(Instruction* instruction, uint32_t dw);
+        parseDataProcessingImmediateInstruction(List<OneOfInstruction>& instructions, Instruction* instruction, uint32_t dw);
 
         bool
-        parseBranchingExceptionSystemInstruction(Instruction* instruction, uint32_t dw);
+        parseBranchingExceptionSystemInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseUnconditionalBranchRegister(Instruction* instruction, uint32_t dw);
+        parseUnconditionalBranchRegister(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseUnconditionalBranchOpcOp2Grp0(Instruction* instruction, uint32_t dw, uint32_t op3, uint32_t op4);
+        parseUnconditionalBranchOpcOp2Grp0(List<OneOfInstruction>& instructions, uint32_t dw, uint32_t op3, uint32_t op4);
 
         bool
-        parseUnconditionalBranchImmediate(Instruction* instruction, uint32_t dw);
+        parseUnconditionalBranchImmediate(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseLdrLiteralInstruction(Instruction* instruction, uint32_t dw);
+        parseLdrLiteralInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseLoadAndStoreInstruction(Instruction* instruction, uint32_t dw);
+        parseLoadAndStoreInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
         parseDataProcessingRegisterInstruction(Instruction* instruction, uint32_t dw);
@@ -190,28 +198,28 @@ namespace elet::domain::compiler::test::aarch
         parseAddSubtractShiftedRegister(Instruction* instruction, uint32_t dw);
 
         bool
-        parseLogicalImmediateInstruction(Instruction* instruction, uint32_t dw);
+        parseLogicalImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseMoveWideImmediateInstruction(Instruction* instruction, uint32_t dw);
+        parseMoveWideImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseLoadStorePair_PreIndexed_Instruction(Instruction* instruction, uint32_t dw);
+        parseLoadStorePair_PreIndexed_Instruction(List<OneOfInstruction>& instruction, uint32_t dw);
 
         bool
-        parseLoadStorePair_Offset_Instruction(Instruction* instruction, uint32_t dw);
+        parseLoadStorePair_Offset_Instruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseLoadStorePair_PostIndexed_Instruction(Instruction* instruction, uint32_t dw);
+        parseLoadStorePair_PostIndexed_Instruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseAddSubtractImmediateInstruction(Instruction* instruction, uint32_t dw);
+        parseAddSubtractImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parse_Op0_xx10(uint32_t op2, Instruction* instruction, uint32_t dw);
+        parse_Op0_xx10(uint32_t op2, List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseLoadStore_UnsignedImmediate(Instruction* instruction, uint32_t dw);
+        parseLoadStore_UnsignedImmediate(List <OneOfInstruction>& instructions, uint32_t dw);
 
         bool
         parseDataProcessing3Source(Instruction* instruction, uint32_t dw);
@@ -220,13 +228,16 @@ namespace elet::domain::compiler::test::aarch
         parseDataProcessing2Source(Instruction* instruction, uint32_t dw);
 
         bool
-        parseBitfieldInstruction(Instruction* instruction, uint32_t dw);
+        parseBitfieldInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parsePcRelAddressingInstruction(Instruction* instruction, uint32_t dw);
+        parsePcRelAddressingInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseReservedInstruction(Instruction* instruction, uint32_t dw);
+        parseReservedInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
+
+        void
+        resetToLastInstructionCursor(List<OneOfInstruction>& instructions) const;
     };
 }
 
