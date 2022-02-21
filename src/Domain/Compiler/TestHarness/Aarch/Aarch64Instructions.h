@@ -74,7 +74,9 @@ namespace elet::domain::compiler::test::aarch
 
     struct NopInstruction : Instruction
     {
-
+        NopInstruction():
+            Instruction(Aarch64Instruction::Nop)
+        { }
     };
 
 
@@ -478,8 +480,8 @@ namespace elet::domain::compiler::test::aarch
         uint8_t
         imm6;
 
-        ShiftedRegisterInstruction(Aarch64Instruction instruction, Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
-            Instruction(instruction),
+        ShiftedRegisterInstruction(Aarch64Instruction instruction, Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit):
+            Instruction(instruction, is64Bit),
             Rd(Rd),
             Rn(Rn),
             Rm(Rm),
@@ -493,16 +495,16 @@ namespace elet::domain::compiler::test::aarch
 
     struct AddShiftedRegisterInstruction : ShiftedRegisterInstruction
     {
-        AddShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
-            ShiftedRegisterInstruction(Aarch64Instruction::AddShiftedRegister, Rd, Rn, Rm, shift, imm6)
+        AddShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit):
+            ShiftedRegisterInstruction(Aarch64Instruction::AddShiftedRegister, Rd, Rn, Rm, shift, imm6, is64Bit)
         { }
     };
 
 
     struct SubShiftedRegisterInstruction : ShiftedRegisterInstruction
     {
-        SubShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6):
-            ShiftedRegisterInstruction(Aarch64Instruction::SubShiftedRegister, Rd, Rn, Rm, shift, imm6)
+        SubShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit):
+            ShiftedRegisterInstruction(Aarch64Instruction::SubShiftedRegister, Rd, Rn, Rm, shift, imm6, is64Bit)
         { }
     };
 
@@ -521,32 +523,12 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        MaddSubInstruction(Aarch64Instruction kind, Register Rm, Register Ra, Register Rn, Register Rd):
-            Instruction(kind),
+        MaddSubInstruction(Aarch64Instruction kind, Register Rm, Register Ra, Register Rn, Register Rd, bool is64Bit):
+            Instruction(kind, is64Bit),
             Rm(Rm),
             Ra(Ra),
             Rn(Rn),
             Rd(Rd)
-        {
-
-        }
-    };
-
-
-    struct MaddInstruction : MaddSubInstruction
-    {
-        MaddInstruction(Register Rm, Register Ra, Register Rn, Register Rd):
-            MaddSubInstruction(Aarch64Instruction::Madd, Rm, Ra, Rn, Rd)
-        {
-
-        }
-    };
-
-
-    struct MsubInstruction : MaddSubInstruction
-    {
-        MsubInstruction(Register Rm, Register Ra, Register Rn, Register Rd):
-            MaddSubInstruction(Aarch64Instruction::Msub, Rm, Ra, Rn, Rd)
         {
 
         }
@@ -564,31 +546,11 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        DivInstruction(Aarch64Instruction kind, Register Rm, Register Rn, Register Rd):
-            Instruction(kind),
+        DivInstruction(Aarch64Instruction kind, Register Rm, Register Rn, Register Rd, bool is64Bit):
+            Instruction(kind, is64Bit),
             Rm(Rm),
             Rn(Rn),
             Rd(Rd)
-        {
-
-        }
-    };
-
-
-    struct SdivInstruction : DivInstruction
-    {
-        SdivInstruction(Register Rm, Register Rn, Register Rd):
-            DivInstruction(Aarch64Instruction::Sdiv, Rm, Rn, Rd)
-        {
-
-        }
-    };
-
-
-    struct UdivInstruction : DivInstruction
-    {
-        UdivInstruction(Register Rm, Register Rn, Register Rd):
-            DivInstruction(Aarch64Instruction::Udiv, Rm, Rn, Rd)
         {
 
         }
@@ -629,7 +591,7 @@ namespace elet::domain::compiler::test::aarch
 
     union OneOfInstruction
     {
-        AddShiftedRegisterInstruction add_shiftedRegister;
+        AddShiftedRegisterInstruction add;
         AddSubImmediateInstruction addSubImmediate;
         AdrInstruction adr;
         AdrpInstruction adrp;
@@ -637,7 +599,7 @@ namespace elet::domain::compiler::test::aarch
         BInstruction b;
         BrInstruction br;
         BlInstruction bl;
-        DataProcessImmediateInstruction dp;
+        DivInstruction div;
         LdrInstruction ldr;
         LdrStrImmediateUnsignedOffsetInstruction ldrstr;
         LdrbStrbImmediateUnsignedOffsetInstruction ldrbstrb;
@@ -646,18 +608,27 @@ namespace elet::domain::compiler::test::aarch
         LdrshImmediateUnsignedOffsetInstruction ldrsh;
         LoadStoreInstruction ldstpr;
         LoadStorePairInstruction ldrpstrp;
+        MaddSubInstruction maddsub;
         MovInstruction mov;
         MovkInstruction movk;
         MovnInstruction movn;
         MovzInstruction movz;
+        NopInstruction nop;
         OrrImmediateInstruction orr;
         RetInstruction ret;
+        SubShiftedRegisterInstruction sub;
         SxtbInstruction sxtb;
         SxthInstruction sxth;
         UdfInstruction udf;
 
+        OneOfInstruction(AddShiftedRegisterInstruction add)
+        {
+            this->add = add;
+        }
+
         OneOfInstruction(AddSubImmediateInstruction addSubImmediate)
         {
+            auto s = sizeof(AddSubImmediateInstruction);
             this->addSubImmediate = addSubImmediate;
         }
 
@@ -685,6 +656,12 @@ namespace elet::domain::compiler::test::aarch
         {
             this->bl = bl;
         }
+
+        OneOfInstruction(DivInstruction div)
+        {
+            this->div = div;
+        }
+
 
         OneOfInstruction(BrInstruction br)
         {
@@ -726,6 +703,11 @@ namespace elet::domain::compiler::test::aarch
             this->ldrsb = ldrsb;
         }
 
+        OneOfInstruction(MaddSubInstruction maddsub)
+        {
+            this->maddsub = maddsub;
+        }
+
         OneOfInstruction(MovkInstruction movk)
         {
             this->movk = movk;
@@ -741,6 +723,11 @@ namespace elet::domain::compiler::test::aarch
             this->movz = movz;
         }
 
+        OneOfInstruction(NopInstruction nop)
+        {
+            this->nop = nop;
+        }
+
         OneOfInstruction(OrrImmediateInstruction orr)
         {
             this->orr = orr;
@@ -749,6 +736,11 @@ namespace elet::domain::compiler::test::aarch
         OneOfInstruction(RetInstruction ret)
         {
             this->ret = ret;
+        }
+
+        OneOfInstruction(SubShiftedRegisterInstruction sub)
+        {
+            this->sub = sub;
         }
 
         OneOfInstruction(SxtbInstruction sxtb)

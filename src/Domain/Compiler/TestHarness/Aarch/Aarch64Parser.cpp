@@ -31,7 +31,7 @@ namespace elet::domain::compiler::test::aarch
                     break;
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Immediate_0):
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Immediate_1):
-                    if (parseDataProcessingImmediateInstruction(instructions, instruction, dw))
+                    if (parseDataProcessingImmediateInstruction(instructions, dw))
                     {
                         continue;
                     }
@@ -54,7 +54,7 @@ namespace elet::domain::compiler::test::aarch
                     break;
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Register_0):
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Register_1):
-                    if (parseDataProcessingRegisterInstruction(instruction, dw))
+                    if (parseDataProcessingRegisterInstruction(instructions, dw))
                     {
                         continue;
                     }
@@ -62,8 +62,8 @@ namespace elet::domain::compiler::test::aarch
             }
             if (dw == Aarch64Instruction::Nop)
             {
-                NopInstruction* instr = reinterpret_cast<NopInstruction*>(instruction);
-                instr->kind = Aarch64Instruction::Nop;
+                resetToLastInstructionCursor(instructions);
+                emplaceInstruction(NopInstruction(), instructions);
                 continue;
             }
             throw std::runtime_error("Could not find instruction when parsing.");
@@ -186,7 +186,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64Parser::parseLdrhStrhImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseLdrhStrhImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
         assert(kind == Aarch64Instruction::LdrhImmediateUnsignedOffset ||
             kind == Aarch64Instruction::StrhImmediateUnsignedOffset && "Unsupported kind");
@@ -355,40 +355,27 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64Parser::parseSubShiftedRegister(SubShiftedRegisterInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseSubShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::SubShiftedRegister;
-        instruction->is64Bit = sf(dw);
-        instruction->Rd = Rd(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rm = Rm(dw);
-        instruction->shift = shift(dw);
-        instruction->imm6 = imm6(dw);
+        resetToLastInstructionCursor(instructions);
+        emplaceInstruction(SubShiftedRegisterInstruction(Rd(dw), Rn(dw), Rm(dw), shift(dw), imm6(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64Parser::parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAddShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::AddShiftedRegister;
-        instruction->is64Bit = sf(dw);
-        instruction->Rd = Rd(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rm = Rm(dw);
-        instruction->shift = shift(dw);
-        instruction->imm6 = imm6(dw);
+        resetToLastInstructionCursor(instructions);
+        emplaceInstruction(AddShiftedRegisterInstruction(Rd(dw), Rn(dw), Rm(dw), shift(dw), imm6(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64Parser::parseMaddSubInstruction(MaddSubInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseMaddSubInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        instruction->kind = kind;
-        instruction->is64Bit = sf(dw);
-        instruction->Rm = Rm(dw);
-        instruction->Ra = Ra(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rd = Rd(dw);
+        assert(kind == Aarch64Instruction::Madd || kind == Aarch64Instruction::Msub && "Unsupported kind");
+        resetToLastInstructionCursor(instructions);
+        emplaceInstruction(MaddSubInstruction(kind, Rm(dw), Ra(dw), Rn(dw), Rd(dw), sf(dw)), instructions);
     }
 
 
@@ -427,18 +414,15 @@ namespace elet::domain::compiler::test::aarch
         result |= (dw & MASK(12, 5)) >> 3;
         result |= (dw & (0b11 << 29)) >> 29;
         return result;
-
     }
 
 
     void
-    Aarch64Parser::parseDivInstruction(DivInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseDivInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        instruction->kind = kind;
-        instruction->is64Bit = sf(dw);
-        instruction->Rm = Rm(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rd = Rd(dw);
+        assert(kind == Aarch64Instruction::Sdiv || kind == Aarch64Instruction::Udiv && "Unsupported kind");
+        resetToLastInstructionCursor(instructions);
+        emplaceInstruction(DivInstruction(kind, Rm(dw), Rn(dw), Rd(dw), sf(dw)), instructions);
     }
 
 
@@ -534,7 +518,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64Parser::parseDataProcessingImmediateInstruction(List<OneOfInstruction>& instructions, Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessingImmediateInstruction(List <OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = DataProcessingImmediateEncoding::Op0_Mask & dw;
         switch (op0)
@@ -743,7 +727,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64Parser::parseDataProcessingRegisterInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessingRegisterInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = DataProcessingRegisterInstruction::Op0_Mask & dw;
         uint32_t op1 = DataProcessingRegisterInstruction::Op1_Mask & dw;
@@ -757,7 +741,7 @@ namespace elet::domain::compiler::test::aarch
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_1):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_2):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_3):
-                    if (parseAddSubtractShiftedRegister(instruction, dw))
+                    if (parseAddSubtractShiftedRegister(instructions, dw))
                     {
                         return true;
                     }
@@ -776,7 +760,7 @@ namespace elet::domain::compiler::test::aarch
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xxx_5):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xxx_6):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xxx_7):
-                    if (parseDataProcessing3Source(instruction, dw))
+                    if (parseDataProcessing3Source(instructions, dw))
                     {
                         return true;
                     }
@@ -786,7 +770,7 @@ namespace elet::domain::compiler::test::aarch
                     {
                         if (op2 == DataProcessingRegisterInstruction::Op2_0110)
                         {
-                            if (parseDataProcessing2Source(instruction, dw))
+                            if (parseDataProcessing2Source(instructions, dw))
                             {
                                 return true;
                             }
@@ -799,18 +783,18 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64Parser::parseAddSubtractShiftedRegister(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAddSubtractShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_op_S = AddSubtractShiftedRegisterInstruction::sf_op_S_Mask & dw;
         switch (sf_op_S)
         {
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Add32):
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Add64):
-                parseAddShiftedRegister(reinterpret_cast<AddShiftedRegisterInstruction*>(instruction), dw);
+                parseAddShiftedRegister(instructions, dw);
                 return true;
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Sub32):
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Sub64):
-                parseSubShiftedRegister(reinterpret_cast<SubShiftedRegisterInstruction*>(instruction), dw);
+                parseSubShiftedRegister(instructions, dw);
                 return true;
         }
         return false;
@@ -973,18 +957,18 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64Parser::parseDataProcessing3Source(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessing3Source(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_op53_op31_o0 = DataProcessing3Source::sf_op54_op32_o0_Mask & dw;
         switch (sf_op53_op31_o0)
         {
             case static_cast<uint32_t>(DataProcessing3Source::Madd32):
             case static_cast<uint32_t>(DataProcessing3Source::Madd64):
-                parseMaddSubInstruction(reinterpret_cast<MaddSubInstruction*>(instruction), dw, Aarch64Instruction::Madd);
+                parseMaddSubInstruction(instructions, dw, Aarch64Instruction::Madd);
                 return true;
             case static_cast<uint32_t>(DataProcessing3Source::Msub32):
             case static_cast<uint32_t>(DataProcessing3Source::Msub64):
-                parseMaddSubInstruction(reinterpret_cast<MaddSubInstruction*>(instruction), dw, Aarch64Instruction::Msub);
+                parseMaddSubInstruction(instructions, dw, Aarch64Instruction::Msub);
                 return true;
         }
         return false;
@@ -992,7 +976,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64Parser::parseDataProcessing2Source(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessing2Source(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t opcode = DataProcessing2Source::opcode_Mask & dw;
         switch (opcode)
@@ -1000,14 +984,14 @@ namespace elet::domain::compiler::test::aarch
             case static_cast<uint32_t>(DataProcessing2Source::opcode_Sdiv):
                 if (S(dw) == 0)
                 {
-                    parseDivInstruction(reinterpret_cast<DivInstruction*>(instruction), dw, Aarch64Instruction::Sdiv);
+                    parseDivInstruction(instructions, dw, Aarch64Instruction::Sdiv);
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(DataProcessing2Source::opcode_Udiv):
                 if (S(dw) == 0)
                 {
-                    parseDivInstruction(reinterpret_cast<DivInstruction*>(instruction), dw, Aarch64Instruction::Udiv);
+                    parseDivInstruction(instructions, dw, Aarch64Instruction::Udiv);
                     return true;
                 }
                 break;
@@ -1064,7 +1048,6 @@ namespace elet::domain::compiler::test::aarch
         uint32_t op1 = ReservedEncoding::Op1_Mask & dw;
         if (op0 == ReservedEncoding::Op0_Udf && op1 == ReservedEncoding::Op1_Udf)
         {
-
             parseUdfInstruction(instructions, dw);
             return true;
         }

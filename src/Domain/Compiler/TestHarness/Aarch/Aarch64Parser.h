@@ -150,16 +150,16 @@ namespace elet::domain::compiler::test::aarch
         parseLdrshImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw);
+        parseAddShiftedRegister(List <OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseSubShiftedRegister(SubShiftedRegisterInstruction* instruction, uint32_t dw);
+        parseSubShiftedRegister(List <OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseMaddSubInstruction(MaddSubInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
+        parseMaddSubInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
 
         void
-        parseDivInstruction(DivInstruction* instruction, uint32_t dw, Aarch64Instruction kind);
+        parseDivInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
 
         void
         parseAndImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
@@ -171,7 +171,7 @@ namespace elet::domain::compiler::test::aarch
         parseSxthInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseDataProcessingImmediateInstruction(List<OneOfInstruction>& instructions, Instruction* instruction, uint32_t dw);
+        parseDataProcessingImmediateInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
 
         bool
         parseBranchingExceptionSystemInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
@@ -192,10 +192,10 @@ namespace elet::domain::compiler::test::aarch
         parseLoadAndStoreInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseDataProcessingRegisterInstruction(Instruction* instruction, uint32_t dw);
+        parseDataProcessingRegisterInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseAddSubtractShiftedRegister(Instruction* instruction, uint32_t dw);
+        parseAddSubtractShiftedRegister(List <OneOfInstruction>& instructions, uint32_t dw);
 
         bool
         parseLogicalImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
@@ -222,10 +222,10 @@ namespace elet::domain::compiler::test::aarch
         parseLoadStore_UnsignedImmediate(List <OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseDataProcessing3Source(Instruction* instruction, uint32_t dw);
+        parseDataProcessing3Source(List <OneOfInstruction>& instructions, uint32_t dw);
 
         bool
-        parseDataProcessing2Source(Instruction* instruction, uint32_t dw);
+        parseDataProcessing2Source(List <OneOfInstruction>& instructions, uint32_t dw);
 
         bool
         parseBitfieldInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
