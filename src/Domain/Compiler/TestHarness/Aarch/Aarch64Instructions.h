@@ -3,10 +3,12 @@
 
 
 #include <variant>
+#include <Foundation/List.h>
 #include <Domain/Compiler/Instruction/Assembly/Aarch/AArch64Encodings.h>
 
 namespace elet::domain::compiler::test::aarch
 {
+    using namespace foundation;
     using namespace elet::domain::compiler::instruction::output;
 
     enum Register : uint8_t
@@ -621,141 +623,59 @@ namespace elet::domain::compiler::test::aarch
         SxthInstruction sxth;
         UdfInstruction udf;
 
-        OneOfInstruction(AddShiftedRegisterInstruction add)
-        {
-            this->add = add;
-        }
+        OneOfInstruction(AddShiftedRegisterInstruction add);
 
-        OneOfInstruction(AddSubImmediateInstruction addSubImmediate)
-        {
-            this->addSubImmediate = addSubImmediate;
-        }
+        OneOfInstruction(AddSubImmediateInstruction addSubImmediate);
 
-        OneOfInstruction(AdrInstruction adr)
-        {
-            this->adr = adr;
-        }
+        OneOfInstruction(AdrInstruction adr);
 
-        OneOfInstruction(AdrpInstruction adrp)
-        {
-            this->adrp = adrp;
-        }
+        OneOfInstruction(AdrpInstruction adrp);
 
-        OneOfInstruction(AndImmediateInstruction _and)
-        {
-            this->_and = _and;
-        }
+        OneOfInstruction(AndImmediateInstruction _and);
 
-        OneOfInstruction(BInstruction b)
-        {
-            this->b = b;
-        }
+        OneOfInstruction(BInstruction b);
 
-        OneOfInstruction(BlInstruction bl)
-        {
-            this->bl = bl;
-        }
+        OneOfInstruction(BlInstruction bl);
 
-        OneOfInstruction(DivInstruction div)
-        {
-            this->div = div;
-        }
+        OneOfInstruction(DivInstruction div);
 
+        OneOfInstruction(BrInstruction br);
 
-        OneOfInstruction(BrInstruction br)
-        {
-            this->br = br;
-        }
+        OneOfInstruction(LdrInstruction ldr);
 
-        OneOfInstruction(LdrInstruction ldr)
-        {
-            this->ldr = ldr;
-        }
+        OneOfInstruction(LdrStrImmediateUnsignedOffsetInstruction ldrstr);
 
-        OneOfInstruction(LdrStrImmediateUnsignedOffsetInstruction ldrstr)
-        {
-            this->ldrstr = ldrstr;
-        }
+        OneOfInstruction(LdrbStrbImmediateUnsignedOffsetInstruction ldrbstrb);
 
-        OneOfInstruction(LdrbStrbImmediateUnsignedOffsetInstruction ldrbstrb)
-        {
-            this->ldrbstrb = ldrbstrb;
-        }
+        OneOfInstruction(LdrhStrhImmediateUnsignedOffsetInstruction ldrhstrh);
 
-        OneOfInstruction(LdrhStrhImmediateUnsignedOffsetInstruction ldrhstrh)
-        {
-            this->ldrhstrh = ldrhstrh;
-        }
+        OneOfInstruction(LoadStorePairInstruction ldrpstrp);
 
-        OneOfInstruction(LoadStorePairInstruction ldrpstrp)
-        {
-            this->ldrpstrp = ldrpstrp;
-        }
+        OneOfInstruction(LdrshImmediateUnsignedOffsetInstruction ldrsh);
 
-        OneOfInstruction(LdrshImmediateUnsignedOffsetInstruction ldrsh)
-        {
-            this->ldrsh = ldrsh;
-        }
+        OneOfInstruction(LdrsbImmediateUnsignedOffsetInstruction ldrsb);
 
-        OneOfInstruction(LdrsbImmediateUnsignedOffsetInstruction ldrsb)
-        {
-            this->ldrsb = ldrsb;
-        }
+        OneOfInstruction(MaddSubInstruction maddsub);
 
-        OneOfInstruction(MaddSubInstruction maddsub)
-        {
-            this->maddsub = maddsub;
-        }
+        OneOfInstruction(MovkInstruction movk);
 
-        OneOfInstruction(MovkInstruction movk)
-        {
-            this->movk = movk;
-        }
+        OneOfInstruction(MovnInstruction movn);
 
-        OneOfInstruction(MovnInstruction movn)
-        {
-            this->movn = movn;
-        }
+        OneOfInstruction(MovzInstruction movz);
 
-        OneOfInstruction(MovzInstruction movz)
-        {
-            this->movz = movz;
-        }
+        OneOfInstruction(NopInstruction nop);
 
-        OneOfInstruction(NopInstruction nop)
-        {
-            this->nop = nop;
-        }
+        OneOfInstruction(OrrImmediateInstruction orr);
 
-        OneOfInstruction(OrrImmediateInstruction orr)
-        {
-            this->orr = orr;
-        }
+        OneOfInstruction(RetInstruction ret);
 
-        OneOfInstruction(RetInstruction ret)
-        {
-            this->ret = ret;
-        }
+        OneOfInstruction(SubShiftedRegisterInstruction sub);
 
-        OneOfInstruction(SubShiftedRegisterInstruction sub)
-        {
-            this->sub = sub;
-        }
+        OneOfInstruction(SxtbInstruction sxtb);
 
-        OneOfInstruction(SxtbInstruction sxtb)
-        {
-            this->sxtb = sxtb;
-        }
+        OneOfInstruction(SxthInstruction sxth);
 
-        OneOfInstruction(SxthInstruction sxth)
-        {
-            this->sxth = sxth;
-        }
-
-        OneOfInstruction(UdfInstruction udf)
-        {
-            this->udf = udf;
-        }
+        OneOfInstruction(UdfInstruction udf);
 
 
         OneOfInstruction()
