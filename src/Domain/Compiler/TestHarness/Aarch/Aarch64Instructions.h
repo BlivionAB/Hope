@@ -628,7 +628,6 @@ namespace elet::domain::compiler::test::aarch
 
         OneOfInstruction(AddSubImmediateInstruction addSubImmediate)
         {
-            auto s = sizeof(AddSubImmediateInstruction);
             this->addSubImmediate = addSubImmediate;
         }
 

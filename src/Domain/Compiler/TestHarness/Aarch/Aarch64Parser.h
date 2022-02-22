@@ -24,10 +24,10 @@ namespace elet::domain::compiler::test::aarch
         parse(List<OneOfInstruction>& instructions, List<std::uint8_t>& output, size_t offset, size_t size);
 
         uint8_t
-        getByte(Instruction* instruction);
+        getByte();
 
         uint32_t
-        getDoubleWord(Instruction* instruction);
+        getDoubleWord();
 
     private:
 
@@ -236,8 +236,6 @@ namespace elet::domain::compiler::test::aarch
         bool
         parseReservedInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
-        void
-        resetToLastInstructionCursor(List<OneOfInstruction>& instructions) const;
     };
 }
 

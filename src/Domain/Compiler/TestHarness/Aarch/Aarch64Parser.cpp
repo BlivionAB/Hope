@@ -17,8 +17,7 @@ namespace elet::domain::compiler::test::aarch
 
         while (_cursor - _offset < _size)
         {
-            Instruction* instruction = reinterpret_cast<Instruction*>(instructions.emplace());
-            uint32_t dw = getDoubleWord(instruction);
+            uint32_t dw = getDoubleWord();
             uint32_t opc = RootInstruction::Op0_Mask & dw;
 
             switch (opc)
@@ -62,7 +61,6 @@ namespace elet::domain::compiler::test::aarch
             }
             if (dw == Aarch64Instruction::Nop)
             {
-                resetToLastInstructionCursor(instructions);
                 emplaceInstruction(NopInstruction(), instructions);
                 continue;
             }
@@ -74,7 +72,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseBrInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(BrInstruction(Rn(dw)), instructions);
     }
 
@@ -82,7 +79,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseBInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(BInstruction(imm26(dw)), instructions);
     }
 
@@ -90,7 +86,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseBlInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(BlInstruction(imm26(dw)), instructions);
     }
 
@@ -98,7 +93,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseRetInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(RetInstruction(Rn(dw)), instructions);
     }
 
@@ -106,7 +100,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseLdrLiteralInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(LdrInstruction(Rt(dw), 0, opc(dw) == Aarch64Instruction::Opc1), instructions);
     }
 
@@ -114,7 +107,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseOrrInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         bool is64Bit = sf(dw);
         uint64_t value;
         if (is64Bit)
@@ -162,7 +154,6 @@ namespace elet::domain::compiler::test::aarch
     {
         assert(kind == Aarch64Instruction::LdrImmediateUnsignedOffset ||
             kind == Aarch64Instruction::StrImmediateUnsignedOffset && "Unsupported kind");
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(LdrStrImmediateUnsignedOffsetInstruction(kind, Rt(dw), Rn(dw), imm12(dw), dw & (0b01 << 30)), instructions);
     }
 
@@ -172,7 +163,6 @@ namespace elet::domain::compiler::test::aarch
     {
         assert(kind == Aarch64Instruction::StrbImmediateUnsignedOffset ||
             kind == Aarch64Instruction::LdrbImmediateUnsignedOffset && "Must be Strb or Ldrb");
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(LdrbStrbImmediateUnsignedOffsetInstruction(kind, Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
@@ -180,7 +170,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseLdrsbImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(LdrsbImmediateUnsignedOffsetInstruction(Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
@@ -190,7 +179,6 @@ namespace elet::domain::compiler::test::aarch
     {
         assert(kind == Aarch64Instruction::LdrhImmediateUnsignedOffset ||
             kind == Aarch64Instruction::StrhImmediateUnsignedOffset && "Unsupported kind");
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(LdrhStrhImmediateUnsignedOffsetInstruction(kind, Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
@@ -198,7 +186,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseLdrshImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(LdrshImmediateUnsignedOffsetInstruction(Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
@@ -206,7 +193,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseLoadStorePairInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        resetToLastInstructionCursor(instructions);
         LoadStorePairInstruction* instruction = emplaceInstruction(LoadStorePairInstruction(
             kind,
             Rt(dw),
@@ -240,7 +226,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseMovzInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(MovzInstruction(Rd(dw), imm16(dw), hw(dw), sf(dw)), instructions);
     }
 
@@ -248,7 +233,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseMovnInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(MovnInstruction(Rd(dw), imm16(dw), hw(dw), sf(dw)), instructions);
     }
 
@@ -256,18 +240,17 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseMovkInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(MovkInstruction(Rd(dw), imm16(dw), hw(dw), sf(dw)), instructions);
     }
 
 
     uint32_t
-    Aarch64Parser::getDoubleWord(Instruction* instruction)
+    Aarch64Parser::getDoubleWord()
     {
         uint32_t result = 0;
         for (int i = 0; i < 4; ++i)
         {
-            uint8_t byte = getByte(instruction);
+            uint8_t byte = getByte();
             result |= (byte << 8*i);
             _currentDw[i] = byte;
         }
@@ -276,11 +259,9 @@ namespace elet::domain::compiler::test::aarch
 
 
     uint8_t
-    Aarch64Parser::getByte(Instruction* instruction)
+    Aarch64Parser::getByte()
     {
-        uint8_t result = (*_output)[_cursor++];
-        instruction->bytes.add(result);
-        return result;
+        return (*_output)[_cursor++];
     }
 
 
@@ -357,7 +338,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseSubShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(SubShiftedRegisterInstruction(Rd(dw), Rn(dw), Rm(dw), shift(dw), imm6(dw), sf(dw)), instructions);
     }
 
@@ -365,7 +345,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseAddShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(AddShiftedRegisterInstruction(Rd(dw), Rn(dw), Rm(dw), shift(dw), imm6(dw), sf(dw)), instructions);
     }
 
@@ -374,7 +353,6 @@ namespace elet::domain::compiler::test::aarch
     Aarch64Parser::parseMaddSubInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
         assert(kind == Aarch64Instruction::Madd || kind == Aarch64Instruction::Msub && "Unsupported kind");
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(MaddSubInstruction(kind, Rm(dw), Ra(dw), Rn(dw), Rd(dw), sf(dw)), instructions);
     }
 
@@ -382,7 +360,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseAdrpInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(AdrpInstruction(Rd(dw), immhilo(dw)), instructions);
     }
 
@@ -390,7 +367,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseAdrInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(AdrInstruction(Rd(dw), immhilo(dw)), instructions);
     }
 
@@ -421,7 +397,6 @@ namespace elet::domain::compiler::test::aarch
     Aarch64Parser::parseDivInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
         assert(kind == Aarch64Instruction::Sdiv || kind == Aarch64Instruction::Udiv && "Unsupported kind");
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(DivInstruction(kind, Rm(dw), Rn(dw), Rd(dw), sf(dw)), instructions);
     }
 
@@ -429,7 +404,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseUdfInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         instructions.emplace(UdfInstruction(imm16(dw)));
     }
 
@@ -486,7 +460,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseAndImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         uint64_t value;
         bool is64Bit = sf(dw);
         if (is64Bit)
@@ -504,7 +477,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseSxtbInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(SxtbInstruction(Rd(dw), Rn(dw)), instructions);
     }
 
@@ -512,7 +484,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseSxthInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(SxthInstruction(Rd(dw), Rn(dw)), instructions);
     }
 
@@ -914,7 +885,6 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Parser::parseAddSubtractImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        resetToLastInstructionCursor(instructions);
         emplaceInstruction(AddSubImmediateInstruction(kind, Rd(dw), Rn(dw), imm12(dw), sf(dw)), instructions);
     }
 
@@ -1052,12 +1022,5 @@ namespace elet::domain::compiler::test::aarch
             return true;
         }
         return false;
-    }
-
-
-    void
-    Aarch64Parser::resetToLastInstructionCursor(List<OneOfInstruction>& instructions) const
-    {
-        instructions.setCursor(instructions.cursor() - 1);
     }
 }

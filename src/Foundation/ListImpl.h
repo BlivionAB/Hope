@@ -63,13 +63,19 @@ namespace elet::foundation
     T*
     List<T>::emplace(const Args&... args)
     {
-        static constexpr std::size_t sizeOfType = sizeof(T);
-        std::size_t oldSize = size();
+        size_t sizeOfType = sizeof(T);
+        size_t oldSize = size();
         if (oldSize + 1 > _capacity)
         {
             _capacity = _capacity * 2;
             _items = reinterpret_cast<T*>(realloc(_items, _capacity * sizeOfType));
             _cursor = _items + oldSize;
+
+            // We have to set this to zero. Because default values must be null/empty pointers.
+            // As an example, we have List<uint8_t> that we assigned in OneOfInstruction constructors.
+            // After the allocation List<uint8_t>::_items wasn't null, because of this allocation. So, it
+            // tried to realloc with a random value of List<uint8_t>::_items.
+            std::memset(_cursor, 0, (_capacity - oldSize) * sizeOfType);
         }
         T* obj = new (_cursor) T(args...);
         _cursor++;
