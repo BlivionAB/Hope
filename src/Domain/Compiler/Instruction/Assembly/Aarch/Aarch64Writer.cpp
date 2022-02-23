@@ -176,6 +176,7 @@ namespace elet::domain::compiler::instruction::output
         bw->writeDoubleWordInFunction(Aarch64Instruction::Ret | Rn(Aarch64Register::lr), function);
     }
 
+
     uint32_t
     Aarch64Writer::Rm(uint8_t reg) const
     {

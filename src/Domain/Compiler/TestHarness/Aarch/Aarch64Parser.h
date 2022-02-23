@@ -90,7 +90,7 @@ namespace elet::domain::compiler::test::aarch
         parseMovzInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseLoadStorePairInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
+        parseLoadStorePairInstruction(List<OneOfInstruction>& instructions, uint32_t dw, InstructionKind kind);
 
         void
         parseBInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
@@ -108,7 +108,7 @@ namespace elet::domain::compiler::test::aarch
         parseAdrpInstruction(List<OneOfInstruction>& instruction, uint32_t dw);
 
         void
-        parseAddSubtractImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
+        parseAddSubtractImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw, InstructionKind kind);
 
         void
         parseUdfInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
@@ -135,16 +135,16 @@ namespace elet::domain::compiler::test::aarch
         shift(uint32_t dw);
 
         void
-        parseLdrStrImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
+        parseLdrStrImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, InstructionKind kind);
 
         void
-        parseLdrbStrbImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
+        parseLdrbStrbImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, InstructionKind kind);
 
         void
         parseLdrsbImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseLdrhStrhImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
+        parseLdrhStrhImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw, InstructionKind kind);
 
         void
         parseLdrshImmediateUnsignedOffsetInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
@@ -156,10 +156,10 @@ namespace elet::domain::compiler::test::aarch
         parseSubShiftedRegister(List <OneOfInstruction>& instructions, uint32_t dw);
 
         void
-        parseMaddSubInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
+        parseMaddSubInstruction(List <OneOfInstruction>& instructions, uint32_t dw, InstructionKind kind);
 
         void
-        parseDivInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind);
+        parseDivInstruction(List <OneOfInstruction>& instructions, uint32_t dw, InstructionKind kind);
 
         void
         parseAndImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
