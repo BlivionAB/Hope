@@ -49,15 +49,9 @@ namespace elet::domain::compiler::test::aarch
         List<uint8_t>
         bytes;
 
-        Instruction(Aarch64Instruction kind):
-            kind(kind),
-            is64Bit(false)
-        { }
+        Instruction(Aarch64Instruction kind);
 
-        Instruction(Aarch64Instruction kind, bool is64Bit):
-            kind(kind),
-            is64Bit(is64Bit)
-        { }
+        Instruction(Aarch64Instruction kind, bool is64Bit);
     };
 
 
@@ -67,18 +61,13 @@ namespace elet::domain::compiler::test::aarch
         int16_t
         imm16;
 
-        UdfInstruction(int16_t imm16):
-            Instruction(Aarch64Instruction::Udf),
-            imm16(imm16)
-        { }
+        UdfInstruction(int16_t imm16);
     };
 
 
     struct NopInstruction : Instruction
     {
-        NopInstruction():
-            Instruction(Aarch64Instruction::Nop)
-        { }
+        NopInstruction();
     };
 
 
@@ -93,12 +82,11 @@ namespace elet::domain::compiler::test::aarch
         uint16_t
         imm12;
 
-        AddSubImmediateInstruction(Aarch64Instruction kind, Register Rd, Register Rn, uint16_t imm12, bool is64Bit):
-            Instruction(kind, is64Bit),
-            Rd(Rd),
-            Rn(Rn),
-            imm12(imm12)
-        { }
+        AddSubImmediateInstruction(
+            Aarch64Instruction kind,
+            Register Rd,
+            Register Rn,
+            uint16_t imm12, bool is64Bit);
     };
 
 
@@ -135,14 +123,12 @@ namespace elet::domain::compiler::test::aarch
         uint16_t
         imm12;
 
-        LdrStrImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12, bool is64Bit):
-            Instruction(kind, is64Bit),
-            Rt(Rt),
-            Rn(Rn),
-            imm12(imm12)
-        {
-
-        }
+        LdrStrImmediateUnsignedOffsetInstruction(
+            Aarch64Instruction kind,
+            Register Rt,
+            Register Rn,
+            uint16_t imm12,
+            bool is64Bit);
     };
 
 
@@ -159,37 +145,25 @@ namespace elet::domain::compiler::test::aarch
 
     struct LdrbStrbImmediateUnsignedOffsetInstruction : LdrStrImmediateUnsignedOffsetInstruction
     {
-        LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12):
-            LdrStrImmediateUnsignedOffsetInstruction(kind, Rt, Rn, imm12, false)
-        {
-
-        }
+        LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12);
     };
 
 
     struct LdrhStrhImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
     {
-        LdrhStrhImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12):
-            LdrbStrbImmediateUnsignedOffsetInstruction(kind, Rt, Rn, imm12)
-        {
-
-        }
+        LdrhStrhImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12);
     };
 
 
     struct LdrsbImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
     {
-        LdrsbImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
-            LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::LdrsbImmediateUnsignedOffset, Rt, Rn, imm12)
-        { }
+        LdrsbImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12);
     };
 
 
     struct LdrshImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
     {
-        LdrshImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12):
-            LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction::LdrshImmediateUnsignedOffset, Rt, Rn, imm12)
-        { }
+        LdrshImmediateUnsignedOffsetInstruction(Register Rt, Register Rn, uint16_t imm12);
     };
 
 
@@ -201,11 +175,7 @@ namespace elet::domain::compiler::test::aarch
         int32_t
         imm19;
 
-        LdrInstruction(Register Rt, int32_t imm19, bool is64Bit):
-            Instruction(Aarch64Instruction::Ldr32, is64Bit),
-            Rt(Rt),
-            imm19(imm19)
-        { }
+        LdrInstruction(Register Rt, int32_t imm19, bool is64Bit);
     };
 
 
@@ -242,19 +212,14 @@ namespace elet::domain::compiler::test::aarch
         AddressMode
         addressMode;
 
-        LoadStorePairInstruction(Aarch64Instruction kind, Register Rt, Register Rt2, Register Rn, int8_t imm7, AddressMode addressMode, bool is64Bit):
-            Instruction(kind, is64Bit),
-            Rt(Rt),
-            Rt2(Rt2),
-            Rn(Rn),
-            imm7(imm7),
-            addressMode(addressMode)
-        {
-            assert(kind == Aarch64Instruction::StpOffset64 ||
-                kind == Aarch64Instruction::LdpOffset64 ||
-                kind == Aarch64Instruction::LdpPostIndex64 ||
-                kind == Aarch64Instruction::StpPreIndex64 && "Unknown kind");
-        }
+        LoadStorePairInstruction(
+            Aarch64Instruction kind,
+            Register Rt,
+            Register Rt2,
+            Register Rn,
+            int8_t imm7,
+            AddressMode addressMode,
+            bool is64Bit);
     };
 
 
@@ -269,12 +234,7 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        AndImmediateInstruction(uint64_t value, Register Rn, Register Rd, bool is64Bit):
-            Instruction(Aarch64Instruction::AndImmediate, is64Bit),
-            value(value),
-            Rn(Rn),
-            Rd(Rd)
-        { }
+        AndImmediateInstruction(uint64_t value, Register Rn, Register Rd, bool is64Bit);
     };
 
 
@@ -283,10 +243,7 @@ namespace elet::domain::compiler::test::aarch
         int32_t
         imm26;
 
-        BInstruction(int32_t imm26):
-            Instruction(Aarch64Instruction::B),
-            imm26(imm26)
-        { }
+        BInstruction(int32_t imm26);
     };
 
 
@@ -295,22 +252,7 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rn;
 
-        BrInstruction(Register Rn):
-            Instruction(Aarch64Instruction::Br),
-            Rn(Rn)
-        { }
-    };
-
-    struct RetInstruction : Instruction
-    {
-
-        Register
-        Rn;
-
-        RetInstruction(Register Rn):
-            Instruction(Aarch64Instruction::Ret),
-            Rn(Rn)
-        { }
+        BrInstruction(Register Rn);
     };
 
 
@@ -322,11 +264,16 @@ namespace elet::domain::compiler::test::aarch
         int32_t
         imm26;
 
-        BlInstruction(int32_t imm26):
-            Instruction(Aarch64Instruction::Bl),
-            withLink(true),
-            imm26(imm26)
-        { }
+        BlInstruction(int32_t imm26);
+    };
+
+    struct RetInstruction : Instruction
+    {
+
+        Register
+        Rn;
+
+        RetInstruction(Register Rn);
     };
 
 
@@ -341,12 +288,7 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         value;
 
-        OrrImmediateInstruction(Register Rd, Register Rn, uint64_t value, bool is64Bit):
-            Instruction(Aarch64Instruction::OrrImmediate, is64Bit),
-            Rd(Rd),
-            Rn(Rn),
-            value(value)
-        { }
+        OrrImmediateInstruction(Register Rd, Register Rn, uint64_t value, bool is64Bit);
     };
 
 
@@ -370,12 +312,7 @@ namespace elet::domain::compiler::test::aarch
         Hw
         hw;
 
-        MovInstruction(Aarch64Instruction kind, Register rd, uint16_t imm16, Hw hw, bool is64Bit):
-            Instruction(kind, is64Bit),
-            Rd(rd),
-            imm16(imm16),
-            hw(hw)
-        { }
+        MovInstruction(Aarch64Instruction kind, Register rd, uint16_t imm16, Hw hw, bool is64Bit);
     };
 
 
@@ -384,11 +321,7 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         immediateValue;
 
-        MovzInstruction(Register Rd, uint16_t imm16, Hw hw, bool is64Bit):
-            MovInstruction(Aarch64Instruction::Movz, Rd, imm16, hw, is64Bit)
-        {
-            immediateValue = static_cast<uint64_t>(imm16) << (static_cast<uint64_t>(hw) * 16);
-        }
+        MovzInstruction(Register Rd, uint16_t imm16, Hw hw, bool is64Bit);
     };
 
 
@@ -398,26 +331,8 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         immediateValue;
 
-        MovnInstruction(Register rd, uint16_t imm16, Hw hw, bool is64Bit):
-            MovInstruction(Aarch64Instruction::Movn, rd, imm16, hw, is64Bit)
-        {
-            uint16_t s = ~imm16;
-            int64_t rimm16 = static_cast<int64_t>(s);
-            uint64_t lsh = static_cast<uint64_t>(hw) * 16;
-            uint64_t result = (rimm16 << lsh);
-            if (rimm16 >= 0)
-            {
-                // For some reason when lsh + 16 == 64. The left shift yields -1 instead of 0. Let's guard against that.
-                if (lsh != 48)
-                {
-                    result |= -1i64 << (lsh + 16);
-                }
-                result |= (1ui64 << lsh) - 1ui64;
-            }
-            immediateValue = result;
-        }
+        MovnInstruction(Register rd, uint16_t imm16, Hw hw, bool is64Bit);
     };
-
 
 
 
@@ -426,12 +341,7 @@ namespace elet::domain::compiler::test::aarch
         uint64_t
         immediateValue;
 
-        MovkInstruction(Register Rd, uint16_t imm16, Hw hw, bool is64Bit):
-            MovInstruction(Aarch64Instruction::Movk, Rd, imm16, hw, is64Bit),
-            immediateValue(imm16)
-        {
-
-        }
+        MovkInstruction(Register Rd, uint16_t imm16, Hw hw, bool is64Bit);
     };
 
 
@@ -443,11 +353,7 @@ namespace elet::domain::compiler::test::aarch
         uint32_t
         immhilo;
 
-        AdrpInstruction(Register rd, uint32_t immhilo):
-            Instruction(Aarch64Instruction::Adrp),
-            rd(rd),
-            immhilo(immhilo)
-        { }
+        AdrpInstruction(Register rd, uint32_t immhilo);
     };
 
     struct AdrInstruction : Instruction
@@ -458,11 +364,7 @@ namespace elet::domain::compiler::test::aarch
         uint32_t
         immhilo;
 
-        AdrInstruction(Register rd, uint32_t immhilo):
-            Instruction(Aarch64Instruction::Adr),
-            rd(rd),
-            immhilo(immhilo)
-        { }
+        AdrInstruction(Register rd, uint32_t immhilo);
     };
 
     struct ShiftedRegisterInstruction : Instruction
@@ -482,32 +384,26 @@ namespace elet::domain::compiler::test::aarch
         uint8_t
         imm6;
 
-        ShiftedRegisterInstruction(Aarch64Instruction instruction, Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit):
-            Instruction(instruction, is64Bit),
-            Rd(Rd),
-            Rn(Rn),
-            Rm(Rm),
-            shift(shift),
-            imm6(imm6)
-        {
-
-        }
+        ShiftedRegisterInstruction(
+            Aarch64Instruction instruction,
+            Register Rd,
+            Register Rn,
+            Register Rm,
+            uint8_t shift,
+            uint8_t imm6,
+            bool is64Bit);
     };
 
 
     struct AddShiftedRegisterInstruction : ShiftedRegisterInstruction
     {
-        AddShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit):
-            ShiftedRegisterInstruction(Aarch64Instruction::AddShiftedRegister, Rd, Rn, Rm, shift, imm6, is64Bit)
-        { }
+        AddShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit);
     };
 
 
     struct SubShiftedRegisterInstruction : ShiftedRegisterInstruction
     {
-        SubShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit):
-            ShiftedRegisterInstruction(Aarch64Instruction::SubShiftedRegister, Rd, Rn, Rm, shift, imm6, is64Bit)
-        { }
+        SubShiftedRegisterInstruction(Register Rd, Register Rn, Register Rm, uint8_t shift, uint8_t imm6, bool is64Bit);
     };
 
 
@@ -525,15 +421,7 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        MaddSubInstruction(Aarch64Instruction kind, Register Rm, Register Ra, Register Rn, Register Rd, bool is64Bit):
-            Instruction(kind, is64Bit),
-            Rm(Rm),
-            Ra(Ra),
-            Rn(Rn),
-            Rd(Rd)
-        {
-
-        }
+        MaddSubInstruction(Aarch64Instruction kind, Register Rm, Register Ra, Register Rn, Register Rd, bool is64Bit);
     };
 
 
@@ -548,14 +436,7 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        DivInstruction(Aarch64Instruction kind, Register Rm, Register Rn, Register Rd, bool is64Bit):
-            Instruction(kind, is64Bit),
-            Rm(Rm),
-            Rn(Rn),
-            Rd(Rd)
-        {
-
-        }
+        DivInstruction(Aarch64Instruction kind, Register Rm, Register Rn, Register Rd, bool is64Bit);
     };
 
 
@@ -567,27 +448,19 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rn;
 
-        SxtbSxtbhInstruction(Aarch64Instruction kind, Register Rd, Register Rn):
-            Instruction(kind),
-            Rd(Rd),
-            Rn(Rn)
-        { }
+        SxtbSxtbhInstruction(Aarch64Instruction kind, Register Rd, Register Rn);
     };
 
 
     struct SxtbInstruction : SxtbSxtbhInstruction
     {
-        SxtbInstruction(Register Rd, Register Rn):
-            SxtbSxtbhInstruction(Aarch64Instruction::Sxtb, Rd, Rn)
-        { }
+        SxtbInstruction(Register Rd, Register Rn);
     };
 
 
     struct SxthInstruction : SxtbSxtbhInstruction
     {
-        SxthInstruction(Register Rd, Register Rn):
-            SxtbSxtbhInstruction(Aarch64Instruction::Sxth, Rd, Rn)
-        { }
+        SxthInstruction(Register Rd, Register Rn);
     };
 
 
