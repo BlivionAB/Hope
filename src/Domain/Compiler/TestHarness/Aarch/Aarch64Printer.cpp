@@ -15,95 +15,92 @@ namespace elet::domain::compiler::test::aarch
             _tw.tab();
             switch (instruction->kind)
             {
-                case Aarch64Instruction::AndImmediate:
+                case InstructionKind::AndImmediate:
                     writeAndImmediateInstruction(reinterpret_cast<const AndImmediateInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Adr:
+                case InstructionKind::Adr:
                     writeAdrInstruction(reinterpret_cast<const AdrInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Adrp:
+                case InstructionKind::Adrp:
                     writeAdrpInstruction(reinterpret_cast<const AdrpInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::AddShiftedRegister:
-                case Aarch64Instruction::SubShiftedRegister:
+                case InstructionKind::AddShiftedRegister:
+                case InstructionKind::SubShiftedRegister:
                     writeShiftedRegisterInstruction(reinterpret_cast<const ShiftedRegisterInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Madd:
-                case Aarch64Instruction::Msub:
+                case InstructionKind::Madd:
+                case InstructionKind::Msub:
                     writeMaddSubInstruction(reinterpret_cast<const MaddSubInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Sdiv:
-                case Aarch64Instruction::Udiv:
+                case InstructionKind::Sdiv:
+                case InstructionKind::Udiv:
                     writeDivInstruction(reinterpret_cast<const DivInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Ldr32:
-                case Aarch64Instruction::Ldr64:
+                case InstructionKind::Ldr:
                     writeLdr(reinterpret_cast<const LdrInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::StpPreIndex64:
-                case Aarch64Instruction::StpOffset64:
-                case Aarch64Instruction::LdpPostIndex64:
-                case Aarch64Instruction::LdpOffset64:
+                case InstructionKind::StpPreIndex:
+                case InstructionKind::StpOffset:
+                case InstructionKind::LdpPostIndex:
+                case InstructionKind::LdpOffset:
                     writeLoadStorePairInstruction(reinterpret_cast<const LoadStorePairInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::StrImmediateUnsignedOffset:
-                case Aarch64Instruction::LdrImmediateUnsignedOffset:
-                case Aarch64Instruction::StrImmediateUnsignedOffset64:
-                case Aarch64Instruction::LdrImmediateUnsignedOffset64:
+                case InstructionKind::StrImmediateUnsignedOffset:
+                case InstructionKind::LdrImmediateUnsignedOffset:
                     writeLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<const StrUnsignedOffsetInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::LdrbImmediateUnsignedOffset:
-                case Aarch64Instruction::StrbImmediateUnsignedOffset:
+                case InstructionKind::LdrbImmediateUnsignedOffset:
+                case InstructionKind::StrbImmediateUnsignedOffset:
                     writeLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::LdrhImmediateUnsignedOffset:
-                case Aarch64Instruction::StrhImmediateUnsignedOffset:
+                case InstructionKind::LdrhImmediateUnsignedOffset:
+                case InstructionKind::StrhImmediateUnsignedOffset:
                     writeLdrhStrhImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrhStrhImmediateUnsignedOffsetInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::LdrsbImmediateUnsignedOffset:
+                case InstructionKind::LdrsbImmediateUnsignedOffset:
                     writeLdrsbImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrsbImmediateUnsignedOffsetInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::LdrshImmediateUnsignedOffset:
+                case InstructionKind::LdrshImmediateUnsignedOffset:
                     writeLdrshImmediateUnsignedOffsetInstruction(reinterpret_cast<const LdrshImmediateUnsignedOffsetInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::AddImmediate64:
-                case Aarch64Instruction::SubImmediate64:
+                case InstructionKind::AddImmediate:
+                case InstructionKind::SubImmediate:
                     writeDataProcessImmediateInstruction(reinterpret_cast<const DataProcessImmediateInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::OrrImmediate:
+                case InstructionKind::OrrImmediate:
                     writeOrrImmediate(reinterpret_cast<const OrrImmediateInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Movz:
+                case InstructionKind::Movz:
                     writeMovz(reinterpret_cast<const MovzInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Movn:
+                case InstructionKind::Movn:
                     writeMovn(reinterpret_cast<const MovnInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Movk:
+                case InstructionKind::Movk:
                     writeMovk(reinterpret_cast<const MovkInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Sxtb:
+                case InstructionKind::Sxtb:
                     writeSxtb(reinterpret_cast<const SxtbInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Sxth:
+                case InstructionKind::Sxth:
                     writeSxth(reinterpret_cast<const SxthInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::B:
+                case InstructionKind::B:
                     writeB(reinterpret_cast<const BInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Bl:
+                case InstructionKind::Bl:
                     writeBl(reinterpret_cast<const BlInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Br:
+                case InstructionKind::Br:
                     writeBr(reinterpret_cast<const BrInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Ret:
+                case InstructionKind::Ret:
                     writeBranchExceptionSyscallInstruction(reinterpret_cast<const BrInstruction*>(instruction));
                     break;
-                case Aarch64Instruction::Nop:
+                case InstructionKind::Nop:
                     writeNopInstruction();
                     break;
-                case Aarch64Instruction::Udf:
+                case InstructionKind::Udf:
                     writeUdf(reinterpret_cast<const UdfInstruction*>(instruction));
                     break;
                 default:
@@ -154,7 +151,7 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Printer::writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrImmediateUnsignedOffsetInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset || instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset64)
+        if (instruction->kind == InstructionKind::LdrImmediateUnsignedOffset)
         {
             _tw.write("ldr ");
         }
@@ -181,7 +178,7 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Printer::writeLdrbStrbImmediateUnsignedOffsetInstruction(const LdrbStrbImmediateUnsignedOffsetInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::LdrbImmediateUnsignedOffset)
+        if (instruction->kind == InstructionKind::LdrbImmediateUnsignedOffset)
         {
             _tw.write("ldrb ");
         }
@@ -214,7 +211,7 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Printer::writeLdrhStrhImmediateUnsignedOffsetInstruction(const LdrhStrhImmediateUnsignedOffsetInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::LdrhImmediateUnsignedOffset)
+        if (instruction->kind == InstructionKind::LdrhImmediateUnsignedOffset)
         {
             _tw.write("ldrh ");
         }
@@ -276,12 +273,12 @@ namespace elet::domain::compiler::test::aarch
     {
         switch (instruction->kind)
         {
-            case Aarch64Instruction::LdpOffset64:
-            case Aarch64Instruction::LdpPostIndex64:
+            case InstructionKind::LdpOffset:
+            case InstructionKind::LdpPostIndex:
                 _tw.write("ldp ");
                 break;
-            case Aarch64Instruction::StpPreIndex64:
-            case Aarch64Instruction::StpOffset64:
+            case InstructionKind::StpPreIndex:
+            case InstructionKind::StpOffset:
                 _tw.write("stp ");
                 break;
             default:
@@ -383,7 +380,7 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Printer::writeBranchExceptionSyscallInstruction(const BrInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::Ret)
+        if (instruction->kind == InstructionKind::Ret)
         {
             _tw.write("ret ");
             writeGeneralPurposeRegister(instruction->Rn, instruction);
@@ -420,10 +417,10 @@ namespace elet::domain::compiler::test::aarch
     {
         switch (instruction->kind)
         {
-            case Aarch64Instruction::AddImmediate64:
+            case InstructionKind::AddImmediate:
                 _tw.write("add ");
                 break;
-            case Aarch64Instruction::SubImmediate64:
+            case InstructionKind::SubImmediate:
                 _tw.write("sub ");
                 break;
             default:
@@ -559,7 +556,7 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Printer::writeShiftedRegisterInstruction(const ShiftedRegisterInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::AddShiftedRegister)
+        if (instruction->kind == InstructionKind::AddShiftedRegister)
         {
             _tw.write("add ");
         }
@@ -583,7 +580,7 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Printer::writeMaddSubInstruction(const MaddSubInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::Madd)
+        if (instruction->kind == InstructionKind::Madd)
         {
             if (instruction->Ra == Register::Zero)
             {
@@ -620,7 +617,7 @@ namespace elet::domain::compiler::test::aarch
     void
     Aarch64Printer::writeDivInstruction(const DivInstruction* instruction)
     {
-        if (instruction->kind == Aarch64Instruction::Sdiv)
+        if (instruction->kind == InstructionKind::Sdiv)
         {
             _tw.write("sdiv ");
         }

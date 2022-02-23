@@ -32,15 +32,50 @@ namespace elet::domain::compiler::test::aarch
     };
 
 
-    // TODO: Used for new rewrite.
     enum class InstructionKind
     {
         Udf,
+        Nop,
+        LdrsbImmediateUnsignedOffset,
+        LdrshImmediateUnsignedOffset,
+        Ldr,
+        StpOffset,
+        LdpOffset,
+        LdpPostIndex,
+        StpPreIndex,
+        StrImmediateUnsignedOffset,
+        LdrImmediateUnsignedOffset,
+        LdrbImmediateUnsignedOffset,
+        StrbImmediateUnsignedOffset,
+        LdrhImmediateUnsignedOffset,
+        StrhImmediateUnsignedOffset,
+        AndImmediate,
+        B,
+        Br,
+        Bl,
+        Ret,
+        OrrImmediate,
+        Movz,
+        Movn,
+        Movk,
+        Adrp,
+        Adr,
+        Sdiv,
+        Udiv,
+        AddImmediate,
+        SubImmediate,
+        AddShiftedRegister,
+        SubShiftedRegister,
+        Madd,
+        Msub,
+        Sxtb,
+        Sxth
     };
+
 
     struct Instruction
     {
-        Aarch64Instruction
+        InstructionKind
         kind;
 
         bool
@@ -49,11 +84,10 @@ namespace elet::domain::compiler::test::aarch
         List<uint8_t>
         bytes;
 
-        Instruction(Aarch64Instruction kind);
+        Instruction(InstructionKind kind);
 
-        Instruction(Aarch64Instruction kind, bool is64Bit);
+        Instruction(InstructionKind kind, bool is64Bit);
     };
-
 
 
     struct UdfInstruction : Instruction
@@ -83,7 +117,7 @@ namespace elet::domain::compiler::test::aarch
         imm12;
 
         AddSubImmediateInstruction(
-            Aarch64Instruction kind,
+            InstructionKind kind,
             Register Rd,
             Register Rn,
             uint16_t imm12, bool is64Bit);
@@ -124,7 +158,7 @@ namespace elet::domain::compiler::test::aarch
         imm12;
 
         LdrStrImmediateUnsignedOffsetInstruction(
-            Aarch64Instruction kind,
+            InstructionKind kind,
             Register Rt,
             Register Rn,
             uint16_t imm12,
@@ -145,13 +179,13 @@ namespace elet::domain::compiler::test::aarch
 
     struct LdrbStrbImmediateUnsignedOffsetInstruction : LdrStrImmediateUnsignedOffsetInstruction
     {
-        LdrbStrbImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12);
+        LdrbStrbImmediateUnsignedOffsetInstruction(InstructionKind kind, Register Rt, Register Rn, uint16_t imm12);
     };
 
 
     struct LdrhStrhImmediateUnsignedOffsetInstruction : LdrbStrbImmediateUnsignedOffsetInstruction
     {
-        LdrhStrhImmediateUnsignedOffsetInstruction(Aarch64Instruction kind, Register Rt, Register Rn, uint16_t imm12);
+        LdrhStrhImmediateUnsignedOffsetInstruction(InstructionKind kind, Register Rt, Register Rn, uint16_t imm12);
     };
 
 
@@ -213,7 +247,7 @@ namespace elet::domain::compiler::test::aarch
         addressMode;
 
         LoadStorePairInstruction(
-            Aarch64Instruction kind,
+            InstructionKind kind,
             Register Rt,
             Register Rt2,
             Register Rn,
@@ -312,7 +346,7 @@ namespace elet::domain::compiler::test::aarch
         Hw
         hw;
 
-        MovInstruction(Aarch64Instruction kind, Register rd, uint16_t imm16, Hw hw, bool is64Bit);
+        MovInstruction(InstructionKind kind, Register rd, uint16_t imm16, Hw hw, bool is64Bit);
     };
 
 
@@ -385,7 +419,7 @@ namespace elet::domain::compiler::test::aarch
         imm6;
 
         ShiftedRegisterInstruction(
-            Aarch64Instruction instruction,
+            InstructionKind instruction,
             Register Rd,
             Register Rn,
             Register Rm,
@@ -421,7 +455,7 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        MaddSubInstruction(Aarch64Instruction kind, Register Rm, Register Ra, Register Rn, Register Rd, bool is64Bit);
+        MaddSubInstruction(InstructionKind kind, Register Rm, Register Ra, Register Rn, Register Rd, bool is64Bit);
     };
 
 
@@ -436,7 +470,7 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rd;
 
-        DivInstruction(Aarch64Instruction kind, Register Rm, Register Rn, Register Rd, bool is64Bit);
+        DivInstruction(InstructionKind kind, Register Rm, Register Rn, Register Rd, bool is64Bit);
     };
 
 
@@ -448,7 +482,7 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rn;
 
-        SxtbSxtbhInstruction(Aarch64Instruction kind, Register Rd, Register Rn);
+        SxtbSxtbhInstruction(InstructionKind kind, Register Rd, Register Rn);
     };
 
 
