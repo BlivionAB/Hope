@@ -1,6 +1,4 @@
-#include "Aarch64AssemblyParser.h"
-#include "Aarch64Instructions.h"
-#include <Domain/Compiler/Instruction/Assembly/Aarch/AArch64Encodings.h>
+#include "Aarch64Parser.h"
 #include <Foundation/Bit.h>
 
 namespace elet::domain::compiler::test::aarch
@@ -10,7 +8,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parse(List<OneOfInstruction>& instructions, List<uint8_t>& output, size_t offset, size_t size)
+    Aarch64Parser::parse(List<OneOfInstruction>& instructions, List<uint8_t>& output, size_t offset, size_t size)
     {
         _output = &output;
         _offset = offset;
@@ -19,27 +17,27 @@ namespace elet::domain::compiler::test::aarch
 
         while (_cursor - _offset < _size)
         {
-            Instruction* instruction = reinterpret_cast<Instruction*>(instructions.emplace());
-            uint32_t dw = getDoubleWord(instruction);
+            uint32_t dw = getDoubleWord();
             uint32_t opc = RootInstruction::Op0_Mask & dw;
+
             switch (opc)
             {
                 case static_cast<uint32_t>(RootInstruction::Reserved):
-                    if (parseReservedInstruction(instruction, dw))
+                    if (parseReservedInstruction(instructions, dw))
                     {
                         continue;
                     }
                     break;
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Immediate_0):
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Immediate_1):
-                    if (parseDataProcessingImmediateInstruction(instruction, dw))
+                    if (parseDataProcessingImmediateInstruction(instructions, dw))
                     {
                         continue;
                     }
                     break;
                 case static_cast<uint32_t>(RootInstruction::BranchingExceptionSystem_0):
                 case static_cast<uint32_t>(RootInstruction::BranchingExceptionSystem_1):
-                    if (parseBranchingExceptionSystemInstruction(instruction, dw))
+                    if (parseBranchingExceptionSystemInstruction(instructions, dw))
                     {
                         continue;
                     }
@@ -48,14 +46,14 @@ namespace elet::domain::compiler::test::aarch
                 case static_cast<uint32_t>(RootInstruction::LoadAndStore_1):
                 case static_cast<uint32_t>(RootInstruction::LoadAndStore_2):
                 case static_cast<uint32_t>(RootInstruction::LoadAndStore_3):
-                    if (parseLoadAndStoreInstruction(instruction, dw))
+                    if (parseLoadAndStoreInstruction(instructions, dw))
                     {
                         continue;
                     }
                     break;
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Register_0):
                 case static_cast<uint32_t>(RootInstruction::DataProcessing_Register_1):
-                    if (parseDataProcessingRegisterInstruction(instruction, dw))
+                    if (parseDataProcessingRegisterInstruction(instructions, dw))
                     {
                         continue;
                     }
@@ -63,8 +61,7 @@ namespace elet::domain::compiler::test::aarch
             }
             if (dw == Aarch64Instruction::Nop)
             {
-                NopInstruction* instr = reinterpret_cast<NopInstruction*>(instruction);
-                instr->kind = Aarch64Instruction::Nop;
+                emplaceInstruction(NopInstruction(), instructions);
                 continue;
             }
             throw std::runtime_error("Could not find instruction when parsing.");
@@ -73,71 +70,59 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parseBrInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseBrInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        BrInstruction* br = reinterpret_cast<BrInstruction*>(instruction);
-        br->kind = Aarch64Instruction::Br;
-        br->rn = Rn(dw);
+        emplaceInstruction(BrInstruction(Rn(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseBInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseBInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        BInstruction* b = reinterpret_cast<BInstruction*>(instruction);
-        b->kind = B;
-        b->imm26 = imm26(dw);
+        emplaceInstruction(BInstruction(imm26(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseBlInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseBlInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        BlInstruction* bl = reinterpret_cast<BlInstruction*>(instruction);
-        bl->kind = Bl;
-        bl->imm26 = imm26(dw);
+        emplaceInstruction(BlInstruction(imm26(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseRetInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseRetInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        RetInstruction* ret = reinterpret_cast<RetInstruction*>(instruction);
-        ret->kind = Ret;
-        ret->rn = Rn(dw);
+        emplaceInstruction(RetInstruction(Rn(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseLdrLiteralInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLdrLiteralInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        LdrInstruction* ldr = reinterpret_cast<LdrInstruction*>(instruction);
-        ldr->kind = Ldr32;
-        ldr->is64Bit = opc(dw) == Aarch64Instruction::Opc1;
-        ldr->rt = Rt(dw);
+        emplaceInstruction(LdrInstruction(Rt(dw), 0, opc(dw) == Aarch64Instruction::Opc1), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseOrrInstruction(OrrImmediateInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseOrrInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::OrrImmediate;
-        instruction->is64Bit = sf(dw);
-        instruction->rd = Rd(dw);
-        instruction->rn = Rn(dw);
-        if (sf(dw))
+        bool is64Bit = sf(dw);
+        uint64_t value;
+        if (is64Bit)
         {
-            instruction->immediateValue = decodeBitmaskImmediate(dw, RegistrySize::_64);
+            value = decodeBitmaskImmediate(dw, RegistrySize::_64);
         }
         else
         {
-            instruction->immediateValue = decodeBitmaskImmediate(dw, RegistrySize::_32);
+            value = decodeBitmaskImmediate(dw, RegistrySize::_32);
         }
+        emplaceInstruction(OrrImmediateInstruction(Rd(dw), Rn(dw), value, is64Bit), instructions);
     }
 
 
     uint64_t
-    Aarch64AssemblyParser::decodeBitmaskImmediate(uint32_t dw, RegistrySize registrySize)
+    Aarch64Parser::decodeBitmaskImmediate(uint32_t dw, RegistrySize registrySize)
     {
         uint32_t N = (dw >> 22) & 1;
         uint32_t immr = (dw >> 16) & 0x3f;
@@ -165,86 +150,72 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parseLdrStrImmediateUnsignedOffsetInstruction(LdrStrImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, uint32_t kind22)
+    Aarch64Parser::parseLdrStrImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        instruction->kind = static_cast<Aarch64Instruction>(kind22);
-        instruction->is64Bit = dw & (0b01 << 30);
-        instruction->Rn = Rn(dw);
-        instruction->Rt = Rt(dw);
-        instruction->imm12 = imm12(dw);
+        assert(kind == Aarch64Instruction::LdrImmediateUnsignedOffset ||
+            kind == Aarch64Instruction::StrImmediateUnsignedOffset && "Unsupported kind");
+        emplaceInstruction(LdrStrImmediateUnsignedOffsetInstruction(kind, Rt(dw), Rn(dw), imm12(dw), dw & (0b01 << 30)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseLdrbStrbImmediateUnsignedOffsetInstruction(LdrbStrbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseLdrbStrbImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        assert(kind == Aarch64Instruction::StrbImmediateUnsignedOffset || kind == Aarch64Instruction::LdrbImmediateUnsignedOffset && "Must be Strb or Ldrb");
-        instruction->kind = static_cast<Aarch64Instruction>(kind);
-        instruction->Rn = Rn(dw);
-        instruction->Rt = Rt(dw);
-        instruction->imm12 = imm12(dw);
+        assert(kind == Aarch64Instruction::StrbImmediateUnsignedOffset ||
+            kind == Aarch64Instruction::LdrbImmediateUnsignedOffset && "Must be Strb or Ldrb");
+        emplaceInstruction(LdrbStrbImmediateUnsignedOffsetInstruction(kind, Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseLdrsbImmediateUnsignedOffsetInstruction(LdrsbImmediateUnsignedOffsetInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLdrsbImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::LdrsbImmediateUnsignedOffset;
-        instruction->Rn = Rn(dw);
-        instruction->Rt = Rt(dw);
-        instruction->imm12 = imm12(dw);
+        emplaceInstruction(LdrsbImmediateUnsignedOffsetInstruction(Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseLdrhStrhImmediateUnsignedOffsetInstruction(LdrhStrhImmediateUnsignedOffsetInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseLdrhStrhImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        instruction->kind = static_cast<Aarch64Instruction>(kind);
-        instruction->Rn = Rn(dw);
-        instruction->Rt = Rt(dw);
-        instruction->imm12 = imm12(dw);
+        assert(kind == Aarch64Instruction::LdrhImmediateUnsignedOffset ||
+            kind == Aarch64Instruction::StrhImmediateUnsignedOffset && "Unsupported kind");
+        emplaceInstruction(LdrhStrhImmediateUnsignedOffsetInstruction(kind, Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseLdrshImmediateUnsignedOffsetInstruction(LdrshImmediateUnsignedOffsetInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLdrshImmediateUnsignedOffsetInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::LdrshImmediateUnsignedOffset;
-        instruction->Rn = Rn(dw);
-        instruction->Rt = Rt(dw);
-        instruction->imm12 = imm12(dw);
+        emplaceInstruction(LdrshImmediateUnsignedOffsetInstruction(Rt(dw), Rn(dw), imm12(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseLoadStorePairInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseLoadStorePairInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        assert(kind == Aarch64Instruction::StpOffset64 ||
-            kind == Aarch64Instruction::LdpOffset64 ||
-            kind == Aarch64Instruction::LdpPostIndex64 ||
-            kind == Aarch64Instruction::StpPreIndex64 && "Unknown kind");
+        LoadStorePairInstruction* instruction = emplaceInstruction(LoadStorePairInstruction(
+            kind,
+            Rt(dw),
+            Rt2(dw),
+            Rn(dw),
+            imm7(dw),
+            AddressMode::Unknown,
+            false), instructions);
 
-        LoadStorePairInstruction* loadStoreInstruction = reinterpret_cast<LoadStorePairInstruction*>(instruction);
-        loadStoreInstruction->kind = kind;
-        loadStoreInstruction->rt = Rt(dw);
-        loadStoreInstruction->rn = Rn(dw);
-        loadStoreInstruction->rt2 = Rt2(dw);
-        loadStoreInstruction->imm7 = imm7(dw);
-
-        switch (loadStoreInstruction->kind)
+        switch (kind)
         {
             case Aarch64Instruction::StpPreIndex64:
-                loadStoreInstruction->is64Bit = true;
-                loadStoreInstruction->addressMode = AddressMode::PreIndex;
+                instruction->is64Bit = true;
+                instruction->addressMode = AddressMode::PreIndex;
                 break;
             case Aarch64Instruction::StpOffset64:
             case Aarch64Instruction::LdpOffset64:
-                loadStoreInstruction->is64Bit = true;
-                loadStoreInstruction->addressMode = AddressMode::BaseOffset;
+                instruction->is64Bit = true;
+                instruction->addressMode = AddressMode::BaseOffset;
                 break;
             case Aarch64Instruction::LdpPostIndex64:
-                loadStoreInstruction->is64Bit = true;
-                loadStoreInstruction->addressMode = AddressMode::PostIndex;
+                instruction->is64Bit = true;
+                instruction->addressMode = AddressMode::PostIndex;
                 break;
             default:
                 throw std::runtime_error("Unknown load store pair instruction.");
@@ -253,353 +224,303 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parseMovzInstruction(MovzInstruction* movz, uint32_t dw)
+    Aarch64Parser::parseMovzInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        movz->kind = Aarch64Instruction::Movz;
-        movz->is64Bit = sf(dw);
-        movz->rd = Rd(dw);
-        movz->imm16 = uimm16(dw);
-        movz->immediateValue = static_cast<uint64_t>(uimm16(dw)) << getLeftShiftFromHv(dw);
+        emplaceInstruction(MovzInstruction(Rd(dw), imm16(dw), hw(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseMovnInstruction(MovnInstruction* movn, uint32_t dw)
+    Aarch64Parser::parseMovnInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        movn->kind = Aarch64Instruction::Movn;
-        movn->is64Bit = sf(dw);
-        movn->rd = Rd(dw);
-        movn->hw = static_cast<Hw>(hw(dw));
-        movn->imm16 = uimm16(dw);
-        uint16_t s = ~uimm16(dw);
-        int64_t imm16 = static_cast<int64_t>(s);
-        uint64_t lsh = getLeftShiftFromHv(dw);
-        uint64_t result = (imm16 << lsh);
-        if (imm16 >= 0)
-        {
-            // For some reason when lsh + 16 == 64. The left shift yields -1 instead of 0. Let's guard against that.
-            if (lsh != 48)
-            {
-                result |= -1i64 << (lsh + 16);
-            }
-            result |= (1ui64 << lsh) - 1ui64;
-        }
-        movn->immediateValue = result;
+        emplaceInstruction(MovnInstruction(Rd(dw), imm16(dw), hw(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseMovkInstruction(MovkInstruction* movk, uint32_t dw)
+    Aarch64Parser::parseMovkInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        movk->kind = Aarch64Instruction::Movk;
-        movk->is64Bit = sf(dw);
-        movk->rd = Rd(dw);
-        movk->hw = static_cast<Hw>(hw(dw));
-        movk->imm16 = uimm16(dw);
-        movk->immediateValue = static_cast<uint64_t>(uimm16(dw));
+        emplaceInstruction(MovkInstruction(Rd(dw), imm16(dw), hw(dw), sf(dw)), instructions);
     }
 
 
     uint32_t
-    Aarch64AssemblyParser::getDoubleWord(Instruction* instruction)
+    Aarch64Parser::getDoubleWord()
     {
         uint32_t result = 0;
         for (int i = 0; i < 4; ++i)
         {
-            uint8_t byte = getByte(instruction);
+            uint8_t byte = getByte();
             result |= (byte << 8*i);
+            _currentDw[i] = byte;
         }
         return result;
     }
 
 
     uint8_t
-    Aarch64AssemblyParser::getByte(Instruction* instruction)
+    Aarch64Parser::getByte()
     {
-        uint8_t result = (*_output)[_cursor++];
-        instruction->bytes.add(result);
-        return result;
+        return (*_output)[_cursor++];
     }
 
 
     Register
-    Aarch64AssemblyParser::Ra(uint32_t dw)
+    Aarch64Parser::Ra(uint32_t dw)
     {
         return static_cast<Register>((dw & Aarch64Instruction::RaMask) >> 10);
     }
 
 
     Register
-    Aarch64AssemblyParser::Rn(uint32_t dw)
+    Aarch64Parser::Rn(uint32_t dw)
     {
         return static_cast<Register>((dw & Aarch64Instruction::RnMask) >> 5);
     }
 
 
     Register
-    Aarch64AssemblyParser::Rm(uint32_t dw)
+    Aarch64Parser::Rm(uint32_t dw)
     {
         return static_cast<Register>((dw & Aarch64Instruction::RmMask) >> 16);
     }
 
 
     Register
-    Aarch64AssemblyParser::Rt(uint32_t dw)
+    Aarch64Parser::Rt(uint32_t dw)
     {
         return static_cast<Register>((dw & Aarch64Instruction::RtMask) >> 0);
     }
 
 
     Register
-    Aarch64AssemblyParser::Rd(uint32_t dw)
+    Aarch64Parser::Rd(uint32_t dw)
     {
         return static_cast<Register>((dw & Aarch64Instruction::RdMask) >> 0);
     }
 
 
     Register
-    Aarch64AssemblyParser::Rt2(uint32_t dw)
+    Aarch64Parser::Rt2(uint32_t dw)
     {
         return static_cast<Register>((dw & Aarch64Instruction::Rt2Mask) >> 10);
     }
 
 
     int8_t
-    Aarch64AssemblyParser::imm7(uint32_t dw)
+    Aarch64Parser::imm7(uint32_t dw)
     {
         return (((dw & Aarch64Instruction::Imm7Mask) >> 15) | 0x80) * 8;
     }
 
 
     int16_t
-    Aarch64AssemblyParser::imm12(uint32_t dw)
+    Aarch64Parser::imm12(uint32_t dw)
     {
         return (dw & Aarch64Instruction::Imm12Mask) >> 10;
     }
 
 
     int32_t
-    Aarch64AssemblyParser::imm26(uint32_t dw)
+    Aarch64Parser::imm26(uint32_t dw)
     {
         return (dw & Aarch64Instruction::Imm26Mask);
     }
 
 
     uint16_t
-    Aarch64AssemblyParser::uimm16(uint32_t dw)
+    Aarch64Parser::imm16(uint32_t dw)
     {
         return (dw & Aarch64Instruction::Imm16Mask) >> 5;
     }
 
 
     void
-    Aarch64AssemblyParser::parseSubShiftedRegister(SubShiftedRegisterInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseSubShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::SubShiftedRegister;
-        instruction->is64Bit = sf(dw);
-        instruction->Rd = Rd(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rm = Rm(dw);
-        instruction->shift = shift(dw);
-        instruction->imm6 = imm6(dw);
+        emplaceInstruction(SubShiftedRegisterInstruction(Rd(dw), Rn(dw), Rm(dw), shift(dw), imm6(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseAddShiftedRegister(AddShiftedRegisterInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAddShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::AddShiftedRegister;
-        instruction->is64Bit = sf(dw);
-        instruction->Rd = Rd(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rm = Rm(dw);
-        instruction->shift = shift(dw);
-        instruction->imm6 = imm6(dw);
+        emplaceInstruction(AddShiftedRegisterInstruction(Rd(dw), Rn(dw), Rm(dw), shift(dw), imm6(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseMaddSubInstruction(MaddSubInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseMaddSubInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        instruction->kind = kind;
-        instruction->is64Bit = sf(dw);
-        instruction->Rm = Rm(dw);
-        instruction->Ra = Ra(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rd = Rd(dw);
+        assert(kind == Aarch64Instruction::Madd || kind == Aarch64Instruction::Msub && "Unsupported kind");
+        emplaceInstruction(MaddSubInstruction(kind, Rm(dw), Ra(dw), Rn(dw), Rd(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseAdrpInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAdrpInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        AdrInstruction* adrp = reinterpret_cast<AdrInstruction*>(instruction);
-        adrp->kind = Aarch64Instruction::Adrp;
-        adrp->rd = Rd(dw);
-        adrp->immhilo = immhilo(dw);
+        emplaceInstruction(AdrpInstruction(Rd(dw), immhilo(dw)), instructions);
     }
 
 
-
     void
-    Aarch64AssemblyParser::parseAdrInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAdrInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        AdrInstruction* adrp = reinterpret_cast<AdrInstruction*>(instruction);
-        adrp->kind = Aarch64Instruction::Adr;
-        adrp->rd = Rd(dw);
-        adrp->immhilo = immhilo(dw);
+        emplaceInstruction(AdrInstruction(Rd(dw), immhilo(dw)), instructions);
+    }
+
+
+    template<typename T>
+    T*
+    Aarch64Parser::emplaceInstruction(T instruction, List<OneOfInstruction>& instructions)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            instruction.bytes.add(_currentDw[i]);
+        }
+        return reinterpret_cast<T*>(instructions.emplace(instruction));
     }
 
 
     uint32_t
-    Aarch64AssemblyParser::immhilo(uint32_t dw)
+    Aarch64Parser::immhilo(uint32_t dw)
     {
         uint32_t result = 0;
         result |= (dw & MASK(12, 5)) >> 3;
         result |= (dw & (0b11 << 29)) >> 29;
         return result;
-
     }
 
 
     void
-    Aarch64AssemblyParser::parseDivInstruction(DivInstruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseDivInstruction(List <OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        instruction->kind = kind;
-        instruction->is64Bit = sf(dw);
-        instruction->Rm = Rm(dw);
-        instruction->Rn = Rn(dw);
-        instruction->Rd = Rd(dw);
+        assert(kind == Aarch64Instruction::Sdiv || kind == Aarch64Instruction::Udiv && "Unsupported kind");
+        emplaceInstruction(DivInstruction(kind, Rm(dw), Rn(dw), Rd(dw), sf(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseUdfInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseUdfInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        UdfInstruction* udf = reinterpret_cast<UdfInstruction*>(instruction);
-        udf->kind = Aarch64Instruction::Udf;
-        udf->imm16 = dw & MASK(16, 0);
+        instructions.emplace(UdfInstruction(imm16(dw)));
     }
 
 
     bool
-    Aarch64AssemblyParser::sf(uint32_t dw)
+    Aarch64Parser::sf(uint32_t dw)
     {
         return Aarch64Instruction::sf & dw;
     }
 
 
     bool
-    Aarch64AssemblyParser::S(uint32_t dw)
+    Aarch64Parser::S(uint32_t dw)
     {
         return Aarch64Instruction::S & dw >> 29;
     }
 
 
     uint32_t
-    Aarch64AssemblyParser::opc(uint32_t dw)
+    Aarch64Parser::opc(uint32_t dw)
     {
         return Aarch64Instruction::OpcMask & dw;
     }
 
 
-    uint32_t
-    Aarch64AssemblyParser::hw(uint32_t dw)
+    Hw
+    Aarch64Parser::hw(uint32_t dw)
     {
-        return (Aarch64Instruction::HwMask & dw) >> 21;
+        return static_cast<Hw>((Aarch64Instruction::HwMask & dw) >> 21);
     }
 
 
     uint8_t
-    Aarch64AssemblyParser::imm6(uint32_t dw)
+    Aarch64Parser::imm6(uint32_t dw)
     {
         return (Aarch64Instruction::Imm6Mask & dw) >> 10;
     }
 
 
     uint8_t
-    Aarch64AssemblyParser::shift(uint32_t dw)
+    Aarch64Parser::shift(uint32_t dw)
     {
         return (Aarch64Instruction::ShiftMask & dw) >> 22;
     }
 
 
     uint64_t
-    Aarch64AssemblyParser::getLeftShiftFromHv(uint32_t dw)
+    Aarch64Parser::getLeftShiftFromHv(uint32_t dw)
     {
         return (((0b11 << 21) & dw) >> 21) * 16;
     }
 
 
     void
-    Aarch64AssemblyParser::parseAndImmediateInstruction(AndImmediateInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAndImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::AndImmediate;
-        instruction->is64Bit = sf(dw);
-        instruction->Rd = Rd(dw);
-        instruction->Rn = Rn(dw);
-        if (instruction->is64Bit)
+        uint64_t value;
+        bool is64Bit = sf(dw);
+        if (is64Bit)
         {
-            instruction->value = decodeBitmaskImmediate(dw, RegistrySize::_64);
+            value = decodeBitmaskImmediate(dw, RegistrySize::_64);
         }
         else
         {
-            instruction->value = decodeBitmaskImmediate(dw, RegistrySize::_32);
+            value = decodeBitmaskImmediate(dw, RegistrySize::_32);
         }
+        emplaceInstruction(AndImmediateInstruction(value, Rd(dw), Rn(dw), is64Bit), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseSxtbInstruction(SxtbInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseSxtbInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::Sxtb;
-        instruction->Rn = Rn(dw);
-        instruction->Rd = Rd(dw);
+        emplaceInstruction(SxtbInstruction(Rd(dw), Rn(dw)), instructions);
     }
 
 
     void
-    Aarch64AssemblyParser::parseSxthInstruction(SxthInstruction* instruction, uint32_t dw)
+    Aarch64Parser::parseSxthInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
-        instruction->kind = Aarch64Instruction::Sxth;
-        instruction->Rn = Rn(dw);
-        instruction->Rd = Rd(dw);
+        emplaceInstruction(SxthInstruction(Rd(dw), Rn(dw)), instructions);
     }
 
 
     bool
-    Aarch64AssemblyParser::parseDataProcessingImmediateInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessingImmediateInstruction(List <OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = DataProcessingImmediateEncoding::Op0_Mask & dw;
         switch (op0)
         {
             case static_cast<uint32_t>(DataProcessingImmediateEncoding::PcRelAddressing_0):
             case static_cast<uint32_t>(DataProcessingImmediateEncoding::PcRelAddressing_1):
-                if (parsePcRelAddressingInstruction(instruction, dw))
+                if (parsePcRelAddressingInstruction(instructions, dw))
                 {
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(DataProcessingImmediateEncoding::AddSubtractImmediate32):
-                if (parseAddSubtractImmediateInstruction(instruction, dw))
+                if (parseAddSubtractImmediateInstruction(instructions, dw))
                 {
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(DataProcessingImmediateEncoding::LogicalImmediate):
-                if (parseLogicalImmediateInstruction(instruction, dw))
+                if (parseLogicalImmediateInstruction(instructions, dw))
                 {
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(DataProcessingImmediateEncoding::MoveWideImmediate):
-                if (parseMoveWideImmediateInstruction(instruction, dw))
+                if (parseMoveWideImmediateInstruction(instructions, dw))
                 {
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(DataProcessingImmediateEncoding::Bitfield):
-                if (parseBitfieldInstruction(instruction, dw))
+                if (parseBitfieldInstruction(instructions, dw))
                 {
                     return true;
                 }
@@ -610,7 +531,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseBranchingExceptionSystemInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseBranchingExceptionSystemInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = BranchingExceptionSystemEncoding::Op0_Mask & dw;
         uint32_t op1 = BranchingExceptionSystemEncoding::Op1_Mask & dw;
@@ -619,7 +540,7 @@ namespace elet::domain::compiler::test::aarch
             case static_cast<uint32_t>(BranchingExceptionSystemEncoding::Op0_Grp6):
                 if (BranchingExceptionSystemEncoding::Op1_UnconditionalBranch_Register & op1)
                 {
-                    if (parseUnconditionalBranchRegister(instruction, dw))
+                    if (parseUnconditionalBranchRegister(instructions, dw))
                     {
                         return true;
                     }
@@ -627,7 +548,7 @@ namespace elet::domain::compiler::test::aarch
                 break;
             case static_cast<uint32_t>(BranchingExceptionSystemEncoding::Op0_GrpUnconditionalBranchImmediate_0):
             case static_cast<uint32_t>(BranchingExceptionSystemEncoding::Op0_GrpUnconditionalBranchImmediate_1):
-                if (parseUnconditionalBranchImmediate(instruction, dw))
+                if (parseUnconditionalBranchImmediate(instructions, dw))
                 {
                     return true;
                 }
@@ -639,7 +560,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseUnconditionalBranchRegister(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseUnconditionalBranchRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = UnconditionalBranch_Register::Opc_Mask & dw;
         uint32_t op2 = UnconditionalBranch_Register::Op2_Mask & dw;
@@ -650,7 +571,7 @@ namespace elet::domain::compiler::test::aarch
             case static_cast<uint32_t>(UnconditionalBranch_Register::Opc_Grp0):
                 if (UnconditionalBranch_Register::Op2_True == op2)
                 {
-                    if (parseUnconditionalBranchOpcOp2Grp0(instruction, dw, op3, op4))
+                    if (parseUnconditionalBranchOpcOp2Grp0(instructions, dw, op3, op4))
                     {
                         return true;
                     }
@@ -661,7 +582,7 @@ namespace elet::domain::compiler::test::aarch
                 {
                     if (UnconditionalBranch_Register::Op3_0 == op3 && UnconditionalBranch_Register::Op4_0 == op4)
                     {
-                        parseRetInstruction(instruction, dw);
+                        parseRetInstruction(instructions, dw);
                         return true;
                     }
                 }
@@ -671,14 +592,14 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseUnconditionalBranchOpcOp2Grp0(Instruction* instruction, uint32_t dw, uint32_t op3, uint32_t op4)
+    Aarch64Parser::parseUnconditionalBranchOpcOp2Grp0(List<OneOfInstruction>& instructions, uint32_t dw, uint32_t op3, uint32_t op4)
     {
         switch (op3)
         {
             case static_cast<uint32_t>(UnconditionalBranch_Register::Op3_0):
                 if (UnconditionalBranch_Register::Op4_0 == op4)
                 {
-                    parseBrInstruction(instruction, dw);
+                    parseBrInstruction(instructions, dw);
                     return true;
                 }
         }
@@ -687,23 +608,23 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseUnconditionalBranchImmediate(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseUnconditionalBranchImmediate(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = UnconditionalBranch_Immediate::Op0_Mask & dw;
         if (UnconditionalBranch_Immediate::Op0_B & op0)
         {
-            parseBInstruction(instruction, dw);
+            parseBInstruction(instructions, dw);
         }
         else
         {
-            parseBlInstruction(instruction, dw);
+            parseBlInstruction(instructions, dw);
         }
         return true;
     }
 
 
     bool
-    Aarch64AssemblyParser::parseLoadAndStoreInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLoadAndStoreInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = LoadAndStoreEncoding::Op0_Mask & dw;
         uint32_t op1 = LoadAndStoreEncoding::Op1_Mask & dw;
@@ -718,7 +639,7 @@ namespace elet::domain::compiler::test::aarch
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op0_xx01_3):
                 if (op2 == LoadAndStoreEncoding::Op2_0 || op2 == LoadAndStoreEncoding::Op2_1)
                 {
-                    parseLdrLiteralInstruction(instruction, dw);
+                    parseLdrLiteralInstruction(instructions, dw);
                     return true;
                 }
                 break;
@@ -726,7 +647,7 @@ namespace elet::domain::compiler::test::aarch
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op0_xx10_1):
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op0_xx10_2):
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op0_xx10_3):
-                if (parse_Op0_xx10(op2, instruction, dw))
+                if (parse_Op0_xx10(op2, instructions, dw))
                 {
                     return true;
                 }
@@ -737,7 +658,7 @@ namespace elet::domain::compiler::test::aarch
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op0_xx11_3):
                 if (op2 == LoadAndStoreEncoding::Op2_2 || op2 == LoadAndStoreEncoding::Op2_3)
                 {
-                    if (parseLoadStore_UnsignedImmediate(instruction, dw))
+                    if (parseLoadStore_UnsignedImmediate(instructions, dw))
                     {
                         return true;
                     }
@@ -749,24 +670,24 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parse_Op0_xx10(uint32_t op2, Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parse_Op0_xx10(uint32_t op2, List<OneOfInstruction>& instructions, uint32_t dw)
     {
         switch (op2)
         {
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op2_1):
-                if (parseLoadStorePair_PostIndexed_Instruction(instruction, dw))
+                if (parseLoadStorePair_PostIndexed_Instruction(instructions, dw))
                 {
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op2_2):
-                if (parseLoadStorePair_Offset_Instruction(instruction, dw))
+                if (parseLoadStorePair_Offset_Instruction(instructions, dw))
                 {
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(LoadAndStoreEncoding::Op2_3):
-                if (parseLoadStorePair_PreIndexed_Instruction(instruction, dw))
+                if (parseLoadStorePair_PreIndexed_Instruction(instructions, dw))
                 {
                     return true;
                 }
@@ -777,7 +698,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseDataProcessingRegisterInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessingRegisterInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = DataProcessingRegisterInstruction::Op0_Mask & dw;
         uint32_t op1 = DataProcessingRegisterInstruction::Op1_Mask & dw;
@@ -791,7 +712,7 @@ namespace elet::domain::compiler::test::aarch
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_1):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_2):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xx0_3):
-                    if (parseAddSubtractShiftedRegister(instruction, dw))
+                    if (parseAddSubtractShiftedRegister(instructions, dw))
                     {
                         return true;
                     }
@@ -810,7 +731,7 @@ namespace elet::domain::compiler::test::aarch
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xxx_5):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xxx_6):
                 case static_cast<uint32_t>(DataProcessingRegisterInstruction::Op2_1xxx_7):
-                    if (parseDataProcessing3Source(instruction, dw))
+                    if (parseDataProcessing3Source(instructions, dw))
                     {
                         return true;
                     }
@@ -820,7 +741,7 @@ namespace elet::domain::compiler::test::aarch
                     {
                         if (op2 == DataProcessingRegisterInstruction::Op2_0110)
                         {
-                            if (parseDataProcessing2Source(instruction, dw))
+                            if (parseDataProcessing2Source(instructions, dw))
                             {
                                 return true;
                             }
@@ -833,18 +754,18 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseAddSubtractShiftedRegister(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAddSubtractShiftedRegister(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_op_S = AddSubtractShiftedRegisterInstruction::sf_op_S_Mask & dw;
         switch (sf_op_S)
         {
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Add32):
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Add64):
-                parseAddShiftedRegister(reinterpret_cast<AddShiftedRegisterInstruction*>(instruction), dw);
+                parseAddShiftedRegister(instructions, dw);
                 return true;
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Sub32):
             case static_cast<uint32_t>(AddSubtractShiftedRegisterInstruction::Sub64):
-                parseSubShiftedRegister(reinterpret_cast<SubShiftedRegisterInstruction*>(instruction), dw);
+                parseSubShiftedRegister(instructions, dw);
                 return true;
         }
         return false;
@@ -852,18 +773,18 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseLogicalImmediateInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLogicalImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_opc = LogicalImmediateEncoding::sf_opc_Mask & dw;
         switch (sf_opc)
         {
             case static_cast<uint32_t>(LogicalImmediateEncoding::AndImmediate32):
             case static_cast<uint32_t>(LogicalImmediateEncoding::AndImmediate64):
-                parseAndImmediateInstruction(reinterpret_cast<AndImmediateInstruction*>(instruction), dw);
+                parseAndImmediateInstruction(instructions, dw);
                 return true;
             case static_cast<uint32_t>(LogicalImmediateEncoding::OrrImmediate32):
             case static_cast<uint32_t>(LogicalImmediateEncoding::OrrImmediate64):
-                parseOrrInstruction(reinterpret_cast<OrrImmediateInstruction*>(instruction), dw);
+                parseOrrInstruction(instructions, dw);
                 return true;
         }
         return false;
@@ -871,22 +792,22 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseMoveWideImmediateInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseMoveWideImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_opc = MoveWideImmediateEncoding::sf_opc_Mask & dw;
         switch (sf_opc)
         {
             case static_cast<uint32_t>(MoveWideImmediateEncoding::Movn32):
             case static_cast<uint32_t>(MoveWideImmediateEncoding::Movn64):
-                parseMovnInstruction(reinterpret_cast<MovnInstruction*>(instruction), dw);
+                parseMovnInstruction(instructions, dw);
                 return true;
             case static_cast<uint32_t>(MoveWideImmediateEncoding::Movz32):
             case static_cast<uint32_t>(MoveWideImmediateEncoding::Movz64):
-                parseMovzInstruction(reinterpret_cast<MovzInstruction*>(instruction), dw);
+                parseMovzInstruction(instructions, dw);
                 return true;
             case static_cast<uint32_t>(MoveWideImmediateEncoding::Movk32):
             case static_cast<uint32_t>(MoveWideImmediateEncoding::Movk64):
-                parseMovkInstruction(reinterpret_cast<MovkInstruction*>(instruction), dw);
+                parseMovkInstruction(instructions, dw);
                 return true;
         }
         return false;
@@ -894,13 +815,13 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseLoadStorePair_PostIndexed_Instruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLoadStorePair_PostIndexed_Instruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t opc_V_L = LoadStoreEncoding::opc_V_L_Mask & dw;
         switch (opc_V_L)
         {
             case static_cast<uint32_t>(LoadStoreEncoding::Ldp64):
-                parseLoadStorePairInstruction(instruction, dw, Aarch64Instruction::LdpPostIndex64);
+                parseLoadStorePairInstruction(instructions, dw, Aarch64Instruction::LdpPostIndex64);
                 return true;
         }
         return false;
@@ -908,16 +829,16 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseLoadStorePair_Offset_Instruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLoadStorePair_Offset_Instruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t opc_V_L = LoadStoreEncoding::opc_V_L_Mask & dw;
         switch (opc_V_L)
         {
             case static_cast<uint32_t>(LoadStoreEncoding::Stp64):
-                parseLoadStorePairInstruction(instruction, dw, Aarch64Instruction::StpOffset64);
+                parseLoadStorePairInstruction(instructions, dw, Aarch64Instruction::StpOffset64);
                 return true;
             case static_cast<uint32_t>(LoadStoreEncoding::Ldp64):
-                parseLoadStorePairInstruction(instruction, dw, Aarch64Instruction::LdpOffset64);
+                parseLoadStorePairInstruction(instructions, dw, Aarch64Instruction::LdpOffset64);
                 return true;
         }
         return false;
@@ -925,7 +846,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseLoadStorePair_PreIndexed_Instruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLoadStorePair_PreIndexed_Instruction(List<OneOfInstruction>& instruction, uint32_t dw)
     {
         uint32_t opc_V_L = LoadStoreEncoding::opc_V_L_Mask & dw;
         switch (opc_V_L)
@@ -939,22 +860,22 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseAddSubtractImmediateInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseAddSubtractImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_op_S = AddSubtract_Immediate_Encoding::sf_op_S_Mask & dw;
         switch (sf_op_S)
         {
             case static_cast<uint32_t>(AddSubtract_Immediate_Encoding::Add_Immediate32):
-                parseAddSubtractImmediateInstruction(instruction, dw, Aarch64Instruction::AddImmediate32);
+                parseAddSubtractImmediateInstruction(instructions, dw, Aarch64Instruction::AddImmediate32);
                 return true;
             case static_cast<uint32_t>(AddSubtract_Immediate_Encoding::Sub_Immediate32):
-                parseAddSubtractImmediateInstruction(instruction, dw, Aarch64Instruction::SubImmediate32);
+                parseAddSubtractImmediateInstruction(instructions, dw, Aarch64Instruction::SubImmediate32);
                 return true;
             case static_cast<uint32_t>(AddSubtract_Immediate_Encoding::Add_Immediate64):
-                parseAddSubtractImmediateInstruction(instruction, dw, Aarch64Instruction::AddImmediate64);
+                parseAddSubtractImmediateInstruction(instructions, dw, Aarch64Instruction::AddImmediate64);
                 return true;
             case static_cast<uint32_t>(AddSubtract_Immediate_Encoding::Sub_Immediate64):
-                parseAddSubtractImmediateInstruction(instruction, dw, Aarch64Instruction::SubImmediate64);
+                parseAddSubtractImmediateInstruction(instructions, dw, Aarch64Instruction::SubImmediate64);
                 return true;
         }
         return false;
@@ -962,48 +883,43 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyParser::parseAddSubtractImmediateInstruction(Instruction* instruction, uint32_t dw, Aarch64Instruction kind)
+    Aarch64Parser::parseAddSubtractImmediateInstruction(List<OneOfInstruction>& instructions, uint32_t dw, Aarch64Instruction kind)
     {
-        AddSubImmediateInstruction* _instruction = reinterpret_cast<AddSubImmediateInstruction*>(instruction);
-        _instruction->kind = kind;
-        _instruction->is64Bit = sf(dw);
-        _instruction->rd = Rd(dw);
-        _instruction->rn = Rn(dw);
-        _instruction->imm12 = imm12(dw);
+        emplaceInstruction(AddSubImmediateInstruction(kind, Rd(dw), Rn(dw), imm12(dw), sf(dw)), instructions);
     }
 
 
     bool
-    Aarch64AssemblyParser::parseLoadStore_UnsignedImmediate(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseLoadStore_UnsignedImmediate(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t size_V_opc = LoadStoreRegister_UnsignedImmediate::size_V_opc_Mask & dw;
         switch (size_V_opc)
         {
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Strb_Immediate):
-                parseLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction), dw, Aarch64Instruction::StrbImmediateUnsignedOffset);
+                parseLdrbStrbImmediateUnsignedOffsetInstruction(instructions, dw, Aarch64Instruction::StrbImmediateUnsignedOffset);
                 return true;
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Ldrb_Immediate):
-                parseLdrbStrbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrbStrbImmediateUnsignedOffsetInstruction*>(instruction), dw, Aarch64Instruction::LdrbImmediateUnsignedOffset );
+                parseLdrbStrbImmediateUnsignedOffsetInstruction(instructions, dw, Aarch64Instruction::LdrbImmediateUnsignedOffset );
                 return true;
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Ldrsb_Immediate32):
-                parseLdrsbImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrsbImmediateUnsignedOffsetInstruction*>(instruction), dw);
+                parseLdrsbImmediateUnsignedOffsetInstruction(instructions, dw);
                 return true;
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Ldrsh_Immediate32):
-                parseLdrshImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrshImmediateUnsignedOffsetInstruction*>(instruction), dw);
+                parseLdrshImmediateUnsignedOffsetInstruction(instructions, dw);
                 return true;
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Ldr_Immediate_32):
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Ldr_Immediate_64):
-                parseLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrStrImmediateUnsignedOffsetInstruction*>(instruction), dw, Aarch64Instruction::LdrImmediateUnsignedOffset);
+                parseLdrStrImmediateUnsignedOffsetInstruction(instructions, dw, Aarch64Instruction::LdrImmediateUnsignedOffset);
                 return true;
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Str_Immediate_32):
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Str_Immediate_64):
-                parseLdrStrImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrStrImmediateUnsignedOffsetInstruction*>(instruction), dw, Aarch64Instruction::StrImmediateUnsignedOffset);
+                parseLdrStrImmediateUnsignedOffsetInstruction(instructions, dw, Aarch64Instruction::StrImmediateUnsignedOffset);
                 return true;
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Strh_Immediate):
-                parseLdrhStrhImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrhStrhImmediateUnsignedOffsetInstruction*>(instruction), dw, Aarch64Instruction::StrhImmediateUnsignedOffset);
+                parseLdrhStrhImmediateUnsignedOffsetInstruction(instructions, dw, Aarch64Instruction::StrhImmediateUnsignedOffset);
                 return true;
             case static_cast<uint32_t>(LoadStoreRegister_UnsignedImmediate::Ldrh_Immediate):
-                parseLdrhStrhImmediateUnsignedOffsetInstruction(reinterpret_cast<LdrhStrhImmediateUnsignedOffsetInstruction*>(instruction), dw, Aarch64Instruction::LdrhImmediateUnsignedOffset);
+                parseLdrhStrhImmediateUnsignedOffsetInstruction(instructions, dw, Aarch64Instruction::LdrhImmediateUnsignedOffset);
                 return true;
         }
         return false;
@@ -1011,18 +927,18 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseDataProcessing3Source(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessing3Source(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_op53_op31_o0 = DataProcessing3Source::sf_op54_op32_o0_Mask & dw;
         switch (sf_op53_op31_o0)
         {
             case static_cast<uint32_t>(DataProcessing3Source::Madd32):
             case static_cast<uint32_t>(DataProcessing3Source::Madd64):
-                parseMaddSubInstruction(reinterpret_cast<MaddSubInstruction*>(instruction), dw, Aarch64Instruction::Madd);
+                parseMaddSubInstruction(instructions, dw, Aarch64Instruction::Madd);
                 return true;
             case static_cast<uint32_t>(DataProcessing3Source::Msub32):
             case static_cast<uint32_t>(DataProcessing3Source::Msub64):
-                parseMaddSubInstruction(reinterpret_cast<MaddSubInstruction*>(instruction), dw, Aarch64Instruction::Msub);
+                parseMaddSubInstruction(instructions, dw, Aarch64Instruction::Msub);
                 return true;
         }
         return false;
@@ -1030,7 +946,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseDataProcessing2Source(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseDataProcessing2Source(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t opcode = DataProcessing2Source::opcode_Mask & dw;
         switch (opcode)
@@ -1038,14 +954,14 @@ namespace elet::domain::compiler::test::aarch
             case static_cast<uint32_t>(DataProcessing2Source::opcode_Sdiv):
                 if (S(dw) == 0)
                 {
-                    parseDivInstruction(reinterpret_cast<DivInstruction*>(instruction), dw, Aarch64Instruction::Sdiv);
+                    parseDivInstruction(instructions, dw, Aarch64Instruction::Sdiv);
                     return true;
                 }
                 break;
             case static_cast<uint32_t>(DataProcessing2Source::opcode_Udiv):
                 if (S(dw) == 0)
                 {
-                    parseDivInstruction(reinterpret_cast<DivInstruction*>(instruction), dw, Aarch64Instruction::Udiv);
+                    parseDivInstruction(instructions, dw, Aarch64Instruction::Udiv);
                     return true;
                 }
                 break;
@@ -1055,7 +971,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parseBitfieldInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseBitfieldInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t sf_opc_N = BitfieldEncoding::sf_opc_N_Mask & dw;
         switch (sf_opc_N)
@@ -1066,12 +982,12 @@ namespace elet::domain::compiler::test::aarch
                 uint32_t imms = BitfieldEncoding::imms_Mask & dw;
                 if (immr == BitfieldEncoding::immr_Sxtb && imms == BitfieldEncoding::imms_Sxtb)
                 {
-                    parseSxtbInstruction(reinterpret_cast<SxtbInstruction*>(instruction), dw);
+                    parseSxtbInstruction(instructions, dw);
                     return true;
                 }
                 else if (immr == BitfieldEncoding::immr_Sxth && imms == BitfieldEncoding::imms_Sxth)
                 {
-                    parseSxthInstruction(reinterpret_cast<SxthInstruction*>(instruction), dw);
+                    parseSxthInstruction(instructions, dw);
                     return true;
                 }
                 break;
@@ -1081,28 +997,28 @@ namespace elet::domain::compiler::test::aarch
 
 
     bool
-    Aarch64AssemblyParser::parsePcRelAddressingInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parsePcRelAddressingInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         if (DataProcessingImmediateEncoding::op & dw)
         {
-            parseAdrInstruction(instruction, dw);
+            parseAdrInstruction(instructions, dw);
         }
         else
         {
-            parseAdrpInstruction(instruction, dw);
+            parseAdrpInstruction(instructions, dw);
         }
         return true;
     }
 
 
     bool
-    Aarch64AssemblyParser::parseReservedInstruction(Instruction* instruction, uint32_t dw)
+    Aarch64Parser::parseReservedInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
     {
         uint32_t op0 = ReservedEncoding::Op0_Mask & dw;
         uint32_t op1 = ReservedEncoding::Op1_Mask & dw;
         if (op0 == ReservedEncoding::Op0_Udf && op1 == ReservedEncoding::Op1_Udf)
         {
-            parseUdfInstruction(instruction, dw);
+            parseUdfInstruction(instructions, dw);
             return true;
         }
         return false;

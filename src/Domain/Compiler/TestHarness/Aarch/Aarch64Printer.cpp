@@ -1,10 +1,10 @@
-#include "Aarch64AssemblyPrinter.h"
+#include "Aarch64Printer.h"
 
 
 namespace elet::domain::compiler::test::aarch
 {
     void
-    Aarch64AssemblyPrinter::writeInstructions(const List<OneOfInstruction>& instructions)
+    Aarch64Printer::writeInstructions(const List<OneOfInstruction>& instructions)
     {
         for (OneOfInstruction& oneOfInstruction : instructions)
         {
@@ -115,7 +115,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeAdrInstruction(const AdrInstruction* instruction)
+    Aarch64Printer::writeAdrInstruction(const AdrInstruction* instruction)
     {
         _tw.write("adr ");
         writeGeneralPurposeRegister(instruction->rd, instruction);
@@ -125,7 +125,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeAdrpInstruction(const AdrpInstruction* instruction)
+    Aarch64Printer::writeAdrpInstruction(const AdrpInstruction* instruction)
     {
         _tw.write("adrp ");
         writeGeneralPurposeRegister(instruction->rd, instruction);
@@ -135,7 +135,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeMovz(const MovzInstruction* instruction)
+    Aarch64Printer::writeMovz(const MovzInstruction* instruction)
     {
         if (!(instruction->imm16 == 0 && instruction->hw != Hw::_0))
         {
@@ -145,14 +145,14 @@ namespace elet::domain::compiler::test::aarch
         {
             _tw.write("movz ");
         }
-        writeGeneralPurposeRegister(instruction->rd, instruction);
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", #");
         _tw.writeSignedHexValue(instruction->immediateValue);
     }
 
 
     void
-    Aarch64AssemblyPrinter::writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrImmediateUnsignedOffsetInstruction* instruction)
+    Aarch64Printer::writeLdrStrImmediateUnsignedOffsetInstruction(const LdrStrImmediateUnsignedOffsetInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset || instruction->kind == Aarch64Instruction::LdrImmediateUnsignedOffset64)
         {
@@ -179,7 +179,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeLdrbStrbImmediateUnsignedOffsetInstruction(const LdrbStrbImmediateUnsignedOffsetInstruction* instruction)
+    Aarch64Printer::writeLdrbStrbImmediateUnsignedOffsetInstruction(const LdrbStrbImmediateUnsignedOffsetInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::LdrbImmediateUnsignedOffset)
         {
@@ -199,7 +199,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeLdrsbImmediateUnsignedOffsetInstruction(const LdrsbImmediateUnsignedOffsetInstruction* instruction)
+    Aarch64Printer::writeLdrsbImmediateUnsignedOffsetInstruction(const LdrsbImmediateUnsignedOffsetInstruction* instruction)
     {
         _tw.write("ldrsb ");
         writeGeneralPurposeRegister(instruction->Rt, instruction);
@@ -212,7 +212,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeLdrhStrhImmediateUnsignedOffsetInstruction(const LdrhStrhImmediateUnsignedOffsetInstruction* instruction)
+    Aarch64Printer::writeLdrhStrhImmediateUnsignedOffsetInstruction(const LdrhStrhImmediateUnsignedOffsetInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::LdrhImmediateUnsignedOffset)
         {
@@ -232,7 +232,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeLdrshImmediateUnsignedOffsetInstruction(const LdrshImmediateUnsignedOffsetInstruction* instruction)
+    Aarch64Printer::writeLdrshImmediateUnsignedOffsetInstruction(const LdrshImmediateUnsignedOffsetInstruction* instruction)
     {
         _tw.write("ldrsh ");
         writeGeneralPurposeRegister(instruction->Rt, instruction);
@@ -245,7 +245,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset)
+    Aarch64Printer::writeIndexedAddressSuffix(AddressMode addressMode, int16_t offset)
     {
         switch (addressMode)
         {
@@ -272,7 +272,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction)
+    Aarch64Printer::writeLoadStorePairInstruction(const LoadStorePairInstruction* instruction)
     {
         switch (instruction->kind)
         {
@@ -287,18 +287,18 @@ namespace elet::domain::compiler::test::aarch
             default:
                 throw std::runtime_error("Unknown load store instruction.");
         }
-        writeGeneralPurposeRegister(instruction->rt, instruction);
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
         _tw.write(", ");
-        writeGeneralPurposeRegister(instruction->rt2, instruction);
+        writeGeneralPurposeRegister(instruction->Rt2, instruction);
         _tw.write(", ");
         _tw.write("[");
-        writeGeneralPurposeRegister(instruction->rn, instruction);
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
         writeIndexedAddressSuffix(instruction->addressMode, instruction->imm7);
     }
 
 
     void
-    Aarch64AssemblyPrinter::writeGeneralPurposeRegister(Register reg, const Instruction* instruction)
+    Aarch64Printer::writeGeneralPurposeRegister(Register reg, const Instruction* instruction)
     {
         if (reg >= Register::r0 && reg <= Register::r28)
         {
@@ -370,7 +370,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeByteInstruction(const Instruction* instruction)
+    Aarch64Printer::writeByteInstruction(const Instruction* instruction)
     {
         // Aarch is little endian. So we have to reverse the bytes.
         for (auto it = instruction->bytes.rbegin(); it != instruction->bytes.rend(); ++it)
@@ -381,18 +381,18 @@ namespace elet::domain::compiler::test::aarch
     }
 
     void
-    Aarch64AssemblyPrinter::writeBranchExceptionSyscallInstruction(const BrInstruction* instruction)
+    Aarch64Printer::writeBranchExceptionSyscallInstruction(const BrInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::Ret)
         {
             _tw.write("ret ");
-            writeGeneralPurposeRegister(instruction->rn, instruction);
+            writeGeneralPurposeRegister(instruction->Rn, instruction);
         }
     }
 
 
     void
-    Aarch64AssemblyPrinter::writeBl(const BlInstruction* instruction)
+    Aarch64Printer::writeBl(const BlInstruction* instruction)
     {
         _tw.write("bl ");
 
@@ -416,7 +416,7 @@ namespace elet::domain::compiler::test::aarch
     }
 
     void
-    Aarch64AssemblyPrinter::writeDataProcessImmediateInstruction(const DataProcessImmediateInstruction* instruction)
+    Aarch64Printer::writeDataProcessImmediateInstruction(const DataProcessImmediateInstruction* instruction)
     {
         switch (instruction->kind)
         {
@@ -438,24 +438,24 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeNopInstruction()
+    Aarch64Printer::writeNopInstruction()
     {
         _tw.write("nop");
     }
 
 
     void
-    Aarch64AssemblyPrinter::writeLdr(const LdrInstruction* instruction)
+    Aarch64Printer::writeLdr(const LdrInstruction* instruction)
     {
         _tw.write("ldr ");
-        writeGeneralPurposeRegister(instruction->rt, instruction);
+        writeGeneralPurposeRegister(instruction->Rt, instruction);
         _tw.write(", ");
         _tw.writeSignedImmediateValue(instruction->imm19);
     }
 
 
     void
-    Aarch64AssemblyPrinter::writeB(const BInstruction* instruction)
+    Aarch64Printer::writeB(const BInstruction* instruction)
     {
         _tw.write("b ");
 
@@ -479,7 +479,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeUdf(const UdfInstruction* instruction)
+    Aarch64Printer::writeUdf(const UdfInstruction* instruction)
     {
         _tw.write("udf ");
         _tw.writeSignedImmediateValue(instruction->imm16);
@@ -487,21 +487,21 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeBr(const BrInstruction* instruction)
+    Aarch64Printer::writeBr(const BrInstruction* instruction)
     {
         _tw.write("br ");
-        writeGeneralPurposeRegister(instruction->rn, instruction);
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
     }
 
     void
-    Aarch64AssemblyPrinter::writeOrrImmediate(const OrrImmediateInstruction* instruction)
+    Aarch64Printer::writeOrrImmediate(const OrrImmediateInstruction* instruction)
     {
-        if (instruction->rn == Aarch64Register::r31)
+        if (instruction->Rn == Aarch64Register::r31)
         {
             _tw.write("mov ");
-            writeGeneralPurposeRegister(instruction->rd, instruction);
+            writeGeneralPurposeRegister(instruction->Rd, instruction);
             _tw.write(", ");
-            _tw.writeSignedImmediateValue(instruction->immediateValue);
+            _tw.writeSignedImmediateValue(instruction->value);
         }
         else
         {
@@ -511,20 +511,20 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeMovn(const MovnInstruction* instruction)
+    Aarch64Printer::writeMovn(const MovnInstruction* instruction)
     {
         _tw.write("movn ");
-        writeGeneralPurposeRegister(instruction->rd, instruction);
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
         _tw.writeUnsignedHexValue(instruction->immediateValue);
     }
 
 
     void
-    Aarch64AssemblyPrinter::writeMovk(const MovkInstruction* instruction)
+    Aarch64Printer::writeMovk(const MovkInstruction* instruction)
     {
         _tw.write("movk ");
-        writeGeneralPurposeRegister(instruction->rd, instruction);
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
         _tw.writeSignedImmediateValue(instruction->immediateValue);
         writeHw(instruction);
@@ -532,7 +532,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeHw(const MovkInstruction* movInstruction)
+    Aarch64Printer::writeHw(const MovkInstruction* movInstruction)
     {
         if (movInstruction->hw == Hw::_0)
         {
@@ -557,7 +557,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeShiftedRegisterInstruction(const ShiftedRegisterInstruction* instruction)
+    Aarch64Printer::writeShiftedRegisterInstruction(const ShiftedRegisterInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::AddShiftedRegister)
         {
@@ -581,7 +581,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeMaddSubInstruction(const MaddSubInstruction* instruction)
+    Aarch64Printer::writeMaddSubInstruction(const MaddSubInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::Madd)
         {
@@ -618,7 +618,7 @@ namespace elet::domain::compiler::test::aarch
     }
 
     void
-    Aarch64AssemblyPrinter::writeDivInstruction(const DivInstruction* instruction)
+    Aarch64Printer::writeDivInstruction(const DivInstruction* instruction)
     {
         if (instruction->kind == Aarch64Instruction::Sdiv)
         {
@@ -637,7 +637,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeAndImmediateInstruction(const AndImmediateInstruction* instruction)
+    Aarch64Printer::writeAndImmediateInstruction(const AndImmediateInstruction* instruction)
     {
         _tw.write("and ");
         writeGeneralPurposeRegister(instruction->Rd, instruction);
@@ -649,7 +649,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeSxtb(const SxtbInstruction* instruction)
+    Aarch64Printer::writeSxtb(const SxtbInstruction* instruction)
     {
         _tw.write("sxtb ");
         writeGeneralPurposeRegister(instruction->Rd, instruction);
@@ -659,7 +659,7 @@ namespace elet::domain::compiler::test::aarch
 
 
     void
-    Aarch64AssemblyPrinter::writeSxth(const SxthInstruction* instruction)
+    Aarch64Printer::writeSxth(const SxthInstruction* instruction)
     {
         _tw.write("sxth ");
         writeGeneralPurposeRegister(instruction->Rd, instruction);

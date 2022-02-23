@@ -1,7 +1,7 @@
 #include "MachOBaselineParser.h"
 #include "Domain/Compiler/Instruction/ObjectFileWriter/MachoFileWriter.h"
 #include "Domain/Compiler/TestHarness/X86/X86AssemblyParser.h"
-#include "Domain/Compiler/TestHarness/Aarch/Aarch64AssemblyParser.h"
+#include "Domain/Compiler/TestHarness/Aarch/Aarch64Parser.h"
 
 namespace elet::domain::compiler::test
 {

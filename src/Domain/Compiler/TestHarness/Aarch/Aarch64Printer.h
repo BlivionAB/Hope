@@ -1,5 +1,5 @@
-#ifndef ELET_AARCH64ASSEMBLYPRINTER_H
-#define ELET_AARCH64ASSEMBLYPRINTER_H
+#ifndef ELET_AARCH64PRINTER_H
+#define ELET_AARCH64PRINTER_H
 
 
 #include "Domain/Compiler/TestHarness/BaselinePrinter.h"
@@ -9,7 +9,7 @@
 namespace elet::domain::compiler::test::aarch
 {
 
-class Aarch64AssemblyPrinter : public BaselinePrinter<OneOfInstruction>
+class Aarch64Printer : public BaselinePrinter<OneOfInstruction>
 {
 public:
 
@@ -109,4 +109,4 @@ public:
 
 }
 
-#endif //ELET_AARCH64ASSEMBLYPRINTER_H
+#endif //ELET_AARCH64PRINTER_H

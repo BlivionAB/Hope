@@ -333,7 +333,7 @@ namespace elet::domain::compiler::test
                                         checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
                                         break;
                                     case AssemblyTarget::Aarch64:
-                                        checkTextSegmentBaselines<Aarch64AssemblyParser, Aarch64AssemblyPrinter, OneOfInstruction>(options, compilerOptions, output,result);
+                                        checkTextSegmentBaselines<Aarch64Parser, Aarch64Printer, OneOfInstruction>(options, compilerOptions, output,result);
                                         break;
                                     default:
                                         assert("Unknown assembly target for MachO.");
