@@ -5,7 +5,7 @@
 #include <Foundation/Utf8String.h>
 #include <Foundation/List.h>
 #include <Domain/Compiler/Instruction/ObjectFileWriter/MachoFileWriter.h>
-#include "Domain/Compiler/TestHarness/X86/X86AssemblyParser.h"
+#include "Domain/Compiler/TestHarness/X86/X86Parser.h"
 #include "Domain/Compiler/TestHarness/X86/X86AssemblyPrinter.h"
 #include "Domain/Compiler/TestHarness/Aarch/Aarch64Parser.h"
 #include "Domain/Compiler/TestHarness/Aarch/Aarch64Printer.h"

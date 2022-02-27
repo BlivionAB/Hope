@@ -1,18 +1,18 @@
-#include "X86AssemblyParser.h"
+#include "X86Parser.h"
 #include "Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h"
 #include <cmath>
 #include <assert.h>
 
 namespace elet::domain::compiler::test::x86
 {
-    X86AssemblyParser::X86AssemblyParser()
+    X86Parser::X86Parser()
     {
 
     }
 
 
     void
-    X86AssemblyParser::parse(List<Instruction>& instructions, List<uint8_t>& output, size_t offset, size_t size)
+    X86Parser::parse(List<Instruction>& instructions, List<uint8_t>& output, size_t offset, size_t size)
     {
         _output = &output;
         _offset = offset;
@@ -66,7 +66,7 @@ namespace elet::domain::compiler::test::x86
 
 
     void
-    X86AssemblyParser::parseOneByteOpCode(List<Instruction>& instructions, Instruction& instruction, uint8_t opcode)
+    X86Parser::parseOneByteOpCode(List<Instruction>& instructions, Instruction& instruction, uint8_t opcode)
     {
         switch (opcode)
         {
@@ -271,7 +271,7 @@ namespace elet::domain::compiler::test::x86
 
 
     void
-    X86AssemblyParser::parseTwoByteOpCode(uint8_t opcode, Instruction& instruction)
+    X86Parser::parseTwoByteOpCode(uint8_t opcode, Instruction& instruction)
     {
         switch (opcode)
         {
@@ -359,7 +359,7 @@ namespace elet::domain::compiler::test::x86
 
 
     void
-    X86AssemblyParser::parseThreeByteOpCode(uint8_t opcode, Instruction& instruction, List<Instruction>& instructions)
+    X86Parser::parseThreeByteOpCode(uint8_t opcode, Instruction& instruction, List<Instruction>& instructions)
     {
         switch (opcode)
         {
@@ -373,7 +373,7 @@ namespace elet::domain::compiler::test::x86
 
 
     Ev*
-    X86AssemblyParser::createE(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField)
+    X86Parser::createE(uint8_t modrmByte, Instruction& instruction, bool useOnlyRmField)
     {
         auto ev = new Ev();
         if (useOnlyRmField)
@@ -445,7 +445,7 @@ namespace elet::domain::compiler::test::x86
 
 
     Gv*
-    X86AssemblyParser::createGv(std::uint8_t opcode, bool isQuadWord)
+    X86Parser::createGv(std::uint8_t opcode, bool isQuadWord)
     {
         std::uint8_t reg = (opcode & ModRmMask::Reg) >> 3;
         return isQuadWord ? new Gv(mapQuadWordRegisterIndex(reg)) : new Gv(mapDoubleWordRegisterIndex(reg));
@@ -453,7 +453,7 @@ namespace elet::domain::compiler::test::x86
 
 
     Register
-    X86AssemblyParser::mapDoubleWordRegisterIndex(uint8_t reg)
+    X86Parser::mapDoubleWordRegisterIndex(uint8_t reg)
     {
         switch (reg)
         {
@@ -478,7 +478,7 @@ namespace elet::domain::compiler::test::x86
 
 
     Register
-    X86AssemblyParser::mapQuadWordRegisterIndex(std::uint8_t reg)
+    X86Parser::mapQuadWordRegisterIndex(std::uint8_t reg)
     {
         switch (reg)
         {
@@ -504,7 +504,7 @@ namespace elet::domain::compiler::test::x86
 
 
     std::array<uint8_t, 4>
-    X86AssemblyParser::getDoubleWord(Instruction& instruction)
+    X86Parser::getDoubleWord(Instruction& instruction)
     {
         std::array<uint8_t, 4> result = { 0, 0, 0, 0 };
         for (unsigned int i = 0; i < 4; ++i)
@@ -516,7 +516,7 @@ namespace elet::domain::compiler::test::x86
     }
 
     std::array<uint8_t, 2>
-    X86AssemblyParser::getWord(Instruction& instruction)
+    X86Parser::getWord(Instruction& instruction)
     {
         std::array<uint8_t, 2> result = { 0, 0,  };
         for (unsigned int i = 0; i < 2; ++i)
@@ -529,7 +529,7 @@ namespace elet::domain::compiler::test::x86
 
 
     uint8_t
-    X86AssemblyParser::getByte(Instruction& instruction)
+    X86Parser::getByte(Instruction& instruction)
     {
         uint8_t result = (*_output)[_cursor++];
         instruction.bytes.add(result);
@@ -538,7 +538,7 @@ namespace elet::domain::compiler::test::x86
 
 
     MemoryAddress32
-    X86AssemblyParser::createMemoryAddress32(Instruction& instruction)
+    X86Parser::createMemoryAddress32(Instruction& instruction)
     {
         std::array<uint8_t, 4> opcode = getDoubleWord(instruction);
         return MemoryAddress32(opcode);

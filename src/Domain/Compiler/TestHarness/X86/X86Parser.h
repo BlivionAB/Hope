@@ -1,5 +1,5 @@
-#ifndef ELET_X86ASSEMBLYPARSER_H
-#define ELET_X86ASSEMBLYPARSER_H
+#ifndef ELET_X86PARSER_H
+#define ELET_X86PARSER_H
 
 
 #include <cstdint>
@@ -13,12 +13,12 @@ namespace elet::domain::compiler::test::x86
     using namespace elet::foundation;
 
 
-    class X86AssemblyParser : public AssemblyParser
+    class X86Parser : public AssemblyParser
     {
 
     public:
 
-        X86AssemblyParser();
+        X86Parser();
 
         void
         parse(List<Instruction>& instructions, List<std::uint8_t>& output, size_t offset, size_t size);
@@ -61,4 +61,4 @@ namespace elet::domain::compiler::test::x86
 }
 
 
-#endif //ELET_X86ASSEMBLYPARSER_H
+#endif //ELET_X86PARSER_H

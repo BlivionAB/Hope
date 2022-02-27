@@ -7,7 +7,7 @@
 #include "Foundation/List.h"
 #include "X86AssemblyPrinter.h"
 #include "X86Types.h"
-#include "X86AssemblyParser.h"
+#include "X86Parser.h"
 #include "Domain/Compiler/TestHarness/BaselinePrinter.h"
 #include "Foundation/TextWriter.h"
 

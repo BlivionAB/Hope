@@ -1,6 +1,6 @@
 #include <fstream>
 #include "X86AssemblyPrinter.h"
-#include "X86AssemblyParser.h"
+#include "X86Parser.h"
 #include "X86Types.h"
 
 

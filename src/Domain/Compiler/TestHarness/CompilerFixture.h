@@ -330,7 +330,7 @@ namespace elet::domain::compiler::test
                                 switch (compilerOptions.assemblyTarget)
                                 {
                                     case AssemblyTarget::x86_64:
-                                        checkTextSegmentBaselines<x86::X86AssemblyParser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
+                                        checkTextSegmentBaselines<x86::X86Parser, x86::X86AssemblyPrinter, x86::Instruction>(options, compilerOptions, output, result);
                                         break;
                                     case AssemblyTarget::Aarch64:
                                         checkTextSegmentBaselines<Aarch64Parser, Aarch64Printer, OneOfInstruction>(options, compilerOptions, output,result);
