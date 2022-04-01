@@ -5,7 +5,7 @@ namespace elet::domain::compiler::instruction::output::test
 {
     TEST_F(BitmaskImmediateFixture, ImmediateInstructionEncoding_BitmaskImmediate_ElementSize16)
     {
-        testMainFunction("return 0b0000_0000_0000_0001_0000_0000_0000_0001;", "s32");
+        testFunction("return 0b0000_0000_0000_0001_0000_0000_0000_0001;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "ImmediateInstructionEncoding_BitmaskImmediate_ElementSize16",
@@ -18,7 +18,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(BitmaskImmediateFixture, ImmediateInstructionEncoding_BitmaskImmediate_ElementSize8)
     {
-        testMainFunction("return 0b0000_0001_0000_0001_0000_0001_0000_0001;");
+        testFunction("return 0b0000_0001_0000_0001_0000_0001_0000_0001;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "ImmediateInstructionEncoding_BitmaskImmediate_ElementSize8",
@@ -31,7 +31,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(BitmaskImmediateFixture, ImmediateInstructionEncoding_BitmaskImmediate_ElementSize4)
     {
-        testMainFunction("return 0b0001_0001_0001_0001_0001_0001_0001_0001;");
+        testFunction("return 0b0001_0001_0001_0001_0001_0001_0001_0001;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "ImmediateInstructionEncoding_BitmaskImmediate_ElementSize4",
@@ -44,7 +44,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(BitmaskImmediateFixture, ImmediateInstructionEncoding_BitmaskImmediate_ElementSize2)
     {
-        testMainFunction("return 0b0101_0101_0101_0101_0101_0101_0101_0101;");
+        testFunction("return 0b0101_0101_0101_0101_0101_0101_0101_0101;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "ImmediateInstructionEncoding_BitmaskImmediate_ElementSize2",
@@ -57,7 +57,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(BitmaskImmediateFixture, ImmediateInstructionEncoding_BitmaskImmediate_ElementSize1)
     {
-        testMainFunction("return 0b1111_1111_1111_1111_1111_1111_1111_1111;");
+        testFunction("return 0b1111_1111_1111_1111_1111_1111_1111_1111;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "ImmediateInstructionEncoding_BitmaskImmediate_ElementSize1",
@@ -70,7 +70,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(BitmaskImmediateFixture, ImmediateInstructionEncoding_BitmaskImmediate_HalfElement64)
     {
-        testMainFunction("return 0b0000_0000_0000_0000_0000_0000_0000_0000____0000_0000_0000_0011_0000_0000_0000_0011;");
+        testFunction("return 0b0000_0000_0000_0000_0000_0000_0000_0000____0000_0000_0000_0011_0000_0000_0000_0011;", "u64");
 
         EXPECT_TRUE(testProject({
             .baselineName = "ImmediateInstructionEncoding_BitmaskImmediate_HalfElement64",

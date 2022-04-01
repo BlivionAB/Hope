@@ -16,13 +16,13 @@ namespace elet::domain::compiler::ast
         Parser*
         _parser;
 
-        template<typename... Args>
-        error::SyntaxError*
-        throwSyntaxError(Utf8String message, Args... args);
+        template<typename T, typename... Args>
+        T*
+        throwSyntaxErrorWithNode(const Syntax* syntax, Args... args);
 
-        template<typename... Args>
-        error::SyntaxError*
-        throwSyntaxError(const Syntax* syntax, Utf8String message, Args... args);
+        template<typename T, typename... Args>
+        T*
+        throwSyntaxError(Args... args);
 
         ErrorNode*
         createErrorNodeOnCurrentToken();

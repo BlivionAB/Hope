@@ -460,8 +460,14 @@ namespace elet::domain::compiler::instruction::output::macho
 
         MachoFileWriter(AssemblyTarget assemblyTarget);
 
-        List<uint8_t>*
-        write(FunctionRoutine* startRoutine) override;
+        void
+        beginWrite() override;
+
+        void
+        write(FunctionRoutine* function) override;
+
+        void
+        endWrite() override;
 
         uint64_t
         vmAddress = 0x0000000100000000;
@@ -574,7 +580,7 @@ namespace elet::domain::compiler::instruction::output::macho
         writeHeader();
 
         void
-        layoutTextSegment(FunctionRoutine* startRoutine);
+        layoutTextSegment();
 
         ContainerPtr<SegmentCommand64, uint8_t>
         writeSegment(SegmentCommand64 segmentCommand);
@@ -660,7 +666,7 @@ namespace elet::domain::compiler::instruction::output::macho
         writeCommandPadding(ContainerPtr<TCommand, uint8_t>& command);
 
         void
-        writeMainCommand(FunctionRoutine* startRoutine);
+        writeMainCommand();
 
         void
         writeDataSection();

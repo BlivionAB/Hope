@@ -182,7 +182,7 @@ namespace elet::domain::compiler::instruction
         transformImmediateToImmediateBinaryExpression(ast::BinaryOperatorKind binaryOperatorKind, const output::ImmediateValue& left, const output::ImmediateValue& right);
 
         output::RegisterResult
-        transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryExpression* binaryExpression);
+        transformImmediateToRegisterExpression(output::OperandRegister left, Int128 right, ast::BinaryExpression* binaryExpression);
 
         void
         transformReturnStatement(ast::ReturnStatement* returnStatement, uint64_t& stackOffset);
@@ -218,6 +218,9 @@ namespace elet::domain::compiler::instruction
 
         RegisterSize
         getSupportedRegisterSize(RegisterSize size);
+
+        output::CanonicalExpression
+        transformBooleanLiteral(ast::BooleanLiteral* booleanLiteral, uint64_t& offset);
     };
 
 

@@ -1,5 +1,5 @@
 #include "Scanner.h"
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error.h"
 
 
 namespace elet::domain::compiler::ast
@@ -109,6 +109,11 @@ namespace elet::domain::compiler::ast
                 case Character::Caret:
                     return Token::Caret;
                 case Character::Pipe:
+                    if (getCharacter() == Character::Pipe)
+                    {
+                        increment();
+                        return Token::PipePipe;
+                    }
                     return Token::Pipe;
                 case Character::Equal:
                     if (getCharacter() == Character::Equal)

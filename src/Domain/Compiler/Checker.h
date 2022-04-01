@@ -5,10 +5,11 @@
 #include <map>
 #include <format>
 #include <Foundation/Utf8StringView.h>
+#include <Foundation/Int128.h>
 #include "Binder.h"
 #include "Syntax/Syntax.h"
 #include "Syntax/Syntax.Type.h"
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error.h"
 
 
 using namespace elet::foundation;
@@ -22,6 +23,14 @@ namespace elet::domain::compiler::ast
     struct CallExpression;
     struct PropertyExpression;
 
+    struct MinTypeValue
+    {
+        Type*
+        type;
+
+        Int128
+        value;
+    };
 
     class Checker
     {
@@ -60,12 +69,6 @@ namespace elet::domain::compiler::ast
         bool
         isTypeEqualToType(const type::Type* target, const type::Type* source);
 
-        void
-        addDiagnostic(Diagnostic* diagnostic);
-
-        List<Diagnostic*>
-        _diagnostics;
-
         const SourceFile*
         _sourceFile;
 
@@ -75,11 +78,17 @@ namespace elet::domain::compiler::ast
         FunctionDeclaration*
         getDeclarationFromSignature(type::Signature* const& signature, const DomainDeclaration* domain) const;
 
-        void
-        checkFunctionSignature(const type::Signature* target, const type::Signature* source);
+        bool
+        isMatchingFunctionSignature(const type::Signature* target, const type::Signature* source);
 
         Type*
         checkExpression(Expression* expression);
+
+        bool
+        tryGetValueFromBinaryExpression(Int128& value, const BinaryExpression* binaryExpression);
+
+        bool
+        tryGetValueFromExpression(elet::foundation::Int128& value, const Expression* expression);
 
         Type*
         checkPropertyExpression(PropertyExpression* propertyExpression);
@@ -117,15 +126,30 @@ namespace elet::domain::compiler::ast
         Type*
         checkIntegerLiteral(IntegerLiteral* integerLiteral);
 
-        template<typename... Args>
+        template<typename T, typename... Args>
         void
-        addError(const Syntax* syntax, const char* message, Args... args);
+        addError(const Syntax* syntax, Args... args);
 
         void
         checkReturnStatement(ReturnStatement* returnStatement, FunctionDeclaration* functionDeclaration);
 
         void
-        checkTypeAssignability(Type* target, Type* reference);
+        checkTypeAssignability(Type* placeholder, Type* target, Syntax* targetSyntax);
+
+        Type*
+        checkBooleanLiteral(BooleanLiteral* literal);
+
+        bool
+        isIntegralType(Type* type);
+
+        bool
+        isIntegralSubsetOrEqualType(Type* reference, Type* target);
+
+        std::string
+        getTypeString(const Type* type);
+
+        void
+        setMinIntegralTypeFromImmediateValue(const Int128& value, Type* type, Expression* binaryExpression);
     };
 }
 

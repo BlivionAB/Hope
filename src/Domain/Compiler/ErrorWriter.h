@@ -3,7 +3,7 @@
 
 
 #include <Foundation/TextWriter.h>
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error.h"
 
 
 using namespace elet::foundation;

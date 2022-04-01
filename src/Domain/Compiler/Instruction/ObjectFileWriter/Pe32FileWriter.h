@@ -326,8 +326,14 @@ namespace elet::domain::compiler::instruction::output::pe32
 
         Pe32FileWriter(AssemblyTarget assemblyTarget);
 
-        List<uint8_t>*
-        write(FunctionRoutine* startRoutine) override;
+        void
+        beginWrite() override;
+
+        void
+        write(FunctionRoutine* function) override;
+
+        void
+        endWrite() override;
 
     private:
 

@@ -5,7 +5,7 @@ namespace elet::domain::compiler::test
 {
     TEST_F(OperatorKindFixture, Operator_Add_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 3;\n"
             "var y: s32 = 3;\n"
             "return x + y;", "s32");
@@ -21,7 +21,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(OperatorKindFixture, Operator_Add_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 3;\n"
             "var y: s64 = 3;\n"
             "return x + y;", "s64");
@@ -37,7 +37,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(OperatorKindFixture, Operator_Subtract_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 3;\n"
             "var y: s32 = 3;\n"
             "return x - y;", "s32");
@@ -53,7 +53,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(OperatorKindFixture, Operator_Subtract_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 3;\n"
             "var y: s64 = 3;\n"
             "return x - y;", "s64");
@@ -69,7 +69,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(OperatorKindFixture, Operator_Multiply_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 3;\n"
             "var y: s32 = 3;\n"
             "return x * y;", "s32");
@@ -85,7 +85,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(OperatorKindFixture, Operator_Multiply_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 3;\n"
             "var y: s64 = 3;\n"
             "return x * y;", "s64");
@@ -101,7 +101,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(OperatorKindFixture, Operator_Divide_S32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 3;\n"
             "var y: s32 = 3;\n"
             "return x / y;", "s32");
@@ -117,7 +117,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(OperatorKindFixture, Operator_Divide_S64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 3;\n"
             "var y: s64 = 3;\n"
             "return x / y;", "s64");

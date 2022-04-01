@@ -15,3 +15,17 @@ Conversion Ranking
 
 Default implicit integer literal type follows the conventions set in CPP.
 https://en.cppreference.com/w/cpp/language/integer_literal
+
+
+## Integer Literal Expression Coercion
+
+Consider:
+```
+var s: s8 = 1 + 2;
+```
+
+The expression `1 + 2` with implicit integer conversion yields `s32` type. Though, `s32` does
+not fit into `s8`. Thus, we have to compute the value of all integer literal
+expression in order to know if it fits into placeholder type. Since, we support upto
+`u64` and all signed types, we have to have a signed type that encompasses `u64`.
+Right now, that type is `s128`.

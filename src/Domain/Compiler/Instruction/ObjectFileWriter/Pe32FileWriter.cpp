@@ -12,10 +12,17 @@ namespace elet::domain::compiler::instruction::output::pe32
     }
 
 
-    List<uint8_t>*
-    Pe32FileWriter::write(FunctionRoutine* startRoutine)
+    void
+    Pe32FileWriter::beginWrite()
     {
-        layoutTextSegment(startRoutine);
+        _textOffset = assemblyWriter->getOffset();
+    }
+
+
+    void
+    Pe32FileWriter::endWrite()
+    {
+        _textSize = assemblyWriter->getOffset() - _textOffset;
 
         writeImageFileHeader();
         writeTextSectionHeader();
@@ -27,8 +34,15 @@ namespace elet::domain::compiler::instruction::output::pe32
         writeSections();
         writeSymbolTable();
         writeStringTable();
-        return assemblyWriter->getOutput();
     }
+
+
+    void
+    Pe32FileWriter::write(FunctionRoutine* function)
+    {
+        assemblyWriter->writeTextSection(function);
+    }
+
 
     void
     Pe32FileWriter::writeSections()
@@ -264,9 +278,7 @@ namespace elet::domain::compiler::instruction::output::pe32
     void
     Pe32FileWriter::layoutTextSection(FunctionRoutine* startRoutine)
     {
-        _textOffset = assemblyWriter->getOffset();
         assemblyWriter->writeTextSection(startRoutine);
-        _textSize = assemblyWriter->getOffset() - _textOffset;
     }
 
 

@@ -3,13 +3,14 @@
 
 #include <cstddef>
 #include <map>
+#include <variant>
 #include <Foundation/Memory/Utf8Span.h>
 #include <Foundation/Utf8StringView.h>
+#include <Foundation/Int128.h>
 #include <Foundation/List.h>
 #include <Domain/Compiler/CompilerTypes.h>
 #include "Syntax.Labels.h"
 #include "Syntax.Kind.h"
-#include "Syntax.Type.h"
 
 
 namespace elet::domain::compiler::instruction::output
@@ -22,6 +23,10 @@ namespace elet::domain::compiler::instruction::output
 
 namespace elet::domain::compiler::ast
 {
+    namespace type
+    {
+        struct Type;
+    }
     using namespace instruction;
     using namespace type;
 
@@ -142,6 +147,7 @@ namespace elet::domain::compiler::ast
 
         // Types
         VoidKeyword,
+        BoolKeyword,
         IntKeyword,
         UnsignedIntKeyword,
         CharKeyword,
@@ -450,7 +456,7 @@ namespace elet::domain::compiler::ast
         std::variant<HexadecimalLiteral*, DecimalLiteral*, BinaryLiteral*>
         digits;
 
-        uint64_t
+        Int128
         value;
 
         IntegerSuffix*
@@ -549,6 +555,7 @@ namespace elet::domain::compiler::ast
 }
 
 
+#include "Syntax.Type.h"
 #include "Syntax.Declarations.h"
 #include "Syntax.Block.h"
 #include "Syntax.Statement.h"

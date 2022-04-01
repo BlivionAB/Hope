@@ -6,7 +6,7 @@
 #include <Domain/Compiler/Syntax/Syntax.Statement.h>
 #include "Scanner.h"
 #include "Syntax/Syntax.h"
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error.h"
 #include "Domain/Compiler/Instruction/Parser.h"
 
 

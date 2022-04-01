@@ -10,6 +10,7 @@ namespace elet::domain::compiler::ast
         EndOfFile,
         Unknown,
         ErrorNode,
+        SyntaxList,
 
         AssemblyBlock,
         AssemblyBody,

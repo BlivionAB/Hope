@@ -20,6 +20,11 @@ namespace elet::domain::compiler::ast
     struct DomainDeclaration;
     struct InterfaceDeclaration;
 
+    namespace type
+    {
+        struct Interface;
+        struct Signature;
+    }
 
     namespace Decoration
     {
@@ -73,9 +78,16 @@ namespace elet::domain::compiler::ast
     };
 
 
+    template<typename T>
+    struct SyntaxList : public List<T>, Syntax
+    {
+
+    };
+
+
     struct DomainDeclaration : Declaration
     {
-        List<Name*>
+        SyntaxList<Name*>*
         names;
 
         DomainType

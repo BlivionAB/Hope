@@ -160,8 +160,9 @@ namespace elet::domain::compiler::ast
         { "char", Token::CharKeyword },
         { "string", Token::StringKeyword },
         { "void", Token::VoidKeyword },
-        { "literal", Token::LiteralKeyword, },
+        { "bool", Token::BoolKeyword },
 
+        // Boolean
         { "true", Token::TrueKeyword },
         { "false", Token::FalseKeyword },
 

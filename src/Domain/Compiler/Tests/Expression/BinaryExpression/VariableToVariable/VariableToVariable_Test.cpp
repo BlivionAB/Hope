@@ -5,7 +5,7 @@ namespace elet::domain::compiler::test
 {
     TEST_F(VariableToVariableFixture, VariableToVariable_SingleTerm)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1 + 2;\n"
             "var y = 1 + 2;\n"
             "return x + y;");
@@ -21,7 +21,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_MultiTerms)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -38,7 +38,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_HigherPrecedence_LowerPrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -55,7 +55,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_LowerPrecedence_HigherPrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -72,7 +72,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_EqualPrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -89,7 +89,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_LowestPrecedence_MiddlePrecedence_HighestPrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -106,7 +106,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_MiddlePrecedence_HighestPrecedence_LowestPrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -123,7 +123,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_LowestPrecedence_HighestPrecedence_MiddlePrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -140,7 +140,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_HighestPrecedence_MiddlePrecedence_LowestPrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -157,7 +157,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_HighestPrecedence_LowestPrecedence_MiddlePrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"
@@ -174,7 +174,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToVariableFixture, VariableToVariable_MiddlePrecedence_LowestPrecedence_HighestPrecedence)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1;\n"
             "var y = 2;\n"
             "var z = 3;\n"

@@ -4,7 +4,7 @@
 
 #include <format>
 #include <filesystem>
-#include "Syntax/Syntax.h"
+#include <Foundation/Utf8String.h>
 
 
 namespace fs = std::filesystem;
@@ -34,6 +34,8 @@ namespace elet::domain::compiler
         S64 = 8,
     };
 
+    std::string
+    integerToString(IntegerKind integerKind);
 
     enum class Sign
     {
@@ -76,21 +78,27 @@ namespace elet::domain::compiler
     enum class TypeKind
     {
         Error,
+        Any, // Only used for testing purposes
 
         // Integer types, ranked after the conversion ranking
         U8,
         S8,
-        Char,
         U16,
         S16,
         U32,
         S32,
         U64,
         S64,
-        UInt,
         Int,
+        Uint,
+        Usize,
 
-        USize,
+        IntegralStart = U8,
+        IntegralEnd = Usize,
+
+        Char,
+        Bool,
+
         Pointer,
         F32,
         F64,
@@ -106,22 +114,6 @@ namespace elet::domain::compiler
         x86_64,
         Aarch64,
         StashIR,
-    };
-
-
-    struct Diagnostic
-    {
-        Utf8String
-        message;
-
-        explicit Diagnostic(const char* message):
-        message(message)
-        { }
-
-        template<typename... Args>
-        explicit Diagnostic(const char* message, Args... args):
-            message(std::format(message, args...).c_str())
-        { }
     };
 
 

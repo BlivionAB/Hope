@@ -16,6 +16,7 @@ file(GLOB FOUNDATION_TEST ${CMAKE_SOURCE_DIR}/src/Foundation/Tests/* ${CMAKE_SOU
 
 file(GLOB DOMAIN_SRC
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/*
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Error/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Syntax/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/ObjectFileWriter/*
@@ -38,7 +39,11 @@ file(GLOB DOMAIN_TEST
     src/Domain/Compiler/Tests/Declaration/VariableDeclaration/VariableDeclarationFixture.h
     src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteral_Test.cpp
     src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteralFixture.h
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/ImmediateKindFixture.h.cpp
+    src/Domain/Compiler/Tests/Expression/Boolean/BooleanLiteral/BooleanLiteral_Test.cpp
+    src/Domain/Compiler/Tests/Expression/Boolean/BooleanLiteral/BooleanLiteralFixture.h
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBoolean_Test.cpp
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBooleanFixture.h
+    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/ImmediateKindFixture.h
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/BinaryExpression_ImmediateKind_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediate_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediateFixture.h

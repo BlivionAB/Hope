@@ -1,5 +1,5 @@
 #include "Binder.h"
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error.h"
 #include <variant>
 
 namespace elet::domain::compiler::ast
@@ -58,6 +58,17 @@ namespace elet::domain::compiler::ast
                 onApplicationStart->type = new type::Type(TypeKind::Void);
                 consoleAppInterface->signatures.add(onApplicationStart);
                 domain->implements = consoleAppInterface;
+            }
+            else if (domain->implementsClause->name == "ITestApplication")
+            {
+                startDomainDeclaration = domain;
+                static auto testInterface = new type::Interface();
+                static auto signature = new type::Signature();
+                signature->isStartFunction = true;
+                signature->name = "Test";
+                signature->type = new type::Type(TypeKind::Any);
+                testInterface->signatures.add(signature);
+                domain->implements = testInterface;
             }
         }
         for (const auto& decl : domain->block->declarations)

@@ -6,22 +6,21 @@
 
 namespace elet::domain::compiler::ast
 {
-    template<typename... Args>
-    error::SyntaxError*
-    ParserError::throwSyntaxError(Utf8String message, Args... args)
+    template<typename T, typename... Args>
+    T*
+    ParserError::throwSyntaxErrorWithNode(const Syntax* syntax, Args... args)
     {
-        ErrorNode* errorNode = createErrorNodeOnCurrentToken();
         _parser->skipToNextSemicolon();
-        throw new error::SyntaxError(errorNode, _parser->_sourceFile, message.toString(), args...);
+        throw new T(_parser->_sourceFile, syntax, args...);
     }
 
-
-    template<typename... Args>
-    error::SyntaxError*
-    ParserError::throwSyntaxError(const Syntax* syntax, Utf8String message, Args... args)
+    template<typename T, typename... Args>
+    T*
+    ParserError::throwSyntaxError(Args... args)
     {
+        const ErrorNode* errorNode = createErrorNodeOnCurrentToken();
         _parser->skipToNextSemicolon();
-        throw new error::SyntaxError(syntax, _parser->_sourceFile, message.toString(), args...);
+        throw new T(_parser->_sourceFile, errorNode, args...);
     }
 }
 

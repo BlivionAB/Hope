@@ -1,5 +1,5 @@
 #include "Parser.h"
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error_Syntax.h"
 #include <Foundation/Utf8String.h>
 #include <filesystem>
 #include <cassert>
@@ -174,7 +174,7 @@ namespace elet::domain::compiler::ast
             case Token::CloseBrace:
                 return nullptr;
             default:
-                throw _error->throwSyntaxError("Unknown domain-level statement.");
+                throw _error->throwSyntaxError<error::UnknownDomainLevelStatement>();
         }
     }
 
@@ -201,7 +201,7 @@ namespace elet::domain::compiler::ast
             case Token::CloseBrace:
                 return nullptr;
             default:
-                _error->throwSyntaxError("Unknown file-level statement.");
+                _error->throwSyntaxError<error::UnknownFileLevelStatement>();
         }
     }
 
@@ -242,12 +242,12 @@ namespace elet::domain::compiler::ast
                                 return propertyAccessExpression;
                             }
                     }
-                    _error->throwSyntaxError("Single variable expressions are disallowed.");
+                    _error->throwSyntaxError<error::UnknownFunctionLevelStatement>();
                 }
                 case Token::EndOfFile:
                     return createSyntax<EndOfFile>(SyntaxKind::EndOfFile);
                 default:
-                    _error->throwSyntaxError("");
+                    _error->throwSyntaxError<error::UnknownFunctionLevelStatement>();
             }
         }
         catch (error::SyntaxError* syntaxError)
@@ -483,7 +483,7 @@ namespace elet::domain::compiler::ast
         {
             ErrorNode* errorNode = _error->createErrorNodeOnCurrentToken();
             const char* tokenValue = getTokenValue().toString();
-            throw new error::SyntaxError(errorNode, _sourceFile, "Expected '{0}', instead got '{1}'.", eletTokenToString.get(expected), tokenValue);
+            throw error::UnexpectedTokenError(_sourceFile, errorNode, eletTokenToString.get(expected), tokenValue);
         }
     }
 
@@ -515,11 +515,8 @@ namespace elet::domain::compiler::ast
         TypeAssignment* typeAssignment = createSyntax<TypeAssignment>(SyntaxKind::Type);
         Token token = _scanner->takeNextToken(false);
         switch (token) {
-            case Token::IntKeyword:
-                typeAssignment->type = TypeKind::Int;
-                break;
             case Token::UnsignedIntKeyword:
-                typeAssignment->type = TypeKind::UInt;
+                typeAssignment->type = TypeKind::Uint;
                 break;
             case Token::CharKeyword:
                 typeAssignment->type = TypeKind::Char;
@@ -527,8 +524,8 @@ namespace elet::domain::compiler::ast
             case Token::VoidKeyword:
                 typeAssignment->type = TypeKind::Void;
                 break;
-            case Token::USizeKeyword:
-                typeAssignment->type = TypeKind::USize;
+            case Token::BoolKeyword:
+                typeAssignment->type = TypeKind::Bool;
                 break;
             case Token::U8Keyword:
                 typeAssignment->type = TypeKind::U8;
@@ -559,7 +556,7 @@ namespace elet::domain::compiler::ast
                 typeAssignment->type = TypeKind::Custom;
                 break;
             default:
-                throw _error->throwSyntaxError("Expected type annotation.");
+                throw _error->throwSyntaxError<error::ExpectedTypeAnnotationError>(getTokenValue().toString());
         }
         typeAssignment->name = createName();
         while (true)
@@ -761,7 +758,7 @@ namespace elet::domain::compiler::ast
             case Token::Identifier:
                 return parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
         }
-        throw _error->throwSyntaxError("Expected expression.");
+        throw _error->throwSyntaxError<error::ExpectedExpressionError>();
     }
 
 
@@ -773,6 +770,7 @@ namespace elet::domain::compiler::ast
         {
             IntegerLiteral* integerLiteral = createIntegerLiteral(token);
             integerLiteral->isNegative = true;
+            finishSyntax(integerLiteral);
             return integerLiteral;
         }
         else
@@ -854,7 +852,8 @@ namespace elet::domain::compiler::ast
     Parser::createBooleanLiteral(bool value)
     {
         BooleanLiteral* boolean = createSyntax<BooleanLiteral>(SyntaxKind::BooleanLiteral);
-        boolean->value = true;
+        boolean->value = value;
+        finishSyntax(boolean);
         return boolean;
     }
 
@@ -1168,13 +1167,16 @@ namespace elet::domain::compiler::ast
         _currentDomain->implementsClause = nullptr;
         Token token = takeNextToken();
         char* start = _scanner->getStartPosition();
+        _currentDomain->names = createSyntax<SyntaxList<Name*>>(SyntaxKind::SyntaxList);
+
         while (true)
         {
             if (token != Token::Identifier)
             {
                 _error->createExpectedTokenError(Token::Identifier);
             }
-            _currentDomain->names.add(createName());
+            _currentDomain->names->add(createName());
+            finishSyntax(static_cast<Syntax*>(_currentDomain->names));
             char *end = _scanner->getPositionAddress();
             token = takeNextToken();
             if (token == Token::SemiColon)
@@ -1209,11 +1211,11 @@ namespace elet::domain::compiler::ast
         }
 
     setAccessMap:
-        std::size_t last = _currentDomain->names.size() - 1;
+        std::size_t last = _currentDomain->names->size() - 1;
         DomainDeclarationMap* currentAccessMap = &domainDeclarationMap;
         for (int i = 0; i <= last; i++)
         {
-            auto name = _currentDomain->names[i];
+            auto name = (*_currentDomain->names)[i];
             if (i == last)
             {
                 currentAccessMap->insert({ name->name, &_currentDomain->block->symbols });
@@ -1223,6 +1225,7 @@ namespace elet::domain::compiler::ast
             currentAccessMap->insert({ name->name, newAccessMap });
             currentAccessMap = newAccessMap;
         }
+        finishSyntax(_currentDomain);
         return _currentDomain;
     }
 
@@ -1378,7 +1381,7 @@ namespace elet::domain::compiler::ast
         expectToken(Token::StringLiteral);
         if (getTokenValue() != "\"C\"")
         {
-            throw _error->throwSyntaxError("Only C language API is allowed.");
+            throw _error->throwSyntaxError<error::ExpectedCDeclarationError>();
         }
         expectToken(Token::OpenBrace);
         block->declarations = parseExternCBlockLevelDeclarations();
@@ -1472,21 +1475,25 @@ namespace elet::domain::compiler::ast
     {
         switch (token)
         {
-            case Token::Minus:
-            case Token::Plus:
-                return 1;
             case Token::Asterisk:
             case Token::ForwardSlash:
             case Token::Percent:
-                return 2;
-            case Token::Pipe:
-                return 3;
-            case Token::Caret:
-                return 4;
+                return 7;
+            case Token::Minus:
+            case Token::Plus:
+                return 6;
             case Token::Ampersand:
                 return 5;
+            case Token::Caret:
+                return 4;
+            case Token::Pipe:
+                return 3;
+            case Token::AmpersandAmpersand:
+                return 2;
+            case Token::PipePipe:
+                return 1;
             default:
-                assert("Unknown operator token.");
+                throw std::runtime_error("Unknown token in getOperatorPrecedence.");
         }
     }
 
@@ -1518,9 +1525,7 @@ namespace elet::domain::compiler::ast
             uint64_t f = positionValue << exponent;
             if (f > leftOfMaxLimit)
             {
-                _error->throwSyntaxError(
-                    binaryLiteral,
-                    "Integer literal has exceeded its max limit of U64_MAX.");
+                _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(binaryLiteral);
             }
             result += f;
             leftOfMaxLimit -= f;
@@ -1567,9 +1572,7 @@ namespace elet::domain::compiler::ast
             uint64_t f = positionValue * std::pow(16ui64, exponent);
             if (f > leftOfMaxLimit)
             {
-                _error->throwSyntaxError(
-                    hexadecimalLiteral,
-                    "Integer literal has exceeded its max limit of U64_MAX.");
+                _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(hexadecimalLiteral);
             }
             result += f;
             leftOfMaxLimit -= f;
@@ -1603,9 +1606,7 @@ namespace elet::domain::compiler::ast
             uint64_t f = s * std::pow(10, exponent);
             if (f > leftOfMaxLimit)
             {
-                _error->throwSyntaxError(
-                    decimalLiteral,
-                    "Integer literal has exceeded its max limit of U64_MAX.");
+                _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(decimalLiteral);
             }
             result += f;
             leftOfMaxLimit -= f;

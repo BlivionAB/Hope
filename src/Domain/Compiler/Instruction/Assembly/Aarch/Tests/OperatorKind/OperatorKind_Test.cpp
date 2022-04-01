@@ -5,7 +5,7 @@ namespace elet::domain::compiler::instruction::output::test
 {
     TEST_F(AarchOperatorKindFixture, OperatorKind_Add_8)
     {
-        testMainFunction(
+        testFunction(
             "var x: s8 = 1 + 2;\n"
             "var y: s8 = 1 + 2;\n"
             "return x + y;", "s8");
@@ -21,7 +21,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_Add_16)
     {
-        testMainFunction(
+        testFunction(
             "var x: s16 = 1 + 2;\n"
             "var y: s16 = 1 + 2;\n"
             "return x + y;", "s16");
@@ -37,7 +37,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_Add_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 1 + 2;\n"
             "var y: s32 = 1 + 2;\n"
             "return x + y;", "s32");
@@ -53,7 +53,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_Add_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 1 + 2;\n"
             "var y: s64 = 1 + 2;\n"
             "return x + y;", "s64");
@@ -69,7 +69,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_Subtract_8)
     {
-        testMainFunction(
+        testFunction(
             "var x: s8 = 1 + 2;\n"
             "var y: s8 = 1 + 2;\n"
             "return x - y;", "s8");
@@ -85,7 +85,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_Subtract_16)
     {
-        testMainFunction(
+        testFunction(
             "var x: s16 = 1 + 2;\n"
             "var y: s16 = 1 + 2;\n"
             "return x - y;", "s16");
@@ -101,7 +101,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_Subtract_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 1 + 2;\n"
             "var y: s32 = 1 + 2;\n"
             "return x - y;", "s32");
@@ -117,7 +117,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_Subtract_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 1 + 2;\n"
             "var y: s64 = 1 + 2;\n"
             "return x - y;", "s64");
@@ -133,7 +133,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_MultiplySigned_8)
     {
-        testMainFunction(
+        testFunction(
             "var x: s8 = 1 + 2;\n"
             "var y: s8 = 1 + 2;\n"
             "return x * y;", "s8");
@@ -149,7 +149,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_MultiplySigned_16)
     {
-        testMainFunction(
+        testFunction(
             "var x: s16 = 1 + 2;\n"
             "var y: s16 = 1 + 2;\n"
             "return x * y;", "s16");
@@ -165,7 +165,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_MultiplySigned_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 1 + 2;\n"
             "var y: s32 = 1 + 2;\n"
             "return x * y;", "s32");
@@ -181,7 +181,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_MultiplySigned_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 1 + 2;\n"
             "var y: s64 = 1 + 2;\n"
             "return x * y;", "s64");
@@ -197,7 +197,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideSigned_8)
     {
-        testMainFunction(
+        testFunction(
             "var x: s8 = 1 + 2;\n"
             "var y: s8 = 1 + 2;\n"
             "return x / y;", "s8");
@@ -213,7 +213,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideSigned_16)
     {
-        testMainFunction(
+        testFunction(
             "var x: s16 = 1 + 2;\n"
             "var y: s16 = 1 + 2;\n"
             "return x / y;", "s16");
@@ -229,7 +229,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideSigned_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 1 + 2;\n"
             "var y: s32 = 1 + 2;\n"
             "return x / y;");
@@ -245,7 +245,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideSigned_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 1 + 2;\n"
             "var y: s64 = 1 + 2;\n"
             "return x / y;", "s64");
@@ -260,7 +260,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideUnsigned_8)
     {
-        testMainFunction(
+        testFunction(
             "var x: u8 = 3;\n"
             "var y: u8 = 3;\n"
             "return x / y;", "u8");
@@ -276,7 +276,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideUnsigned_16)
     {
-        testMainFunction(
+        testFunction(
             "var x: u16 = 3;\n"
             "var y: u16 = 3;\n"
             "return x / y;", "u16");
@@ -292,7 +292,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideUnsigned_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: u32 = 3;\n"
             "var y: u32 = 3;\n"
             "return x / y;", "u32");
@@ -308,7 +308,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_DivideUnsigned_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: u64 = 3;\n"
             "var y: u64 = 3;\n"
             "return x / y;", "u64");
@@ -324,7 +324,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderSigned_8)
     {
-        testMainFunction(
+        testFunction(
             "var x: s8 = 3;\n"
             "var y: s8 = 3;\n"
             "return x % y;", "s8");
@@ -340,7 +340,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderSigned_16)
     {
-        testMainFunction(
+        testFunction(
             "var x: s16 = 3;\n"
             "var y: s16 = 3;\n"
             "return x % y;", "s16");
@@ -356,7 +356,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderSigned_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: s32 = 3;\n"
             "var y: s32 = 3;\n"
             "return x % y;");
@@ -372,7 +372,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderSigned_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: s64 = 3;\n"
             "var y: s64 = 3;\n"
             "return x % y;", "s64");
@@ -388,7 +388,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderUnsigned_8)
     {
-        testMainFunction(
+        testFunction(
             "var x: u8 = 3;\n"
             "var y: u8 = 3;\n"
             "return x % y;", "u8");
@@ -404,7 +404,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderUnsigned_16)
     {
-        testMainFunction(
+        testFunction(
             "var x: u16 = 3;\n"
             "var y: u16 = 3;\n"
             "return x % y;", "u16");
@@ -420,7 +420,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderUnsigned_32)
     {
-        testMainFunction(
+        testFunction(
             "var x: u32 = 3;\n"
             "var y: u32 = 3;\n"
             "return x % y;");
@@ -436,7 +436,7 @@ namespace elet::domain::compiler::instruction::output::test
 
     TEST_F(AarchOperatorKindFixture, OperatorKind_RemainderUnsigned_64)
     {
-        testMainFunction(
+        testFunction(
             "var x: u64 = 3;\n"
             "var y: u64 = 3;\n"
             "return x % y;", "u64");

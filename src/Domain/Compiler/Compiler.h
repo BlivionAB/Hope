@@ -17,7 +17,7 @@
 #include "Domain/Compiler/Instruction/AssemblyWriter.h"
 #include "CompilerTypes.h"
 #include "ErrorWriter.h"
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error.h"
 #include <Foundation/FileReader.h>
 
 
@@ -142,9 +142,6 @@ namespace elet::domain::compiler
 
         ast::ErrorWriter
         _errorPrinter;
-
-        List<Diagnostic>
-        _diagnostics;
 
         CompilerOptions
         _options;

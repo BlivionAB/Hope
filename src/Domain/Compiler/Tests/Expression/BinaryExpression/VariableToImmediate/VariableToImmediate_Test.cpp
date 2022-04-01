@@ -5,7 +5,7 @@ namespace elet::domain::compiler::test
 {
     TEST_F(VariableToImmediateFixture, VariableToImmediate_VariableLeft)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1 + 2;\n"
             "return x + 1;");
 
@@ -20,7 +20,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(VariableToImmediateFixture, VariableToImmediate_VariableRight)
     {
-        testMainFunction(
+        testFunction(
             "var x = 1 + 2;\n"
             "return 1 + x;");
 

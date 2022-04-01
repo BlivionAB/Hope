@@ -13,10 +13,17 @@ namespace elet::domain::compiler::instruction::output::macho
     }
 
 
-    List<uint8_t>*
-    MachoFileWriter::write(FunctionRoutine* startRoutine)
+    void
+    MachoFileWriter::beginWrite()
     {
-        layoutTextSegment(startRoutine);
+        _textOffset = assemblyWriter->getOffset();
+    }
+
+
+    void
+    MachoFileWriter::endWrite()
+    {
+        layoutTextSegment();
 
         writeHeader();
         writePageZeroSegmentCommand();
@@ -29,7 +36,7 @@ namespace elet::domain::compiler::instruction::output::macho
         writeDysymTabCommand();
         writeLoadDylinkerCommand();
         writeUuidCommand();
-        writeMainCommand(startRoutine);
+        writeMainCommand();
         writeLoadDylibCommands();
 
         writeTextSegment();
@@ -39,8 +46,13 @@ namespace elet::domain::compiler::instruction::output::macho
         writeSymbolTable();
         writeIndirectSymbolTable();
         writeStringTable();
+    }
 
-        return assemblyWriter->getOutput();
+
+    void
+    MachoFileWriter::write(FunctionRoutine* function)
+    {
+        assemblyWriter->writeTextSection(function);
     }
 
 
@@ -83,9 +95,9 @@ namespace elet::domain::compiler::instruction::output::macho
 
 
     void
-    MachoFileWriter::layoutTextSegment(FunctionRoutine* startRoutine)
+    MachoFileWriter::layoutTextSegment()
     {
-        writeTextSection(startRoutine);
+        _textSize = assemblyWriter->getOffset() - _textOffset;
         writeStubsSection();
         writeStubHelperSection();
         writeCStringSection();
@@ -797,7 +809,7 @@ namespace elet::domain::compiler::instruction::output::macho
 
 
     void
-    MachoFileWriter::writeMainCommand(FunctionRoutine* startRoutine)
+    MachoFileWriter::writeMainCommand()
     {
         _mainCommand = writeCommand<MainCommand>(LC_MAIN);
         _mainCommand->offset = 0;

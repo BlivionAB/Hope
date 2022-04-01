@@ -5,7 +5,7 @@ namespace elet::domain::compiler::test
 {
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_SingleTerm)
     {
-        testMainFunction("return 1 + 2;");
+        testFunction("return 1 + 2;");
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_SingleTerm",
@@ -18,7 +18,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_MultiTerms)
     {
-        testMainFunction("return 1 + 1 + 1 + 1 + 1 + 1 + 1;");
+        testFunction("return 1 + 1 + 1 + 1 + 1 + 1 + 1;");
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_MultiTerms",
@@ -31,7 +31,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_LowerPrecedence_HigherPrecedence)
     {
-        testMainFunction("return 1 + 2 * 10;");
+        testFunction("return 1 + 2 * 10;");
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_LowerPrecedence_HigherPrecedence",
@@ -44,7 +44,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_HigherPrecedence_LowerPrecedence)
     {
-        testMainFunction("return 1 * 2 + 10;");
+        testFunction("return 1 * 2 + 10;");
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_HigherPrecedence_LowerPrecedence",
@@ -57,7 +57,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_EqualPrecedence)
     {
-        testMainFunction("return 1 + 2 + 10;");
+        testFunction("return 1 + 2 + 10;");
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_EqualPrecedence",
@@ -70,7 +70,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_LowestPrecedence_MiddlePrecedence_HighestPrecedence)
     {
-        testMainFunction("return 1 | 2 ^ 3 & 4;"); // Note: the precedence order from high to low is &, ^, |.
+        testFunction("return 1 | 2 ^ 3 & 4;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_LowestPrecedence_MiddlePrecedence_HighestPrecedence",
@@ -83,7 +83,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_MiddlePrecedence_HighestPrecedence_LowestPrecedence)
     {
-        testMainFunction("return 1 ^ 2 & 3 | 4;"); // Note: the precedence order from high to low is &, ^, |.
+        testFunction("return 1 ^ 2 & 3 | 4;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_MiddlePrecedence_HighestPrecedence_LowestPrecedence",
@@ -96,7 +96,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_LowestPrecedence_HighestPrecedence_MiddlePrecedence)
     {
-        testMainFunction("return 1 | 2 & 3 ^ 4;"); // Note: the precedence order from high to low is &, ^, |.
+        testFunction("return 1 | 2 & 3 ^ 4;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_LowestPrecedence_HighestPrecedence_MiddlePrecedence",
@@ -109,7 +109,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_HighestPrecedence_MiddlePrecedence_LowestPrecedence)
     {
-        testMainFunction("return 1 & 2 ^ 3 | 4;"); // Note: the precedence order from high to low is &, ^, |.
+        testFunction("return 1 & 2 ^ 3 | 4;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_HighestPrecedence_MiddlePrecedence_LowestPrecedence",
@@ -122,7 +122,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_HighestPrecedence_LowestPrecedence_MiddlePrecedence)
     {
-        testMainFunction("return 1 & 2 | 3 ^ 4;"); // Note: the precedence order from high to low is &, ^, |.
+        testFunction("return 1 & 2 | 3 ^ 4;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_HighestPrecedence_LowestPrecedence_MiddlePrecedence",
@@ -135,7 +135,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BinaryExpression_ImmediateToImmediateFixture, BinaryExpression_ImmediateToImmediate_MiddlePrecedence_LowestPrecedence_HighestPrecedence)
     {
-        testMainFunction("return 1 ^ 2 | 3 & 4;"); // Note: the precedence order from high to low is &, ^, |.
+        testFunction("return 1 ^ 2 | 3 & 4;"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "BinaryExpression_ImmediateToImmediate_MiddlePrecedence_LowestPrecedence_HighestPrecedence",

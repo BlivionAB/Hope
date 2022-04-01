@@ -1,5 +1,5 @@
 #include "ErrorWriter.h"
-#include "Exceptions.h"
+#include "Domain/Compiler/Error/Error.h"
 
 
 namespace elet::domain::compiler::ast
@@ -98,6 +98,7 @@ namespace elet::domain::compiler::ast
         _scanner = &scanner;
         unsigned int line = 1;
         unsigned int column = 1;
+        _currentLineStart = scanner.getPositionAddress();
 
         while (true)
         {
@@ -109,7 +110,7 @@ namespace elet::domain::compiler::ast
             if (scanner.getPositionAddress() == syntaxError->syntax->start)
             {
                 scanner.scanRestOfLine();
-                _currentLineEnd = scanner.getPositionAddress() - 1;
+                _currentLineEnd = scanner.getPositionAddress();
                 break;
             }
             if (scanner.isNewline(ch))

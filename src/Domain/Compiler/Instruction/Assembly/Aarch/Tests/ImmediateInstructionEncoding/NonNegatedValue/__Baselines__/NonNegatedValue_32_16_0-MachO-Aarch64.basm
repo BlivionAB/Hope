@@ -3,7 +3,7 @@ Address           Bytes                 Instruction
 
 __TEXT,__text:
 
-_main:
+Test:
 0000000100003fc0  a9bf7bfd              stp fp, lr, [sp, #-0x10]!
 0000000100003fc4  910003fd              add fp, sp, #0x0
 0000000100003fc8  d28000e0              mov x0, #0x7

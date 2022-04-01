@@ -382,10 +382,8 @@ namespace elet::domain::compiler
             output::FunctionRoutine* routine = _transformer->transform(declaration);
 
             // TEMP: All declarations are right now functions.
-            if (routine->isStartFunction)
-            {
-                _optimizationWork.push(routine);
-            }
+
+            _optimizationWork.push(routine);
             _pendingTransformationTasks--;
         }
     }
@@ -424,23 +422,28 @@ namespace elet::domain::compiler
         {
             return;
         }
-        while (_compilationStage == CompilationStage::Writing)
+        if (_compilationStage == CompilationStage::Writing)
         {
-            if (_routines.empty())
+            _objectFileWriter->beginWrite();
+            while (_compilationStage == CompilationStage::Writing)
             {
-                break;
+                if (_routines.empty())
+                {
+                    break;
+                }
+                output::FunctionRoutine* routine = _routines.front();
+                try
+                {
+                    _objectFileWriter->write(routine);
+                }
+                catch (std::exception& e)
+                {
+                    std::cerr << e.what() << std::endl;
+                    throw e;
+                }
+                _routines.pop();
             }
-            output::FunctionRoutine* routine = _routines.front();
-            try
-            {
-                _objectFileWriter->write(routine);
-            }
-            catch (std::exception& e)
-            {
-                std::cerr << e.what() << std::endl;
-                throw e;
-            }
-            _routines.pop();
+            _objectFileWriter->endWrite();
         }
     }
 

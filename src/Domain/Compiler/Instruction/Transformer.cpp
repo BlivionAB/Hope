@@ -138,7 +138,7 @@ namespace elet::domain::compiler::instruction
         if (std::holds_alternative<output::ImmediateValue>(expression))
         {
             output::ImmediateValue immediateValue = std::get<output::ImmediateValue>(expression);
-            addInstruction(new output::MoveImmediateInstruction(output::OperandRegister::Return, immediateValue.value, returnStatement->expectedType->size()));
+            addInstruction(new output::MoveImmediateInstruction(output::OperandRegister::Return, immediateValue.value.toUint64(), returnStatement->expectedType->size()));
         }
         else if (std::holds_alternative<output::RegisterResult>(expression))
         {
@@ -203,7 +203,7 @@ namespace elet::domain::compiler::instruction
         if (std::holds_alternative<output::ImmediateValue>(canonicalExpression))
         {
             auto immediateValue = std::get<output::ImmediateValue>(canonicalExpression);
-            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(immediateValue.value, stackOffset, registerSize, sign);
+            output::StoreImmediateInstruction* storeInstruction = new output::StoreImmediateInstruction(immediateValue.value.toUint64(), stackOffset, registerSize, sign);
             variable->referenceInstruction = storeInstruction;
             addInstruction(storeInstruction);
         }
@@ -230,6 +230,8 @@ namespace elet::domain::compiler::instruction
     {
         switch (expression->kind)
         {
+            case ast::SyntaxKind::BooleanLiteral:
+                return transformBooleanLiteral(reinterpret_cast<ast::BooleanLiteral*>(expression), stackOffset);
             case ast::SyntaxKind::BinaryExpression:
                 return transformBinaryExpression(reinterpret_cast<ast::BinaryExpression*>(expression), stackOffset, forcedType);
             case ast::SyntaxKind::IntegerLiteral:
@@ -260,18 +262,19 @@ namespace elet::domain::compiler::instruction
 
 
     output::RegisterResult
-    Transformer::transformImmediateToRegisterExpression(output::OperandRegister left, uint64_t right, ast::BinaryExpression* binaryExpression)
+    Transformer::transformImmediateToRegisterExpression(output::OperandRegister left, Int128 right, ast::BinaryExpression* binaryExpression)
     {
         _scratchRegisterIndex--;
         output::OperandRegister scratchRegister = borrowScratchRegister();
         RegisterSize registerSize = binaryExpression->resolvedType->size();
+        uint64_t rightUint64 = right.toUint64();
         switch (binaryExpression->binaryOperatorKind)
         {
             case ast::BinaryOperatorKind::Plus:
-                addInstruction(new output::AddImmediateToRegisterInstruction(scratchRegister, left, right, registerSize));
+                addInstruction(new output::AddImmediateToRegisterInstruction(scratchRegister, left, rightUint64, registerSize));
                 break;
             case ast::BinaryOperatorKind::Minus:
-                addInstruction(new output::SubtractImmediateToRegisterInstruction(scratchRegister, left, right, registerSize));
+                addInstruction(new output::SubtractImmediateToRegisterInstruction(scratchRegister, left, rightUint64, registerSize));
                 break;
             default:
                 assert("Not implemented binary operator in 'transformImmediateToRegisterExpression'.");
@@ -287,117 +290,34 @@ namespace elet::domain::compiler::instruction
         output::ImmediateValue immediateValue(left.integerType, 0);
         switch (binaryOperatorKind)
         {
+            case ast::BinaryOperatorKind::And:
+                immediateValue.value = left.value.toBool() && right.value.toBool();
+                return immediateValue;
+
+            case ast::BinaryOperatorKind::Or:
+                immediateValue.value = left.value.toBool() || right.value.toBool();
+                return immediateValue;
+
             case ast::BinaryOperatorKind::BitwiseAnd:
-                switch (integerKind)
-                {
-                    case IntegerKind::S32:
-                        immediateValue.value = static_cast<int32_t>(left.value) & static_cast<int32_t>(right.value);
-                        break;
-                    case IntegerKind::S64:
-                        immediateValue.value = static_cast<int64_t>(left.value) & static_cast<int64_t>(right.value);
-                        break;
-                    case IntegerKind::U32:
-                        immediateValue.value = static_cast<uint32_t>(left.value) & static_cast<uint32_t>(right.value);
-                        break;
-                    case IntegerKind::U64:
-                        immediateValue.value = left.value & right.value;
-                        break;
-                    default:
-                        throw std::runtime_error("Unknown type kind for bitwise and.");
-                }
+                immediateValue.value = left.value & right.value;
                 return immediateValue;
 
             case ast::BinaryOperatorKind::BitwiseXor:
-                switch (integerKind)
-                {
-                    case IntegerKind::S32:
-                        immediateValue.value = static_cast<int32_t>(left.value) ^ static_cast<int32_t>(right.value);
-                        break;
-                    case IntegerKind::S64:
-                        immediateValue.value = static_cast<int64_t>(left.value) ^ static_cast<int64_t>(right.value);
-                        break;
-                    case IntegerKind::U32:
-                        immediateValue.value = static_cast<uint32_t>(left.value) ^ static_cast<uint32_t>(right.value);
-                        break;
-                    case IntegerKind::U64:
-                        immediateValue.value = left.value ^ right.value;
-                        break;
-                    default:
-                        throw std::runtime_error("Unknown type kind for bitwise and.");
-                }
+                immediateValue.value = left.value ^ right.value;
                 return immediateValue;
+
             case ast::BinaryOperatorKind::BitwiseOr:
-                switch (integerKind)
-                {
-                    case IntegerKind::S32:
-                        immediateValue.value = static_cast<int32_t>(left.value) | static_cast<int32_t>(right.value);
-                        break;
-                    case IntegerKind::S64:
-                        immediateValue.value = static_cast<int64_t>(left.value) | static_cast<int64_t>(right.value);
-                        break;
-                    case IntegerKind::U32:
-                        immediateValue.value = static_cast<uint32_t>(left.value) | static_cast<uint32_t>(right.value);
-                        break;
-                    case IntegerKind::U64:
-                        immediateValue.value = left.value | right.value;
-                        break;
-                    default:
-                        throw std::runtime_error("Unknown type kind for bitwise and.");
-                }
+                immediateValue.value = left.value | right.value;
                 return immediateValue;
+
             case ast::BinaryOperatorKind::Multiply:
-            {
-                switch (integerKind)
-                {
-                    case IntegerKind::S32:
-                        immediateValue.value = left.value * right.value;
-                        break;
-                    case IntegerKind::S64:
-                        immediateValue.value = static_cast<uint64_t>(static_cast<int32_t>(left.value) * static_cast<int32_t>(right.value));
-                        break;
-                    case IntegerKind::U32:
-                        immediateValue.value = static_cast<uint64_t>(left.value) * static_cast<uint64_t>(right.value);
-                        break;
-                    case IntegerKind::U64:
-                        immediateValue.value = static_cast<uint32_t>(left.value) * static_cast<uint32_t>(right.value);
-                        break;
-                    default:
-                        throw std::runtime_error("Should not contain lower than 32bit ints.");
-                }
+                immediateValue.value = left.value * right.value;
                 return immediateValue;
-            }
 
             case ast::BinaryOperatorKind::Plus:
-            {
-                switch (integerKind)
-                {
-                    case IntegerKind::U8:
-                        immediateValue.value = static_cast<uint8_t>(left.value) + static_cast<uint8_t>(right.value);
-                        break;
-                    case IntegerKind::S8:
-                        immediateValue.value = static_cast<int8_t>(left.value) + static_cast<int8_t>(right.value);
-                        break;
-                    case IntegerKind::U16:
-                        immediateValue.value = static_cast<uint16_t>(left.value) + static_cast<uint16_t>(right.value);
-                        break;
-                    case IntegerKind::S16:
-                        immediateValue.value = static_cast<int16_t>(left.value) + static_cast<int16_t>(right.value);
-                        break;
-                    case IntegerKind::U32:
-                        immediateValue.value = static_cast<uint32_t>(left.value) + static_cast<uint32_t>(right.value);
-                        break;
-                    case IntegerKind::S32:
-                        immediateValue.value = static_cast<int32_t>(left.value) + static_cast<int32_t>(right.value);
-                        break;
-                    case IntegerKind::S64:
-                        immediateValue.value = static_cast<int64_t>(left.value) + static_cast<int64_t>(right.value);
-                        break;
-                    case IntegerKind::U64:
-                        immediateValue.value = static_cast<uint64_t>(left.value) + static_cast<uint64_t>(right.value);
-                        break;
-                }
+                immediateValue.value = left.value + right.value;
                 return immediateValue;
-            }
+
             default:
                 throw std::runtime_error("Not implemented binary expression operator for immediate immediateValue.");
         }
@@ -791,6 +711,20 @@ namespace elet::domain::compiler::instruction
                 return size;
             default:
                 return RegisterSize::Dword;
+        }
+    }
+
+
+    output::CanonicalExpression
+    Transformer::transformBooleanLiteral(ast::BooleanLiteral* booleanLiteral, uint64_t& offset)
+    {
+        if (booleanLiteral->value)
+        {
+            return output::ImmediateValue(IntegerKind::U8, 1);
+        }
+        else
+        {
+            return output::ImmediateValue(IntegerKind::U8, 0);
         }
     }
 }

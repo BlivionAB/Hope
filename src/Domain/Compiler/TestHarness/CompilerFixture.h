@@ -220,22 +220,22 @@ namespace elet::domain::compiler::test
         TypeBaselinePrinter
         typeBaselinePrinter;
 
+        std::optional<TestProjectOptions>
+        _testOptions;
+
+        Utf8String
+        _testSource;
+
+        Utf8String
+        _testReturnType;
 
         void
-        testMainFunction(Utf8String source, Utf8String returnType = "s32")
+        testFunction(Utf8String source, Utf8String returnType = "s32")
         {
-            project.setEntrySourceFile("main.hs",
-                Utf8String() + "domain Common::MyApplication implements IConsoleApplication\n"
-                "{\n"
-                "\n"
-                "public:\n"
-                "\n"
-                "    fn OnApplicationStart(): " + returnType + "\n"
-                "    {\n"
-                + source +
-                "    }\n"
-                "}");
+            _testSource = source;
+            _testReturnType = returnType;
         }
+
 
         CompilerOptions
         getCompilerOptionsFromCompilationTarget(const CompilationTarget compilationTarget)
@@ -270,6 +270,7 @@ namespace elet::domain::compiler::test
         testing::AssertionResult
         testProject(TestProjectOptions options)
         {
+            generateTestFunction(options);
             const char* envvar = std::getenv("ACCEPT_BASELINES");
             if (envvar && std::strcmp(envvar, "true") == 0)
             {
@@ -281,6 +282,36 @@ namespace elet::domain::compiler::test
                 compileTarget(target, options, result);
             }
             return result;
+        }
+
+
+        void
+        generateTestFunction(const TestProjectOptions& options)
+        {
+            TextWriter tw;
+            tw.writeLine("domain Common::MyApplication");
+            tw.writeLine("{");
+            tw.newline();
+            tw.writeLine("public:");
+            tw.indent();
+            tw.writeLine("fn Test(): " + _testReturnType);
+            tw.writeLine("{");
+            tw.indent();
+            tw.write(_testSource);
+            tw.unindent();
+            tw.write("}");
+            if (options.writeExecutable)
+            {
+                tw.writeLine("fn OnApplicationStart(): void");
+                tw.writeLine("{");
+                tw.indent();
+                tw.write("Test();");
+                tw.unindent();
+                tw.writeLine("}");
+            }
+            tw.unindent();
+            tw.write("}");
+            project.setEntrySourceFile("main.hs",tw.toString());
         }
 
 

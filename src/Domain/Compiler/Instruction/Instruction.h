@@ -40,24 +40,24 @@ namespace elet::domain::compiler::instruction::output
         IntegerType
         integerType;
 
-        uint64_t
+        Int128
         value;
 
 
-        ImmediateValue(IntegerKind integerKind, uint64_t value):
+        ImmediateValue(IntegerKind integerKind, Int128 value):
             integerType(integerKind),
             value(value)
         {
 
         }
 
-        ImmediateValue(TypeKind typeKind, uint64_t value):
+        ImmediateValue(TypeKind typeKind, Int128 value):
             ImmediateValue(static_cast<IntegerKind>(typeKind), value)
         {
 
         }
 
-        ImmediateValue(IntegerType type, uint64_t value):
+        ImmediateValue(IntegerType type, Int128 value):
             ImmediateValue(type.kind, value)
         {
 

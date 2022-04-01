@@ -58,11 +58,25 @@ namespace elet::domain::compiler::instruction::output
             }
         }
 
+        virtual
+        void
+        beginWrite()
+        {
+
+        }
+
 
         virtual
-        List<uint8_t>*
-        write(FunctionRoutine* startRoutine) = 0;
+        void
+        write(FunctionRoutine* function) = 0;
 
+
+        virtual
+        void
+        endWrite()
+        {
+
+        }
 
         List<uint8_t>&
         getOutput()
