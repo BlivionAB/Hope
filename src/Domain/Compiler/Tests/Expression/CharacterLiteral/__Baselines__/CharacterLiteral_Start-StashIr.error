@@ -1,5 +1,0 @@
-error: Expected single quote (') character.
---> main.hs:8:12
-  | 
-8 | return '\0';    }
-  |            ^

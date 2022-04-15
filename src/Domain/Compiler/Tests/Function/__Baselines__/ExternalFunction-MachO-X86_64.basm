@@ -3,37 +3,36 @@ Address           Bytes                 Instruction
 
 __TEXT,__text:
 
-_main:
+WriteLine:
 0000000100003f80  55                    pushq %rbp
 0000000100003f81  4889e5                movq %rsp, %rbp
-0000000100003f84  488d3d5f000000        leaq "0x0000000100003fea:"Hello World!"", %rdi
-0000000100003f8b  e810000000            callq "0x0000000100003fa0 (WriteLine)"
-0000000100003f90  5d                    popq %rbp
-0000000100003f91  c3                    ret
-0000000100003f92  660f1f840000000000    nopw (%ax,%ax)
-0000000100003f9b  0f1f440000            nopl (%eax,%eax)
+0000000100003f84  4883ec10              subq #0x10, %rsp
+0000000100003f88  48897df8              movq %rdi, -0x8(%rbp)
+0000000100003f8c  e82f000000            callq 0x0000000100003fc0
+0000000100003f91  4883c410              addq #0x10, %rsp
+0000000100003f95  5d                    popq %rbp
+0000000100003f96  c3                    ret
+0000000100003f97  660f1f840000000000    nopw (%ax,%ax)
 
-WriteLine:
+_main:
 0000000100003fa0  55                    pushq %rbp
 0000000100003fa1  4889e5                movq %rsp, %rbp
-0000000100003fa4  4883ec10              subq #0x10, %rsp
-0000000100003fa8  48897df8              movq %rdi, -0x8(%rbp)
-0000000100003fac  488b7df8              movq -0x8(%rbp), %rdi
-0000000100003fb0  e80b000000            callq 0x0000000100003fc0
-0000000100003fb5  4883c410              addq #0x10, %rsp
-0000000100003fb9  5d                    popq %rbp
-0000000100003fba  c3                    ret
+0000000100003fa4  488d3d3f000000        leaq "0x0000000100003fea:"Hello World!"", %rdi
+0000000100003fab  e8d0ffffff            callq "0x0000000100003f80 (WriteLine)"
+0000000100003fb0  5d                    popq %rbp
+0000000100003fb1  c3                    ret
+0000000100003fb2  660f1f840000000000    nopw (%ax,%ax)
 0000000100003fbb  0f1f440000            nopl (%eax,%eax)
 
 __TEXT,__stubs:
 
-0000000100003fc0  ff253a400000          jmpq 0x0000000100008000
+0000000100003fc0  ff153a400000          jmpq 0x0000000100008000
 
 __TEXT,__stub_helper:
 
 0000000100003fc6  4c8d1d31400000        leaq 0x0000000100007ffe, %rbx
 0000000100003fcd  4153                  pushq %r11
-0000000100003fcf  ff2521000000          jmpq "0x0000000100003ff6:"""
+0000000100003fcf  ff1521000000          jmpq "0x0000000100003ff6:"""
 0000000100003fd5  90                    nopl 
 0000000100003fd6  6800000000            pushl #0x0
 0000000100003fdb  e9e6ffffff            jmpl 0x0000000100003fc6

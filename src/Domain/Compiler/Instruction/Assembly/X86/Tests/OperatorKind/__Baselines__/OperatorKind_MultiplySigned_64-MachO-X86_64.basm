@@ -3,7 +3,7 @@ Address           Bytes                 Instruction
 
 __TEXT,__text:
 
-_main:
+Test:
 0000000100003fc0  55                    pushq %rbp
 0000000100003fc1  4889e5                movq %rsp, %rbp
 0000000100003fc4  4883ec10              subq #0x10, %rsp

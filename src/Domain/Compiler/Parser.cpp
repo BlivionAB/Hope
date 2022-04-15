@@ -483,7 +483,7 @@ namespace elet::domain::compiler::ast
         {
             ErrorNode* errorNode = _error->createErrorNodeOnCurrentToken();
             const char* tokenValue = getTokenValue().toString();
-            throw error::UnexpectedTokenError(_sourceFile, errorNode, eletTokenToString.get(expected), tokenValue);
+            throw new error::UnexpectedTokenError(_sourceFile, errorNode, eletTokenToString.get(expected), tokenValue);
         }
     }
 
@@ -556,7 +556,7 @@ namespace elet::domain::compiler::ast
                 typeAssignment->type = TypeKind::Custom;
                 break;
             default:
-                throw _error->throwSyntaxError<error::ExpectedTypeAnnotationError>(getTokenValue().toString());
+                _error->throwSyntaxError<error::ExpectedTypeAnnotationError>(getTokenValue().toString());
         }
         typeAssignment->name = createName();
         while (true)
@@ -664,11 +664,14 @@ namespace elet::domain::compiler::ast
                 unsigned int precedence = getOperatorPrecedence(peek);
                 takeNextToken();
                 binaryExpression->left = leftExpression;
+                binaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
+                finishSyntax(binaryExpression->binaryOperator);
                 binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
                 binaryExpression->right = parseRightHandSideOfBinaryExpression(precedence);
                 leftExpression = binaryExpression;
                 peek = peekNextToken(false);
             }
+            finishSyntax(leftExpression);
             return leftExpression;
         }
         return expr;
@@ -691,6 +694,8 @@ namespace elet::domain::compiler::ast
                 BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
                 binaryExpression->left = expression;
                 binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+                binaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
+                finishSyntax(binaryExpression->binaryOperator);
                 binaryExpression->operatorPrecedence = nextOperatorPrecedence;
 
                 Expression* right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
@@ -739,8 +744,8 @@ namespace elet::domain::compiler::ast
                 stringLiteral->stringEnd = stringLiteral->end - 1;
                 return stringLiteral;
             }
-            case Token::CharacterLiteral:
-                return createCharacterLiteral();
+//            case Token::CharacterLiteral:
+//                return createCharacterLiteral();
             case Token::Minus:
                 return createNegativeIntegerLiteral();
             case Token::HexadecimalLiteral:
@@ -770,6 +775,7 @@ namespace elet::domain::compiler::ast
         {
             IntegerLiteral* integerLiteral = createIntegerLiteral(token);
             integerLiteral->isNegative = true;
+            integerLiteral->value = -integerLiteral->value;
             finishSyntax(integerLiteral);
             return integerLiteral;
         }

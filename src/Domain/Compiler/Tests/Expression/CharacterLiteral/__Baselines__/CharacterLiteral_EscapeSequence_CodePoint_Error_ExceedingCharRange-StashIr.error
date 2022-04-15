@@ -1,5 +1,0 @@
-error: Character literal must be in ASCII (non-extended) range.
---> main.hs:8:9
-  | 
-8 | return '\xa00';    }
-  |         ^^^^^

@@ -77,17 +77,24 @@ namespace elet::domain::compiler
 
     enum class TypeKind
     {
-        Error,
-        Any, // Only used for testing purposes
+        // Any is assignable to anything and anything is assignable to any
+        // Any is binary operable to anything.
+        Any,
 
-        // Integer types, ranked after the conversion ranking
+        // Integer types, ranked after the conversion ranking.
+        // Note: US types stands for unsigned signed. Meaning it's on the unsigned
+        // part of the signed type.
         U8,
+        US8,
         S8,
         U16,
+        US16,
         S16,
         U32,
+        US32,
         S32,
         U64,
+        US64,
         S64,
         Int,
         Uint,

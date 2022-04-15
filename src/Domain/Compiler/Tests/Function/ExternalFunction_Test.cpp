@@ -22,7 +22,7 @@ TEST_F(FunctionFixture, ExternalFunction)
         "\n"
         "   extern \"C\"\n"
         "   {\n"
-        "       fn puts(source: char*): int;\n"
+        "       fn puts(source: char*): s32;\n"
         "   }\n"
         "}\n"
         "\n"
@@ -42,12 +42,12 @@ TEST_F(FunctionFixture, ExternalFunction)
         .baselineName = "ExternalFunction",
         .targets =
         {
-            CompilationTarget::Pe32_x86_64,
-//            CompilationTarget::MachO_x86_64,
-//            CompilationTarget::MachO_Aarch64,
-//            CompilationTarget::StashIR
+//            CompilationTarget::Pe32_x86_64,
+            CompilationTarget::MachO_x86_64,
+            CompilationTarget::MachO_Aarch64,
+            CompilationTarget::StashIR
         },
-        .writeExecutable = true,
+        .generateTestFunction = false
     }));
 }
 

@@ -56,7 +56,13 @@ namespace elet::foundation
         operator <(int32_t other) const;
 
         bool
+        operator <(int64_t other) const;
+
+        bool
         operator <(uint64_t other) const;
+
+        bool
+        operator >(int64_t other) const;
 
         bool
         operator >(uint64_t other) const;
@@ -65,10 +71,19 @@ namespace elet::foundation
         operator ==(uint64_t other) const;
 
         bool
+        operator ==(int64_t other) const;
+
+        bool
         operator <=(uint64_t other) const;
 
         bool
+        operator <=(int64_t other) const;
+
+        bool
         operator >=(uint64_t other) const;
+
+        bool
+        operator >=(int64_t other) const;
 
         Int128
         operator &(const Int128& other) const;

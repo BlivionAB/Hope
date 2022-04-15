@@ -1001,11 +1001,11 @@ namespace elet::domain::compiler::test::aarch
     {
         if (DataProcessingImmediateEncoding::op & dw)
         {
-            parseAdrInstruction(instructions, dw);
+            parseAdrpInstruction(instructions, dw);
         }
         else
         {
-            parseAdrpInstruction(instructions, dw);
+            parseAdrInstruction(instructions, dw);
         }
         return true;
     }

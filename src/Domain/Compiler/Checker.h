@@ -36,6 +36,21 @@ namespace elet::domain::compiler::ast
     {
     public:
 
+        static Type* anyType;
+        static Type* booleanType;
+        static Type* s8Type;
+        static Type* us8Type;
+        static Type* s16Type;
+        static Type* us16Type;
+        static Type* s32Type;
+        static Type* us32Type;
+        static Type* s64Type;
+        static Type* us64Type;
+        static Type* u8Type;
+        static Type* u16Type;
+        static Type* u32Type;
+        static Type* u64Type;
+
         Checker(const Binder* _binder);
 
         void
@@ -143,13 +158,22 @@ namespace elet::domain::compiler::ast
         isIntegralType(Type* type);
 
         bool
+        isBooleanType(Type* type);
+
+        bool
+        isLogicalOperation(BinaryExpression* binaryExpression);
+
+        bool
+        isAny(Type* type);
+
+        bool
         isIntegralSubsetOrEqualType(Type* reference, Type* target);
 
         std::string
         getTypeString(const Type* type);
 
-        void
-        setMinIntegralTypeFromImmediateValue(const Int128& value, Type* type, Expression* binaryExpression);
+        Type*
+        getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression);
     };
 }
 

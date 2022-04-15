@@ -33,6 +33,9 @@ namespace elet::domain::compiler::ast::error
             case TypeKind::S64:
                 result = "s64";
                 break;
+            case TypeKind::Char:
+                result = "char";
+                break;
             case TypeKind::Bool:
                 result = "bool";
                 break;

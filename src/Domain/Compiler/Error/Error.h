@@ -109,6 +109,10 @@ namespace elet::domain::compiler::ast::error
             SyntaxError(sourceFile, syntax, std::format(message, str1))
         { }
 
+        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, Utf8StringView str1, const Type* type1):
+            SyntaxError(sourceFile, syntax, std::format(message, std::string(str1.cStringBegin(), str1.cStringEnd()), getTypeString(type1)))
+        { }
+
         TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, std::string str1, std::string str2):
             SyntaxError(sourceFile, syntax, std::format(message, str1, str2))
         { }

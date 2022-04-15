@@ -425,7 +425,7 @@ namespace elet::domain::compiler::instruction::output
         Bitfield                    = 0b110ui32 << 23,
         Extract                     = 0b111ui32 << 23,
 
-        op = 0b1ui32 << 31,
+        op                          = 0b1ui32 << 31,
     };
 
 

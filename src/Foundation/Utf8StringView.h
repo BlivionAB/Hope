@@ -72,6 +72,12 @@ public:
     Utf8StringView
     slice(const char* start) const;
 
+    const char*
+    cStringBegin() const;
+
+    const char*
+    cStringEnd() const;
+
     [[nodiscard]] Iterator
     begin() const;
 

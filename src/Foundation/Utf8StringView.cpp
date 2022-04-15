@@ -32,6 +32,9 @@ namespace elet::foundation
     }
 
 
+
+
+
     Utf8StringView::Iterator
     Utf8StringView::begin() const
     {
@@ -147,6 +150,18 @@ namespace elet::foundation
     Utf8StringView::startsWith(Utf8StringView string)
     {
         return string.size() <= size() && std::memcmp(_value, string._value, string.size()) == 0;
+    }
+
+    const char*
+    Utf8StringView::cStringBegin() const
+    {
+        return _value;
+    }
+
+    const char*
+    Utf8StringView::cStringEnd() const
+    {
+        return _end;
     }
 
 

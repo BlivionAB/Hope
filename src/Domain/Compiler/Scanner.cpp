@@ -68,8 +68,8 @@ namespace elet::domain::compiler::ast
                     return Token::ForwardSlash;
                 case Character::BackwardSlash:
                     return Token::BackwardSlash;
-                case Character::SingleQuote:
-                    return scanCharacterLiteral();
+//                case Character::SingleQuote:
+//                    return scanCharacterLiteral();
                 case Character::DoubleQuote:
                     return scanString();
                 case Character::Dot:
@@ -298,72 +298,72 @@ namespace elet::domain::compiler::ast
     }
 
 
-    Token
-    Scanner::scanCharacterLiteral()
-    {
-        Character character = getCharacter();
-        const char* start = getPositionAddress();
-        if (character == Character::BackwardSlash)
-        {
-            increment();
-            character = getCharacter();
-            increment();
-            if (character == Character::x)
-            {
-                uint32_t result = 0;
-                int8_t numberOfDigits = scanHexDigits(result);
-                if (numberOfDigits == -1)
-                {
-                    throwLexicalError("Expected hex digit.");
-                }
-
-                // hex escape sequence can accomodate unsigned part.
-                if (static_cast<uint32_t>(result) > UCHAR_MAX)
-                {
-                    throwLexicalError(start, getPositionAddress(), "Character literal must be in ASCII (non-extended) range.");
-                }
-                _characterLiteralValue = result;
-            }
-            else {
-                switch (character)
-                {
-                    case Character::n:
-                        _characterLiteralValue = static_cast<uint8_t>(Character::Newline);
-                        break;
-                    case Character::r:
-                        _characterLiteralValue = static_cast<uint8_t>(Character::CarriageReturn);
-                        break;
-                    case Character::t:
-                        _characterLiteralValue = static_cast<uint8_t>(Character::Tab);
-                        break;
-                    case Character::BackwardSlash:
-                        _characterLiteralValue = static_cast<uint8_t>(Character::BackwardSlash);
-                        break;
-                    case Character::_0:
-                        _characterLiteralValue = static_cast<uint8_t>(Character::NullCharacter);
-                        break;
-                    default:
-                        throwLexicalError(start, getPositionAddress(), "Unknown escape sequence.");
-                }
-            }
-        }
-        else if (static_cast<uint32_t>(character) > CHAR_MAX)
-        {
-            throwLexicalError("Character literal must be in ASCII (non-extended) range.");
-        }
-        else
-        {
-            increment();
-            _characterLiteralValue = static_cast<uint8_t>(character);
-        }
-        character = getCharacter();
-        if (character != Character::SingleQuote)
-        {
-            throwLexicalError("Expected single quote (') character.");
-        }
-        increment();
-        return Token::CharacterLiteral;
-    }
+//    Token
+//    Scanner::scanCharacterLiteral()
+//    {
+//        Character character = getCharacter();
+//        const char* start = getPositionAddress();
+//        if (character == Character::BackwardSlash)
+//        {
+//            increment();
+//            character = getCharacter();
+//            increment();
+//            if (character == Character::x)
+//            {
+//                uint32_t result = 0;
+//                int8_t numberOfDigits = scanHexDigits(result);
+//                if (numberOfDigits == -1)
+//                {
+//                    throwLexicalError("Expected hex digit.");
+//                }
+//
+//                // hex escape sequence can accomodate unsigned part.
+//                if (static_cast<uint32_t>(result) > UCHAR_MAX)
+//                {
+//                    throwLexicalError(start, getPositionAddress(), "Character literal must be in ASCII (non-extended) range.");
+//                }
+//                _characterLiteralValue = result;
+//            }
+//            else {
+//                switch (character)
+//                {
+//                    case Character::n:
+//                        _characterLiteralValue = static_cast<uint8_t>(Character::Newline);
+//                        break;
+//                    case Character::r:
+//                        _characterLiteralValue = static_cast<uint8_t>(Character::CarriageReturn);
+//                        break;
+//                    case Character::t:
+//                        _characterLiteralValue = static_cast<uint8_t>(Character::Tab);
+//                        break;
+//                    case Character::BackwardSlash:
+//                        _characterLiteralValue = static_cast<uint8_t>(Character::BackwardSlash);
+//                        break;
+//                    case Character::_0:
+//                        _characterLiteralValue = static_cast<uint8_t>(Character::NullCharacter);
+//                        break;
+//                    default:
+//                        throwLexicalError(start, getPositionAddress(), "Unknown escape sequence.");
+//                }
+//            }
+//        }
+//        else if (static_cast<uint32_t>(character) > CHAR_MAX)
+//        {
+//            throwLexicalError("Character literal must be in ASCII (non-extended) range.");
+//        }
+//        else
+//        {
+//            increment();
+//            _characterLiteralValue = static_cast<uint8_t>(character);
+//        }
+//        character = getCharacter();
+//        if (character != Character::SingleQuote)
+//        {
+//            throwLexicalError("Expected single quote (') character.");
+//        }
+//        increment();
+//        return Token::CharacterLiteral;
+//    }
 
 
     void

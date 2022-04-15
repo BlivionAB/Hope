@@ -10,8 +10,8 @@ namespace elet::domain::compiler::instruction::output::test
     using namespace elet::domain::compiler::test;
 
 
-        class AarchOperatorKindFixture : public CompileFixture
-        {
+    class AarchOperatorKindFixture : public CompileFixture
+    {
         std::filesystem::path
         basePath() override
         {

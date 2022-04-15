@@ -24,18 +24,21 @@ namespace elet::domain::compiler::ast::type
         U64Max = UINT64_MAX,
 
         S8Max = INT8_MAX,
-        S8Min = static_cast<uint64_t>(INT8_MIN),
+        S8Min = static_cast<int64_t>(INT8_MIN),
         S16Max = INT16_MAX,
-        S16Min = static_cast<uint64_t>(INT16_MIN),
+        S16Min = static_cast<int64_t>(INT16_MIN),
         S32Max = INT32_MAX,
-        S32Min = static_cast<uint64_t>(INT32_MIN),
+        S32Min = static_cast<int64_t>(INT32_MIN),
         S64Max = INT64_MAX,
-        S64Min = static_cast<uint64_t>(INT64_MIN),
+        S64Min = static_cast<int64_t>(INT64_MIN),
     };
 
 
     bool
     operator >= (const Int128& value1, const IntegerLimit& value2);
+
+    bool
+    operator <= (const Int128& value1, const IntegerLimit& value2);
 
 
     struct Type
@@ -111,12 +114,12 @@ namespace elet::domain::compiler::ast::type
         {
             switch (kind)
             {
-                case TypeKind::Char:
                 case TypeKind::S8:
                 case TypeKind::S16:
                 case TypeKind::S32:
                 case TypeKind::S64:
                     return Sign::Signed;
+                case TypeKind::Char:
                 case TypeKind::U8:
                 case TypeKind::U16:
                 case TypeKind::U32:

@@ -32,13 +32,13 @@ namespace elet::domain::compiler::test
 
     TEST_F(DecimalLiteralFixture, DecimalLiteral_Negative)
     {
-        testFunction("return -2147483648;");
+        testFunction("return -2147483648;", "s32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "DecimalLiteral_Negative",
             .targets = {
                 CompilationTarget::StashIR
-            }
+            },
         }));
     }
 
@@ -52,7 +52,7 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .printTypeBaseline = true,
+            .printTypeBaseline = true
         }));
     }
 
@@ -66,7 +66,7 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .printTypeBaseline = true,
+            .printTypeBaseline = true
         }));
     }
 

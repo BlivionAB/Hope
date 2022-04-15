@@ -7,12 +7,12 @@
 
 namespace elet::domain::compiler::test
 {
-    class CharacterLiteralFixture : public CompileFixture
+    class BinaryExpression_NonSupportedTypesFixture : public CompileFixture
     {
         std::filesystem::path
         localTestPath() override
         {
-            return "Expression/CharacterLiteral";
+            return "Expression/BinaryExpression/NonSupportedTypes";
         }
     };
 }

@@ -1,3 +1,0 @@
-_main():
-    Mov OpRet, #0x7e
-

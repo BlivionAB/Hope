@@ -1,9 +1,9 @@
+WriteLine():
+    StrQ[Sp - 8], Arg0
+    LdrQ Arg0, [Sp + #-8]
+    Call _puts
+
 _main():
     Mov Arg0, ["Hello World!"]
     Call WriteLine
-
-WriteLine():
-    Str [Sp - 8], Arg0
-    Ldr Arg0, [Sp + #-8]
-    Call _puts
 

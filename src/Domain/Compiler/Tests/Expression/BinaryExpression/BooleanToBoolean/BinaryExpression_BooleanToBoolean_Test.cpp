@@ -45,7 +45,7 @@ namespace elet::domain::compiler::test
     {
         Utf8String expr = std::get<0>(GetParam());
         Utf8String baselineName = std::get<1>(GetParam());
-        testFunction(expr);
+        testFunction(expr, "bool");
 
         EXPECT_TRUE(testProject({
             .baselineName = baselineName.toString(),

@@ -1,4 +1,4 @@
-_main():
+Test():
     StrL [Sp + #-4], #0x1
     StrL [Sp + #-8], #0x2
     StrL [Sp + #-12], #0x3

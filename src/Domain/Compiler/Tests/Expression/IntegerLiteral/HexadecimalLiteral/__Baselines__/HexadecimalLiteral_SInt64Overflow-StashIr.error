@@ -1,5 +1,5 @@
-error: Negative value cannot exceed S64_Max
---> main.hs:8:9
+error: Integral expression '0xffff_ffff_ffff_ffff' does not fit into integral type 's32'.
+--> main.hs:7:17
   | 
-8 | return -0xffff_ffff_ffff_ffff;    
-  |         ^^^^^^^^^^^^^^^^^^^^^
+7 |         return -0xffff_ffff_ffff_ffff;}}
+  |                 ^^^^^^^^^^^^^^^^^^^^^

@@ -114,6 +114,9 @@ public:
     bool
     isNewline(Character character) const;
 
+    bool
+    isEnd() const;
+
 protected:
 
     std::stack<Location>

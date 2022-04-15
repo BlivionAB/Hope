@@ -1,0 +1,5 @@
+error: Integral type 's32' does not fit into integral type 's16'.
+--> main.hs:8:8
+  | 
+8 | return a;}}§§§§нннннннн
+  |        ^

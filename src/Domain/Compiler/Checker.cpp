@@ -5,10 +5,26 @@
 
 namespace elet::domain::compiler::ast
 {
+
+    Type* Checker::anyType = new Type(TypeKind::Any);
+    Type* Checker::booleanType = new Type(TypeKind::Bool);
+    Type* Checker::s8Type = new Type(TypeKind::S8);
+    Type* Checker::us8Type = new Type(TypeKind::US8);
+    Type* Checker::s16Type = new Type(TypeKind::S16);
+    Type* Checker::us16Type = new Type(TypeKind::US16);
+    Type* Checker::s32Type = new Type(TypeKind::S32);
+    Type* Checker::us32Type = new Type(TypeKind::US32);
+    Type* Checker::s64Type = new Type(TypeKind::S64);
+    Type* Checker::us64Type = new Type(TypeKind::US64);
+    Type* Checker::u8Type = new Type(TypeKind::U8);
+    Type* Checker::u16Type = new Type(TypeKind::U16);
+    Type* Checker::u32Type = new Type(TypeKind::U32);
+    Type* Checker::u64Type = new Type(TypeKind::U64);
+
+
     Checker::Checker(const Binder* _binder):
         _binder(_binder)
     {
-
     }
 
 
@@ -42,8 +58,6 @@ namespace elet::domain::compiler::ast
                 return checkPropertyExpression(reinterpret_cast<PropertyExpression*>(expression));
             case SyntaxKind::IntegerLiteral:
                 return checkIntegerLiteral(reinterpret_cast<IntegerLiteral*>(expression));
-            case SyntaxKind::CharacterLiteral:
-                return new Type(TypeKind::Char);
             default:
                 assert("Unknown expression to check.");
         }
@@ -107,7 +121,7 @@ namespace elet::domain::compiler::ast
             Int128 value;
             if (tryGetValueFromExpression(value, variable->expression))
             {
-                setMinIntegralTypeFromImmediateValue(value, expressionType, variable->expression);
+                expressionType = getMinIntegralTypeFromImmediateValue(value, variable->expression);
             }
             checkTypeAssignability(variable->resolvedType, expressionType, variable->expression);
         }
@@ -122,37 +136,37 @@ namespace elet::domain::compiler::ast
     Checker::checkIntegerLiteral(IntegerLiteral* integerLiteral)
     {
         integerLiteral->resolvedType = getTypeFromIntegerLiteral(integerLiteral);
-        if (integerLiteral->isNegative)
-        {
-            if (integerLiteral->resolvedType->kind == TypeKind::S32)
-            {
-                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max) + 1)
-                {
-                    addError<error::IntegralLiteralUnderflowError>(integerLiteral, IntegerKind::S32);
-                }
-                else if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max) + 1)
-                {
-                    addError<error::IntegralLiteralUnderflowError>(integerLiteral, IntegerKind::S64);
-                }
-            }
-        }
-        else
-        {
-            if (integerLiteral->resolvedType->kind == TypeKind::S32)
-            {
-                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max))
-                {
-                    addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S32);
-                }
-            }
-            if (integerLiteral->resolvedType->kind == TypeKind::S64)
-            {
-                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max))
-                {
-                    addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S64);
-                }
-            }
-        }
+//        if (integerLiteral->isNegative)
+//        {
+//            if (integerLiteral->resolvedType->kind == TypeKind::S32)
+//            {
+//                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max) + 1)
+//                {
+//                    addError<error::IntegralLiteralUnderflowError>(integerLiteral, IntegerKind::S32);
+//                }
+//                else if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max) + 1)
+//                {
+//                    addError<error::IntegralLiteralUnderflowError>(integerLiteral, IntegerKind::S64);
+//                }
+//            }
+//        }
+//        else
+//        {
+//            if (integerLiteral->resolvedType->kind == TypeKind::S32)
+//            {
+//                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max))
+//                {
+//                    addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S32);
+//                }
+//            }
+//            if (integerLiteral->resolvedType->kind == TypeKind::S64)
+//            {
+//                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max))
+//                {
+//                    addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S64);
+//                }
+//            }
+//        }
         return integerLiteral->resolvedType;
     }
 
@@ -160,62 +174,90 @@ namespace elet::domain::compiler::ast
     Type*
     Checker::checkBinaryExpression(BinaryExpression* binaryExpression)
     {
-        Type* leftType = checkExpression(binaryExpression->left);
-        Type* rightType = checkExpression(binaryExpression->right);
-        Type* commonType = getCommonRealType(leftType, rightType);
-        binaryExpression->resolvedType = commonType;
-        return commonType;
+        Type* left = checkExpression(binaryExpression->left);
+        Type* right = checkExpression(binaryExpression->right);
+        if (isIntegralType(left) && isIntegralType(right))
+        {
+            Type* commonType = getCommonRealType(left, right);
+            binaryExpression->resolvedType = commonType;
+            return commonType;
+        }
+        if (isBooleanType(left) && isBooleanType(right))
+        {
+            if (!isLogicalOperation(binaryExpression))
+            {
+                addError<error::UndefinedBinaryOperatorError>(binaryExpression->binaryOperator, error::UndefinedBinaryOperatorError::Type::Bool);
+                return anyType;
+            }
+            binaryExpression->resolvedType = booleanType;
+            return booleanType;
+        }
+        if (isAny(left) || isAny(right))
+        {
+            binaryExpression->resolvedType = anyType;
+            return anyType;
+        }
+        addError<error::TypeMismatchBinaryOperationError>(binaryExpression, left, right);
+        return anyType;
     }
 
 
-    void
-    Checker::setMinIntegralTypeFromImmediateValue(const Int128& value, Type* type, Expression* binaryExpression)
+    Type*
+    Checker::getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression)
     {
         if (value < 0)
         {
             if (value >= IntegerLimit::S8Min)
             {
-                type->kind = TypeKind::S8;
-                return;
+                return s8Type;
             }
             else if (value >= IntegerLimit::S16Min)
             {
-                type->kind = TypeKind::S16;
-                return;
+                return s16Type;
             }
             else if (value >= IntegerLimit::S32Min)
             {
-                type->kind = TypeKind::S32;
-                return;
+                return s32Type;
             }
             else if (value >= IntegerLimit::S64Min)
             {
-                type->kind = TypeKind::S64;
-                return;
+                return s64Type;
             }
             addError<error::IntegralLiteralUnderflowError>(binaryExpression, IntegerKind::S64);
         }
         else
         {
-            if (value >= IntegerLimit::U8Max)
+            if (value <= IntegerLimit::S8Max)
             {
-                type->kind = TypeKind::U8;
-                return;
+                return us8Type;
             }
-            else if (value >= IntegerLimit::U16Max)
+            if (value <= IntegerLimit::U8Max)
             {
-                type->kind = TypeKind::U16;
-                return;
+                return u8Type;
             }
-            else if (value >= IntegerLimit::U32Max)
+            if (value <= IntegerLimit::S16Max)
             {
-                type->kind = TypeKind::U32;
-                return;
+                return us16Type;
             }
-            else if (value >= IntegerLimit::U64Max)
+            if (value <= IntegerLimit::U16Max)
             {
-                type->kind = TypeKind::U64;
-                return;
+                return u16Type;
+            }
+            if (value <= IntegerLimit::S32Max)
+            {
+                return us32Type;
+            }
+            if (value <= IntegerLimit::U32Max)
+            {
+                return u32Type;
+            }
+            if (value <= IntegerLimit::S64Max)
+            {
+                return us64Type;
+            }
+            if (value <= IntegerLimit::U64Max)
+            {
+                return u64Type;
             }
             addError<error::IntegralLiteralOverflowError>(binaryExpression, IntegerKind::U64);
         }
@@ -280,64 +322,43 @@ namespace elet::domain::compiler::ast
         {
             if (integerLiteral->isNegative)
             {
-                if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S8Max) + 1)
+                if (integerLiteral->value >= static_cast<int64_t>(IntegerLimit::S32Min))
                 {
-                    return new Type(TypeKind::S16);
+                    return s32Type;
                 }
-                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S16Max) + 1)
+                if (integerLiteral->value >= static_cast<int64_t>(IntegerLimit::S64Min))
                 {
-                    return new Type(TypeKind::S16);
-                }
-                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S32Max) + 1)
-                {
-                    return new Type(TypeKind::S32);
-                }
-                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::S64Max) + 1)
-                {
-                    return new Type(TypeKind::S64);
+                    return s64Type;
                 }
                 addError<error::IntegralLiteralUnderflowError>(integerLiteral, IntegerKind::S64);
-                return new Type(TypeKind::Any);
+                return anyType;
             }
             else
             {
-                if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U8Max))
+                if (integerLiteral->value <= static_cast<int64_t>(IntegerLimit::S32Max))
                 {
-                    return new Type(TypeKind::U8);
+                    return s32Type;
                 }
-                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U16Max))
+                if (integerLiteral->value <= static_cast<int64_t>(IntegerLimit::S64Max))
                 {
-                    return new Type(TypeKind::U16);
+                    return s64Type;
                 }
-                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U32Max))
-                {
-                    return new Type(TypeKind::U32);
-                }
-                else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U64Max))
-                {
-                    return new Type(TypeKind::U64);
-                }
-                return new Type(TypeKind::Any);
+                addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S64);
+                return anyType;
             }
         }
         else // Hexadecimal or BinaryLiteral
         {
-            if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U8Max))
+            if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U32Max))
             {
-                return new Type(TypeKind::U32);
+                return u32Type;
             }
-            else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U16Max))
+            if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U64Max))
             {
-                return new Type(TypeKind::U32);
+                return u64Type;
             }
-            else if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U32Max))
-            {
-                return new Type(TypeKind::U32);
-            }
-            else
-            {
-                return new Type(TypeKind::U64);
-            }
+            addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::U64);
+            return anyType;
         }
     }
 
@@ -382,13 +403,13 @@ namespace elet::domain::compiler::ast
         switch (signedType->kind)
         {
             case TypeKind::S8:
-                return new Type(TypeKind::U8);
+                return u8Type;
             case TypeKind::S16:
-                return new Type(TypeKind::U16);
+                return u16Type;
             case TypeKind::S32:
-                return new Type(TypeKind::U32);
+                return u32Type;
             case TypeKind::S64:
-                return new Type(TypeKind::U64);
+                return u64Type;
             default:
                 throw std::runtime_error("Unknown signed type to fetch unsigned counter part.");
         }
@@ -400,6 +421,7 @@ namespace elet::domain::compiler::ast
     {
         switch (type->kind)
         {
+            case TypeKind::Char:
             case TypeKind::U8:
                 return static_cast<uint64_t>(IntegerLimit::U8Max);
             case TypeKind::U16:
@@ -615,11 +637,14 @@ namespace elet::domain::compiler::ast
         {
             if (!isIntegralSubsetOrEqualType(placeholder, target))
             {
-                addError<error::IntegralMisfitError>(targetSyntax, placeholder, target);
+                addError<error::IntegralExpressionMisfitError>(
+                    targetSyntax,
+                    placeholder,
+                    Utf8StringView(targetSyntax->start, targetSyntax->end));
             }
             return;
         }
-        addError<error::TypeMismatchError>(targetSyntax, placeholder, target);
+        addError<error::TypeAssignabilityError>(targetSyntax, placeholder, target);
     }
 
 
@@ -638,6 +663,33 @@ namespace elet::domain::compiler::ast
 
 
     bool
+    Checker::isBooleanType(Type* type)
+    {
+        return type->kind == TypeKind::Bool;
+    }
+
+
+    bool
+    Checker::isAny(Type* type)
+    {
+        return type->kind == TypeKind::Any;
+    }
+
+
+    bool
+    Checker::isLogicalOperation(BinaryExpression* binaryExpression)
+    {
+        switch (binaryExpression->binaryOperatorKind)
+        {
+            case BinaryOperatorKind::And:
+            case BinaryOperatorKind::Or:
+                return true;
+        }
+        return false;
+    }
+
+
+    bool
     Checker::isIntegralSubsetOrEqualType(Type* reference, Type* target)
     {
         assert(isIntegralType(reference) && isIntegralType(target) && "target and source must be integral type.");
@@ -648,12 +700,16 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::S64:
+                    case TypeKind::US64:
                     case TypeKind::S32:
                     case TypeKind::S16:
                     case TypeKind::S8:
                     case TypeKind::U32:
+                    case TypeKind::US32:
                     case TypeKind::U16:
+                    case TypeKind::US16:
                     case TypeKind::U8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;
@@ -661,10 +717,13 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::S32:
+                    case TypeKind::US32:
                     case TypeKind::S16:
                     case TypeKind::S8:
                     case TypeKind::U16:
+                    case TypeKind::US16:
                     case TypeKind::U8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;
@@ -672,8 +731,10 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::S16:
+                    case TypeKind::US16:
                     case TypeKind::S8:
                     case TypeKind::U8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;
@@ -681,6 +742,7 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::S8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;
@@ -688,9 +750,13 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::U64:
+                    case TypeKind::US64:
                     case TypeKind::U32:
+                    case TypeKind::US32:
                     case TypeKind::U16:
+                    case TypeKind::US16:
                     case TypeKind::U8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;
@@ -698,8 +764,11 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::U32:
+                    case TypeKind::US32:
                     case TypeKind::U16:
+                    case TypeKind::US16:
                     case TypeKind::U8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;
@@ -707,7 +776,9 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::U16:
+                    case TypeKind::US16:
                     case TypeKind::U8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;
@@ -715,6 +786,7 @@ namespace elet::domain::compiler::ast
                 switch (target->kind)
                 {
                     case TypeKind::U8:
+                    case TypeKind::US8:
                         return true;
                 }
                 break;

@@ -15,7 +15,7 @@ namespace elet::foundation::test
     TEST(Int128, Multiplication1)
     {
         Int128 op1({ 0, 2, 0, 0 });
-        Int128 op2({ 0, 3, 0, 0 });
+        Int128 op2({ 3, 0, 0, 0 });
         EXPECT_EQ(op1 * op2, Int128({ 0, 6, 0 , 0 }));
     }
 
@@ -23,7 +23,7 @@ namespace elet::foundation::test
     TEST(Int128, Multiplication2)
     {
         Int128 op1({ 0, 0, 2, 0 });
-        Int128 op2({ 0, 0, 3, 0 });
+        Int128 op2({ 3, 0, 0, 0 });
         EXPECT_EQ(op1 * op2, Int128({ 0, 0, 6, 0 }));
     }
 
@@ -31,7 +31,7 @@ namespace elet::foundation::test
     TEST(Int128, Multiplication3)
     {
         Int128 op1({ 0, 0, 0, 2 });
-        Int128 op2({ 0, 0, 0, 3 });
+        Int128 op2({ 3, 0, 0, 0 });
         EXPECT_EQ(op1 * op2, Int128({ 0, 0, 0, 6 }));
     }
 

@@ -49,7 +49,7 @@ namespace elet::domain::compiler::test
         writeCallInstruction(const output::CallInstruction* callInstruction, output::FunctionRoutine* function);
 
         void
-        writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction);
+        writeStoreRegisterInstruction(const output::StoreRegisterInstruction* instruction);
 
         void
         writeMoveImmediateInstruction(const output::MoveImmediateInstruction* moveImmediateInstruction);

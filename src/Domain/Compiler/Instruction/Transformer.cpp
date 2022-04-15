@@ -238,14 +238,7 @@ namespace elet::domain::compiler::instruction
             {
                 ast::IntegerLiteral* integerLiteral = reinterpret_cast<ast::IntegerLiteral*>(expression);
                 ast::Type* type = forcedType ? forcedType : integerLiteral->resolvedType;
-                if (integerLiteral->isNegative)
-                {
-                    return output::ImmediateValue(type->kind, -integerLiteral->value);
-                }
-                else
-                {
-                    return output::ImmediateValue(type->kind, integerLiteral->value);
-                }
+                return output::ImmediateValue(type->kind, integerLiteral->value);
             }
             case ast::SyntaxKind::CharacterLiteral:
             {
@@ -363,11 +356,12 @@ namespace elet::domain::compiler::instruction
                     case ObjectFileTarget::Pe32:
                         *externalSymbol = Utf8String("__imp_") + functionDeclaration->symbol->name.toString();
                         break;
+                    case ObjectFileTarget::StashIR:
                     case ObjectFileTarget::MachO:
                         *externalSymbol = Utf8String("_") + functionDeclaration->symbol->name.toString();
                         break;
                     default:
-                        assert("Unknown object file target.");
+                        throw std::runtime_error("Unknown object file target.");
                 }
             }
             else

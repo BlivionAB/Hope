@@ -1,5 +1,5 @@
-error: Decimal literal cannot exceed S64_Max
---> main.hs:8:8
+error: Value exceeds max limit of 's64'.
+--> main.hs:7:16
   | 
-8 | return 9223372036854775808;    
-  |        ^^^^^^^^^^^^^^^^^^^
+7 |         return 9223372036854775808;}}
+  |                ^^^^^^^^^^^^^^^^^^^

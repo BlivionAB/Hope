@@ -43,8 +43,8 @@ file(GLOB DOMAIN_TEST
     src/Domain/Compiler/Tests/Expression/Boolean/BooleanLiteral/BooleanLiteralFixture.h
     src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBoolean_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBooleanFixture.h
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/ImmediateKindFixture.h
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateKind/BinaryExpression_ImmediateKind_Test.cpp
+        src/Domain/Compiler/Tests/Expression/BinaryExpression/NonSupportedTypes/ImmediateKindFixture.h
+        src/Domain/Compiler/Tests/Expression/BinaryExpression/NonSupportedTypes/BinaryExpression_NonSupportedTypes_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediate_Test.cpp
     src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediateFixture.h
     src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToImmediate/VariableToImmediate_Test.cpp

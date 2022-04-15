@@ -309,10 +309,76 @@ namespace elet::foundation
             {
                 return false;
             }
-            return value[0] < other;
+            return value[0] < static_cast<uint32_t>(other);
         }
     }
 
+
+    bool
+    Int128::operator <(int64_t other) const
+    {
+        if (static_cast<int32_t>(value[3]) == -1 && static_cast<int32_t>(value[2]) == -1)
+        {
+            if (other >= 0)
+            {
+                return true;
+            }
+            M64 c;
+            c.s64 = other;
+
+            int32_t s1 = static_cast<int32_t>(value[1]);
+
+            // A positive value would yield a signbit of 0, rendering it being more negative than s64.
+            if (s1 > 0)
+            {
+                return true;
+            }
+
+            if (s1 < c.s32.hi)
+            {
+                return true;
+            }
+            if (s1 > c.s32.hi)
+            {
+                return false;
+            }
+
+            int32_t s0 = static_cast<int32_t>(value[0]);
+
+            // A positive value would yield a signbit of 0, rendering it being more negative than s32.
+            if (s0 > 0)
+            {
+                return true;
+            }
+            return s0 < c.s32.lo;
+        }
+        else if (static_cast<int32_t>(value[3]) == 0 && static_cast<int32_t>(value[2]) == 0)
+        {
+            if (other < 0)
+            {
+                return false;
+            }
+            M64 c;
+            c.u64 = other;
+            if (static_cast<uint32_t>(value[1]) > c.u32.hi)
+            {
+                return false;
+            }
+            if (static_cast<uint32_t>(value[1]) < c.u32.hi)
+            {
+                return true;
+            }
+            return static_cast<uint32_t>(value[0]) < c.u32.lo;
+        }
+        else if (static_cast<int32_t>(value[3]) < 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     bool
     Int128::operator >(uint64_t other) const
@@ -336,6 +402,73 @@ namespace elet::foundation
             return true;
         }
         return value[0] > c.u32.lo;
+    }
+
+
+    bool
+    Int128::operator >(int64_t other) const
+    {
+        if (static_cast<int32_t>(value[3]) == -1 && static_cast<int32_t>(value[2]) == -1)
+        {
+            if (other >= 0)
+            {
+                return false;
+            }
+            M64 c;
+            c.s64 = other;
+
+            int32_t s1 = static_cast<int32_t>(value[1]);
+
+            // A positive value would yield a signbit of 0, rendering it being more negative than s64.
+            if (s1 > 0)
+            {
+                return false;
+            }
+
+            if (s1 < c.s32.hi)
+            {
+                return false;
+            }
+            else if (s1 > c.s32.hi)
+            {
+                return true;
+            }
+
+            int32_t s0 = static_cast<int32_t>(value[0]);
+
+            // A positive value would yield a signbit of 0, rendering it being more negative than s32.
+            if (s0 > 0)
+            {
+                return false;
+            }
+            return s0 > c.s32.lo;
+        }
+        else if (static_cast<int32_t>(value[3]) == 0 && static_cast<int32_t>(value[2]) == 0)
+        {
+            if (other < 0)
+            {
+                return true;
+            }
+            M64 c;
+            c.u64 = other;
+            if (static_cast<uint32_t>(value[1]) > c.u32.hi)
+            {
+                return true;
+            }
+            if (static_cast<uint32_t>(value[1]) < c.u32.hi)
+            {
+                return false;
+            }
+            return static_cast<uint32_t>(value[0]) > c.u32.lo;
+        }
+        else if (static_cast<int32_t>(value[3]) < 0)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 
 
@@ -366,6 +499,18 @@ namespace elet::foundation
         }
     }
 
+
+    bool
+    Int128::operator <=(int64_t other) const
+    {
+        if (*this == other)
+        {
+            return true;
+        }
+        return *this < other;
+    }
+
+
     bool
     Int128::operator <=(uint64_t other) const
     {
@@ -374,6 +519,17 @@ namespace elet::foundation
             return true;
         }
         return *this < other;
+    }
+
+
+    bool
+    Int128::operator >=(int64_t other) const
+    {
+        if (*this == other)
+        {
+            return true;
+        }
+        return *this > other;
     }
 
 
@@ -395,6 +551,25 @@ namespace elet::foundation
             return false;
         }
         return value[0] == c.u32.lo;
+    }
+
+
+    bool
+    Int128::operator ==(int64_t other) const
+    {
+        if (!(
+            (value[2] == -1 && value[3] == -1) ||
+            (value[2] == 0 && value[3] == 0)))
+        {
+            return false;
+        }
+        M64 c;
+        c.s64 = other;
+        if (value[1] != c.s32.hi)
+        {
+            return false;
+        }
+        return value[0] == c.s32.lo;
     }
 
 
@@ -437,7 +612,7 @@ namespace elet::foundation
         {
             return false;
         }
-        return value[0] == 0;
+        return value[0] == 1;
     }
 
 

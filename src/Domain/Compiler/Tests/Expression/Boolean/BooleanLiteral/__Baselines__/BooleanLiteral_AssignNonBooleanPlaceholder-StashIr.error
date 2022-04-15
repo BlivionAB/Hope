@@ -1,0 +1,5 @@
+error: Type 'bool' is not assignable to type 'u32'.
+--> main.hs:7:22
+  | 
+7 |         var a: u32 = false;}}
+  |                      ^^^^^

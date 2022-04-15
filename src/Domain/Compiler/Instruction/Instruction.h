@@ -402,8 +402,8 @@ namespace elet::domain::compiler::instruction::output
         stubHelperAddress;
 
         ExternalRoutine(Utf8StringView name):
-            name(name),
-            Routine(RoutineKind::External)
+            Routine(RoutineKind::External),
+            name(name)
         { }
     };
 

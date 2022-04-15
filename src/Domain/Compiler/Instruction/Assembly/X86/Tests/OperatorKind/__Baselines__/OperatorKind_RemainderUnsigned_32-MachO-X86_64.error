@@ -1,0 +1,13 @@
+error: Integral expression '3;
+var y: u32 = 3;
+return x % y;}}ııııext:' does not fit into integral type 'u32'.
+--> main.hs:7:22
+  | 
+7 |         var x: u32 = 3;
+  |                      ^
+error: Integral expression '3;
+return x % y;}}ııııext:' does not fit into integral type 'u32'.
+--> main.hs:8:14
+  | 
+8 | var y: u32 = 3;
+  |              ^

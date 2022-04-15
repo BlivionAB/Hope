@@ -1,13 +1,9 @@
-//
-// Created by tinganho on 2022-03-05.
-//
-
 #include "Error_TypeCheck.h"
 
 
 namespace elet::domain::compiler::ast::error
 {
-    TypeMismatchError::TypeMismatchError(
+    TypeAssignabilityError::TypeAssignabilityError(
         const SourceFile* sourceFile,
         const Syntax* syntax,
         const Type* placeholder,
@@ -22,18 +18,49 @@ namespace elet::domain::compiler::ast::error
     { }
 
 
-    IntegralMisfitError::IntegralMisfitError(
+    TypeMismatchBinaryOperationError::TypeMismatchBinaryOperationError(
         const SourceFile* sourceFile,
         const Syntax* syntax,
-        const Type* placeholder,
-        const Type* target):
+        const Type* left,
+        const Type* right):
 
         TypeCheckError(
             sourceFile,
             syntax,
-            "Integral type '{}' does not fit into integral type '{}'.",
-            target,
-            placeholder)
+            "Type '{}' and '{}' are not binary operable.",
+            left,
+            right)
+    { }
+
+
+
+    UndefinedBinaryOperatorError::UndefinedBinaryOperatorError(
+        const SourceFile* sourceFile,
+        const Syntax* binaryOperator,
+        Type type):
+
+        TypeCheckError(
+            sourceFile,
+            binaryOperator,
+            "Undefined binary operator for type '{}'.",
+            type == Type::Bool ? "bool" : "integral")
+    {
+
+    }
+
+
+    IntegralExpressionMisfitError::IntegralExpressionMisfitError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax,
+        const Type* type,
+        Utf8StringView expression):
+
+        TypeCheckError(
+            sourceFile,
+            syntax,
+            "Integral expression '{}' does not fit into integral type '{}'.",
+            expression,
+            type)
     { }
 
 

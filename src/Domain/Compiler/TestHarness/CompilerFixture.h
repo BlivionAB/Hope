@@ -57,6 +57,9 @@ namespace elet::domain::compiler::test
 
         std::optional<bool>
         acceptBaselines;
+
+        std::optional<bool>
+        generateTestFunction = true;
     };
 
 
@@ -270,7 +273,10 @@ namespace elet::domain::compiler::test
         testing::AssertionResult
         testProject(TestProjectOptions options)
         {
-            generateTestFunction(options);
+            if (*options.generateTestFunction)
+            {
+                generateTestFunction(options);
+            }
             const char* envvar = std::getenv("ACCEPT_BASELINES");
             if (envvar && std::strcmp(envvar, "true") == 0)
             {
@@ -371,7 +377,7 @@ namespace elet::domain::compiler::test
                                 }
                                 break;
                             case ObjectFileTarget::Pe32:
-                                assert("We have not implemented Pe32 baseline tests yet.");
+                                throw std::runtime_error("We have not implemented Pe32 baseline tests yet.");
                         }
                     }
                 }

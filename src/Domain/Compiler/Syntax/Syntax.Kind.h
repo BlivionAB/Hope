@@ -57,6 +57,7 @@ namespace elet::domain::compiler::ast
         LengthOfExpression,
         AddressOfExpression,
         BinaryExpression,
+        BinaryOperator,
         CallExpression,
         PropertyExpression,
         PropertyAccessExpression,

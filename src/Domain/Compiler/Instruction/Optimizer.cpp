@@ -25,7 +25,7 @@ namespace elet::domain::compiler::instruction::output
     Optimizer::optimizeLoadOperationInstructions(FunctionRoutine* functionRoutine)
     {
         List<Instruction*> optimizedInstructions;
-        StackOffsetInstruction* currentLoadInstructions[static_cast<int>(OperandRegister::Scratch2)];
+        StackOffsetInstruction* currentLoadInstructions[static_cast<int>(OperandRegister::Arg2)];
         memset(currentLoadInstructions, 0, sizeof(currentLoadInstructions)); // Scratch 2 is the max scratch register.
         bool isOperationStage = false;
         std::set<OperandRegister> loadAllocations;
@@ -40,6 +40,8 @@ namespace elet::domain::compiler::instruction::output
                     memset(currentLoadInstructions, 0, sizeof(currentLoadInstructions));
                     isOperationStage = false;
                 }
+
+                // TODO: It shouldn't optimize function call arguments??
                 StackOffsetInstruction* load = reinterpret_cast<StackOffsetInstruction*>(instruction);
                 currentLoadInstructions[static_cast<unsigned int>(load->destination)] = load;
                 loadAllocations.insert(load->destination);

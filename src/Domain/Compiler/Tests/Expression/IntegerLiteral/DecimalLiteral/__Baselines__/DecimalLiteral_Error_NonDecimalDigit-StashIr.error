@@ -1,5 +1,5 @@
-error: Expected ';', instead got 'g2'.
---> main.hs:8:10
+error: Expected ';', but instead got 'g2'.
+--> main.hs:7:18
   | 
-8 | return -1g2;    
-  |          ^^
+7 |         return -1g2;}}
+  |                  ^^

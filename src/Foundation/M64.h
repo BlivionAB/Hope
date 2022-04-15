@@ -23,7 +23,7 @@ namespace elet::foundation
 
         struct
         {
-            uint32_t
+            int32_t
             lo;
 
             int32_t

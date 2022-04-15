@@ -156,9 +156,17 @@ namespace elet::foundation
     void
     TextScanner::scanRestOfLine()
     {
-        while (!isNewline(getCharacter()))
+        while (true)
         {
+            Character ch = getCharacter();
+            if (isNewline(ch))
+            {
+                break;
+            }
             increment();
+            if (isEnd()) {
+                break;
+            }
         }
     }
 
@@ -233,5 +241,12 @@ namespace elet::foundation
         {
             increment();
         }
+    }
+
+
+    bool
+    TextScanner::isEnd() const
+    {
+        return _sourceIterator == _endIterator;
     }
 }

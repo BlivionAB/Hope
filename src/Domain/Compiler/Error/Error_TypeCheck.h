@@ -7,9 +7,9 @@
 
 namespace elet::domain::compiler::ast::error
 {
-    struct TypeMismatchError : TypeCheckError
+    struct TypeAssignabilityError : TypeCheckError
     {
-        TypeMismatchError(
+        TypeAssignabilityError(
             const SourceFile* sourceFile,
             const Syntax* syntax,
             const Type* placeholder,
@@ -17,13 +17,38 @@ namespace elet::domain::compiler::ast::error
     };
 
 
-    struct IntegralMisfitError : TypeCheckError
+    struct TypeMismatchBinaryOperationError : TypeCheckError
     {
-        IntegralMisfitError(
+        TypeMismatchBinaryOperationError(
             const SourceFile* sourceFile,
             const Syntax* syntax,
-            const Type* placeholder,
-            const Type* target);
+            const Type* left,
+            const Type* right);
+    };
+
+
+    struct UndefinedBinaryOperatorError : TypeCheckError
+    {
+        enum class Type
+        {
+            Integral,
+            Bool,
+        };
+
+        UndefinedBinaryOperatorError(
+            const SourceFile* sourceFile,
+            const Syntax* binaryOperator,
+            Type type);
+    };
+
+
+    struct IntegralExpressionMisfitError : TypeCheckError
+    {
+        IntegralExpressionMisfitError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax,
+            const Type* type,
+            Utf8StringView expression);
     };
 
 

@@ -1,3 +1,3 @@
-_main():
+Test():
     StrB [Sp + #-1], #0x1
 

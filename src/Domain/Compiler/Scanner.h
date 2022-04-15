@@ -94,8 +94,8 @@ namespace elet::domain::compiler::ast
         Token
         scanWhitespace();
 
-        Token
-        scanCharacterLiteral();
+//        Token
+//        scanCharacterLiteral();
 
         void
         throwLexicalError(const char* message) const;

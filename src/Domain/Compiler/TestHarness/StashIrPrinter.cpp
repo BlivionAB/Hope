@@ -19,6 +19,10 @@ namespace elet::domain::compiler::test
     void
     StashIRPrinter::writeFunctionRoutine(output::FunctionRoutine* function)
     {
+        if (function->hasWrittenOutput)
+        {
+            return;
+        }
         _tw.write(function->name);
         _tw.write("(");
         for (const output::ParameterDeclaration* parameterDeclaration : function->parameters)
@@ -38,6 +42,7 @@ namespace elet::domain::compiler::test
         {
             writeFunctionRoutine(f);
         }
+        function->hasWrittenOutput = true;
     }
 
 
@@ -124,13 +129,13 @@ namespace elet::domain::compiler::test
 
 
     void
-    StashIRPrinter::writeStoreRegisterInstruction(const output::StoreRegisterInstruction* storeRegisterInstruction)
+    StashIRPrinter::writeStoreRegisterInstruction(const output::StoreRegisterInstruction* instruction)
     {
-        _tw.write("Str ");
+        writeOperationName("Str", instruction);
         _tw.write("[Sp - ");
-        _tw.write(storeRegisterInstruction->stackOffset);
+        _tw.write(instruction->stackOffset);
         _tw.write("], ");
-        writeOperandRegister(storeRegisterInstruction->target);
+        writeOperandRegister(instruction->target);
     }
 
     void
@@ -257,7 +262,8 @@ namespace elet::domain::compiler::test
         }
         else if (callInstruction->routine->kind == output::RoutineKind::External)
         {
-            _tw.write(reinterpret_cast<output::ExternalRoutine*>(callInstruction->routine)->name);
+            output::ExternalRoutine* externalRoutine = reinterpret_cast<output::ExternalRoutine*>(callInstruction->routine);
+            _tw.write(externalRoutine->name);
         }
         else
         {

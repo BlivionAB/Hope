@@ -423,7 +423,7 @@ namespace elet::domain::compiler::instruction::output::test
         testFunction(
             "var x: u32 = 3;\n"
             "var y: u32 = 3;\n"
-            "return x % y;");
+            "return x % y;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "OperatorKind_RemainderUnsigned_32",
