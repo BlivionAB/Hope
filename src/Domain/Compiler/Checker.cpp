@@ -9,13 +9,9 @@ namespace elet::domain::compiler::ast
     Type* Checker::anyType = new Type(TypeKind::Any);
     Type* Checker::booleanType = new Type(TypeKind::Bool);
     Type* Checker::s8Type = new Type(TypeKind::S8);
-    Type* Checker::us8Type = new Type(TypeKind::US8);
     Type* Checker::s16Type = new Type(TypeKind::S16);
-    Type* Checker::us16Type = new Type(TypeKind::US16);
     Type* Checker::s32Type = new Type(TypeKind::S32);
-    Type* Checker::us32Type = new Type(TypeKind::US32);
     Type* Checker::s64Type = new Type(TypeKind::S64);
-    Type* Checker::us64Type = new Type(TypeKind::US64);
     Type* Checker::u8Type = new Type(TypeKind::U8);
     Type* Checker::u16Type = new Type(TypeKind::U16);
     Type* Checker::u32Type = new Type(TypeKind::U32);
@@ -114,16 +110,16 @@ namespace elet::domain::compiler::ast
         Type* expressionType = checkExpression(variable->expression);
         if (variable->type)
         {
-            variable->resolvedType = new Type(variable->type->type, variable->type->pointers.size());
-
-            // If expression only consist of immediate values (including binary expressions), try to get the value
-            // and calculate the min type for it.
-            Int128 value;
-            if (tryGetValueFromExpression(value, variable->expression))
+            Type* type = variable->resolvedType = new Type(variable->type->type, variable->type->pointers.size());
+            if (!type->explicitSet && isIntegralType(expressionType))
             {
-                expressionType = getMinIntegralTypeFromImmediateValue(value, variable->expression);
+                type->setSet(expressionType);
             }
             checkTypeAssignability(variable->resolvedType, expressionType, variable->expression);
+        }
+        else if (isIntegralType(expressionType))
+        {
+            variable->resolvedType = new Type(expressionType->minValue, expressionType->maxValue);
         }
         else
         {
@@ -135,39 +131,18 @@ namespace elet::domain::compiler::ast
     Type*
     Checker::checkIntegerLiteral(IntegerLiteral* integerLiteral)
     {
-        integerLiteral->resolvedType = getTypeFromIntegerLiteral(integerLiteral);
-//        if (integerLiteral->isNegative)
-//        {
-//            if (integerLiteral->resolvedType->kind == TypeKind::S32)
-//            {
-//                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max) + 1)
-//                {
-//                    addError<error::IntegralLiteralUnderflowError>(integerLiteral, IntegerKind::S32);
-//                }
-//                else if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max) + 1)
-//                {
-//                    addError<error::IntegralLiteralUnderflowError>(integerLiteral, IntegerKind::S64);
-//                }
-//            }
-//        }
-//        else
-//        {
-//            if (integerLiteral->resolvedType->kind == TypeKind::S32)
-//            {
-//                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S32Max))
-//                {
-//                    addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S32);
-//                }
-//            }
-//            if (integerLiteral->resolvedType->kind == TypeKind::S64)
-//            {
-//                if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::S64Max))
-//                {
-//                    addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S64);
-//                }
-//            }
-//        }
-        return integerLiteral->resolvedType;
+        if (integerLiteral->value > static_cast<uint64_t>(IntegerLimit::U64Max))
+        {
+            addError<error::IntegralExpressionGlobalOverflowError>(integerLiteral);
+            return anyType;
+        }
+        if (integerLiteral->value < static_cast<int64_t>(SignedIntegerLimit::S64Min))
+        {
+            addError<error::IntegralExpressionGlobalUnderflowError>(integerLiteral);
+            return anyType;
+        }
+        integerLiteral->operatingType = new Type(integerLiteral->value, integerLiteral->value);
+        return integerLiteral->resolvedType = new Type(integerLiteral->value, integerLiteral->value);
     }
 
 
@@ -178,9 +153,11 @@ namespace elet::domain::compiler::ast
         Type* right = checkExpression(binaryExpression->right);
         if (isIntegralType(left) && isIntegralType(right))
         {
-            Type* commonType = getCommonRealType(left, right);
-            binaryExpression->resolvedType = commonType;
-            return commonType;
+            Type* resolvedType = binaryExpression->resolvedType = resolveMinMaxTypeFromBinaryExpression(binaryExpression);
+            Int128 maxValue = max(resolvedType->maxValue, left->maxValue, right->maxValue);
+            Int128 minValue = min(resolvedType->minValue, left->minValue, right->minValue);
+            binaryExpression->operatingType = new Type(minValue, maxValue);
+            return resolvedType;
         }
         if (isBooleanType(left) && isBooleanType(right))
         {
@@ -189,11 +166,13 @@ namespace elet::domain::compiler::ast
                 addError<error::UndefinedBinaryOperatorError>(binaryExpression->binaryOperator, error::UndefinedBinaryOperatorError::Type::Bool);
                 return anyType;
             }
+            binaryExpression->operatingType = booleanType;
             binaryExpression->resolvedType = booleanType;
             return booleanType;
         }
         if (isAny(left) || isAny(right))
         {
+            binaryExpression->operatingType = anyType;
             binaryExpression->resolvedType = anyType;
             return anyType;
         }
@@ -203,83 +182,224 @@ namespace elet::domain::compiler::ast
 
 
     Type*
-    Checker::getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression)
+    Checker::resolveMinMaxTypeFromBinaryExpression(BinaryExpression* binaryExpression)
     {
-        if (value < 0)
+        Type* left = checkExpression(binaryExpression->left);
+        Type* right = checkExpression(binaryExpression->right);
+        Int128 minValue;
+        Int128 maxValue;
+        switch (binaryExpression->binaryOperatorKind)
         {
-            if (value >= IntegerLimit::S8Min)
-            {
-                return s8Type;
-            }
-            else if (value >= IntegerLimit::S16Min)
-            {
-                return s16Type;
-            }
-            else if (value >= IntegerLimit::S32Min)
-            {
-                return s32Type;
-            }
-            else if (value >= IntegerLimit::S64Min)
-            {
-                return s64Type;
-            }
-            addError<error::IntegralLiteralUnderflowError>(binaryExpression, IntegerKind::S64);
+            case BinaryOperatorKind::Add:
+                maxValue = left->maxValue + right->maxValue;
+                minValue = left->minValue + right->minValue;
+                break;
+            case BinaryOperatorKind::Minus:
+                maxValue = left->maxValue - right->minValue;
+                minValue = left->minValue - right->maxValue;
+                break;
+            case BinaryOperatorKind::Multiply:
+                if ((left->maxValue.isPositive() && right->maxValue.isPositive()))
+                {
+                    maxValue = left->maxValue * right->maxValue;
+                }
+                else if (left->maxValue.isNegative() && right->maxValue.isNegative())
+                {
+                    maxValue = left->minValue * right->minValue;
+                }
+                else if (left->maxValue.isNegative())
+                {
+                    maxValue = left->maxValue * right->minValue;
+                }
+                else
+                {
+                    maxValue = left->minValue * right->maxValue;
+                }
+
+                if ((left->minValue.isPositive() && right->minValue.isPositive()))
+                {
+                    minValue = left->minValue * right->minValue;
+                }
+                else if (left->minValue.isNegative() && right->minValue.isNegative())
+                {
+                    minValue = min(left->minValue * right->minValue, left->minValue * right->maxValue, left->maxValue * right->minValue);
+                }
+                else if (left->maxValue.isNegative())
+                {
+                    minValue = left->minValue * right->maxValue;
+                }
+                else
+                {
+                    minValue = left->maxValue * right->minValue;
+                }
+                break;
+            case BinaryOperatorKind::Divide:
+                if (left->minValue.isPositive() && right->minValue.isPositive())
+                {
+                    maxValue = left->maxValue / right->minValue;
+                    minValue = left->minValue / right->maxValue;
+                }
+                else if (left->maxValue.isNegative() && right->maxValue.isNegative())
+                {
+                    maxValue = left->maxValue / right->minValue;
+                    minValue = left->minValue / right->maxValue;
+                }
+                else
+                {
+                    maxValue = min(left->minValue / right->minValue, left->minValue / right->maxValue, left->maxValue / right->minValue, left->maxValue / right->maxValue);
+                    minValue = min(left->minValue / right->minValue, left->minValue / right->maxValue, left->maxValue / right->minValue, left->maxValue / right->maxValue);
+                }
+                break;
+            case BinaryOperatorKind::BitwiseAnd:
+                if (left->minValue == left->maxValue && right->minValue == right->maxValue)
+                {
+                    maxValue = minValue = left->minValue & right->minValue;
+                }
+                else
+                {
+                    if (max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
+                    {
+                        minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
+                        maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
+                    }
+                    else
+                    {
+                        minValue = static_cast<uint64_t>(IntegerLimit::U64Min);
+                        maxValue = static_cast<uint64_t>(IntegerLimit::U64Max);
+                    }
+                }
+                break;
+            case BinaryOperatorKind::BitwiseOr:
+                if (left->minValue == left->maxValue && right->minValue == right->maxValue)
+                {
+                    maxValue = minValue = left->minValue | right->minValue;
+                }
+                else
+                {
+                    if (max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
+                    {
+                        minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
+                        maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
+                    }
+                    else
+                    {
+                        minValue = static_cast<uint64_t>(IntegerLimit::U64Min);
+                        maxValue = static_cast<uint64_t>(IntegerLimit::U64Max);
+                    }
+                }
+                break;
+            case BinaryOperatorKind::BitwiseXor:
+                if (left->minValue == left->maxValue && right->minValue == right->maxValue)
+                {
+                    maxValue = minValue = left->minValue ^ right->minValue;
+                }
+                else
+                {
+                    if (max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
+                    {
+                        minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
+                        maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
+                    }
+                    else
+                    {
+                        minValue = static_cast<uint64_t>(IntegerLimit::U64Min);
+                        maxValue = static_cast<uint64_t>(IntegerLimit::U64Max);
+                    }
+                }
+                break;
+            default:
+                throw std::runtime_error("Unsupported binary operator in resolveMinMaxTypeFromBinaryExpression.");
         }
-        else
+        if (maxValue > static_cast<uint64_t>(IntegerLimit::U64Max))
         {
-            if (value <= IntegerLimit::S8Max)
-            {
-                return us8Type;
-            }
-            if (value <= IntegerLimit::U8Max)
-            {
-                return u8Type;
-            }
-            if (value <= IntegerLimit::S16Max)
-            {
-                return us16Type;
-            }
-            if (value <= IntegerLimit::U16Max)
-            {
-                return u16Type;
-            }
-            if (value <= IntegerLimit::S32Max)
-            {
-                return us32Type;
-            }
-            if (value <= IntegerLimit::U32Max)
-            {
-                return u32Type;
-            }
-            if (value <= IntegerLimit::S64Max)
-            {
-                return us64Type;
-            }
-            if (value <= IntegerLimit::U64Max)
-            {
-                return u64Type;
-            }
-            addError<error::IntegralLiteralOverflowError>(binaryExpression, IntegerKind::U64);
+            addError<error::IntegralExpressionGlobalOverflowError>(binaryExpression);
         }
+        if (minValue < static_cast<int64_t>(SignedIntegerLimit::S64Min))
+        {
+            addError<error::IntegralExpressionGlobalUnderflowError>(binaryExpression);
+        }
+        return new Type(minValue, maxValue);
     }
+
+
+//    Type*
+//    Checker::getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression)
+//    {
+//        if (value < 0)
+//        {
+//            if (value >= SignedIntegerLimit::S8Min)
+//            {
+//                return s8Type;
+//            }
+//            else if (value >= SignedIntegerLimit::S16Min)
+//            {
+//                return s16Type;
+//            }
+//            else if (value >= SignedIntegerLimit::S32Min)
+//            {
+//                return s32Type;
+//            }
+//            else if (value >= SignedIntegerLimit::S64Min)
+//            {
+//                return s64Type;
+//            }
+//            addError<error::IntegralLiteralUnderflowError>(binaryExpression, IntegerKind::S64);
+//        }
+//        else
+//        {
+//            if (value <= SignedIntegerLimit::S8Max)
+//            {
+//                return us8Type;
+//            }
+//            if (value <= IntegerLimit::U8Max)
+//            {
+//                return u8Type;
+//            }
+//            if (value <= SignedIntegerLimit::S16Max)
+//            {
+//                return us16Type;
+//            }
+//            if (value <= IntegerLimit::U16Max)
+//            {
+//                return u16Type;
+//            }
+//            if (value <= SignedIntegerLimit::S32Max)
+//            {
+//                return us32Type;
+//            }
+//            if (value <= IntegerLimit::U32Max)
+//            {
+//                return u32Type;
+//            }
+//            if (value <= SignedIntegerLimit::S64Max)
+//            {
+//                return us64Type;
+//            }
+//            if (value <= IntegerLimit::U64Max)
+//            {
+//                return u64Type;
+//            }
+//            addError<error::IntegralLiteralOverflowError>(binaryExpression, IntegerKind::U64);
+//        }
+//    }
 
 
     bool
     Checker::tryGetValueFromBinaryExpression(Int128& value, const BinaryExpression* binaryExpression)
     {
         Int128 left;
-        if (!tryGetValueFromExpression(left, binaryExpression->left))
+        if (!expressionHasImmediateValue(left, binaryExpression->left))
         {
             return false;
         }
         Int128 right;
-        if (!tryGetValueFromExpression(right, binaryExpression->right))
+        if (!expressionHasImmediateValue(right, binaryExpression->right))
         {
             return false;
         }
         switch (binaryExpression->binaryOperatorKind)
         {
-            case BinaryOperatorKind::Plus:
+            case BinaryOperatorKind::Add:
                 value = left + right;
                 break;
             case BinaryOperatorKind::Minus:
@@ -299,7 +419,7 @@ namespace elet::domain::compiler::ast
 
 
     bool
-    Checker::tryGetValueFromExpression(Int128& value, const Expression* expression)
+    Checker::expressionHasImmediateValue(Int128& value, const Expression* expression)
     {
         if (expression->kind == SyntaxKind::IntegerLiteral)
         {
@@ -322,11 +442,11 @@ namespace elet::domain::compiler::ast
         {
             if (integerLiteral->isNegative)
             {
-                if (integerLiteral->value >= static_cast<int64_t>(IntegerLimit::S32Min))
+                if (integerLiteral->value >= SignedIntegerLimit::S32Min)
                 {
                     return s32Type;
                 }
-                if (integerLiteral->value >= static_cast<int64_t>(IntegerLimit::S64Min))
+                if (integerLiteral->value >= SignedIntegerLimit::S64Min)
                 {
                     return s64Type;
                 }
@@ -335,25 +455,29 @@ namespace elet::domain::compiler::ast
             }
             else
             {
-                if (integerLiteral->value <= static_cast<int64_t>(IntegerLimit::S32Max))
+                if (integerLiteral->value <= SignedIntegerLimit::S32Max)
                 {
                     return s32Type;
                 }
-                if (integerLiteral->value <= static_cast<int64_t>(IntegerLimit::S64Max))
+                if (integerLiteral->value <= SignedIntegerLimit::S64Max)
                 {
                     return s64Type;
                 }
-                addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::S64);
+                if (integerLiteral->value <= IntegerLimit::U64Max)
+                {
+                    return u64Type;
+                }
+                addError<error::IntegralLiteralOverflowError>(integerLiteral, IntegerKind::U64);
                 return anyType;
             }
         }
         else // Hexadecimal or BinaryLiteral
         {
-            if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U32Max))
+            if (integerLiteral->value <= IntegerLimit::U32Max)
             {
                 return u32Type;
             }
-            if (integerLiteral->value <= static_cast<uint64_t>(IntegerLimit::U64Max))
+            if (integerLiteral->value <= IntegerLimit::U64Max)
             {
                 return u64Type;
             }
@@ -424,12 +548,20 @@ namespace elet::domain::compiler::ast
             case TypeKind::Char:
             case TypeKind::U8:
                 return static_cast<uint64_t>(IntegerLimit::U8Max);
+            case TypeKind::S8:
+                return static_cast<uint64_t>(SignedIntegerLimit::S8Max);
             case TypeKind::U16:
                 return static_cast<uint64_t>(IntegerLimit::U16Max);
+            case TypeKind::S16:
+                return static_cast<uint64_t>(SignedIntegerLimit::S16Max);
             case TypeKind::U32:
                 return static_cast<uint64_t>(IntegerLimit::U32Max);
+            case TypeKind::S32:
+                return static_cast<uint64_t>(SignedIntegerLimit::S32Max);
             case TypeKind::U64:
                 return static_cast<uint64_t>(IntegerLimit::U64Max);
+            case TypeKind::S64:
+                return static_cast<uint64_t>(SignedIntegerLimit::S64Max);
             default:
                 throw std::runtime_error("Cannot get max domain of type");
         }
@@ -635,16 +767,31 @@ namespace elet::domain::compiler::ast
         }
         if (isIntegralType(placeholder) && isIntegralType(target))
         {
-            if (!isIntegralSubsetOrEqualType(placeholder, target))
-            {
-                addError<error::IntegralExpressionMisfitError>(
-                    targetSyntax,
-                    placeholder,
-                    Utf8StringView(targetSyntax->start, targetSyntax->end));
-            }
+            checkUndecidedIntegralType(placeholder, target, targetSyntax);
+//            if (!isIntegralSubsetOrEqualType(placeholder, target))
+//            {
+//                addError<error::IntegralExpressionMisfitError>(
+//                    targetSyntax,
+//                    placeholder,
+//                    Utf8StringView(targetSyntax->start, targetSyntax->end));
+//            }
             return;
         }
         addError<error::TypeAssignabilityError>(targetSyntax, placeholder, target);
+    }
+
+
+    void
+    Checker::checkUndecidedIntegralType(Type* placeholder, Type* target, Syntax* targetSyntax)
+    {
+        if (target->maxValue > placeholder->maxValue)
+        {
+            addError<error::IntegralExpressionOverflowError>(targetSyntax, placeholder, target);
+        }
+        if (target->minValue < placeholder->minValue)
+        {
+            addError<error::IntegralExpressionUnderflowError>(targetSyntax, placeholder, target);
+        }
     }
 
 
@@ -656,9 +803,9 @@ namespace elet::domain::compiler::ast
 
 
     bool
-    Checker::isIntegralType(Type* type)
+    Checker::isUndecidedIntegralType(Type* type)
     {
-        return type->kind >= TypeKind::IntegralStart && type->kind <= TypeKind::IntegralEnd;
+        return type->kind == TypeKind::UndecidedInt;
     }
 
 
@@ -689,108 +836,4 @@ namespace elet::domain::compiler::ast
     }
 
 
-    bool
-    Checker::isIntegralSubsetOrEqualType(Type* reference, Type* target)
-    {
-        assert(isIntegralType(reference) && isIntegralType(target) && "target and source must be integral type.");
-
-        switch (reference->kind)
-        {
-            case TypeKind::S64:
-                switch (target->kind)
-                {
-                    case TypeKind::S64:
-                    case TypeKind::US64:
-                    case TypeKind::S32:
-                    case TypeKind::S16:
-                    case TypeKind::S8:
-                    case TypeKind::U32:
-                    case TypeKind::US32:
-                    case TypeKind::U16:
-                    case TypeKind::US16:
-                    case TypeKind::U8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-            case TypeKind::S32:
-                switch (target->kind)
-                {
-                    case TypeKind::S32:
-                    case TypeKind::US32:
-                    case TypeKind::S16:
-                    case TypeKind::S8:
-                    case TypeKind::U16:
-                    case TypeKind::US16:
-                    case TypeKind::U8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-            case TypeKind::S16:
-                switch (target->kind)
-                {
-                    case TypeKind::S16:
-                    case TypeKind::US16:
-                    case TypeKind::S8:
-                    case TypeKind::U8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-            case TypeKind::S8:
-                switch (target->kind)
-                {
-                    case TypeKind::S8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-            case TypeKind::U64:
-                switch (target->kind)
-                {
-                    case TypeKind::U64:
-                    case TypeKind::US64:
-                    case TypeKind::U32:
-                    case TypeKind::US32:
-                    case TypeKind::U16:
-                    case TypeKind::US16:
-                    case TypeKind::U8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-            case TypeKind::U32:
-                switch (target->kind)
-                {
-                    case TypeKind::U32:
-                    case TypeKind::US32:
-                    case TypeKind::U16:
-                    case TypeKind::US16:
-                    case TypeKind::U8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-            case TypeKind::U16:
-                switch (target->kind)
-                {
-                    case TypeKind::U16:
-                    case TypeKind::US16:
-                    case TypeKind::U8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-            case TypeKind::U8:
-                switch (target->kind)
-                {
-                    case TypeKind::U8:
-                    case TypeKind::US8:
-                        return true;
-                }
-                break;
-        }
-        return false;
-    }
 }

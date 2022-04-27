@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <array>
 #include "Int256.h"
+#include <string>
 
 
 namespace elet::foundation
@@ -51,6 +52,18 @@ namespace elet::foundation
 
         bool
         isEqual(const Int128& other) const;
+
+        bool
+        operator <(const Int128& other) const;
+
+        bool
+        operator >(const Int128& other) const;
+
+        bool
+        operator >=(const Int128& other) const;
+
+        bool
+        operator <=(const Int128& other) const;
 
         bool
         operator <(int32_t other) const;
@@ -101,7 +114,13 @@ namespace elet::foundation
         isNegative() const;
 
         bool
+        isPositive() const;
+
+        bool
         toBool() const;
+
+        std::string
+        toString() const;
 
         uint64_t
         toUint64() const;
@@ -110,9 +129,6 @@ namespace elet::foundation
         onesComplement() const;
 
     private:
-
-        void
-        setBit(uint32_t position, uint32_t bit, Int128& s) const;
 
         std::array<uint32_t, 4>
         value;
@@ -135,6 +151,26 @@ namespace elet::foundation
     operator ==(const Int128& op1, const Int128& op2);
 
 
+    Int128
+    power(Int128 a, Int128 b);
+
+    Int128
+    max(Int128 a, Int128 b);
+
+    Int128
+    max(Int128 a, Int128 b, Int128 c);
+
+    Int128
+    max(Int128 a, Int128 b, Int128 c, Int128 d);
+
+    Int128
+    min(Int128 a, Int128 b);
+
+    Int128
+    min(Int128 a, Int128 b, Int128 c);
+
+    Int128
+    min(Int128 a, Int128 b, Int128 c, Int128 d);
 
     Int128
     operator ~(const Int128& op);

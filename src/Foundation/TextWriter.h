@@ -56,7 +56,10 @@ namespace elet::foundation
         writeSignedHexValue(std::array<uint8_t, 4> integer);
 
         void
-        writeUnsignedHexValue(uint64_t n);
+        writeU32HexValue(uint64_t n);
+
+        void
+        writeU64HexValue(uint64_t n);
 
         void
         writeByteHex(uint8_t integer);

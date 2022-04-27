@@ -5,27 +5,13 @@ namespace elet::domain::compiler::test
 {
     TEST_F(DecimalLiteralFixture, DecimalLiteral_Positive)
     {
-        testFunction("return 2147483647;");
+        testFunction("return 2147483647;", "s32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "DecimalLiteral_Positive",
             .targets = {
                 CompilationTarget::StashIR
             },
-        }));
-    }
-
-
-    TEST_F(DecimalLiteralFixture, DecimalLiteral_Zero)
-    {
-        testFunction("return 0;");
-
-        EXPECT_TRUE(testProject({
-            .baselineName = "DecimalLiteral_Zero",
-            .targets = {
-                CompilationTarget::StashIR
-            },
-            .printTypeBaseline = true,
         }));
     }
 
@@ -43,6 +29,32 @@ namespace elet::domain::compiler::test
     }
 
 
+    TEST_F(DecimalLiteralFixture, DecimalLiteral_S32Underflow)
+    {
+        testFunction("return -2147483649;", "s32");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "DecimalLiteral_S32Underflow",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+    TEST_F(DecimalLiteralFixture, DecimalLiteral_S32Overflow)
+    {
+        testFunction("return 2147483648;", "s32");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "DecimalLiteral_S32Overflow",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
     TEST_F(DecimalLiteralFixture, DecimalLiteral_S64NegativeMax)
     {
         testFunction("return -2147483649;", "s64");
@@ -52,7 +64,6 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .printTypeBaseline = true
         }));
     }
 
@@ -66,17 +77,18 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .printTypeBaseline = true
+            .printTypeBaseline = true,
+            .acceptBaselines = true
         }));
     }
 
 
-    TEST_F(DecimalLiteralFixture, DecimalLiteral_S64MinUnderflow)
+    TEST_F(DecimalLiteralFixture, DecimalLiteral_S64Underflow)
     {
         testFunction("return -9223372036854775809;");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "DecimalLiteral_S64MinUnderflow",
+            .baselineName = "DecimalLiteral_S64Underflow",
             .targets = {
                 CompilationTarget::StashIR
             },
@@ -112,12 +124,39 @@ namespace elet::domain::compiler::test
     }
 
 
-    TEST_F(DecimalLiteralFixture, DecimalLiteral_S64MaxOverflow)
+    TEST_F(DecimalLiteralFixture, DecimalLiteral_S64Overflow)
     {
-        testFunction("return 9223372036854775808;");
+        testFunction("return 9223372036854775808;", "s64");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "DecimalLiteral_S64MaxOverflow",
+            .baselineName = "DecimalLiteral_S64Overflow",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+
+    TEST_F(DecimalLiteralFixture, DecimalLiteral_GlobalUnderflow)
+    {
+        testFunction("return -9223372036854775809;", "s64");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "DecimalLiteral_GlobalUnderflow",
+            .targets = {
+                CompilationTarget::StashIR
+            },
+        }));
+    }
+
+
+    TEST_F(DecimalLiteralFixture, DecimalLiteral_GlobalOverflow)
+    {
+        testFunction("return 18446744073709551616;", "u64");
+
+        EXPECT_TRUE(testProject({
+            .baselineName = "DecimalLiteral_GlobalOverflow",
             .targets = {
                 CompilationTarget::StashIR
             },

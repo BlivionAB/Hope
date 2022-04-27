@@ -1,8 +1,0 @@
-domain Common::MyApplication
-{
-
-public:
-    fn Test(): s64
-    {
-        return -9223372036854775808;}}
-                ~~~~~~~~~~~~~~~~~~~  s64

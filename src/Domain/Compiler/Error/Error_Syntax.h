@@ -70,6 +70,14 @@ namespace elet::domain::compiler::ast::error
             const SourceFile* sourceFile,
             const Syntax* syntax);
     };
+
+
+    struct IntegerLiteralUnderflowError : SyntaxError
+    {
+        IntegerLiteralUnderflowError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax);
+    };
 }
 
 #endif //ELET_ERROR_SYNTAX_H

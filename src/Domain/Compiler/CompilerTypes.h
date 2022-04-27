@@ -12,6 +12,32 @@ namespace fs = std::filesystem;
 
 namespace elet::domain::compiler
 {
+    enum class IntegerLimit : uint64_t
+    {
+        U8Min = 0,
+        U8Max = UINT8_MAX,
+        U16Min = 0,
+        U16Max = UINT16_MAX,
+        U32Min = 0,
+        U32Max = UINT32_MAX,
+        U64Min = 0,
+        U64Max = UINT64_MAX,
+    };
+
+
+    enum class SignedIntegerLimit : int64_t
+    {
+        S8Max = INT8_MAX,
+        S8Min = INT8_MIN,
+        S16Max = INT16_MAX,
+        S16Min = INT16_MIN,
+        S32Max = INT32_MAX,
+        S32Min = INT32_MIN,
+        S64Max = INT64_MAX,
+        S64Min = INT64_MIN,
+    };
+
+
     enum class RegisterSize : uint8_t
     {
         Byte = 1,
@@ -99,9 +125,10 @@ namespace elet::domain::compiler
         Int,
         Uint,
         Usize,
+        UndecidedInt,
 
         IntegralStart = U8,
-        IntegralEnd = Usize,
+        IntegralEnd = UndecidedInt,
 
         Char,
         Bool,

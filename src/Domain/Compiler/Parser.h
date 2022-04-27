@@ -418,25 +418,22 @@ namespace elet::domain::compiler::ast
         parseReturnStatement();
 
         uint64_t
-        parseBinaryLiteral(const BinaryLiteral* binaryLiteral) const;
+        parseBinaryLiteral(const BinaryLiteral* binaryLiteral, bool isNegative) const;
 
         uint64_t
-        parseDecimalLiteral(const DecimalLiteral* decimalLiteral) const;
+        parseDecimalLiteral(const DecimalLiteral* decimalLiteral, bool isNegative) const;
 
         uint64_t
-        parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral) const;
-
-        std::string
-        toStringFromIntegerLimit(IntegerLimit limit) const;
-
-        IntegerLimit
-        getIntegerMaxLimitFromToken(Token token, IntegerLimit defaultLimit) const;
+        parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, bool isNegative) const;
 
         bool
         isIntegerSuffix(Token token);
 
         IntegerLiteral*
         createIntegerLiteral(Token& token);
+
+        IntegerLiteral*
+        createIntegerLiteral(Token& token, bool isNegative);
 
         unsigned int
         getDigitsLength(const char* end, const char* start) const;
@@ -448,6 +445,9 @@ namespace elet::domain::compiler::ast
 //        parseDecoration();
     CharacterLiteral*
     createCharacterLiteral();
+
+    Expression*
+    parseBinaryExpression(Expression* expression, Token& peek);
 };
 }
 

@@ -237,7 +237,7 @@ namespace elet::domain::compiler::instruction
             case ast::SyntaxKind::IntegerLiteral:
             {
                 ast::IntegerLiteral* integerLiteral = reinterpret_cast<ast::IntegerLiteral*>(expression);
-                ast::Type* type = forcedType ? forcedType : integerLiteral->resolvedType;
+                ast::Type* type = forcedType ? forcedType : integerLiteral->operatingType;
                 return output::ImmediateValue(type->kind, integerLiteral->value);
             }
             case ast::SyntaxKind::CharacterLiteral:
@@ -263,7 +263,7 @@ namespace elet::domain::compiler::instruction
         uint64_t rightUint64 = right.toUint64();
         switch (binaryExpression->binaryOperatorKind)
         {
-            case ast::BinaryOperatorKind::Plus:
+            case ast::BinaryOperatorKind::Add:
                 addInstruction(new output::AddImmediateToRegisterInstruction(scratchRegister, left, rightUint64, registerSize));
                 break;
             case ast::BinaryOperatorKind::Minus:
@@ -307,7 +307,7 @@ namespace elet::domain::compiler::instruction
                 immediateValue.value = left.value * right.value;
                 return immediateValue;
 
-            case ast::BinaryOperatorKind::Plus:
+            case ast::BinaryOperatorKind::Add:
                 immediateValue.value = left.value + right.value;
                 return immediateValue;
 
@@ -475,7 +475,7 @@ namespace elet::domain::compiler::instruction
 
         // Decrease scratch register index, since we should leave them back after usage
 
-        RegisterSize registerSize = getSupportedRegisterSize(binaryExpression->resolvedType->size());
+        RegisterSize registerSize = getSupportedRegisterSize(binaryExpression->operatingType->size());
         if (binaryExpression->binaryOperatorKind == ast::BinaryOperatorKind::Modulo)
         {
             output::OperandRegister divisionResultRegister = borrowScratchRegister();
@@ -495,7 +495,7 @@ namespace elet::domain::compiler::instruction
         output::OperandRegister destination = borrowScratchRegister();
         switch (binaryExpression->binaryOperatorKind)
         {
-            case ast::BinaryOperatorKind::Plus:
+            case ast::BinaryOperatorKind::Add:
                 addInstruction(new output::AddRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::Minus:

@@ -23,14 +23,6 @@ namespace elet::domain::compiler::ast
     struct CallExpression;
     struct PropertyExpression;
 
-    struct MinTypeValue
-    {
-        Type*
-        type;
-
-        Int128
-        value;
-    };
 
     class Checker
     {
@@ -103,7 +95,7 @@ namespace elet::domain::compiler::ast
         tryGetValueFromBinaryExpression(Int128& value, const BinaryExpression* binaryExpression);
 
         bool
-        tryGetValueFromExpression(elet::foundation::Int128& value, const Expression* expression);
+        expressionHasImmediateValue(elet::foundation::Int128& value, const Expression* expression);
 
         Type*
         checkPropertyExpression(PropertyExpression* propertyExpression);
@@ -155,7 +147,7 @@ namespace elet::domain::compiler::ast
         checkBooleanLiteral(BooleanLiteral* literal);
 
         bool
-        isIntegralType(Type* type);
+        isUndecidedIntegralType(Type* type);
 
         bool
         isBooleanType(Type* type);
@@ -166,14 +158,17 @@ namespace elet::domain::compiler::ast
         bool
         isAny(Type* type);
 
-        bool
-        isIntegralSubsetOrEqualType(Type* reference, Type* target);
-
         std::string
         getTypeString(const Type* type);
 
+//        Type*
+//        getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression);
+
         Type*
-        getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression);
+        resolveMinMaxTypeFromBinaryExpression(BinaryExpression* binaryExpression);
+
+        void
+        checkUndecidedIntegralType(Type* placeholder, Type* target, Syntax* targetSyntax);
     };
 }
 

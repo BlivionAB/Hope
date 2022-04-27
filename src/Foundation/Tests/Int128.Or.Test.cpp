@@ -8,7 +8,7 @@ namespace elet::foundation::test
     {
         Int128 op1({ 1, 1, 1, 1 });
         Int128 op2({ 1, 1, 1, 1 });
-        EXPECT_EQ(op1 | op2, Int128({ 1, 1, 1, 1 }));
+        EXPECT_EQ(op1 | op2, Int128({ 1, 1, 0, 0 }));
     }
 
 
@@ -16,7 +16,7 @@ namespace elet::foundation::test
     {
         Int128 op1({ 1, 1, 1, 1 });
         Int128 op2({ 0, 0, 0, 0 });
-        EXPECT_EQ(op1 | op2, Int128({ 1, 1, 1, 1 }));
+        EXPECT_EQ(op1 | op2, Int128({ 1, 1, 0, 0 }));
     }
 
 
@@ -24,7 +24,7 @@ namespace elet::foundation::test
     {
         Int128 op1({ 0, 0, 0, 0 });
         Int128 op2({ 1, 1, 1, 1 });
-        EXPECT_EQ(op1 | op2, Int128({ 1, 1, 1, 1 }));
+        EXPECT_EQ(op1 | op2, Int128({ 1, 1, 0, 0 }));
     }
 
 

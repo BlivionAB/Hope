@@ -26,6 +26,16 @@ namespace elet::foundation
     }
 
 
+    Utf8String::Utf8String(const std::string& text)
+    {
+        std::size_t size = text.size();
+        _value = new char[size + 1];
+        _end = _value + size;
+        text.copy(_value, size);
+        _capacity = size;
+    }
+
+
     Utf8String::Utf8String(const char* text, std::size_t size):
         _capacity(size)
     {

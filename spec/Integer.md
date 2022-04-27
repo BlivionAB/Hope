@@ -1,3 +1,18 @@
+## Syntax
+
+The syntax for denoting an `IntegralType`:
+```bnf
+IntegralTypeAnnotation: IntegralType`:` Integer`..`Integer
+```
+
+where `IntegralType` can be any of:
+
+```
+IntegralType :: one of 
+    `u64` `u32` `u16` `u8`
+    `s64` `s32` `s16` `s8`
+```
+
 ## Integer Literal Expression Coercion
 
 Consider:
@@ -22,13 +37,14 @@ Note, the `OperatingType`'s operators are the `ResultingType`:s of their express
 ## Global Integral Expression Minimum And Maximum
 Any integral expressions cannot exceed the *global maximum* or subceed the *global minimum*.
 
-* *Global maximum:* `u64max` `18446744073709551615`.
-* *Global minimum:* `s64min` `-9223372036854775808`
+* *Global maximum:* `u64max` 
+  * Decimal: `18446744073709551615`.
+  * Hexadecimal: `0xffff_ffff_ffff_ffff`.
+* *Global minimum:* `s64min`
+  * Decimal: `-9223372036854775808`.
+  * Hexadecimal: `0x8000_0000_0000_0000`.
 
-## Notations
+These include dynamic(non-constant) expressions such as variables as well.
 
-The syntax for denoting the type of an expression is
-```bnf
-TypeAnnotation: Type`:` Integer`..`Integer
-```
-* `s32` denotes 
+Note it is written in [grammarmarkdown](https://github.com/rbuckton/grammarkdown).
+

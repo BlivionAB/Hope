@@ -33,7 +33,6 @@ namespace elet::domain::compiler::ast::error
     { }
 
 
-
     UndefinedBinaryOperatorError::UndefinedBinaryOperatorError(
         const SourceFile* sourceFile,
         const Syntax* binaryOperator,
@@ -44,9 +43,7 @@ namespace elet::domain::compiler::ast::error
             binaryOperator,
             "Undefined binary operator for type '{}'.",
             type == Type::Bool ? "bool" : "integral")
-    {
-
-    }
+    { }
 
 
     IntegralExpressionMisfitError::IntegralExpressionMisfitError(
@@ -64,6 +61,36 @@ namespace elet::domain::compiler::ast::error
     { }
 
 
+    IntegralExpressionOverflowError::IntegralExpressionOverflowError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax,
+        const Type* placeholder,
+        const Type* target):
+
+        TypeCheckError(
+            sourceFile,
+            syntax,
+            "Integral expression of type '{}' exceeds maximum value of type '{}'.",
+            target,
+            placeholder)
+    { }
+
+
+    IntegralExpressionUnderflowError::IntegralExpressionUnderflowError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax,
+        const Type* placeholder,
+        const Type* target):
+
+        TypeCheckError(
+            sourceFile,
+            syntax,
+            "Integral expression of type '{}' subceeds minimum value of type '{}'.",
+            target,
+            placeholder)
+    { }
+
+
     IntegralLiteralUnderflowError::IntegralLiteralUnderflowError(
         const SourceFile* sourceFile,
         const Syntax* syntax,
@@ -72,7 +99,7 @@ namespace elet::domain::compiler::ast::error
         TypeCheckError(
             sourceFile,
             syntax,
-            "Value exceeds min limit of '{}'.",
+            "Value subceeds min limit of '{}'.",
             integerToString(integerKind))
     { }
 
@@ -87,6 +114,28 @@ namespace elet::domain::compiler::ast::error
             syntax,
             "Value exceeds max limit of '{}'.",
             integerToString(integerKind))
+    { }
+
+
+    IntegralExpressionGlobalOverflowError::IntegralExpressionGlobalOverflowError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax):
+
+        TypeCheckError(
+            sourceFile,
+            syntax,
+            "Integral expression exceeds global maximum limit (u64_max).")
+    { }
+
+
+    IntegralExpressionGlobalUnderflowError::IntegralExpressionGlobalUnderflowError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax):
+
+        TypeCheckError(
+            sourceFile,
+            syntax,
+            "Integral expression subceeds global minimum limit (s64_min).")
     { }
 
 

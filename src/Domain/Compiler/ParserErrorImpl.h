@@ -10,7 +10,6 @@ namespace elet::domain::compiler::ast
     T*
     ParserError::throwSyntaxErrorWithNode(const Syntax* syntax, Args... args)
     {
-        _parser->skipToNextSemicolon();
         throw new T(_parser->_sourceFile, syntax, args...);
     }
 
@@ -19,7 +18,6 @@ namespace elet::domain::compiler::ast
     ParserError::throwSyntaxError(Args... args)
     {
         const ErrorNode* errorNode = createErrorNodeOnCurrentToken();
-        _parser->skipToNextSemicolon();
         throw new T(_parser->_sourceFile, errorNode, args...);
     }
 }

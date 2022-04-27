@@ -1,8 +1,0 @@
-domain Common::MyApplication
-{
-
-public:
-    fn Test(): s32
-    {
-        return 0;}}
-               ~  s32

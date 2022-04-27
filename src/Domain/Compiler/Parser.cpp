@@ -38,12 +38,9 @@ namespace elet::domain::compiler::ast
     Parser::performWork(SourceFile* sourceFile)
     {
         _sourceFile = sourceFile;
-//        Utf8StringView sourceContent(task.sourceStart, task.sourceEnd);
         Scanner scanner(sourceFile);
-//        _currentDirectory = const_cast<fs::path*>(task.sourceDirectory);
         _scanner = &scanner;
         List<Syntax*> statements;
-//        ParsingTask* pendingParsingTask = nullptr;
         while (true)
         {
             try
@@ -644,37 +641,46 @@ namespace elet::domain::compiler::ast
         Expression* expr = parseExpressionOnToken(token);
         Token peek = peekNextToken(false);
 
-        // Given binary expressions A [*] B [*] C:
-        // * Parse A and B and then check if after B has a binary operator.
-        //   * If B has higher precedence:
-        //     * B becomes left and then continue parseRightHandSideOfBinaryExpression(TokenPrecedence lowestPrecedence).
-        //        * Where parseRightHandSideOfBinaryExpression only continues parsing expressions in the right-hand side
-        //          if it encounters higher token precedence. For instance, if it encounters A [*:1] B [*:2] C [*:3] D,
-        //          where ':n' denotes the precedence. From [*:2], parseRightHandSideOfBinaryExpression must evaluate [*:3]
-        //          It will evaluate whether [*:3] has a higher precedence then the passed in lowestPrecedence [*:2].
-        //
-        //   * If B has lower precedence:
-        //     * Create a binary expression of A and B first and then with C.
         if (isBinaryOperator(peek))
         {
-            Expression* leftExpression = expr;
-            while (isBinaryOperator(peek))
-            {
-                BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
-                unsigned int precedence = getOperatorPrecedence(peek);
-                takeNextToken();
-                binaryExpression->left = leftExpression;
-                binaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
-                finishSyntax(binaryExpression->binaryOperator);
-                binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
-                binaryExpression->right = parseRightHandSideOfBinaryExpression(precedence);
-                leftExpression = binaryExpression;
-                peek = peekNextToken(false);
-            }
-            finishSyntax(leftExpression);
-            return leftExpression;
+            return parseBinaryExpression(expr, peek);
         }
         return expr;
+    }
+
+
+    // Given binary expressions A [*] B [*] C:
+    // * Parse A and B and then check if after B has a binary operator.
+    //   * If B has higher precedence:
+    //     * B becomes left and then continue parseRightHandSideOfBinaryExpression(TokenPrecedence lowestPrecedence).
+    //        * Where parseRightHandSideOfBinaryExpression only continues parsing expressions in the right-hand side
+    //          if it encounters higher token precedence. For instance, if it encounters A [*:1] B [*:2] C [*:3] D,
+    //          where ':n' denotes the precedence. From [*:2], parseRightHandSideOfBinaryExpression must evaluate [*:3]
+    //          It will evaluate whether [*:3] has a higher precedence then the passed in lowestPrecedence [*:2].
+    //
+    //   * If B has lower precedence:
+    //     * Create a binary expression of A and B first and then with C.
+    Expression*
+    Parser::parseBinaryExpression(Expression* expression, Token& peek)
+    {
+        Expression* leftExpression = expression;
+        int previousPrecedence = 0;
+        while (isBinaryOperator(peek))
+        {
+            BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
+            binaryExpression->start = leftExpression->start;
+            unsigned int precedence = getOperatorPrecedence(peek);
+            takeNextToken();
+            binaryExpression->left = leftExpression;
+            binaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
+            finishSyntax(binaryExpression->binaryOperator);
+            binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+            binaryExpression->right = parseRightHandSideOfBinaryExpression(precedence);
+            finishSyntax(binaryExpression);
+            leftExpression = binaryExpression;
+            peek = peekNextToken(false);
+        }
+        return leftExpression;
     }
 
 
@@ -692,36 +698,38 @@ namespace elet::domain::compiler::ast
                 takeNextToken();
 
                 BinaryExpression* binaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
+                binaryExpression->start = expression->start;
                 binaryExpression->left = expression;
                 binaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
                 binaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
                 finishSyntax(binaryExpression->binaryOperator);
                 binaryExpression->operatorPrecedence = nextOperatorPrecedence;
 
-                Expression* right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
-                bool nextNextHasHigherOperatorPrecedence = false;
-                if (right->kind == SyntaxKind::BinaryExpression)
-                {
-                    peek = peekNextToken(false);
-                    if (isBinaryOperator(peek))
-                    {
-                        unsigned int nextNextOperatorPrecedence = getOperatorPrecedence(peek);
-                        if (nextNextOperatorPrecedence > previousOperatorPrecedence)
-                        {
-                            BinaryExpression* nextBinaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
-                            nextBinaryExpression->left = right;
-                            nextBinaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
-                            nextBinaryExpression->operatorPrecedence = nextNextOperatorPrecedence;
-                            nextBinaryExpression->right = parseRightHandSideOfBinaryExpression(nextNextOperatorPrecedence);
-                            binaryExpression->right = nextBinaryExpression;
-                            nextNextHasHigherOperatorPrecedence = true;
-                        }
-                    }
-                }
-                if (!nextNextHasHigherOperatorPrecedence)
-                {
-                    binaryExpression->right = right;
-                }
+                binaryExpression->right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
+//                 = right;
+//                bool nextNextHasHigherOperatorPrecedence = false;
+//                if (right->kind == SyntaxKind::BinaryExpression)
+//                {
+//                    peek = peekNextToken(false);
+//                    if (isBinaryOperator(peek))
+//                    {
+//                        unsigned int nextNextOperatorPrecedence = getOperatorPrecedence(peek);
+//                        if (nextNextOperatorPrecedence > previousOperatorPrecedence)
+//                        {
+//                            BinaryExpression* nextBinaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
+//                            nextBinaryExpression->left = right;
+//                            nextBinaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
+//                            nextBinaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
+//                            finishSyntax(nextBinaryExpression->binaryOperator);
+//                            nextBinaryExpression->operatorPrecedence = nextNextOperatorPrecedence;
+//                            nextBinaryExpression->right = parseRightHandSideOfBinaryExpression(nextNextOperatorPrecedence);
+//                            finishSyntax(nextBinaryExpression);
+//                            binaryExpression->right = nextBinaryExpression;
+//                            nextNextHasHigherOperatorPrecedence = true;
+//                        }
+//                    }
+//                }
+                finishSyntax(binaryExpression);
                 return binaryExpression;
             }
         }
@@ -773,7 +781,7 @@ namespace elet::domain::compiler::ast
         Token token = takeNextToken();
         if (token == Token::HexadecimalLiteral || token == Token::DecimalLiteral)
         {
-            IntegerLiteral* integerLiteral = createIntegerLiteral(token);
+            IntegerLiteral* integerLiteral = createIntegerLiteral(token, true);
             integerLiteral->isNegative = true;
             integerLiteral->value = -integerLiteral->value;
             finishSyntax(integerLiteral);
@@ -800,6 +808,13 @@ namespace elet::domain::compiler::ast
 
     IntegerLiteral*
     Parser::createIntegerLiteral(Token& token)
+    {
+        return createIntegerLiteral(token, false);
+    }
+
+
+    IntegerLiteral*
+    Parser::createIntegerLiteral(Token& token, bool isNegative)
     {
         IntegerLiteral* integerLiteral = createSyntax<IntegerLiteral>(SyntaxKind::IntegerLiteral);
         switch (token)
@@ -840,13 +855,13 @@ namespace elet::domain::compiler::ast
         switch (token)
         {
             case Token::BinaryLiteral:
-                integerLiteral->value = parseBinaryLiteral(std::get<BinaryLiteral*>(integerLiteral->digits));
+                integerLiteral->value = parseBinaryLiteral(std::get<BinaryLiteral*>(integerLiteral->digits), isNegative);
                 break;
             case Token::DecimalLiteral:
-                integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits));
+                integerLiteral->value = parseDecimalLiteral(std::get<DecimalLiteral*>(integerLiteral->digits), isNegative);
                 break;
             case Token::HexadecimalLiteral:
-                integerLiteral->value = parseHexadecimalLiteral(std::get<HexadecimalLiteral*>(integerLiteral->digits));
+                integerLiteral->value = parseHexadecimalLiteral(std::get<HexadecimalLiteral*>(integerLiteral->digits), isNegative);
                 break;
         }
         finishSyntax(integerLiteral);
@@ -1452,7 +1467,7 @@ namespace elet::domain::compiler::ast
             case Token::EqualEqual:
                 return BinaryOperatorKind::Equal;
             case Token::Plus:
-                return BinaryOperatorKind::Plus;
+                return BinaryOperatorKind::Add;
             case Token::Minus:
                 return BinaryOperatorKind::Minus;
             case Token::Asterisk:
@@ -1512,13 +1527,13 @@ namespace elet::domain::compiler::ast
 
 
     uint64_t
-    Parser::parseBinaryLiteral(const BinaryLiteral* binaryLiteral) const
+    Parser::parseBinaryLiteral(const BinaryLiteral* binaryLiteral, bool isNegative) const
     {
         const char* cursor = binaryLiteral->end - 1;
         const char* start = binaryLiteral->start + 2;
         uint64_t exponent = 0;
         uint64_t result = 0;
-        uint64_t leftOfMaxLimit = UINT64_MAX;
+        uint64_t leftOfMaxLimit = isNegative ? static_cast<uint64_t>(INT64_MAX) + 1 : UINT64_MAX;
         while (true)
         {
             unsigned char character = cursor[0];
@@ -1531,7 +1546,14 @@ namespace elet::domain::compiler::ast
             uint64_t f = positionValue << exponent;
             if (f > leftOfMaxLimit)
             {
-                _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(binaryLiteral);
+                if (isNegative)
+                {
+                    _error->throwSyntaxErrorWithNode<error::IntegerLiteralUnderflowError>(binaryLiteral);
+                }
+                else
+                {
+                    _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(binaryLiteral);
+                }
             }
             result += f;
             leftOfMaxLimit -= f;
@@ -1547,13 +1569,13 @@ namespace elet::domain::compiler::ast
 
 
     uint64_t
-    Parser::parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral) const
+    Parser::parseHexadecimalLiteral(const HexadecimalLiteral* hexadecimalLiteral, bool isNegative) const
     {
         const char* cursor = hexadecimalLiteral->end - 1;
         const char* start = hexadecimalLiteral->start + 2;
         uint64_t exponent = 0;
         uint64_t result = 0;
-        uint64_t leftOfMaxLimit = UINT64_MAX;
+        uint64_t leftOfMaxLimit = isNegative ? static_cast<uint64_t>(INT64_MAX) + 1 : UINT64_MAX;
         while (true)
         {
             unsigned char character = cursor[0];
@@ -1578,7 +1600,14 @@ namespace elet::domain::compiler::ast
             uint64_t f = positionValue * std::pow(16ui64, exponent);
             if (f > leftOfMaxLimit)
             {
-                _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(hexadecimalLiteral);
+                if (isNegative)
+                {
+                    _error->throwSyntaxErrorWithNode<error::IntegerLiteralUnderflowError>(hexadecimalLiteral);
+                }
+                else
+                {
+                    _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(hexadecimalLiteral);
+                }
             }
             result += f;
             leftOfMaxLimit -= f;
@@ -1594,12 +1623,12 @@ namespace elet::domain::compiler::ast
 
 
     uint64_t
-    Parser::parseDecimalLiteral(const DecimalLiteral* decimalLiteral) const
+    Parser::parseDecimalLiteral(const DecimalLiteral* decimalLiteral, bool isNegative) const
     {
         const char* cursor = decimalLiteral->end - 1;
         uint64_t exponent = 0;
         uint64_t result = 0;
-        uint64_t leftOfMaxLimit = UINT64_MAX;
+        uint64_t leftOfMaxLimit = isNegative ? static_cast<uint64_t>(INT64_MAX) + 1 : UINT64_MAX;
         while (true)
         {
             char character = cursor[0];
@@ -1612,7 +1641,14 @@ namespace elet::domain::compiler::ast
             uint64_t f = s * std::pow(10, exponent);
             if (f > leftOfMaxLimit)
             {
-                _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(decimalLiteral);
+                if (isNegative)
+                {
+                    _error->throwSyntaxErrorWithNode<error::IntegerLiteralUnderflowError>(decimalLiteral);
+                }
+                else
+                {
+                    _error->throwSyntaxErrorWithNode<error::IntegerLiteralOverflowError>(decimalLiteral);
+                }
             }
             result += f;
             leftOfMaxLimit -= f;
@@ -1646,62 +1682,6 @@ namespace elet::domain::compiler::ast
             length++;
         }
         return length;
-    }
-
-
-
-
-
-    IntegerLimit
-    Parser::getIntegerMaxLimitFromToken(Token token, IntegerLimit defaultLimit) const
-    {
-        switch (token)
-        {
-            case Token::U8Keyword:
-                return IntegerLimit::U8Max;
-            case Token::U16Keyword:
-                return IntegerLimit::U16Max;
-            case Token::U32Keyword:
-                return IntegerLimit::U32Max;
-            case Token::U64Keyword:
-                return IntegerLimit::U64Max;
-            case Token::S8Keyword:
-                return IntegerLimit::S8Max;
-            case Token::S16Keyword:
-                return IntegerLimit::S16Max;
-            case Token::S32Keyword:
-                return IntegerLimit::S32Max;
-            case Token::S64Keyword:
-                return IntegerLimit::S64Max;
-            default:
-                return defaultLimit;
-        }
-    }
-
-
-    std::string
-    Parser::toStringFromIntegerLimit(IntegerLimit limit) const
-    {
-        switch (limit)
-        {
-            case IntegerLimit::U8Max:
-                return "u8";
-            case IntegerLimit::U16Max:
-                return "u16";
-            case IntegerLimit::U32Max:
-                return "u32";
-            case IntegerLimit::U64Max:
-                return "u64";
-
-            case IntegerLimit::S8Max:
-                return "s8";
-            case IntegerLimit::S16Max:
-                return "s16";
-            case IntegerLimit::S32Max:
-                return "s32";
-            case IntegerLimit::S64Max:
-                return "s64";
-        }
     }
 
 

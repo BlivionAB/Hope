@@ -57,7 +57,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(HexadecimalLiteralFixture, HexadecimalLiteral_SInt64Overflow)
     {
-        testFunction("return -0xffff_ffff_ffff_ffff;");
+        testFunction("return -0xffff_ffff_ffff_ffff;", "s64");
 
         EXPECT_TRUE(testProject({
             .baselineName = "HexadecimalLiteral_SInt64Overflow",
@@ -83,7 +83,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(HexadecimalLiteralFixture, HexadecimalLiteral_Multiple_Error_CapitalHexCharacter)
     {
-        testFunction("var a: int = 0xF;\nvar b: int = 0xE;\nvar c: int = 0xD;\nvar d: int = 0xC;\nvar e: int = 0xB;\nvar f: int = 0xA;");
+        testFunction("var a: s32 = 0xF;\nvar b: s32 = 0xE;\nvar c: s32 = 0xD;\nvar d: s32 = 0xC;\nvar e: s32 = 0xB;\nvar f: s32 = 0xA;");
 
         EXPECT_TRUE(testProject({
             .baselineName = "HexadecimalLiteral_Multiple_Error_CapitalHexCharacter",

@@ -342,8 +342,13 @@ namespace elet::domain::compiler::ast
 
     struct Expression : Syntax
     {
+        // Resolved tyoe is the required type needed to store the result of the expression.
         Type*
         resolvedType;
+
+        // Operating type is the required type needed to execute the operation of the expression.
+        Type*
+        operatingType;
     };
 
 
@@ -489,7 +494,7 @@ namespace elet::domain::compiler::ast
         And,
         Or,
         Equal,
-        Plus,
+        Add,
         Minus,
         Multiply,
         Divide,

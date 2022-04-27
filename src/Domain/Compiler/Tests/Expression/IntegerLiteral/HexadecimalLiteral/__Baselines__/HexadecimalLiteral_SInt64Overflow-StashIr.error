@@ -1,4 +1,4 @@
-error: Integral expression '0xffff_ffff_ffff_ffff' does not fit into integral type 's32'.
+error: Integer literal subceeds global minimum limit (s64_min).
 --> main.hs:7:17
   | 
 7 |         return -0xffff_ffff_ffff_ffff;}}

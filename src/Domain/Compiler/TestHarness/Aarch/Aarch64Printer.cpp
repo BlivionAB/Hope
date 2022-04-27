@@ -165,11 +165,11 @@ namespace elet::domain::compiler::test::aarch
         _tw.write(", #");
         if (instruction->is64Bit)
         {
-            _tw.writeUnsignedHexValue(instruction->imm12 * 8);
+            _tw.writeU64HexValue(instruction->imm12 * 8);
         }
         else
         {
-            _tw.writeUnsignedHexValue(instruction->imm12 * 4);
+            _tw.writeU64HexValue(instruction->imm12 * 4);
         }
         _tw.write("]");
     }
@@ -190,7 +190,7 @@ namespace elet::domain::compiler::test::aarch
         _tw.write(", [");
         writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", #");
-        _tw.writeUnsignedHexValue(instruction->imm12);
+        _tw.writeU64HexValue(instruction->imm12);
         _tw.write("]");
     }
 
@@ -203,7 +203,7 @@ namespace elet::domain::compiler::test::aarch
         _tw.write(", [");
         writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", #");
-        _tw.writeUnsignedHexValue(instruction->imm12);
+        _tw.writeU64HexValue(instruction->imm12);
         _tw.write("]");
     }
 
@@ -223,7 +223,7 @@ namespace elet::domain::compiler::test::aarch
         _tw.write(", [");
         writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", #");
-        _tw.writeUnsignedHexValue(instruction->imm12);
+        _tw.writeU64HexValue(instruction->imm12);
         _tw.write("]");
     }
 
@@ -236,7 +236,7 @@ namespace elet::domain::compiler::test::aarch
         _tw.write(", [");
         writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", #");
-        _tw.writeUnsignedHexValue(instruction->imm12);
+        _tw.writeU64HexValue(instruction->imm12);
         _tw.write("]");
     }
 
@@ -513,7 +513,7 @@ namespace elet::domain::compiler::test::aarch
         _tw.write("movn ");
         writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
-        _tw.writeUnsignedHexValue(instruction->immediateValue);
+        _tw.writeU64HexValue(instruction->immediateValue);
     }
 
 
@@ -572,7 +572,7 @@ namespace elet::domain::compiler::test::aarch
         if (instruction->imm6)
         {
             _tw.write(", ");
-            _tw.writeUnsignedHexValue(instruction->imm6);
+            _tw.writeU64HexValue(instruction->imm6);
         }
     }
 
@@ -641,7 +641,7 @@ namespace elet::domain::compiler::test::aarch
         _tw.write(", ");
         writeGeneralPurposeRegister(instruction->Rn, instruction);
         _tw.write(", ");
-        _tw.writeUnsignedHexValue(instruction->value);
+        _tw.writeU64HexValue(instruction->value);
     }
 
 

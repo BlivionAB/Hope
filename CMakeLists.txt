@@ -26,46 +26,48 @@ file(GLOB DOMAIN_SRC
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/x86/X86Parser/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/x86/OpCode/*)
 
-file(GLOB DOMAIN_TEST
+file(GLOB_RECURSE DOMAIN_TEST
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/**/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Expression/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Function/*
+#    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Expression/*
+#    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Function/*
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/X86/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/Aarch/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/Tests/*
-    src/Domain/Compiler/Tests/Declaration/VariableDeclaration/VariableDeclaration_Test.cpp
-    src/Domain/Compiler/Tests/Declaration/VariableDeclaration/VariableDeclarationFixture.h
-    src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteral_Test.cpp
-    src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteralFixture.h
-    src/Domain/Compiler/Tests/Expression/Boolean/BooleanLiteral/BooleanLiteral_Test.cpp
-    src/Domain/Compiler/Tests/Expression/Boolean/BooleanLiteral/BooleanLiteralFixture.h
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBoolean_Test.cpp
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBooleanFixture.h
-        src/Domain/Compiler/Tests/Expression/BinaryExpression/NonSupportedTypes/ImmediateKindFixture.h
-        src/Domain/Compiler/Tests/Expression/BinaryExpression/NonSupportedTypes/BinaryExpression_NonSupportedTypes_Test.cpp
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediate_Test.cpp
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediateFixture.h
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToImmediate/VariableToImmediate_Test.cpp
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToImmediate/VariableToImmediateFixture.h
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToVariable/VariableToVariable_Test.cpp
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToVariable/VariableToVariableFixture.h
-    src/Domain/Compiler/Tests/Expression/IntegerLiteral/HexadecimalLiteral/HexadecimalLiteral_Test.cpp
-    src/Domain/Compiler/Tests/Expression/IntegerLiteral/DecimalLiteral/DecimalLiteral_Test.cpp
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKind_Test.cpp
-    src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKindFixture.h
-
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/BitmaskImmediate/BitmaskImmediate_Test.cpp
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/BitmaskImmediate/BitmaskImmediateFixture.h
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue/NonNegatedValue_Test.cpp
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue/NonNegatedValueFixture.h
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue/NegatedValue_Test.cpp
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue/NegatedValueFixture.h
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/OperatorKind/OperatorKind_Test.cpp
-    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/OperatorKind/OperatorKindFixture.h
-
-    src/Domain/Compiler/Instruction/Assembly/X86/Tests/OperatorKind/OperatorKind_Test.cpp
+    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/**/*
+#    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/X86/*
+#    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/Aarch/*
+#    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/*
+#    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/Tests/*
+#    src/Domain/Compiler/Tests/Declaration/VariableDeclaration/VariableDeclaration_Test.cpp
+#    src/Domain/Compiler/Tests/Declaration/VariableDeclaration/VariableDeclarationFixture.h
+#    src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteral_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/CharacterLiteral/CharacterLiteralFixture.h
+#    src/Domain/Compiler/Tests/Expression/Boolean/BooleanLiteral/BooleanLiteral_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/Boolean/BooleanLiteral/BooleanLiteralFixture.h
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBoolean_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/BooleanToBoolean/BinaryExpression_BooleanToBooleanFixture.h
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/NonSupportedTypes/ImmediateKindFixture.h
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/NonSupportedTypes/BinaryExpression_NonSupportedTypes_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediate_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/ImmediateToImmediate/BinaryExpression_ImmediateToImmediateFixture.h
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToImmediate/VariableToImmediate_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToImmediate/VariableToImmediateFixture.h
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToVariable/VariableToVariable_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/VariableToVariable/VariableToVariableFixture.h
+#    src/Domain/Compiler/Tests/Expression/IntegerLiteral/HexadecimalLiteral/HexadecimalLiteral_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/IntegerLiteral/DecimalLiteral/DecimalLiteral_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKind_Test.cpp
+#    src/Domain/Compiler/Tests/Expression/BinaryExpression/OperatorKind/OperatorKindFixture.h
+#
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/BitmaskImmediate/BitmaskImmediate_Test.cpp
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/BitmaskImmediate/BitmaskImmediateFixture.h
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue/NonNegatedValue_Test.cpp
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NonNegatedValue/NonNegatedValueFixture.h
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue/NegatedValue_Test.cpp
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/ImmediateInstructionEncoding/NegatedValue/NegatedValueFixture.h
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/OperatorKind/OperatorKind_Test.cpp
+#    src/Domain/Compiler/Instruction/Assembly/Aarch/Tests/OperatorKind/OperatorKindFixture.h
+#
+#    src/Domain/Compiler/Instruction/Assembly/X86/Tests/OperatorKind/OperatorKind_Test.cpp
 )
 
 #message(STATUS ${DOMAIN_TEST})

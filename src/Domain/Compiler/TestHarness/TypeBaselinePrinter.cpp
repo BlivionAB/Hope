@@ -90,11 +90,29 @@ namespace elet::domain::compiler::test
     {
         switch (type->kind)
         {
-            case TypeKind::S32:
-                _tw.write("s32");
+            case TypeKind::U64:
+                _tw.write("u64");
+                break;
+            case TypeKind::U32:
+                _tw.write("u32");
+                break;
+            case TypeKind::U16:
+                _tw.write("u16");
+                break;
+            case TypeKind::U8:
+                _tw.write("u8");
                 break;
             case TypeKind::S64:
                 _tw.write("s64");
+                break;
+            case TypeKind::S32:
+                _tw.write("s32");
+                break;
+            case TypeKind::S16:
+                _tw.write("s16");
+                break;
+            case TypeKind::S8:
+                _tw.write("s8");
                 break;
             default:
                 throw std::runtime_error("Have not implemented integer type yet.");

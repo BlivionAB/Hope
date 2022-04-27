@@ -92,6 +92,17 @@ namespace elet::domain::compiler::ast::error
         SyntaxError(
             sourceFile,
             syntax,
-            "Integer literal has exceeded its max limit of U64_MAX.")
+            "Integer literal exceeds global maximum limit (u64_max).")
+    { }
+
+
+    IntegerLiteralUnderflowError::IntegerLiteralUnderflowError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax):
+
+        SyntaxError(
+            sourceFile,
+            syntax,
+            "Integer literal subceeds global minimum limit (s64_min).")
     { }
 }

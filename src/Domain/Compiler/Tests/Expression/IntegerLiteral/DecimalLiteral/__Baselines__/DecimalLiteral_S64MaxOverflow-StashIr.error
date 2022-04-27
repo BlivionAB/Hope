@@ -1,5 +1,0 @@
-error: Value exceeds max limit of 's64'.
---> main.hs:7:16
-  | 
-7 |         return 9223372036854775808;}}
-  |                ^^^^^^^^^^^^^^^^^^^

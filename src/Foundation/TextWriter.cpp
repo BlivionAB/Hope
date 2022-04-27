@@ -166,12 +166,47 @@ namespace elet::foundation
             write("-");
             n = ~n + 1;
         }
-        writeUnsignedHexValue(n);
+        writeU64HexValue(n);
+    }
+
+
+    // TODO: write test writeU32HexValue
+    void
+    TextWriter::writeU32HexValue(uint64_t n)
+    {
+        write("0x");
+        n = n & 0x00000000'ffffffff;
+        static const char* digits = "0123456789abcdef";
+        bool hasWrittenDigit = false;
+        int writeDigitsCount = 0;
+        for (int i = 8; i >= 0; --i)
+        {
+            uint64_t s = pow(16, i);
+            uint64_t r = n / s;
+            if (r != 0 || hasWrittenDigit)
+            {
+                hasWrittenDigit = true;
+                if (writeDigitsCount != 0 && writeDigitsCount % 4 == 0)
+                {
+                    write("_");
+                }
+                write(digits[r]);
+                writeDigitsCount++;
+                if (r != 0)
+                {
+                    n -= r * s;
+                }
+            }
+        }
+        if (!hasWrittenDigit)
+        {
+            write("0");
+        }
     }
 
 
     void
-    TextWriter::writeUnsignedHexValue(uint64_t n)
+    TextWriter::writeU64HexValue(uint64_t n)
     {
         write("0x");
         static const char* digits = "0123456789abcdef";

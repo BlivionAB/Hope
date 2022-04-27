@@ -124,7 +124,14 @@ namespace elet::domain::compiler::test
         _tw.write("Mov ");
         writeOperandRegister(moveImmediateInstruction->destination);
         _tw.write(", #");
-        _tw.writeUnsignedHexValue(moveImmediateInstruction->value);
+        if (moveImmediateInstruction->destinationSize == RegisterSize::Dword)
+        {
+            _tw.writeU32HexValue(moveImmediateInstruction->value);
+        }
+        else
+        {
+            _tw.writeU64HexValue(moveImmediateInstruction->value);
+        }
     }
 
 
@@ -300,7 +307,7 @@ namespace elet::domain::compiler::test
         _tw.write(", ");
         writeOperandRegister(instruction->target);
         _tw.write(", ");
-        _tw.writeUnsignedHexValue(instruction->value);
+        _tw.writeU64HexValue(instruction->value);
     }
 
 

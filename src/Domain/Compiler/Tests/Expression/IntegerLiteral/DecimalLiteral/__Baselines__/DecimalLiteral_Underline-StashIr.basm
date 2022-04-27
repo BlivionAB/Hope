@@ -1,3 +1,0 @@
-Test():
-    Mov OpRet, #0xf424_0
-

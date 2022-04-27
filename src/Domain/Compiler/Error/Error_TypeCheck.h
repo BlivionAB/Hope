@@ -51,6 +51,25 @@ namespace elet::domain::compiler::ast::error
             Utf8StringView expression);
     };
 
+    struct IntegralExpressionOverflowError : TypeCheckError
+    {
+        IntegralExpressionOverflowError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax,
+            const Type* placeholder,
+            const Type* target);
+    };
+
+
+    struct IntegralExpressionUnderflowError : TypeCheckError
+    {
+        IntegralExpressionUnderflowError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax,
+            const Type* placeholder,
+            const Type* target);
+    };
+
 
     struct IntegralLiteralUnderflowError : TypeCheckError
     {
@@ -67,6 +86,22 @@ namespace elet::domain::compiler::ast::error
             const SourceFile* sourceFile,
             const Syntax* syntax,
             IntegerKind integerKind);
+    };
+
+
+    struct IntegralExpressionGlobalOverflowError : TypeCheckError
+    {
+        IntegralExpressionGlobalOverflowError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax);
+    };
+
+
+    struct IntegralExpressionGlobalUnderflowError : TypeCheckError
+    {
+        IntegralExpressionGlobalUnderflowError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax);
     };
 
 

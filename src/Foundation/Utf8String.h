@@ -164,6 +164,8 @@ namespace elet::foundation
 
         Utf8String();
 
+        Utf8String(const std::string& text);
+
         Utf8String(const char* text);
 
         Utf8String(const char* text, std::size_t size);

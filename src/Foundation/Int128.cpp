@@ -3,6 +3,7 @@
 #include "M64.h"
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 namespace elet::foundation
 {
@@ -241,28 +242,10 @@ namespace elet::foundation
     }
 
 
-    void
-    Int128::setBit(uint32_t position, uint32_t bit, Int128& s) const
+    bool
+    Int128::isPositive() const
     {
-        assert(position < 128 && "position must be smaller than 128.");
-        assert(bit == 0 || bit == 1 && "bit must be  0 or 1.");
-
-        if (position < 32)
-        {
-            s.value[0] |= bit << position;
-        }
-        else if (position < 64)
-        {
-            s.value[1] |= bit << (position - 32);
-        }
-        else if (position < 96)
-        {
-            s.value[2] |= bit << (position - 64);
-        }
-        else
-        {
-            s.value[3] |= bit << (position - 96);
-        }
+        return (value[3] & 0x8000'0000) == 0;
     }
 
 
@@ -274,6 +257,164 @@ namespace elet::foundation
             && value[3] == other.value[3];
     }
 
+
+    bool
+    Int128::operator <(const Int128& other) const
+    {
+        if (isNegative() && other.isPositive())
+        {
+            return true;
+        }
+        if (isPositive() && other.isNegative())
+        {
+            return false;
+        }
+        if (isPositive() && other.isPositive())
+        {
+            for (int i = 3; i >= 1; i--)
+            {
+                if (value[i] < other.value[i])
+                {
+                    return true;
+                }
+                if (value[i] > other.value[i])
+                {
+                    return false;
+                }
+            }
+            return value[0] < other.value[0];
+        }
+
+
+        // Both are negative
+        for (int i = 3; i >= 0; i--)
+        {
+            // A positive value would yield a signbit of 0, rendering it being more negative than s64.
+            int32_t s1 = static_cast<int32_t>(value[i]);
+            int32_t s2 = static_cast<int32_t>(other.value[i]);
+            if (s1 >= 0 && s2 < 0)
+            {
+                return true;
+            }
+            if (s2 >= 0 && s1 < 0)
+            {
+                return false;
+            }
+            if (s1 < 0 && s2 < 0)
+            {
+                if (s1 > s2)
+                {
+                    return false;
+                }
+                if (s1 < s2)
+                {
+                    return true;
+                }
+            }
+            else if (s1 >= 0 && s2 >= 0)
+            {
+                if (s1 > s2)
+                {
+                    return true;
+                }
+                if (s1 < s2)
+                {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    bool
+    Int128::operator >(const Int128& other) const
+    {
+        if (isNegative() && other.isPositive())
+        {
+            return false;
+        }
+        if (isPositive() && other.isNegative())
+        {
+            return true;
+        }
+        if (isPositive() && other.isPositive())
+        {
+            for (int i = 3; i >= 1; i--)
+            {
+                if (value[i] > other.value[i])
+                {
+                    return true;
+                }
+                if (value[i] < other.value[i])
+                {
+                    return false;
+                }
+            }
+            return value[0] > other.value[0];
+        }
+
+        // Both are negative
+        for (int i = 3; i >= 0; i--)
+        {
+            // A positive value would yield a signbit of 0, rendering it being more negative than s64.
+            int32_t s1 = static_cast<int32_t>(value[i]);
+            int32_t s2 = static_cast<int32_t>(other.value[i]);
+            if (s1 >= 0 && s2 < 0)
+            {
+                return false;
+            }
+            if (s2 >= 0 && s1 < 0)
+            {
+                return true;
+            }
+            if (s1 < 0 && s2 < 0)
+            {
+                if (s1 > s2)
+                {
+                    return true;
+                }
+                if (s1 < s2)
+                {
+                    return false;
+                }
+            }
+            else if (s1 >= 0 && s2 >= 0)
+            {
+                if (s1 > s2)
+                {
+                    return false;
+                }
+                if (s1 < s2)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    bool
+    Int128::operator >=(const Int128& other) const
+    {
+        if (*this == other)
+        {
+            return true;
+        }
+        return *this > other;
+    }
+
+
+    bool
+    Int128::operator <=(const Int128& other) const
+    {
+        if (*this == other)
+        {
+            return true;
+        }
+        return *this < other;
+    }
 
 
     bool
@@ -617,37 +758,37 @@ namespace elet::foundation
 
 
     Int128
-    Int128::operator&(const Int128& other) const
+    Int128::operator &(const Int128& other) const
     {
         Int128 r;
         r.value[0] = value[0] & other.value[0];
         r.value[1] = value[1] & other.value[1];
-        r.value[2] = value[2] & other.value[2];
-        r.value[3] = value[3] & other.value[3];
+        r.value[2] = 0;
+        r.value[3] = 0;
         return r;
     }
 
 
     Int128
-    Int128::operator|(const Int128& other) const
+    Int128::operator |(const Int128& other) const
     {
         Int128 r;
         r.value[0] = value[0] | other.value[0];
         r.value[1] = value[1] | other.value[1];
-        r.value[2] = value[2] | other.value[2];
-        r.value[3] = value[3] | other.value[3];
+        r.value[2] = 0;
+        r.value[3] = 0;
         return r;
     }
 
 
     Int128
-    Int128::operator^(const Int128& other) const
+    Int128::operator ^(const Int128& other) const
     {
         Int128 r;
         r.value[0] = value[0] ^ other.value[0];
         r.value[1] = value[1] ^ other.value[1];
-        r.value[2] = value[2] ^ other.value[2];
-        r.value[3] = value[3] ^ other.value[3];
+        r.value[2] = 0;
+        r.value[3] = 0;
         return r;
     }
 
@@ -687,7 +828,6 @@ namespace elet::foundation
     {
         return op.onesComplement();
     }
-
 
 
     Int128
@@ -751,5 +891,114 @@ namespace elet::foundation
                 break;
         }
         return s;
+    }
+
+
+    std::string
+    Int128::toString() const
+    {
+        if (isPositive())
+        {
+            std::string result = "";
+            bool encounteredNonZero = false;
+            Int128 accumulated = *this;
+            for (int e = 38; e >= 0; e--)
+            {
+                Int128 f = power(10, e);
+                Int128 quotient = accumulated / f;
+                if (!encounteredNonZero && quotient != Int128(0))
+                {
+                    encounteredNonZero = true;
+                }
+                if (encounteredNonZero)
+                {
+                    result += std::to_string(quotient.toUint64());
+                }
+                accumulated = accumulated - quotient * f;
+            }
+            if (!encounteredNonZero)
+            {
+                result = "0";
+            }
+            return result;
+        }
+
+        Int128 f = *this;
+        Int128 s = -f;
+        return "-" + s.toString();
+    }
+
+
+    Int128
+    power(Int128 a, Int128 b)
+    {
+        Int128 temp;
+        Int128 zero(0);
+        if(b == zero)
+        {
+            return 1;
+        }
+        temp = power(a, b / 2);
+        if (b % 2 == zero)
+        {
+            return temp * temp;
+        }
+        return a * temp * temp;
+    }
+
+
+    Int128
+    max(Int128 a, Int128 b)
+    {
+        if (a >= b)
+        {
+            return a;
+        }
+        else
+        {
+            return b;
+        }
+    }
+
+
+    Int128
+    max(Int128 a, Int128 b, Int128 c)
+    {
+        return max(max(a, b), c);
+    }
+
+
+    Int128
+    max(Int128 a, Int128 b, Int128 c, Int128 d)
+    {
+        return max(max(a, b, c), d);
+    }
+
+
+    Int128
+    min(Int128 a, Int128 b)
+    {
+        if (a <= b)
+        {
+            return a;
+        }
+        else
+        {
+            return b;
+        }
+    }
+
+
+    Int128
+    min(Int128 a, Int128 b, Int128 c)
+    {
+        return min(min(a, b), c);
+    }
+
+
+    Int128
+    min(Int128 a, Int128 b, Int128 c, Int128 d)
+    {
+        return min(min(a, b, c), d);
     }
 }

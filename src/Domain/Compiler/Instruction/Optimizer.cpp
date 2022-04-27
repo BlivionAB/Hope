@@ -13,7 +13,6 @@ namespace elet::domain::compiler::instruction::output
     void
     Optimizer::optimizeRoutine(FunctionRoutine* functionRoutine)
     {
-
         if (_options.assemblyHasMultiRegisterOperands)
         {
             optimizeLoadOperationInstructions(functionRoutine);

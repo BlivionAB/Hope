@@ -15,30 +15,17 @@ namespace elet::domain::compiler::ast::type
     struct Interface;
     struct Struct;
 
-
-    enum class IntegerLimit : uint64_t
-    {
-        U8Max = UINT8_MAX,
-        U16Max = UINT16_MAX,
-        U32Max = UINT32_MAX,
-        U64Max = UINT64_MAX,
-
-        S8Max = INT8_MAX,
-        S8Min = static_cast<int64_t>(INT8_MIN),
-        S16Max = INT16_MAX,
-        S16Min = static_cast<int64_t>(INT16_MIN),
-        S32Max = INT32_MAX,
-        S32Min = static_cast<int64_t>(INT32_MIN),
-        S64Max = INT64_MAX,
-        S64Min = static_cast<int64_t>(INT64_MIN),
-    };
-
-
     bool
     operator >= (const Int128& value1, const IntegerLimit& value2);
 
     bool
+    operator >= (const Int128& value1, const SignedIntegerLimit& value2);
+
+    bool
     operator <= (const Int128& value1, const IntegerLimit& value2);
+
+    bool
+    operator <= (const Int128& value1, const SignedIntegerLimit& value2);
 
 
     struct Type
@@ -46,91 +33,55 @@ namespace elet::domain::compiler::ast::type
         TypeKind
         kind;
 
+        Int128
+        minValue;
+
+        Int128
+        maxValue;
+
+        bool
+        explicitSet;
+
         unsigned int
         pointers = 0;
 
         Struct*
         struct_;
 
-        Type():
-            kind(TypeKind::Any)
-        { }
+        Type();
 
-        Type(TypeKind kind):
-            kind(kind)
-        { }
+        Type(TypeKind kind);
 
-        Type(TypeKind kind, unsigned int pointers):
-            kind(kind),
-            pointers(pointers)
-        { }
+        Type(TypeKind kind, unsigned int pointers);
+
+        Type(Int128 minValue, Int128 maxValue);
+
+        Type(TypeKind kind, Int128 minValue, Int128 maxValue);
+
+        Type(TypeKind kind, unsigned int pointers, Int128 minValue, Int128 maxValue, bool explicitSet);
 
         RegisterSize
-        size()
-        {
-            if (pointers > 0)
-            {
-                return RegisterSize::Pointer;
-            }
-            switch (kind)
-            {
-                case TypeKind::Uint:
-                case TypeKind::S64:
-                case TypeKind::U64:
-                    return RegisterSize::Quad;
-                case TypeKind::S32:
-                case TypeKind::U32:
-                    return RegisterSize::Dword;
-                case TypeKind::U16:
-                case TypeKind::S16:
-                    return RegisterSize::Word;
-                case TypeKind::U8:
-                case TypeKind::S8:
-                case TypeKind::Char:
-                case TypeKind::Bool:
-                    return RegisterSize::Byte;
-                default:
-                    throw std::runtime_error("Could not resolve primitive type size.");
-            }
-        }
+        size();
 
+        void
+        setSet(Int128 minValue, Int128 maxValue);
+
+        void
+        setSet(Type*);
 
         bool
-        operator != (TypeKind typeKind)
-        {
-            return kind != typeKind;
-        }
-
+        operator != (TypeKind typeKind);
 
         bool
-        operator == (TypeKind typeKind)
-        {
-            return kind == typeKind;
-        }
-
+        operator == (TypeKind typeKind);
 
         Sign
-        sign()
-        {
-            switch (kind)
-            {
-                case TypeKind::S8:
-                case TypeKind::S16:
-                case TypeKind::S32:
-                case TypeKind::S64:
-                    return Sign::Signed;
-                case TypeKind::Char:
-                case TypeKind::U8:
-                case TypeKind::U16:
-                case TypeKind::U32:
-                case TypeKind::U64:
-                case TypeKind::Bool:
-                    return Sign::Unsigned;
-                default:
-                    throw std::runtime_error("Cannot get signedness from type.");
-            }
-        }
+        sign();
     };
+
+
+    bool
+    isIntegralType(const Type* type);
 
 
     struct Parameter
