@@ -1,0 +1,3 @@
+Test():
+    Mov OpRet, #0x1
+

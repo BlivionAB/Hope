@@ -1,0 +1,5 @@
+error: Integral expression of type 's64 -2147483649' subceeds minimum value of type 's32'.
+--> main.hs:7:17
+  | 
+7 |         return -2147483649;}}
+  |                 ^^^^^^^^^^

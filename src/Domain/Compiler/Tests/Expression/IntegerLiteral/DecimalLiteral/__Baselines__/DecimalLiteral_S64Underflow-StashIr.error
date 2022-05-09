@@ -1,0 +1,5 @@
+error: Integer literal subceeds global minimum limit (s64_min).
+--> main.hs:7:17
+  | 
+7 |         return -9223372036854775809;}}
+  |                 ^^^^^^^^^^^^^^^^^^^
