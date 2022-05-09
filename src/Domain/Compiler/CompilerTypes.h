@@ -40,6 +40,7 @@ namespace elet::domain::compiler
 
     enum class RegisterSize : uint8_t
     {
+        None = 0,
         Byte = 1,
         Word = 2,
         Dword = 4,
@@ -65,6 +66,7 @@ namespace elet::domain::compiler
 
     enum class Sign
     {
+        Mixed,
         Unsigned,
         Signed,
     };

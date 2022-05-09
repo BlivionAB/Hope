@@ -85,6 +85,7 @@ namespace elet::domain::compiler::instruction::output
         AndImmediate = static_cast<uint32_t>(0b0001001000) << 22,
         Sxtb = static_cast<uint32_t>(0b000'100110'0'000000'000111) << 10,
         Sxth = static_cast<uint32_t>(0b000'100110'0'000000'001111) << 10,
+        Sxtw = static_cast<uint32_t>(0b100'100110'1'000000'011111) << 10,
         SubShiftedRegister = static_cast<uint32_t>(0b01001011000) << 21,
         SubShiftedRegister64 = static_cast<uint32_t>(0b11001011000) << 21,
         SubImmediate32 = static_cast<uint32_t>(0b0101000100) << 22,
@@ -631,10 +632,12 @@ namespace elet::domain::compiler::instruction::output
         imms_Mask       = 0b111111ui32 << 10,
         imms_Sxtb       = 0b000111ui32 << 10,
         imms_Sxth       = 0b001111ui32 << 10,
+        imms_Sxtw       = 0b011111ui32 << 10,
 
         immr_Mask       = 0b111111ui32 << 16,
         immr_Sxtb       = 0b000000ui32 << 16,
         immr_Sxth       = 0b000000ui32 << 16,
+        immr_Sxtw       = 0b000000ui32 << 16,
     };
 
 

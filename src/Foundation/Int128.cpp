@@ -636,6 +636,10 @@ namespace elet::foundation
             {
                 return false;
             }
+            else if (value[1] < c.u32.hi)
+            {
+                return true;
+            }
             return value[0] < c.u32.lo;
         }
     }

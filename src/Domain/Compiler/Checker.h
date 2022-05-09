@@ -161,6 +161,9 @@ namespace elet::domain::compiler::ast
         std::string
         getTypeString(const Type* type);
 
+        Type*
+        createOperatingType(const Type* resolvedType, const Type* left, const Type* right);
+
 //        Type*
 //        getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression);
 

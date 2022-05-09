@@ -85,6 +85,9 @@ namespace elet::domain::compiler::test::aarch
                 case InstructionKind::Sxth:
                     writeSxth(reinterpret_cast<const SxthInstruction*>(instruction));
                     break;
+                case InstructionKind::Sxtw:
+                    writeSxtw(reinterpret_cast<const SxtwInstruction*>(instruction));
+                    break;
                 case InstructionKind::B:
                     writeB(reinterpret_cast<const BInstruction*>(instruction));
                     break;
@@ -659,6 +662,16 @@ namespace elet::domain::compiler::test::aarch
     Aarch64Printer::writeSxth(const SxthInstruction* instruction)
     {
         _tw.write("sxth ");
+        writeGeneralPurposeRegister(instruction->Rd, instruction);
+        _tw.write(", ");
+        writeGeneralPurposeRegister(instruction->Rn, instruction);
+    }
+
+
+    void
+    Aarch64Printer::writeSxtw(const SxtwInstruction* instruction)
+    {
+        _tw.write("sxtw ");
         writeGeneralPurposeRegister(instruction->Rd, instruction);
         _tw.write(", ");
         writeGeneralPurposeRegister(instruction->Rn, instruction);

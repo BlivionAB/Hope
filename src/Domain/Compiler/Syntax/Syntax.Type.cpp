@@ -15,77 +15,63 @@ namespace elet::domain::compiler::ast::type
     Type::Type(TypeKind kind, unsigned int pointers):
         Type(kind, pointers, 0, 0, false)
     {
-        switch (kind)
+        if (isIntegralType(this))
         {
-            case TypeKind::U64:
-                minValue = static_cast<uint64_t>(IntegerLimit::U64Min);
-                maxValue = static_cast<uint64_t>(IntegerLimit::U64Max);
-                break;
-            case TypeKind::U32:
-                minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
-                maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
-                break;
-            case TypeKind::U16:
-                minValue = static_cast<uint64_t>(IntegerLimit::U16Min);
-                maxValue = static_cast<uint64_t>(IntegerLimit::U16Max);
-                break;
-            case TypeKind::U8:
-                minValue = static_cast<uint64_t>(IntegerLimit::U8Min);
-                maxValue = static_cast<uint64_t>(IntegerLimit::U8Max);
-                break;
-            case TypeKind::S64:
-                minValue = static_cast<int64_t>(SignedIntegerLimit::S64Min);
-                maxValue = static_cast<int64_t>(SignedIntegerLimit::S64Max);
-                break;
-            case TypeKind::S32:
-                minValue = static_cast<int64_t>(SignedIntegerLimit::S32Min);
-                maxValue = static_cast<int64_t>(SignedIntegerLimit::S32Max);
-                break;
-            case TypeKind::S16:
-                minValue = static_cast<int64_t>(SignedIntegerLimit::S16Min);
-                maxValue = static_cast<int64_t>(SignedIntegerLimit::S16Max);
-                break;
-            case TypeKind::S8:
-                minValue = static_cast<int64_t>(SignedIntegerLimit::S8Min);
-                maxValue = static_cast<int64_t>(SignedIntegerLimit::S8Max);
-                break;
-            case TypeKind::Bool:
-                minValue = 0;
-                maxValue = 1;
-                break;
-            case TypeKind::Any:
-                minValue = static_cast<int64_t>(SignedIntegerLimit::S64Min);
-                maxValue = static_cast<uint64_t>(IntegerLimit::U64Max);
-                break;
-            default:
-                throw std::runtime_error("Unknown kind in Type(kind, pointers).");
+            switch (kind)
+            {
+                case TypeKind::U64:
+                    minValue = static_cast<uint64_t>(IntegerLimit::U64Min);
+                    maxValue = static_cast<uint64_t>(IntegerLimit::U64Max);
+                    break;
+                case TypeKind::U32:
+                    minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
+                    maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
+                    break;
+                case TypeKind::U16:
+                    minValue = static_cast<uint64_t>(IntegerLimit::U16Min);
+                    maxValue = static_cast<uint64_t>(IntegerLimit::U16Max);
+                    break;
+                case TypeKind::U8:
+                    minValue = static_cast<uint64_t>(IntegerLimit::U8Min);
+                    maxValue = static_cast<uint64_t>(IntegerLimit::U8Max);
+                    break;
+                case TypeKind::S64:
+                    minValue = static_cast<int64_t>(SignedIntegerLimit::S64Min);
+                    maxValue = static_cast<int64_t>(SignedIntegerLimit::S64Max);
+                    break;
+                case TypeKind::S32:
+                    minValue = static_cast<int64_t>(SignedIntegerLimit::S32Min);
+                    maxValue = static_cast<int64_t>(SignedIntegerLimit::S32Max);
+                    break;
+                case TypeKind::S16:
+                    minValue = static_cast<int64_t>(SignedIntegerLimit::S16Min);
+                    maxValue = static_cast<int64_t>(SignedIntegerLimit::S16Max);
+                    break;
+                case TypeKind::S8:
+                    minValue = static_cast<int64_t>(SignedIntegerLimit::S8Min);
+                    maxValue = static_cast<int64_t>(SignedIntegerLimit::S8Max);
+                    break;
+                    default:
+                        throw std::runtime_error("Unknown kind in Type(kind, pointers).");
+            }
         }
     }
 
 
-    Type::Type(Int128 minValue, Int128 maxValue):
+    Type::Type(Int128 minValue, Int128 maxValue, Sign sign):
         minValue(minValue),
         maxValue(maxValue)
     {
-        if (minValue >= SignedIntegerLimit::S32Min && minValue <= SignedIntegerLimit::S32Max)
+        switch (sign)
         {
-            kind = TypeKind::S32;
-        }
-        else if (minValue >= IntegerLimit::U32Min && minValue <= IntegerLimit::U32Max)
-        {
-            kind = TypeKind::U32;
-        }
-        else if (minValue >= SignedIntegerLimit::S64Min && minValue <= SignedIntegerLimit::S64Max)
-        {
-            kind = TypeKind::S64;
-        }
-        else if (minValue >= IntegerLimit::U64Min && minValue <= IntegerLimit::U64Max)
-        {
-            kind = TypeKind::U64;
-        }
-        else
-        {
-            throw std::runtime_error("Could not construct type from min and max values.");
+            case Sign::Signed:
+                kind = getDefaultSignedTypeFromBounds(minValue, maxValue);
+                break;
+            case Sign::Unsigned:
+                kind = getDefaultUnsignedTypeFromBounds(minValue, maxValue);
+                break;
+            default:
+                throw std::runtime_error("Not supported sign");
         }
     }
 
@@ -149,30 +135,19 @@ namespace elet::domain::compiler::ast::type
         {
             return RegisterSize::Pointer;
         }
-        switch (kind)
-        {
-            case TypeKind::Uint:
-            case TypeKind::S64:
-            case TypeKind::U64:
-                return RegisterSize::Quad;
-            case TypeKind::S32:
-            case TypeKind::U32:
-                return RegisterSize::Dword;
-            case TypeKind::U16:
-            case TypeKind::S16:
-                return RegisterSize::Word;
-            case TypeKind::U8:
-            case TypeKind::S8:
-            case TypeKind::Char:
-            case TypeKind::Bool:
-                return RegisterSize::Byte;
-            default:
-                throw std::runtime_error("Could not resolve primitive type size.");
-        }
+        return getRegisterSizeFromTypeKind(kind);
     }
 
+
+    RegisterSize
+    Type::boundSize()
+    {
+        return getRegisterSizeFromTypeKind(getMinimumTypeKindFromBounds(minValue, maxValue));
+    }
+
+
     Sign
-    Type::sign()
+    Type::sign() const
     {
         switch (kind)
         {
@@ -197,7 +172,7 @@ namespace elet::domain::compiler::ast::type
     bool
     Type::operator !=(TypeKind typeKind)
     {
-                return kind != typeKind;
+        return kind != typeKind;
     }
 
 
@@ -209,7 +184,7 @@ namespace elet::domain::compiler::ast::type
 
 
     void
-    Type::setSet(Int128 minValue, Int128 maxValue)
+    Type::setBounds(Int128 minValue, Int128 maxValue)
     {
         this->minValue = minValue;
         this->maxValue = maxValue;
@@ -218,9 +193,9 @@ namespace elet::domain::compiler::ast::type
 
 
     void
-    Type::setSet(Type* type)
+    Type::setBounds(Type* type)
     {
-        setSet(type->minValue, type->maxValue);
+        setBounds(type->minValue, type->maxValue);
     }
 
 
@@ -252,5 +227,123 @@ namespace elet::domain::compiler::ast::type
     isIntegralType(const Type* type)
     {
         return type->kind >= TypeKind::IntegralStart && type->kind <= TypeKind::IntegralEnd;
+    }
+
+
+    TypeKind
+    getMinimumTypeKindFromBounds(Int128 minValue, Int128 maxValue)
+    {
+        if (minValue >= SignedIntegerLimit::S8Min && maxValue <= SignedIntegerLimit::S8Max)
+        {
+            return TypeKind::S8;
+        }
+        if (minValue >= IntegerLimit::U8Min && maxValue <= IntegerLimit::U8Max)
+        {
+            return TypeKind::U8;
+        }
+        if (minValue >= SignedIntegerLimit::S16Min && maxValue <= SignedIntegerLimit::S16Max)
+        {
+            return TypeKind::S16;
+        }
+        if (minValue >= IntegerLimit::U16Min && maxValue <= IntegerLimit::U16Max)
+        {
+            return TypeKind::U16;
+        }
+        if (minValue >= SignedIntegerLimit::S32Min && maxValue <= SignedIntegerLimit::S32Max)
+        {
+            return TypeKind::S32;
+        }
+        if (minValue >= IntegerLimit::U32Min && maxValue <= IntegerLimit::U32Max)
+        {
+            return TypeKind::U32;
+        }
+        if (minValue >= SignedIntegerLimit::S64Min && maxValue <= SignedIntegerLimit::S64Max)
+        {
+            return TypeKind::S64;
+        }
+        if (minValue >= IntegerLimit::U64Min && maxValue <= IntegerLimit::U64Max)
+        {
+            return TypeKind::U64;
+        }
+        throw std::runtime_error("Could not construct type from min and max values.");
+    }
+
+
+    TypeKind
+    getDefaultSignedTypeFromBounds(const Int128& minValue, const Int128& maxValue)
+    {
+        if (minValue >= SignedIntegerLimit::S32Min && maxValue <= SignedIntegerLimit::S32Max)
+        {
+            return TypeKind::S32;
+        }
+        if (minValue >= SignedIntegerLimit::S64Min && maxValue <= SignedIntegerLimit::S64Max)
+        {
+            return TypeKind::S64;
+        }
+        throw std::runtime_error("Could not construct type from min and max values.");
+    }
+
+
+    TypeKind
+    getDefaultUnsignedTypeFromBounds(const Int128& minValue, const Int128& maxValue)
+    {
+        if (minValue >= IntegerLimit::U32Min && maxValue <= IntegerLimit::U32Max)
+        {
+            return TypeKind::U32;
+        }
+        if (minValue >= IntegerLimit::U64Min && maxValue <= IntegerLimit::U64Max)
+        {
+            return TypeKind::U64;
+        }
+        throw std::runtime_error("Could not construct type from min and max values.");
+    }
+
+
+    TypeKind
+    getDefaultMixedSignTypeFromBounds(const Int128& minValue, const Int128& maxValue)
+    {
+        if (minValue >= SignedIntegerLimit::S32Min && maxValue <= SignedIntegerLimit::S32Max)
+        {
+            return TypeKind::S32;
+        }
+        if (minValue >= IntegerLimit::U32Min && maxValue <= IntegerLimit::U32Max)
+        {
+            return TypeKind::U32;
+        }
+        if (minValue >= SignedIntegerLimit::S64Min && maxValue <= SignedIntegerLimit::S64Max)
+        {
+            return TypeKind::S64;
+        }
+        if (minValue >= IntegerLimit::U64Min && maxValue <= IntegerLimit::U64Max)
+        {
+            return TypeKind::U64;
+        }
+        throw std::runtime_error("Could not construct type from min and max values.");
+    }
+
+
+    RegisterSize
+    getRegisterSizeFromTypeKind(TypeKind kind)
+    {
+        switch (kind)
+        {
+            case TypeKind::Uint:
+            case TypeKind::S64:
+            case TypeKind::U64:
+                return RegisterSize::Quad;
+            case TypeKind::S32:
+            case TypeKind::U32:
+                return RegisterSize::Dword;
+            case TypeKind::U16:
+            case TypeKind::S16:
+                return RegisterSize::Word;
+            case TypeKind::U8:
+            case TypeKind::S8:
+            case TypeKind::Char:
+            case TypeKind::Bool:
+                return RegisterSize::Byte;
+            default:
+                throw std::runtime_error("Could not resolve primitive type size.");
+        }
     }
 }

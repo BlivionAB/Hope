@@ -111,15 +111,17 @@ namespace elet::domain::compiler::ast
         if (variable->type)
         {
             Type* type = variable->resolvedType = new Type(variable->type->type, variable->type->pointers.size());
+
+            // Explicitly set the bounds
             if (!type->explicitSet && isIntegralType(expressionType))
             {
-                type->setSet(expressionType);
+                type->setBounds(expressionType);
             }
             checkTypeAssignability(variable->resolvedType, expressionType, variable->expression);
         }
         else if (isIntegralType(expressionType))
         {
-            variable->resolvedType = new Type(expressionType->minValue, expressionType->maxValue);
+            variable->resolvedType = expressionType;
         }
         else
         {
@@ -141,8 +143,22 @@ namespace elet::domain::compiler::ast
             addError<error::IntegralExpressionGlobalUnderflowError>(integerLiteral);
             return anyType;
         }
-        integerLiteral->operatingType = new Type(integerLiteral->value, integerLiteral->value);
-        return integerLiteral->resolvedType = new Type(integerLiteral->value, integerLiteral->value);
+        if (std::holds_alternative<DecimalLiteral*>(integerLiteral->digits))
+        {
+            return integerLiteral->resolvedType =
+                integerLiteral->operatingType = new Type(
+                    getDefaultMixedSignTypeFromBounds(integerLiteral->value, integerLiteral->value),
+                    integerLiteral->value,
+                    integerLiteral->value);
+        }
+        else
+        {
+            return integerLiteral->resolvedType =
+                integerLiteral->operatingType = new Type(
+                    getDefaultUnsignedTypeFromBounds(integerLiteral->value, integerLiteral->value),
+                    integerLiteral->value,
+                    integerLiteral->value);
+        }
     }
 
 
@@ -154,9 +170,7 @@ namespace elet::domain::compiler::ast
         if (isIntegralType(left) && isIntegralType(right))
         {
             Type* resolvedType = binaryExpression->resolvedType = resolveMinMaxTypeFromBinaryExpression(binaryExpression);
-            Int128 maxValue = max(resolvedType->maxValue, left->maxValue, right->maxValue);
-            Int128 minValue = min(resolvedType->minValue, left->minValue, right->minValue);
-            binaryExpression->operatingType = new Type(minValue, maxValue);
+            binaryExpression->operatingType = createOperatingType(resolvedType, left, right);
             return resolvedType;
         }
         if (isBooleanType(left) && isBooleanType(right))
@@ -313,75 +327,15 @@ namespace elet::domain::compiler::ast
         if (maxValue > static_cast<uint64_t>(IntegerLimit::U64Max))
         {
             addError<error::IntegralExpressionGlobalOverflowError>(binaryExpression);
+            return anyType;
         }
         if (minValue < static_cast<int64_t>(SignedIntegerLimit::S64Min))
         {
             addError<error::IntegralExpressionGlobalUnderflowError>(binaryExpression);
+            return anyType;
         }
-        return new Type(minValue, maxValue);
+        return new Type(getDefaultMixedSignTypeFromBounds(minValue, maxValue), minValue, maxValue);
     }
-
-
-//    Type*
-//    Checker::getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression)
-//    {
-//        if (value < 0)
-//        {
-//            if (value >= SignedIntegerLimit::S8Min)
-//            {
-//                return s8Type;
-//            }
-//            else if (value >= SignedIntegerLimit::S16Min)
-//            {
-//                return s16Type;
-//            }
-//            else if (value >= SignedIntegerLimit::S32Min)
-//            {
-//                return s32Type;
-//            }
-//            else if (value >= SignedIntegerLimit::S64Min)
-//            {
-//                return s64Type;
-//            }
-//            addError<error::IntegralLiteralUnderflowError>(binaryExpression, IntegerKind::S64);
-//        }
-//        else
-//        {
-//            if (value <= SignedIntegerLimit::S8Max)
-//            {
-//                return us8Type;
-//            }
-//            if (value <= IntegerLimit::U8Max)
-//            {
-//                return u8Type;
-//            }
-//            if (value <= SignedIntegerLimit::S16Max)
-//            {
-//                return us16Type;
-//            }
-//            if (value <= IntegerLimit::U16Max)
-//            {
-//                return u16Type;
-//            }
-//            if (value <= SignedIntegerLimit::S32Max)
-//            {
-//                return us32Type;
-//            }
-//            if (value <= IntegerLimit::U32Max)
-//            {
-//                return u32Type;
-//            }
-//            if (value <= SignedIntegerLimit::S64Max)
-//            {
-//                return us64Type;
-//            }
-//            if (value <= IntegerLimit::U64Max)
-//            {
-//                return u64Type;
-//            }
-//            addError<error::IntegralLiteralOverflowError>(binaryExpression, IntegerKind::U64);
-//        }
-//    }
 
 
     bool
@@ -836,4 +790,22 @@ namespace elet::domain::compiler::ast
     }
 
 
+    Type*
+    Checker::createOperatingType(const Type* resolvedType, const Type* left, const Type* right)
+    {
+        Int128 maxValue = max(resolvedType->maxValue, left->maxValue, right->maxValue);
+        Int128 minValue = min(resolvedType->minValue, left->minValue, right->minValue);
+        if (left->sign() == right->sign())
+        {
+            if (left->sign() == Sign::Signed && right->sign() == Sign::Signed)
+            {
+                return new Type(getDefaultSignedTypeFromBounds(minValue, maxValue), minValue, maxValue);
+            }
+            else
+            {
+                return new Type(getDefaultUnsignedTypeFromBounds(minValue, maxValue), minValue, maxValue);
+            }
+        }
+        return new Type(getDefaultMixedSignTypeFromBounds(minValue, maxValue), minValue, maxValue);
+    }
 }

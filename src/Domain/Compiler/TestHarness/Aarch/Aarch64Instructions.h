@@ -69,7 +69,8 @@ namespace elet::domain::compiler::test::aarch
         Madd,
         Msub,
         Sxtb,
-        Sxth
+        Sxth,
+        Sxtw,
     };
 
 
@@ -474,7 +475,7 @@ namespace elet::domain::compiler::test::aarch
     };
 
 
-    struct SxtbSxtbhInstruction : Instruction
+    struct SxtInstruction : Instruction
     {
         Register
         Rd;
@@ -482,19 +483,25 @@ namespace elet::domain::compiler::test::aarch
         Register
         Rn;
 
-        SxtbSxtbhInstruction(InstructionKind kind, Register Rd, Register Rn);
+        SxtInstruction(InstructionKind kind, Register Rd, Register Rn);
     };
 
 
-    struct SxtbInstruction : SxtbSxtbhInstruction
+    struct SxtbInstruction : SxtInstruction
     {
         SxtbInstruction(Register Rd, Register Rn);
     };
 
 
-    struct SxthInstruction : SxtbSxtbhInstruction
+    struct SxthInstruction : SxtInstruction
     {
         SxthInstruction(Register Rd, Register Rn);
+    };
+
+
+    struct SxtwInstruction : SxtInstruction
+    {
+        SxtwInstruction(Register Rd, Register Rn);
     };
 
 
@@ -528,6 +535,7 @@ namespace elet::domain::compiler::test::aarch
         SubShiftedRegisterInstruction sub;
         SxtbInstruction sxtb;
         SxthInstruction sxth;
+        SxtwInstruction sxtw;
         UdfInstruction udf;
 
         OneOfInstruction(AddShiftedRegisterInstruction add);
@@ -581,6 +589,8 @@ namespace elet::domain::compiler::test::aarch
         OneOfInstruction(SxtbInstruction sxtb);
 
         OneOfInstruction(SxthInstruction sxth);
+
+        OneOfInstruction(SxtwInstruction sxtw);
 
         OneOfInstruction(UdfInstruction udf);
 

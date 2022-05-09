@@ -54,7 +54,7 @@ namespace elet::domain::compiler::ast::type
 
         Type(TypeKind kind, unsigned int pointers);
 
-        Type(Int128 minValue, Int128 maxValue);
+        Type(Int128 minValue, Int128 maxValue, Sign sign);
 
         Type(TypeKind kind, Int128 minValue, Int128 maxValue);
 
@@ -63,11 +63,17 @@ namespace elet::domain::compiler::ast::type
         RegisterSize
         size();
 
-        void
-        setSet(Int128 minValue, Int128 maxValue);
+        /**
+         * Get boundsize returns the smallest size fitting a type kind.
+         */
+        RegisterSize
+        boundSize();
 
         void
-        setSet(Type*);
+        setBounds(Int128 minValue, Int128 maxValue);
+
+        void
+        setBounds(Type*);
 
         bool
         operator != (TypeKind typeKind);
@@ -76,9 +82,23 @@ namespace elet::domain::compiler::ast::type
         operator == (TypeKind typeKind);
 
         Sign
-        sign();
+        sign() const;
     };
 
+    RegisterSize
+    getRegisterSizeFromTypeKind(TypeKind kind);
+
+    TypeKind
+    getMinimumTypeKindFromBounds(Int128 minValue, Int128 maxValue);
+
+    TypeKind
+    getDefaultSignedTypeFromBounds(const Int128& minValue, const Int128& maxValue);
+
+    TypeKind
+    getDefaultUnsignedTypeFromBounds(const Int128& minValue, const Int128& maxValue);
+
+    TypeKind
+    getDefaultMixedSignTypeFromBounds(const Int128& minValue, const Int128& maxValue);
 
     bool
     isIntegralType(const Type* type);

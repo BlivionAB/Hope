@@ -488,6 +488,13 @@ namespace elet::domain::compiler::test::aarch
     }
 
 
+    void
+    Aarch64Parser::parseSxtwInstruction(List<OneOfInstruction>& instructions, uint32_t dw)
+    {
+        emplaceInstruction(SxtwInstruction(Rd(dw), Rn(dw)), instructions);
+    }
+
+
     bool
     Aarch64Parser::parseDataProcessingImmediateInstruction(List <OneOfInstruction>& instructions, uint32_t dw)
     {
@@ -988,6 +995,11 @@ namespace elet::domain::compiler::test::aarch
                 else if (immr == BitfieldEncoding::immr_Sxth && imms == BitfieldEncoding::imms_Sxth)
                 {
                     parseSxthInstruction(instructions, dw);
+                    return true;
+                }
+                else if (immr == BitfieldEncoding::immr_Sxtw && imms == BitfieldEncoding::imms_Sxtw)
+                {
+                    parseSxtwInstruction(instructions, dw);
                     return true;
                 }
                 break;

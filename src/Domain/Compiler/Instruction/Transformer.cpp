@@ -146,18 +146,18 @@ namespace elet::domain::compiler::instruction
             output::RegisterResult result = std::get<output::RegisterResult>(expression);
             bool writtenExtension = false;
             // Note: we have to sign extend if:
-            //  * placeholder-type s64 expression-type 32
-            //  * placeholder-type s8 expression-type 16
-            //  * placeholder-type s16 expression-type 32
+            //  * placeholder-type s64 expression-type s32
+            //  * placeholder-type s32 expression-type s16
+            //  * placeholder-type s16 expression-type s8
             if (returnStatement->expectedType->sign() == Sign::Signed)
             {
-                if (returnStatement->expectedType->size() != result.size)
+                if (returnStatement->expectedType->size() > result.registerSize)
                 {
                     addInstruction(new output::MoveSignExtendInstruction(
                         output::OperandRegister::Scratch0,
                         output::OperandRegister::Return,
-                        returnStatement->expectedType->size(),
-                        result.size));
+                        result.registerSize,
+                        returnStatement->expectedType->size()));
                     writtenExtension = true;
                 }
             }
@@ -168,13 +168,13 @@ namespace elet::domain::compiler::instruction
                 //  * placeholder-type u8 expression-type 32
                 //  * placeholder-type u16 expression-type 32
                 //  * placeholder-type u32 expression-type 64
-                if (returnStatement->expectedType->size() != result.size)
+                if (returnStatement->expectedType->size() != result.registerSize)
                 {
                     addInstruction(new output::MoveZeroExtendInstruction(
                         output::OperandRegister::Scratch0,
                         output::OperandRegister::Return,
                         returnStatement->expectedType->size(),
-                        result.size));
+                        result.registerSize));
                     writtenExtension = true;
                 }
             }
@@ -260,6 +260,7 @@ namespace elet::domain::compiler::instruction
         _scratchRegisterIndex--;
         output::OperandRegister scratchRegister = borrowScratchRegister();
         RegisterSize registerSize = binaryExpression->resolvedType->size();
+        RegisterSize boundSize = binaryExpression->resolvedType->boundSize();
         uint64_t rightUint64 = right.toUint64();
         switch (binaryExpression->binaryOperatorKind)
         {
@@ -272,7 +273,7 @@ namespace elet::domain::compiler::instruction
             default:
                 assert("Not implemented binary operator in 'transformImmediateToRegisterExpression'.");
         }
-        return output::RegisterResult(scratchRegister, registerSize);
+        return output::RegisterResult(scratchRegister, registerSize, boundSize);
     }
 
 
@@ -475,7 +476,8 @@ namespace elet::domain::compiler::instruction
 
         // Decrease scratch register index, since we should leave them back after usage
 
-        RegisterSize registerSize = getSupportedRegisterSize(binaryExpression->operatingType->size());
+        RegisterSize boundSize = binaryExpression->operatingType->boundSize();
+        RegisterSize registerSize = getSupportedRegisterSize(boundSize);
         if (binaryExpression->binaryOperatorKind == ast::BinaryOperatorKind::Modulo)
         {
             output::OperandRegister divisionResultRegister = borrowScratchRegister();
@@ -489,7 +491,7 @@ namespace elet::domain::compiler::instruction
             {
                 addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
             }
-            return output::RegisterResult(destination, registerSize);
+            return output::RegisterResult(destination, registerSize, boundSize);
         }
         _scratchRegisterIndex -= 2;
         output::OperandRegister destination = borrowScratchRegister();
@@ -531,7 +533,7 @@ namespace elet::domain::compiler::instruction
                 throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
         }
 
-        return output::RegisterResult(destination, registerSize);
+        return output::RegisterResult(destination, registerSize, boundSize);
     }
 
 

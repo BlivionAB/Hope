@@ -217,7 +217,7 @@ namespace elet::domain::compiler::test::aarch
     { }
 
 
-    SxtbSxtbhInstruction::SxtbSxtbhInstruction(InstructionKind kind, Register Rd, Register Rn):
+    SxtInstruction::SxtInstruction(InstructionKind kind, Register Rd, Register Rn):
         Instruction(kind),
         Rd(Rd),
         Rn(Rn)
@@ -225,12 +225,17 @@ namespace elet::domain::compiler::test::aarch
 
 
     SxtbInstruction::SxtbInstruction(Register Rd, Register Rn):
-        SxtbSxtbhInstruction(InstructionKind::Sxtb, Rd, Rn)
+        SxtInstruction(InstructionKind::Sxtb, Rd, Rn)
     { }
 
 
     SxthInstruction::SxthInstruction(Register Rd, Register Rn):
-        SxtbSxtbhInstruction(InstructionKind::Sxth, Rd, Rn)
+        SxtInstruction(InstructionKind::Sxth, Rd, Rn)
+    { }
+
+
+    SxtwInstruction::SxtwInstruction(Register Rd, Register Rn):
+        SxtInstruction(InstructionKind::Sxtw, Rd, Rn)
     { }
 
 
@@ -372,22 +377,24 @@ namespace elet::domain::compiler::test::aarch
     }
 
 
-    OneOfInstruction::OneOfInstruction(SubShiftedRegisterInstruction sub)
-    {
-        this->sub = sub;
-    }
+    OneOfInstruction::OneOfInstruction(SubShiftedRegisterInstruction sub):
+        sub(sub)
+    { }
 
 
-    OneOfInstruction::OneOfInstruction(SxtbInstruction sxtb)
-    {
-        this->sxtb = sxtb;
-    }
+    OneOfInstruction::OneOfInstruction(SxtbInstruction sxtb):
+        sxtb(sxtb)
+    { }
 
 
-    OneOfInstruction::OneOfInstruction(SxthInstruction sxth)
-    {
-        this->sxth = sxth;
-    }
+    OneOfInstruction::OneOfInstruction(SxthInstruction sxth):
+        sxth(sxth)
+    { }
+
+
+    OneOfInstruction::OneOfInstruction(SxtwInstruction sxtw):
+        sxtw(sxtw)
+    { }
 
 
     OneOfInstruction::OneOfInstruction(UdfInstruction udf)

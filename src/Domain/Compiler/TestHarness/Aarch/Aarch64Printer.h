@@ -105,6 +105,9 @@ public:
 
     void
     writeSxth(const SxthInstruction* instruction);
+
+    void
+    writeSxtw(const SxtwInstruction* instruction);
 };
 
 }

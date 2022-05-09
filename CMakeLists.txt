@@ -27,12 +27,16 @@ file(GLOB DOMAIN_SRC
     ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Instruction/Assembly/x86/OpCode/*)
 
 file(GLOB_RECURSE DOMAIN_TEST
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/**/*
+    src/Domain/Compiler/Tests/*
+    src/Domain/Compiler/Tests/**/*
 #    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Expression/*
 #    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/Tests/Function/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/*
-    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/**/*
+    src/Domain/Compiler/TestHarness/*
+    src/Domain/Compiler/TestHarness/**/*
+    src/Domain/Compiler/Instruction/Assembly/Aarch/*
+    src/Domain/Compiler/Instruction/Assembly/Aarch/**/*
+    src/Domain/Compiler/Instruction/Assembly/X86/*
+    src/Domain/Compiler/Instruction/Assembly/X86/**/*
 #    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/X86/*
 #    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/Aarch/*
 #    ${CMAKE_SOURCE_DIR}/src/Domain/Compiler/TestHarness/TextDiff/*

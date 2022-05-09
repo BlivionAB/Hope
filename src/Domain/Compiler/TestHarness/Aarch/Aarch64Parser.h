@@ -170,6 +170,9 @@ namespace elet::domain::compiler::test::aarch
         void
         parseSxthInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
 
+        void
+        parseSxtwInstruction(List<OneOfInstruction>& instructions, uint32_t dw);
+
         bool
         parseDataProcessingImmediateInstruction(List <OneOfInstruction>& instructions, uint32_t dw);
 

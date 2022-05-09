@@ -879,23 +879,23 @@ namespace elet::domain::compiler::instruction::output
     void
     Aarch64Writer::writeMoveSignExtendInstruction(MoveSignExtendInstruction* instruction, FunctionRoutine* function)
     {
-        uint32_t bitmaskImmediate;
-        if (!tryGetBitmaskImmediate(
-            getRegisterSizeBitmask(instruction->targetSize),
-            bitmaskImmediate,
-            getSupportedBinopSize(instruction->destinationSize)))
-        {
-            throw std::runtime_error("Could not get bitmask immediate");
-        }
+//        uint32_t bitmaskImmediate;
+//        if (!tryGetBitmaskImmediate(
+//            getRegisterSizeBitmask(instruction->targetSize),
+//            bitmaskImmediate,
+//            getSupportedBinopSize(instruction->destinationSize)))
+//        {
+//            throw std::runtime_error("Could not get bitmask immediate");
+//        }
         uint32_t sf = instruction->destinationSize == RegisterSize::Quad ? 1 << 31 : 0;
         uint32_t N = instruction->destinationSize == RegisterSize::Quad ? 1 << 22 : 0;
-        bw->writeDoubleWordInFunction(
-            Aarch64Instruction::AndImmediate |
-            sf |
-            bitmaskImmediate |
-            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
-            Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
-            function);
+//        bw->writeDoubleWordInFunction(
+//            Aarch64Instruction::AndImmediate |
+//            sf |
+//            bitmaskImmediate |
+//            Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
+//            Rd(getAarch64RegisterFromOperandRegister(instruction->destination)),
+//            function);
         if (instruction->targetSize == RegisterSize::Byte)
         {
             bw->writeDoubleWordInFunction(
@@ -912,9 +912,16 @@ namespace elet::domain::compiler::instruction::output
                 Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
                 Rd(getAarch64RegisterFromOperandRegister(instruction->destination)), function);
         }
+        else if (instruction->targetSize == RegisterSize::Dword)
+        {
+            bw->writeDoubleWordInFunction(
+                Aarch64Instruction::Sxtw |
+                Rn(getAarch64RegisterFromOperandRegister(instruction->target)) |
+                Rd(getAarch64RegisterFromOperandRegister(instruction->destination)), function);
+        }
         else
         {
-            assert("Larger the word size is not supported yet.");
+            throw std::runtime_error("Larger the word size is not supported yet.");
         }
     }
 
@@ -932,7 +939,7 @@ namespace elet::domain::compiler::instruction::output
             case RegisterSize::Byte:
                 return 0xff;
         }
-        assert("Unknown register size.");
+        throw std::runtime_error("Unknown register size.");
     }
 
 
