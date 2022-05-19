@@ -52,10 +52,34 @@ TypeAnnotation: Type`:` Integer`..`Integer
       fn f(): u32 {
           var x: u32 = 1;
           var y: u32 = 1;
-          return x + y; // We expect this to be u32 as well
+          return x + y; // OperatingType: u32, ResultingType: u32
+      }
+      ```
+    * Note:
+      ```ho
+      fn f(): s32 {
+        var x: u32 = 1;
+        var y: u32 = 2;
+        return x - y; // OperatingType: s32, ResultingType: s32
       }
       ```
     * Same thing applies to `s32`.
+    * Note:
+    ```ho
+    fn f(): s32 {
+        var x: s32 = 1;
+        var y: s32 = 1;
+        return x + y; // OperatingType: s32, ResultingType: s32
+    }
+    ```
+    * Note:
+    ```ho
+    fn f(): s64 {
+        var x: s32 = maxint32;
+        var y: s32 = 1;
+        return x + y; // OperatingType: s64, ResultingType: s64
+    }
+    ```
   * Otherwise. it should have `UndecidedType`.
   * What happens with a binary expression of `UndecidedInt` and `DecidedInt`?
     * ~~It should have the same sign as `DecidedInt` (but with the right bounds)~~.
@@ -73,3 +97,31 @@ TypeAnnotation: Type`:` Integer`..`Integer
     * What about subtracting *Unsigned* from *Unsigned*?
       * It should be `Undecided` if the min value is negative. Otherwise, keep the sign.
     
+Summary:
+* `ExplicitInt` is when the int type is explicitly defined.
+* `UndecidedInt` is not explicitly defined.
+* When two integers in a binary expression are of type `ExplicitInt`:
+  * If they are of the same sign:
+    * If sign is `Signed` keep the sign, unless it overflows `s64` it becomes `UndecidedInt`. 
+      Otherwise throw `IntegerOverflowError`. 
+    * If sign is `Unsigned` try to keep the sign, unless its minimum 
+      bound is negative, in which it becomes `UndecidedInt`. If it overflows `u64` or
+      `s64` throw `IntegerOverflowError`.
+  * If they are of opposite sign:
+    * It becomes `UndecidedInt`.
+* Else they are `UndecidedInt`!
+
+
+Next set of questions:
+
+  * What should happen below?:
+      ```ho
+      fn f(): s32 {
+          var x: u32 = 1;
+          var y: u32 = 2;
+          return x - y; // OperatingType: u32, ResultingType: u32
+      }
+      ```
+      * It's a bit strange if we don't error? But if we follow the rules it shouldn't error?
+        * `u32` becomes `UndecidedInt` and then "fits" into `s32`.
+        

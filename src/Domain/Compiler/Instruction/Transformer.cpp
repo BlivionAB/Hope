@@ -196,7 +196,7 @@ namespace elet::domain::compiler::instruction
     void
     Transformer::transformVariableDeclaration(ast::VariableDeclaration* variable, output::FunctionRoutine* function, uint64_t& stackOffset)
     {
-        ast::Type* type = variable->resolvedType;
+        ast::Type* type = variable->declarationType;
         RegisterSize registerSize = type->size();
         Sign sign = type->sign();
         output::CanonicalExpression canonicalExpression = transformExpression(variable->expression, stackOffset);
@@ -259,8 +259,8 @@ namespace elet::domain::compiler::instruction
     {
         _scratchRegisterIndex--;
         output::OperandRegister scratchRegister = borrowScratchRegister();
-        RegisterSize registerSize = binaryExpression->resolvedType->size();
-        RegisterSize boundSize = binaryExpression->resolvedType->boundSize();
+        RegisterSize registerSize = binaryExpression->resultingType->size();
+        RegisterSize boundSize = binaryExpression->resultingType->boundSize();
         uint64_t rightUint64 = right.toUint64();
         switch (binaryExpression->binaryOperatorKind)
         {
@@ -432,9 +432,9 @@ namespace elet::domain::compiler::instruction
     Transformer::segmentParameterDeclaration(ast::ParameterDeclaration* parameter)
     {
         List<output::ParameterDeclaration*> parameterList;
-        if (parameter->resolvedType->pointers > 0)
+        if (parameter->declarationType->pointers > 0)
         {
-            output::ParameterDeclaration* parameterDeclaration = new output::ParameterDeclaration(0, RegisterSize::Quad, parameter->resolvedType->sign());
+            output::ParameterDeclaration* parameterDeclaration = new output::ParameterDeclaration(0, RegisterSize::Quad, parameter->declarationType->sign());
             parameterList.add(parameterDeclaration);
         }
         return parameterList;
@@ -483,7 +483,7 @@ namespace elet::domain::compiler::instruction
             output::OperandRegister divisionResultRegister = borrowScratchRegister();
             _scratchRegisterIndex -= 3;
             output::OperandRegister destination = borrowScratchRegister();
-            if (binaryExpression->resolvedType->sign() == Sign::Signed)
+            if (binaryExpression->resultingType->sign() == Sign::Signed)
             {
                 addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
             }
@@ -507,7 +507,7 @@ namespace elet::domain::compiler::instruction
                 addInstruction(new output::MultiplySignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 break;
             case ast::BinaryOperatorKind::Divide:
-                if (binaryExpression->resolvedType->sign() == Sign::Signed)
+                if (binaryExpression->resultingType->sign() == Sign::Signed)
                 {
                     addInstruction(new output::DivideSignedRegisterToRegisterInstruction(destination, target, value, registerSize));
                 }
@@ -593,7 +593,7 @@ namespace elet::domain::compiler::instruction
 
         output::CanonicalExpression leftOutput;
         output::CanonicalExpression rightOutput;
-        ast::Type* type = forcedType ? forcedType : binaryExpression->resolvedType;
+        ast::Type* type = forcedType ? forcedType : binaryExpression->resultingType;
         // Transform binary expressions first and then regular expressions.
         if (binaryExpression->left->kind == ast::SyntaxKind::BinaryExpression)
         {

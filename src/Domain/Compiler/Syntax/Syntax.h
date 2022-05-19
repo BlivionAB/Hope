@@ -344,7 +344,7 @@ namespace elet::domain::compiler::ast
     {
         // Resolved tyoe is the required type needed to store the result of the expression.
         Type*
-        resolvedType;
+        resultingType;
 
         // Operating type is the required type needed to execute the operation of the expression.
         Type*

@@ -63,14 +63,14 @@ namespace elet::domain::compiler::ast
     Type*
     Checker::checkPropertyExpression(PropertyExpression* propertyExpression)
     {
-        return propertyExpression->referenceDeclaration->resolvedType;
+        return propertyExpression->referenceDeclaration->expressionType;
     }
 
 
     Type*
     Checker::resolveTypeFromDeclaration(Declaration* declaration)
     {
-        return declaration->resolvedType;
+        return declaration->declarationType;
     }
 
 
@@ -107,25 +107,15 @@ namespace elet::domain::compiler::ast
     void
     Checker::checkVariableDeclaration(VariableDeclaration* variable)
     {
-        Type* expressionType = checkExpression(variable->expression);
+        variable->expressionType = checkExpression(variable->expression);
         if (variable->type)
         {
-            Type* type = variable->resolvedType = new Type(variable->type->type, variable->type->pointers.size());
-
-            // Explicitly set the bounds
-            if (!type->explicitSet && isIntegralType(expressionType))
-            {
-                type->setBounds(expressionType);
-            }
-            checkTypeAssignability(variable->resolvedType, expressionType, variable->expression);
-        }
-        else if (isIntegralType(expressionType))
-        {
-            variable->resolvedType = expressionType;
+            variable->declarationType = new Type(variable->type->type, variable->type->pointers.size());
+            checkTypeAssignability(variable->declarationType, variable->expressionType, variable->expression);
         }
         else
         {
-            variable->resolvedType = expressionType;
+            throw std::runtime_error("");
         }
     }
 
@@ -145,15 +135,15 @@ namespace elet::domain::compiler::ast
         }
         if (std::holds_alternative<DecimalLiteral*>(integerLiteral->digits))
         {
-            return integerLiteral->resolvedType =
+            return integerLiteral->resultingType =
                 integerLiteral->operatingType = new Type(
-                    getDefaultMixedSignTypeFromBounds(integerLiteral->value, integerLiteral->value),
+                    getDefaultTypeFromBounds(integerLiteral->value, integerLiteral->value),
                     integerLiteral->value,
                     integerLiteral->value);
         }
         else
         {
-            return integerLiteral->resolvedType =
+            return integerLiteral->resultingType =
                 integerLiteral->operatingType = new Type(
                     getDefaultUnsignedTypeFromBounds(integerLiteral->value, integerLiteral->value),
                     integerLiteral->value,
@@ -169,9 +159,9 @@ namespace elet::domain::compiler::ast
         Type* right = checkExpression(binaryExpression->right);
         if (isIntegralType(left) && isIntegralType(right))
         {
-            Type* resolvedType = binaryExpression->resolvedType = resolveMinMaxTypeFromBinaryExpression(binaryExpression);
-            binaryExpression->operatingType = createOperatingType(resolvedType, left, right);
-            return resolvedType;
+            Type* resultingType = binaryExpression->resultingType = resolveTypeFromBinaryExpression(binaryExpression);
+            binaryExpression->operatingType = createOperatingType(resultingType, left, right);
+            return resultingType;
         }
         if (isBooleanType(left) && isBooleanType(right))
         {
@@ -181,13 +171,13 @@ namespace elet::domain::compiler::ast
                 return anyType;
             }
             binaryExpression->operatingType = booleanType;
-            binaryExpression->resolvedType = booleanType;
+            binaryExpression->resultingType = booleanType;
             return booleanType;
         }
         if (isAny(left) || isAny(right))
         {
             binaryExpression->operatingType = anyType;
-            binaryExpression->resolvedType = anyType;
+            binaryExpression->resultingType = anyType;
             return anyType;
         }
         addError<error::TypeMismatchBinaryOperationError>(binaryExpression, left, right);
@@ -196,7 +186,7 @@ namespace elet::domain::compiler::ast
 
 
     Type*
-    Checker::resolveMinMaxTypeFromBinaryExpression(BinaryExpression* binaryExpression)
+    Checker::resolveTypeFromBinaryExpression(BinaryExpression* binaryExpression)
     {
         Type* left = checkExpression(binaryExpression->left);
         Type* right = checkExpression(binaryExpression->right);
@@ -322,7 +312,7 @@ namespace elet::domain::compiler::ast
                 }
                 break;
             default:
-                throw std::runtime_error("Unsupported binary operator in resolveMinMaxTypeFromBinaryExpression.");
+                throw std::runtime_error("Unsupported binary operator in resolveTypeFromBinaryExpression.");
         }
         if (maxValue > static_cast<uint64_t>(IntegerLimit::U64Max))
         {
@@ -334,7 +324,15 @@ namespace elet::domain::compiler::ast
             addError<error::IntegralExpressionGlobalUnderflowError>(binaryExpression);
             return anyType;
         }
-        return new Type(getDefaultMixedSignTypeFromBounds(minValue, maxValue), minValue, maxValue);
+        if (left->sign() == Sign::Unsigned && right->sign() == Sign::Unsigned)
+        {
+            return new Type(getDefaultUnsignedTypeFromBounds(minValue, maxValue), minValue, maxValue);
+        }
+        else if (left->sign() == Sign::Signed && right->sign() == Sign::Signed)
+        {
+            return new Type(getDefaultSignedTypeFromBounds(minValue, maxValue), minValue, maxValue);
+        }
+        return new Type(TypeKind::UndecidedInt, minValue, maxValue);
     }
 
 
@@ -645,7 +643,7 @@ namespace elet::domain::compiler::ast
         {
             const auto param = new type::Parameter();
             param->name = p->name->name;
-            p->resolvedType = param->type = new type::Type(p->type->type, p->type->pointers.size());
+            p->declarationType = p->expressionType = param->type = new type::Type(p->type->type, p->type->pointers.size());
             signature->parameters.add(param);
         }
         functionDeclaration->signature = signature;
@@ -806,6 +804,6 @@ namespace elet::domain::compiler::ast
                 return new Type(getDefaultUnsignedTypeFromBounds(minValue, maxValue), minValue, maxValue);
             }
         }
-        return new Type(getDefaultMixedSignTypeFromBounds(minValue, maxValue), minValue, maxValue);
+        return new Type(getDefaultTypeFromBounds(minValue, maxValue), minValue, maxValue);
     }
 }

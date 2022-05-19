@@ -168,7 +168,7 @@ namespace elet::domain::compiler::ast
 //        getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression);
 
         Type*
-        resolveMinMaxTypeFromBinaryExpression(BinaryExpression* binaryExpression);
+        resolveTypeFromBinaryExpression(BinaryExpression* binaryExpression);
 
         void
         checkUndecidedIntegralType(Type* placeholder, Type* target, Syntax* targetSyntax);

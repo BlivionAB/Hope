@@ -111,7 +111,6 @@ namespace elet::domain::compiler::instruction::output::test
             .targets = {
                 CompilationTarget::MachO_Aarch64
             },
-            .acceptBaselines = true
         }));
     }
 

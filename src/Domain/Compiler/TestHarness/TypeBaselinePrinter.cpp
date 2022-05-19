@@ -81,7 +81,7 @@ namespace elet::domain::compiler::test
     {
         TextScanner::Location startLocation = writeUntilPositionAddress(integerLiteral->start);
         TextScanner::Location endLocation = writeUntilPositionAddress(integerLiteral->end);
-        typeEntries.emplace(startLocation, integerLiteral->resolvedType, endLocation.column - startLocation.column);
+        typeEntries.emplace(startLocation, integerLiteral->resultingType, endLocation.column - startLocation.column);
     }
 
 

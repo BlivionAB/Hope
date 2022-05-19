@@ -28,6 +28,16 @@ namespace elet::domain::compiler::ast::type
     operator <= (const Int128& value1, const SignedIntegerLimit& value2);
 
 
+    struct Bounds
+    {
+        Int128
+        min;
+
+        Int128
+        max;
+    };
+
+
     struct Type
     {
         TypeKind
@@ -98,7 +108,7 @@ namespace elet::domain::compiler::ast::type
     getDefaultUnsignedTypeFromBounds(const Int128& minValue, const Int128& maxValue);
 
     TypeKind
-    getDefaultMixedSignTypeFromBounds(const Int128& minValue, const Int128& maxValue);
+    getDefaultTypeFromBounds(const Int128& minValue, const Int128& maxValue);
 
     bool
     isIntegralType(const Type* type);

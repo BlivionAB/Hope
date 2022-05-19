@@ -68,7 +68,10 @@ namespace elet::domain::compiler::ast
         domain;
 
         Type*
-        resolvedType;
+        declarationType;
+
+        Type*
+        expressionType;
 
         output::MemoryAllocation*
         referenceInstruction;
