@@ -162,17 +162,23 @@ namespace elet::domain::compiler::ast
         getTypeString(const Type* type);
 
         Type*
-        createOperatingType(const Type* resolvedType, const Type* left, const Type* right);
+        createOperatingType(const Type* resultingType, const Type* left, const Type* right);
 
 //        Type*
 //        getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression);
 
         Type*
-        resolveTypeFromBinaryExpression(BinaryExpression* binaryExpression);
+        getResultingTypeFromBinaryExpression(BinaryExpression* binaryExpression);
 
         void
         checkUndecidedIntegralType(Type* placeholder, Type* target, Syntax* targetSyntax);
-    };
+
+    TypeKind
+    getMaxSignedType(Type* type1, Type* type2);
+
+    TypeKind
+    getMaxUnsignedType(Type* type1, Type* type2);
+};
 }
 
 

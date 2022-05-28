@@ -112,6 +112,7 @@ namespace elet::domain::compiler
         // Integer types, ranked after the conversion ranking.
         // Note: US types stands for unsigned signed. Meaning it's on the unsigned
         // part of the signed type.
+        ImplicitInt,
         U8,
         US8,
         S8,

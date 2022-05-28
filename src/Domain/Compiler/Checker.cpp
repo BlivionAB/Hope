@@ -107,16 +107,9 @@ namespace elet::domain::compiler::ast
     void
     Checker::checkVariableDeclaration(VariableDeclaration* variable)
     {
+        Type* declarationType = variable->declarationType = new Type(variable->type->type, variable->type->pointers.size());
         variable->expressionType = checkExpression(variable->expression);
-        if (variable->type)
-        {
-            variable->declarationType = new Type(variable->type->type, variable->type->pointers.size());
-            checkTypeAssignability(variable->declarationType, variable->expressionType, variable->expression);
-        }
-        else
-        {
-            throw std::runtime_error("");
-        }
+        checkTypeAssignability(variable->declarationType, variable->expressionType, variable->expression);
     }
 
 
@@ -137,7 +130,7 @@ namespace elet::domain::compiler::ast
         {
             return integerLiteral->resultingType =
                 integerLiteral->operatingType = new Type(
-                    getDefaultTypeFromBounds(integerLiteral->value, integerLiteral->value),
+                    TypeKind::ImplicitInt,
                     integerLiteral->value,
                     integerLiteral->value);
         }
@@ -159,7 +152,7 @@ namespace elet::domain::compiler::ast
         Type* right = checkExpression(binaryExpression->right);
         if (isIntegralType(left) && isIntegralType(right))
         {
-            Type* resultingType = binaryExpression->resultingType = resolveTypeFromBinaryExpression(binaryExpression);
+            Type* resultingType = binaryExpression->resultingType = getResultingTypeFromBinaryExpression(binaryExpression);
             binaryExpression->operatingType = createOperatingType(resultingType, left, right);
             return resultingType;
         }
@@ -186,7 +179,7 @@ namespace elet::domain::compiler::ast
 
 
     Type*
-    Checker::resolveTypeFromBinaryExpression(BinaryExpression* binaryExpression)
+    Checker::getResultingTypeFromBinaryExpression(BinaryExpression* binaryExpression)
     {
         Type* left = checkExpression(binaryExpression->left);
         Type* right = checkExpression(binaryExpression->right);
@@ -312,7 +305,7 @@ namespace elet::domain::compiler::ast
                 }
                 break;
             default:
-                throw std::runtime_error("Unsupported binary operator in resolveTypeFromBinaryExpression.");
+                throw std::runtime_error("Unsupported binary operator in getResultingTypeFromBinaryExpression.");
         }
         if (maxValue > static_cast<uint64_t>(IntegerLimit::U64Max))
         {
@@ -324,13 +317,13 @@ namespace elet::domain::compiler::ast
             addError<error::IntegralExpressionGlobalUnderflowError>(binaryExpression);
             return anyType;
         }
-        if (left->sign() == Sign::Unsigned && right->sign() == Sign::Unsigned)
+        if (left->sign() == Sign::Signed && right->sign() == Sign::Signed)
         {
-            return new Type(getDefaultUnsignedTypeFromBounds(minValue, maxValue), minValue, maxValue);
+            return new Type(getMaxSignedType(left, right), minValue, maxValue);
         }
-        else if (left->sign() == Sign::Signed && right->sign() == Sign::Signed)
+        else if (left->sign() == Sign::Unsigned && right->sign() == Sign::Unsigned)
         {
-            return new Type(getDefaultSignedTypeFromBounds(minValue, maxValue), minValue, maxValue);
+            return new Type(getMaxUnsignedType(left, right), minValue, maxValue);
         }
         return new Type(TypeKind::UndecidedInt, minValue, maxValue);
     }
@@ -789,10 +782,10 @@ namespace elet::domain::compiler::ast
 
 
     Type*
-    Checker::createOperatingType(const Type* resolvedType, const Type* left, const Type* right)
+    Checker::createOperatingType(const Type* resultingType, const Type* left, const Type* right)
     {
-        Int128 maxValue = max(resolvedType->maxValue, left->maxValue, right->maxValue);
-        Int128 minValue = min(resolvedType->minValue, left->minValue, right->minValue);
+        Int128 maxValue = max(resultingType->maxValue, left->maxValue, right->maxValue);
+        Int128 minValue = min(resultingType->minValue, left->minValue, right->minValue);
         if (left->sign() == right->sign())
         {
             if (left->sign() == Sign::Signed && right->sign() == Sign::Signed)
@@ -805,5 +798,26 @@ namespace elet::domain::compiler::ast
             }
         }
         return new Type(getDefaultTypeFromBounds(minValue, maxValue), minValue, maxValue);
+    }
+
+
+    TypeKind
+    Checker::getMaxSignedType(Type* type1, Type* type2)
+    {
+        if (type1->kind >= type2->kind)
+        {
+            return type1->kind;
+        }
+        return type2->kind;
+    }
+
+    TypeKind
+    Checker::getMaxUnsignedType(Type* type1, Type* type2)
+    {
+        if (type1->kind >= type2->kind)
+        {
+            return type1->kind;
+        }
+        return type2->kind;
     }
 }

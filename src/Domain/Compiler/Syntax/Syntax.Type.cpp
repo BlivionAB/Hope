@@ -149,12 +149,7 @@ namespace elet::domain::compiler::ast::type
     Sign
     Type::sign() const
     {
-        TypeKind k = kind;
-        if (kind == TypeKind::UndecidedInt)
-        {
-            k = getDefaultTypeFromBounds(minValue, maxValue);
-        }
-        switch (k)
+        switch (kind)
         {
             case TypeKind::S8:
             case TypeKind::S16:
@@ -285,10 +280,6 @@ namespace elet::domain::compiler::ast::type
         {
             return TypeKind::S64;
         }
-        if (minValue >= IntegerLimit::U64Min && maxValue <= IntegerLimit::U64Max)
-        {
-            return TypeKind::UndecidedInt;
-        }
         throw std::runtime_error("Could not construct type from min and max values.");
     }
 
@@ -303,10 +294,6 @@ namespace elet::domain::compiler::ast::type
         if (minValue >= IntegerLimit::U64Min && maxValue <= IntegerLimit::U64Max)
         {
             return TypeKind::U64;
-        }
-        if (minValue >= SignedIntegerLimit::S64Min && maxValue <= SignedIntegerLimit::S64Max)
-        {
-            return TypeKind::UndecidedInt;
         }
         throw std::runtime_error("Could not construct type from min and max values.");
     }
