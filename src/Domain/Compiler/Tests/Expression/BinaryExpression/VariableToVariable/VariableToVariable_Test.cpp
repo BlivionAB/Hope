@@ -6,9 +6,9 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_SingleTerm)
     {
         testFunction(
-            "var x = 1 + 2;\n"
-            "var y = 1 + 2;\n"
-            "return x + y;");
+            "var x: u32 = 1 + 2;\n"
+            "var y: u32 = 1 + 2;\n"
+            "return x + y;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_SingleTerm",
@@ -22,10 +22,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_MultiTerms)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x + y + z + x;");
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x + y + z + x;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_MultiTerms",
@@ -39,10 +39,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_HigherPrecedence_LowerPrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x * y + z;");
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x * y + z;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_HigherPrecedence_LowerPrecedence",
@@ -56,10 +56,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_LowerPrecedence_HigherPrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x + y * z;");
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x + y * z;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_LowerPrecedence_HigherPrecedence",
@@ -73,10 +73,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_EqualPrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x + y + z;");
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x + y + z;", "u32");
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_EqualPrecedence",
@@ -90,10 +90,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_LowestPrecedence_MiddlePrecedence_HighestPrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x | y ^ z & x;"); // Note: the precedence order from high to low is &, ^, |.
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x | y ^ z & x;", "u32"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_LowestPrecedence_MiddlePrecedence_HighestPrecedence",
@@ -107,10 +107,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_MiddlePrecedence_HighestPrecedence_LowestPrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x ^ y & z | x;"); // Note: the precedence order from high to low is &, ^, |.
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x ^ y & z | x;", "u32"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_MiddlePrecedence_HighestPrecedence_LowestPrecedence",
@@ -124,10 +124,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_LowestPrecedence_HighestPrecedence_MiddlePrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x | y & z ^ x;"); // Note: the precedence order from high to low is &, ^, |.
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x | y & z ^ x;", "u32"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_LowestPrecedence_HighestPrecedence_MiddlePrecedence",
@@ -141,10 +141,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_HighestPrecedence_MiddlePrecedence_LowestPrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x & y ^ z | x;"); // Note: the precedence order from high to low is &, ^, |.
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x & y ^ z | x;", "u32"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_HighestPrecedence_MiddlePrecedence_LowestPrecedence",
@@ -158,10 +158,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_HighestPrecedence_LowestPrecedence_MiddlePrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x & y | z ^ x;"); // Note: the precedence order from high to low is &, ^, |.
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x & y | z ^ x;", "u32"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_HighestPrecedence_LowestPrecedence_MiddlePrecedence",
@@ -175,10 +175,10 @@ namespace elet::domain::compiler::test
     TEST_F(VariableToVariableFixture, VariableToVariable_MiddlePrecedence_LowestPrecedence_HighestPrecedence)
     {
         testFunction(
-            "var x = 1;\n"
-            "var y = 2;\n"
-            "var z = 3;\n"
-            "return x ^ y | z & x;"); // Note: the precedence order from high to low is &, ^, |.
+            "var x: u32 = 1;\n"
+            "var y: u32 = 2;\n"
+            "var z: u32 = 3;\n"
+            "return x ^ y | z & x;", "u32"); // Note: the precedence order from high to low is &, ^, |.
 
         EXPECT_TRUE(testProject({
             .baselineName = "VariableToVariable_MiddlePrecedence_LowestPrecedence_HighestPrecedence",

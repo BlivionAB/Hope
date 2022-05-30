@@ -141,6 +141,7 @@ namespace elet::domain::compiler::ast
         Pipe,
         Caret,
         Percent,
+        AsKeyword,
 
         BinaryOperationStart = AmpersandAmpersand,
         BinaryOperationEnd = Percent,
@@ -175,7 +176,6 @@ namespace elet::domain::compiler::ast
         // Operators
         LengthOfKeyword,
         SizeOfKeyword,
-
         StringLiteral,
         CharacterLiteral,
         FloatLiteral,
@@ -291,6 +291,16 @@ namespace elet::domain::compiler::ast
     };
 
 
+    struct TypeCast : Syntax
+    {
+        TypeAssignment*
+        type;
+
+        TypeCast*
+        typeCast;
+    };
+
+
     struct TypeDeclaration : Syntax
     {
         Name*
@@ -349,6 +359,9 @@ namespace elet::domain::compiler::ast
         // Operating type is the required type needed to execute the operation of the expression.
         Type*
         operatingType;
+
+        TypeCast*
+        typeCast;
     };
 
 
@@ -482,10 +495,10 @@ namespace elet::domain::compiler::ast
     };
 
 
-    struct Tuple : Expression
+    struct ParenExpression : Expression
     {
-        List<Expression*>
-        values;
+        Expression*
+        expression;
     };
 
 
@@ -503,6 +516,8 @@ namespace elet::domain::compiler::ast
         BitwiseAnd,
         BitwiseXor,
         BitwiseOr,
+
+        TypeCast,
     };
 
 

@@ -66,7 +66,7 @@ namespace elet::domain::compiler
 
     enum class Sign
     {
-        Mixed,
+        Unknown,
         Unsigned,
         Signed,
     };
@@ -112,7 +112,7 @@ namespace elet::domain::compiler
         // Integer types, ranked after the conversion ranking.
         // Note: US types stands for unsigned signed. Meaning it's on the unsigned
         // part of the signed type.
-        ImplicitInt,
+        Int,
         U8,
         US8,
         S8,
@@ -125,13 +125,9 @@ namespace elet::domain::compiler
         U64,
         US64,
         S64,
-        Int,
-        Uint,
-        Usize,
-        UndecidedInt,
 
-        IntegralStart = U8,
-        IntegralEnd = UndecidedInt,
+        IntegralStart = Int,
+        IntegralEnd = S64,
 
         Char,
         Bool,

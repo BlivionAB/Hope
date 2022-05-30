@@ -151,6 +151,8 @@ namespace elet::domain::compiler::ast::type
     {
         switch (kind)
         {
+            case TypeKind::Int:
+                return Sign::Unknown;
             case TypeKind::S8:
             case TypeKind::S16:
             case TypeKind::S32:
@@ -327,7 +329,6 @@ namespace elet::domain::compiler::ast::type
     {
         switch (kind)
         {
-            case TypeKind::Uint:
             case TypeKind::S64:
             case TypeKind::U64:
                 return RegisterSize::Quad;

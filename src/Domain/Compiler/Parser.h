@@ -39,7 +39,6 @@ namespace elet::domain::compiler::ast
     struct AssemblyBlock;
     struct ExternCBlock;
     struct DeclarationMetadata;
-    struct Tuple;
     struct EndStatement;
     struct DomainAccessUsage;
     struct UsingStatement;
@@ -255,8 +254,8 @@ namespace elet::domain::compiler::ast
         DeclarationMetadata*
         parseDeclarationMetadata();
 
-        Tuple*
-        parseTuple();
+        ParenExpression*
+        parseParenExpression();
 
     //    DomainAccessUsage*
     //    parseDomainAccessUsageOnIdentifier();
@@ -325,7 +324,7 @@ namespace elet::domain::compiler::ast
         parseInitializationList();
 
         Expression*
-        parseExpression();
+        parseExpression(bool skipNextOperator);
 
         Expression*
         parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPrecedence);

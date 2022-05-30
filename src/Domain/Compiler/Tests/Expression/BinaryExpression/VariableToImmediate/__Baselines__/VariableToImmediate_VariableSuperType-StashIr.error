@@ -1,0 +1,5 @@
+error: Integral type 'u64 1' is not assignable to type 'u32'.
+--> main.hs:8:12
+  | 
+8 | return 1 + x;}}
+  |            ^

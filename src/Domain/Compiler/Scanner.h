@@ -132,6 +132,7 @@ namespace elet::domain::compiler::ast
         { "context", Token::ContextKeyword },
         { "implements", Token::ImplementsKeyword },
         { "from", Token::FromKeyword },
+        { "as", Token::AsKeyword },
 
         // Control flows
         { "if", Token::IfKeyword },
@@ -143,7 +144,6 @@ namespace elet::domain::compiler::ast
         { "return", Token::ReturnKeyword },
 
         // Operators
-        { "lengthof", Token::LengthOfKeyword },
         { "u8", Token::U8Keyword },
         { "u16", Token::U16Keyword },
         { "u32", Token::U32Keyword },
@@ -173,7 +173,7 @@ namespace elet::domain::compiler::ast
 
     const HashTableMap<Token, const char*> eletTokenToString =
     {
-    // Declarations
+        // Declarations
         { Token::DomainKeyword, "domain"},
         { Token::FunctionKeyword, "fn" },
         { Token::ClassKeyword, "class"},
@@ -192,6 +192,7 @@ namespace elet::domain::compiler::ast
         { Token::ParamsKeyword, "params" },
         { Token::ImplementsKeyword, "implements" },
         { Token::FromKeyword, "from" },
+        { Token::AsKeyword, "as" },
 
         // Control flows
         { Token::IfKeyword, "if" },
@@ -223,6 +224,7 @@ namespace elet::domain::compiler::ast
 
         // For errors only
         { Token::Identifier, "identifier" },
+        { Token::Colon, ":" },
         { Token::DoubleColon, "::" },
         { Token::SemiColon, ";" },
         { Token::OpenBrace, "{" },

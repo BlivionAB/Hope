@@ -18,6 +18,36 @@ namespace elet::domain::compiler::ast::error
     { }
 
 
+    SignMismatchAssignabilityError::SignMismatchAssignabilityError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax,
+        const Type* placeholder,
+        const Type* target):
+
+        TypeCheckError(
+            sourceFile,
+            syntax,
+            "Type '{}' and '{}' does not have the same sign.",
+            target,
+            placeholder)
+    { }
+
+
+    IntegralTypeMismatchAssignabilityError::IntegralTypeMismatchAssignabilityError(
+        const SourceFile* sourceFile,
+        const Syntax* syntax,
+        const Type* placeholder,
+        const Type* target):
+
+        TypeCheckError(
+            sourceFile,
+            syntax,
+            "Integral type '{}' is not assignable to type '{}'.",
+            target,
+            placeholder)
+    { }
+
+
     TypeMismatchBinaryOperationError::TypeMismatchBinaryOperationError(
         const SourceFile* sourceFile,
         const Syntax* syntax,

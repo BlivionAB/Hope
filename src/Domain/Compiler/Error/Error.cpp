@@ -9,7 +9,7 @@ namespace elet::domain::compiler::ast::error
         std::string result;
         switch (type->kind)
         {
-            case TypeKind::UndecidedInt:
+            case TypeKind::Int:
                 result = "int";
                 break;
             case TypeKind::U8:

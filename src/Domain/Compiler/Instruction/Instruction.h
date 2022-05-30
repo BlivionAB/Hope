@@ -108,21 +108,9 @@ namespace elet::domain::compiler::instruction::output
         RegisterSize
         registerSize;
 
-        // Only use to calculate if sign extension is needed.
-        RegisterSize
-        _boundSize;
-
         RegisterResult(OperandRegister _register, RegisterSize size):
             _register(_register),
-            registerSize(getSupportedRegisterSize(size)),
-            _boundSize(RegisterSize::None)
-        { }
-
-
-        RegisterResult(OperandRegister _register, RegisterSize size, RegisterSize boundSize):
-            _register(_register),
-            registerSize(getSupportedRegisterSize(size)),
-            _boundSize(boundSize)
+            registerSize(getSupportedRegisterSize(size))
         { }
 
 

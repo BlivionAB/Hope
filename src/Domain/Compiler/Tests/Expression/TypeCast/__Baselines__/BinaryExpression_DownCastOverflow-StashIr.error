@@ -1,0 +1,5 @@
+error: Integral expression of type 'u32 4294967296' exceeds maximum value of type 'u32'.
+--> main.hs:8:12
+  | 
+8 | return 1 + x as u32;}}
+  |            ^

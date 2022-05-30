@@ -17,6 +17,26 @@ namespace elet::domain::compiler::ast::error
     };
 
 
+    struct SignMismatchAssignabilityError : TypeCheckError
+    {
+        SignMismatchAssignabilityError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax,
+            const Type* placeholder,
+            const Type* target);
+    };
+
+
+    struct IntegralTypeMismatchAssignabilityError : TypeCheckError
+    {
+        IntegralTypeMismatchAssignabilityError(
+            const SourceFile* sourceFile,
+            const Syntax* syntax,
+            const Type* placeholder,
+            const Type* target);
+    };
+
+
     struct TypeMismatchBinaryOperationError : TypeCheckError
     {
         TypeMismatchBinaryOperationError(
@@ -50,6 +70,7 @@ namespace elet::domain::compiler::ast::error
             const Type* type,
             Utf8StringView expression);
     };
+
 
     struct IntegralExpressionOverflowError : TypeCheckError
     {

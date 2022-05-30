@@ -1,0 +1,6 @@
+Test():
+    StrB [Sp + #-1], #0x1
+    LdrB X0, [Sp + #-1]
+    Add X0, X0, 0x1
+    MovL OpRet, X0
+

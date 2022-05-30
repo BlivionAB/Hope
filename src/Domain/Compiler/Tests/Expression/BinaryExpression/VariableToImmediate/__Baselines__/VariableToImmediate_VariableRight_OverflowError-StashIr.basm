@@ -1,6 +1,6 @@
 Test():
-    StrL [Sp + #-4], #0x1
+    StrL [Sp + #-4], #0xffff_ffff
     LdrL X0, [Sp + #-4]
     Add X0, X0, 0x1
-    MovL OpRet, X0
+    MovQ OpRet, X0
 

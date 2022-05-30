@@ -31,7 +31,6 @@ namespace elet::domain::compiler::ast
         ParameterDeclaration,
         Type,
         ArgumentList,
-        Tuple,
         NamedUsage,
         WildcardUsage,
         Punctuation,
@@ -59,8 +58,10 @@ namespace elet::domain::compiler::ast
         BinaryExpression,
         BinaryOperator,
         CallExpression,
+        ParenExpression,
         PropertyExpression,
         PropertyAccessExpression,
+        TypeCast,
 
         // Declarations
         ObjectDeclaration,

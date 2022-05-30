@@ -1,0 +1,6 @@
+Test():
+    StrQ [Sp + #-8], #0x1
+    LdrQ X0, [Sp + #-8]
+    Add X0, X0, 0x1
+    MovL OpRet, X0
+

@@ -347,17 +347,13 @@ namespace elet::domain::compiler::ast
     {
         VariableDeclaration* variableDeclaration = createDeclaration<VariableDeclaration>(SyntaxKind::VariableDeclaration);
         variableDeclaration->name = parseName();
+        expectToken(Token::Colon);
+        variableDeclaration->type = parseType();
         Token peek = peekNextToken(false);
-        if (peek == Token::Colon)
-        {
-            skipNextToken();
-            variableDeclaration->type = parseType();
-            peek = peekNextToken(false);
-        }
         if (peek == Token::Equal)
         {
             skipNextToken();
-            variableDeclaration->expression = parseExpression();
+            variableDeclaration->expression = parseExpression(false);
             expectToken(Token::SemiColon);
         }
         return variableDeclaration;
@@ -512,9 +508,6 @@ namespace elet::domain::compiler::ast
         TypeAssignment* typeAssignment = createSyntax<TypeAssignment>(SyntaxKind::Type);
         Token token = _scanner->takeNextToken(false);
         switch (token) {
-            case Token::UnsignedIntKeyword:
-                typeAssignment->type = TypeKind::Uint;
-                break;
             case Token::CharKeyword:
                 typeAssignment->type = TypeKind::Char;
                 break;
@@ -635,13 +628,31 @@ namespace elet::domain::compiler::ast
 
 
     Expression*
-    Parser::parseExpression()
+    Parser::parseExpression(bool skipNextOperator)
     {
         Token token = takeNextToken();
         Expression* expr = parseExpressionOnToken(token);
         Token peek = peekNextToken(false);
 
-        if (isBinaryOperator(peek))
+        TypeCast* previousTypeCast = nullptr;
+        while (peek == Token::AsKeyword)
+        {
+            TypeCast* typeCast = createSyntax<TypeCast>(SyntaxKind::TypeCast);
+            takeNextToken();
+            typeCast->type = parseType();
+            finishSyntax(typeCast);
+            if (!expr->typeCast)
+            {
+                expr->typeCast = typeCast;
+            }
+            peek = peekNextToken(false);
+            if (previousTypeCast)
+            {
+                previousTypeCast->typeCast = typeCast;
+            }
+            previousTypeCast = typeCast;
+        }
+        if (isBinaryOperator(peek) && !skipNextOperator)
         {
             return parseBinaryExpression(expr, peek);
         }
@@ -687,8 +698,7 @@ namespace elet::domain::compiler::ast
     Expression*
     Parser::parseRightHandSideOfBinaryExpression(unsigned int previousOperatorPrecedence)
     {
-        Token token = takeNextToken();
-        Expression* expression = parseExpressionOnToken(token);
+        Expression* expression = parseExpression(true);
         Token peek = peekNextToken(false);
         if (isBinaryOperator(peek))
         {
@@ -704,31 +714,7 @@ namespace elet::domain::compiler::ast
                 binaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
                 finishSyntax(binaryExpression->binaryOperator);
                 binaryExpression->operatorPrecedence = nextOperatorPrecedence;
-
                 binaryExpression->right = parseRightHandSideOfBinaryExpression(nextOperatorPrecedence);
-//                 = right;
-//                bool nextNextHasHigherOperatorPrecedence = false;
-//                if (right->kind == SyntaxKind::BinaryExpression)
-//                {
-//                    peek = peekNextToken(false);
-//                    if (isBinaryOperator(peek))
-//                    {
-//                        unsigned int nextNextOperatorPrecedence = getOperatorPrecedence(peek);
-//                        if (nextNextOperatorPrecedence > previousOperatorPrecedence)
-//                        {
-//                            BinaryExpression* nextBinaryExpression = createSyntax<BinaryExpression>(SyntaxKind::BinaryExpression);
-//                            nextBinaryExpression->left = right;
-//                            nextBinaryExpression->binaryOperatorKind = getBinaryOperatorKind(peek);
-//                            nextBinaryExpression->binaryOperator = createSyntax<BinaryOperator>(SyntaxKind::BinaryOperator);
-//                            finishSyntax(nextBinaryExpression->binaryOperator);
-//                            nextBinaryExpression->operatorPrecedence = nextNextOperatorPrecedence;
-//                            nextBinaryExpression->right = parseRightHandSideOfBinaryExpression(nextNextOperatorPrecedence);
-//                            finishSyntax(nextBinaryExpression);
-//                            binaryExpression->right = nextBinaryExpression;
-//                            nextNextHasHigherOperatorPrecedence = true;
-//                        }
-//                    }
-//                }
                 finishSyntax(binaryExpression);
                 return binaryExpression;
             }
@@ -767,7 +753,7 @@ namespace elet::domain::compiler::ast
             case Token::OpenBracket:
                 return parseArrayLiteral();
             case Token::OpenParen:
-                return parseTuple();
+                return parseParenExpression();
             case Token::Identifier:
                 return parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
         }
@@ -879,30 +865,14 @@ namespace elet::domain::compiler::ast
     }
 
 
-    Tuple*
-    Parser::parseTuple()
+    ParenExpression*
+    Parser::parseParenExpression()
     {
-        Tuple* tuple = createSyntax<Tuple>(SyntaxKind::Tuple);
-        Token peek = peekNextToken(false);
-        while (true)
-        {
-            if (peek == Token::CloseParen)
-            {
-                skipNextToken();
-                break;
-            }
-
-            Expression* expression = parseExpression();
-            tuple->values.add(expression);
-            peek = peekNextToken(false);
-            if (peek == Token::Comma)
-            {
-                skipNextToken();
-                peek = peekNextToken(false);
-            }
-        }
-        finishSyntax(tuple);
-        return tuple;
+        ParenExpression* parenExpression = createSyntax<ParenExpression>(SyntaxKind::ParenExpression);
+        parenExpression->expression = parseExpression(false);
+        expectToken(Token::CloseParen);
+        finishSyntax(parenExpression);
+        return parenExpression;
     }
 
 
@@ -1269,7 +1239,7 @@ namespace elet::domain::compiler::ast
             MetadataProperty* property = createSyntax<MetadataProperty>(SyntaxKind::MetadataProperty);
             property->name = createName();
             expectToken(Token::Colon);
-            property->value = parseExpression();
+            property->value = parseExpression(false);
             finishSyntax(property);
             metadata->properties.add(property);
             token = takeNextToken();
@@ -1294,8 +1264,14 @@ namespace elet::domain::compiler::ast
             skipNextToken();
             expectToken(Token::Identifier);
             moduleAccessExpression->expression = parseModuleAccessOrPropertyAccessOrCallExpressionOnIdentifier();
+            Token peek = peekNextToken(false);
             finishSyntax(moduleAccessExpression);
             return moduleAccessExpression;
+        }
+        else if (peek == Token::AsKeyword)
+        {
+            // Pass in Token::Unknown, so we can bypass dot and call expressions.
+            return createPropertyAccessExpressionOrCallExpressionFromPeek(Token::Unknown);
         }
         else
         {
@@ -1316,7 +1292,7 @@ namespace elet::domain::compiler::ast
                 skipNextToken();
                 break;
             }
-            Expression* expression = parseExpression();
+            Expression* expression = parseExpression(false);
             arrayLiteral->values.add(expression);
             peek = peekNextToken(false);
             if (peek == Token::Comma)
@@ -1388,7 +1364,7 @@ namespace elet::domain::compiler::ast
     Parser::parseAddressOfExpression()
     {
         auto addressOfExpression = createSyntax<AddressOfExpression>(SyntaxKind::AddressOfExpression);
-        addressOfExpression->expression = parseExpression();
+        addressOfExpression->expression = parseExpression(false);
         finishSyntax(addressOfExpression);
         return addressOfExpression;
     }
@@ -1441,7 +1417,7 @@ namespace elet::domain::compiler::ast
     {
         IfStatement* ifStatement = createSyntax<IfStatement>(SyntaxKind::IfStatement);
         expectToken(Token::OpenParen);
-        ifStatement->condition = parseExpression();
+        ifStatement->condition = parseExpression(false);
         expectToken(Token::CloseParen);
         expectToken(Token::OpenBrace);
         ifStatement->body = parseStatementBlock();
@@ -1476,6 +1452,10 @@ namespace elet::domain::compiler::ast
                 return BinaryOperatorKind::Divide;
             case Token::Percent:
                 return BinaryOperatorKind::Modulo;
+
+            case Token::AsKeyword:
+                return BinaryOperatorKind::TypeCast;
+
             default:
                 throw std::runtime_error("Unknown binary operator.");
         }
@@ -1485,7 +1465,7 @@ namespace elet::domain::compiler::ast
     Parser::parseReturnStatement()
     {
         ReturnStatement* returnStatement = createSyntax<ReturnStatement>(SyntaxKind::ReturnStatement);
-        returnStatement->expression = parseExpression();
+        returnStatement->expression = parseExpression(false);
         expectToken(Token::SemiColon);
         return returnStatement;
     }

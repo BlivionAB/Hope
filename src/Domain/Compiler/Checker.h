@@ -73,6 +73,10 @@ namespace elet::domain::compiler::ast
         resolveTypeFromFunctionDeclaration(FunctionDeclaration* functionDeclaration);
 
         static
+        type::Type*
+        resolveTypeAssignment(const TypeAssignment* type);
+
+        static
         bool
         isTypeEqualToType(const type::Type* target, const type::Type* source);
 
@@ -89,7 +93,7 @@ namespace elet::domain::compiler::ast
         isMatchingFunctionSignature(const type::Signature* target, const type::Signature* source);
 
         Type*
-        checkExpression(Expression* expression);
+        checkExpression(Expression* expression, const Type* operatingType);
 
         bool
         tryGetValueFromBinaryExpression(Int128& value, const BinaryExpression* binaryExpression);
@@ -98,7 +102,7 @@ namespace elet::domain::compiler::ast
         expressionHasImmediateValue(elet::foundation::Int128& value, const Expression* expression);
 
         Type*
-        checkPropertyExpression(PropertyExpression* propertyExpression);
+        checkPropertyExpression(PropertyExpression* propertyExpression, const Type* operatingType);
 
         type::Type*
         resolveTypeFromDeclaration(Declaration* declaration);
@@ -118,8 +122,11 @@ namespace elet::domain::compiler::ast
         Type*
         getMaxType(Type* type1, Type* type2);
 
-        uint64_t
-        getMaxTypeDomain(Type* type);
+        Int128
+        getMaxLimitFromType(const Type* type);
+
+        Int128
+        getMinLimitFromType(const Type* type);
 
         Type*
         getUnsignedCounterPart(Type* signedType);
@@ -128,10 +135,10 @@ namespace elet::domain::compiler::ast
         getTypeFromIntegerLiteral(IntegerLiteral* integerLiteral);
 
         Type*
-        checkBinaryExpression(BinaryExpression* binaryExpression);
+        checkBinaryExpression(BinaryExpression* binaryExpression, const Type* operatingType);
 
         Type*
-        checkIntegerLiteral(IntegerLiteral* integerLiteral);
+        checkIntegerLiteral(IntegerLiteral* integerLiteral, const Type* operatingType);
 
         template<typename T, typename... Args>
         void
@@ -140,14 +147,11 @@ namespace elet::domain::compiler::ast
         void
         checkReturnStatement(ReturnStatement* returnStatement, FunctionDeclaration* functionDeclaration);
 
-        void
-        checkTypeAssignability(Type* placeholder, Type* target, Syntax* targetSyntax);
+        bool
+        checkTypeAssignability(const Type* placeholder, const Type* target, const Syntax* targetSyntax);
 
         Type*
         checkBooleanLiteral(BooleanLiteral* literal);
-
-        bool
-        isUndecidedIntegralType(Type* type);
 
         bool
         isBooleanType(Type* type);
@@ -168,16 +172,31 @@ namespace elet::domain::compiler::ast
 //        getMinIntegralTypeFromImmediateValue(const Int128& value, Expression* binaryExpression);
 
         Type*
-        getResultingTypeFromBinaryExpression(BinaryExpression* binaryExpression);
+        checkBinaryOperation(BinaryExpression* binaryExpression, const Type* left, const Type* right, const Type* operatingType);
 
-        void
-        checkUndecidedIntegralType(Type* placeholder, Type* target, Syntax* targetSyntax);
+        bool
+        checkIntegralBounds(const Type* placeholder, const Type* target, const Syntax* targetSyntax);
 
-    TypeKind
-    getMaxSignedType(Type* type1, Type* type2);
+        TypeKind
+        getMaxSignedType(Type* type1, Type* type2);
 
-    TypeKind
-    getMaxUnsignedType(Type* type1, Type* type2);
+        TypeKind
+        getMaxUnsignedType(Type* type1, Type* type2);
+
+        bool
+        checkIntegralTypeAndBoundsAssignability(const Type* placeholder, const Type* target, const Syntax* targetSyntax);
+
+        bool
+        checkIntegralAssignability(const Type* placeholder, const Type* target, const Syntax* targetSyntax);
+
+        Type*
+        checkParenExpression(ParenExpression* parenExpression, const Type* operatingType);
+
+    bool
+    checkTypeCastRelation(const Type* target, const Type* destination, const TypeCast* syntax);
+
+    Type*
+    checkTypeCast(const TypeCast* typeCast);
 };
 }
 

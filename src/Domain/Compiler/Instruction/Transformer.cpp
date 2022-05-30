@@ -246,6 +246,8 @@ namespace elet::domain::compiler::instruction
                 ast::CharacterLiteral* characterLiteral = reinterpret_cast<ast::CharacterLiteral*>(expression);
                 return output::ImmediateValue(typeKind, characterLiteral->value);
             }
+            case ast::SyntaxKind::ParenExpression:
+                return transformExpression(reinterpret_cast<ast::ParenExpression*>(expression)->expression, stackOffset, forcedType);
             case ast::SyntaxKind::PropertyExpression:
                 return transformPropertyExpression(reinterpret_cast<ast::PropertyExpression*>(expression));
             default:
@@ -260,7 +262,6 @@ namespace elet::domain::compiler::instruction
         _scratchRegisterIndex--;
         output::OperandRegister scratchRegister = borrowScratchRegister();
         RegisterSize registerSize = binaryExpression->resultingType->size();
-        RegisterSize boundSize = binaryExpression->resultingType->boundSize();
         uint64_t rightUint64 = right.toUint64();
         switch (binaryExpression->binaryOperatorKind)
         {
@@ -273,7 +274,7 @@ namespace elet::domain::compiler::instruction
             default:
                 assert("Not implemented binary operator in 'transformImmediateToRegisterExpression'.");
         }
-        return output::RegisterResult(scratchRegister, registerSize, boundSize);
+        return output::RegisterResult(scratchRegister, registerSize);
     }
 
 
@@ -474,10 +475,8 @@ namespace elet::domain::compiler::instruction
         // address and apply it on the operation.
 
 
-        // Decrease scratch register index, since we should leave them back after usage
 
-        RegisterSize boundSize = binaryExpression->operatingType->boundSize();
-        RegisterSize registerSize = getSupportedRegisterSize(boundSize);
+        RegisterSize registerSize = binaryExpression->operatingType->size();
         if (binaryExpression->binaryOperatorKind == ast::BinaryOperatorKind::Modulo)
         {
             output::OperandRegister divisionResultRegister = borrowScratchRegister();
@@ -491,8 +490,9 @@ namespace elet::domain::compiler::instruction
             {
                 addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
             }
-            return output::RegisterResult(destination, registerSize, boundSize);
+            return output::RegisterResult(destination, registerSize);
         }
+        // Decrease scratch register index, since we should leave them back after usage
         _scratchRegisterIndex -= 2;
         output::OperandRegister destination = borrowScratchRegister();
         switch (binaryExpression->binaryOperatorKind)
@@ -533,7 +533,7 @@ namespace elet::domain::compiler::instruction
                 throw std::runtime_error("Not implemented binary operator kind for memory to memory binary expression.");
         }
 
-        return output::RegisterResult(destination, registerSize, boundSize);
+        return output::RegisterResult(destination, registerSize);
     }
 
 
