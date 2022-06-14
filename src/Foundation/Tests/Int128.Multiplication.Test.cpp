@@ -52,6 +52,14 @@ namespace elet::foundation::test
     }
 
 
+    TEST(Int128, Multiplication_NegativeNegative)
+    {
+        Int128 op1(-1);
+        Int128 op2(-1);
+        EXPECT_EQ(op1 * op2, Int128(1));
+    }
+
+
     TEST(Int128, Multiplication_Overflow0)
     {
         Int128 op1({ 0x80000000, 0, 0, 0 });

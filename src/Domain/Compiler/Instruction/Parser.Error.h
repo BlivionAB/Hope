@@ -16,7 +16,7 @@ struct CompilerError : std::exception
 
     template<typename... Args>
     explicit CompilerError(const char* message, Args... args):
-            message(std::format(message, args...).c_str())
+            message(std::vformat(message, std::make_format_args(args...)).c_str())
     { }
 };
 

@@ -1,5 +1,5 @@
 error: Undefined binary operator for type 'bool'.
 --> main.hs:7:21
   | 
-7 |         return true + true;}}
+7 |         return true + true;
   |                     ^

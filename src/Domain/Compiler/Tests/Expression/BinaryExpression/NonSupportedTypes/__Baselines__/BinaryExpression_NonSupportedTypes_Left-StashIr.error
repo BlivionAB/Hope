@@ -1,5 +1,5 @@
 error: Type 'bool' and 's32 1' are not binary operable.
 --> main.hs:7:16
   | 
-7 |         return true + 1;}}
+7 |         return true + 1;
   |                ^^^^^^^^

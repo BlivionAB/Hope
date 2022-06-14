@@ -273,7 +273,7 @@ namespace elet::domain::compiler::ast
                 }
                 else if (left->minValue.isNegative() && right->minValue.isNegative())
                 {
-                    minValue = min(left->minValue * right->minValue, left->minValue * right->maxValue, left->maxValue * right->minValue);
+                    minValue = Int128::min(left->minValue * right->minValue, left->minValue * right->maxValue, left->maxValue * right->minValue);
                 }
                 else if (left->maxValue.isNegative())
                 {
@@ -297,9 +297,12 @@ namespace elet::domain::compiler::ast
                 }
                 else
                 {
-                    maxValue = min(left->minValue / right->minValue, left->minValue / right->maxValue, left->maxValue / right->minValue, left->maxValue / right->maxValue);
-                    minValue = min(left->minValue / right->minValue, left->minValue / right->maxValue, left->maxValue / right->minValue, left->maxValue / right->maxValue);
+                    maxValue = Int128::min(left->minValue / right->minValue, left->minValue / right->maxValue, left->maxValue / right->minValue, left->maxValue / right->maxValue);
+                    minValue = Int128::min(left->minValue / right->minValue, left->minValue / right->maxValue, left->maxValue / right->minValue, left->maxValue / right->maxValue);
                 }
+                break;
+            case BinaryOperatorKind::Modulo:
+                setMinMaxOfModuloExpression(left, right, minValue, maxValue);
                 break;
             case BinaryOperatorKind::BitwiseAnd:
                 if (left->minValue == left->maxValue && right->minValue == right->maxValue)
@@ -308,7 +311,7 @@ namespace elet::domain::compiler::ast
                 }
                 else
                 {
-                    if (max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
+                    if (Int128::max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
                     {
                         minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
                         maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
@@ -327,7 +330,7 @@ namespace elet::domain::compiler::ast
                 }
                 else
                 {
-                    if (max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
+                    if (Int128::max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
                     {
                         minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
                         maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
@@ -346,7 +349,7 @@ namespace elet::domain::compiler::ast
                 }
                 else
                 {
-                    if (max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
+                    if (Int128::max(left->maxValue, right->maxValue) <= static_cast<uint64_t>(IntegerLimit::U32Max))
                     {
                         minValue = static_cast<uint64_t>(IntegerLimit::U32Min);
                         maxValue = static_cast<uint64_t>(IntegerLimit::U32Max);
@@ -381,6 +384,85 @@ namespace elet::domain::compiler::ast
         }
         addError<error::TypeMismatchBinaryOperationError>(binaryExpression, left, right);
         return anyType;
+    }
+
+
+    void
+    Checker::setMinMaxOfModuloExpression(const Type* left, const Type* right, Int128& minValue, Int128& maxValue) const
+    {
+        Int128 absRightMin = Int128::abs(right->minValue);
+        Int128 absRightMax = Int128::abs(right->maxValue);
+        Int128 absMaxOfAbsRightMinMax = Int128::max(absRightMin, absRightMax);
+
+        if (left->minValue.isNegative())
+        {
+            Int128 absMin = Int128::abs(left->minValue);
+            if (absMin > absMaxOfAbsRightMinMax)
+            {
+                minValue = -(absMaxOfAbsRightMinMax - Int128(1));
+            }
+            else
+            {
+                minValue = -absMin;
+            }
+            if (left->maxValue.isNegative())
+            {
+                Int128 absMax = Int128::abs(left->maxValue);
+                if (absMax >= absMaxOfAbsRightMinMax)
+                {
+                    maxValue = 0;
+                }
+                else
+                {
+                    maxValue = -absMax;
+                }
+            }
+            else
+            {
+                Int128 absMax = left->maxValue;
+                if (absMax > absMaxOfAbsRightMinMax)
+                {
+                    maxValue = absMaxOfAbsRightMinMax - Int128(1);
+                }
+                else if (absMax == absMaxOfAbsRightMinMax)
+                {
+                    maxValue = 0;
+                }
+                else
+                {
+                    maxValue = absMax;
+                }
+            }
+        }
+        else
+        {
+            Int128 absMin = left->minValue;
+            if (absMin > absMaxOfAbsRightMinMax)
+            {
+                minValue = absMaxOfAbsRightMinMax - Int128(1);
+            }
+            else if (absMin == absMaxOfAbsRightMinMax)
+            {
+                minValue = 0;
+            }
+            else
+            {
+                minValue = absMin;
+            }
+            Int128 absMax = left->maxValue;
+            if (absMax > absMaxOfAbsRightMinMax)
+            {
+                maxValue = absMaxOfAbsRightMinMax - Int128(1);
+            }
+            else if (absMax == absMaxOfAbsRightMinMax)
+            {
+                minValue = 0;
+            }
+            else
+            {
+                maxValue = absMax;
+            }
+        }
     }
 
 
@@ -795,6 +877,10 @@ namespace elet::domain::compiler::ast
         {
             return true;
         }
+        if (isBooleanType(placeholder) && isBooleanType(target))
+        {
+            return true;
+        }
         if (isIntegralType(placeholder) && isIntegralType(target))
         {
             return checkIntegralTypeAndBoundsAssignability(placeholder, target, targetSyntax);
@@ -917,14 +1003,14 @@ namespace elet::domain::compiler::ast
 
 
     bool
-    Checker::isBooleanType(Type* type)
+    Checker::isBooleanType(const Type* type) const
     {
         return type->kind == TypeKind::Bool;
     }
 
 
     bool
-    Checker::isAny(Type* type)
+    Checker::isAny(const Type* type) const
     {
         return type->kind == TypeKind::Any;
     }
@@ -946,8 +1032,8 @@ namespace elet::domain::compiler::ast
     Type*
     Checker::createOperatingType(const Type* resultingType, const Type* left, const Type* right)
     {
-        Int128 maxValue = max(resultingType->maxValue, left->maxValue, right->maxValue);
-        Int128 minValue = min(resultingType->minValue, left->minValue, right->minValue);
+        Int128 maxValue = Int128::max(resultingType->maxValue, left->maxValue, right->maxValue);
+        Int128 minValue = Int128::min(resultingType->minValue, left->minValue, right->minValue);
         if (left->sign() == right->sign())
         {
             if (left->sign() == Sign::Signed && right->sign() == Sign::Signed)

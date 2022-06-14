@@ -7,12 +7,12 @@
 
 namespace elet::domain::compiler::test
 {
-    class BinaryExpression_BoundedOperationsFixture : public CompileFixture
+    class BinaryExpression_BoundsCheckingFixture : public CompileFixture
     {
         std::filesystem::path
         localTestPath() override
         {
-            return "Expression/BinaryExpression/BoundedOperations";
+            return "Expression/BinaryExpression/BoundsChecking";
         }
     };
 }

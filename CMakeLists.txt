@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
 project(Elet)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(third_party/googletest)
+
+if(MSVC)
+    add_compile_options(/EHa)
+endif()
 
 include_directories(
     src

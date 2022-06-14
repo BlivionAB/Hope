@@ -5,6 +5,7 @@
 #include <Foundation/Utf8String.h>
 #include <Foundation/Utf8StringView.h>
 #include <Foundation/List.h>
+#include <Foundation/Int128.h>
 
 
 namespace elet::foundation
@@ -68,13 +69,19 @@ namespace elet::foundation
         write(char ch);
 
         void
+        write(Utf8String::Character ch);
+
+        void
         write(int32_t integer);
 
         void
         write(int64_t integer);
 
         void
-        writeDecimal(uint64_t integer);
+        write(const Int128& integer);
+
+        void
+        writeDecimal(Int128 integer);
 
         void
         write(uint64_t integer);
@@ -102,6 +109,9 @@ namespace elet::foundation
 
         void
         setStartSlice();
+
+        void
+        writeIndentedText(const Utf8String& text);
 
     private:
 

@@ -5,7 +5,7 @@ namespace elet::domain::compiler::test
 {
     TEST_F(BooleanLiteralFixture, BooleanLiteral_True)
     {
-        testFunction("var a = true;", "void");
+        testFunction("var a: bool = true;", "void");
 
         EXPECT_TRUE(testProject({
             .baselineName = "BooleanLiteral_True",
@@ -18,7 +18,7 @@ namespace elet::domain::compiler::test
 
     TEST_F(BooleanLiteralFixture, BooleanLiteral_False)
     {
-        testFunction("var a = false;", "void");
+        testFunction("var a: bool = false;", "void");
 
         EXPECT_TRUE(testProject({
             .baselineName = "BooleanLiteral_False",

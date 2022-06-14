@@ -50,6 +50,14 @@ namespace elet::foundation
 
 
     void
+    TextWriter::write(Utf8String::Character ch)
+    {
+        _output += static_cast<char>(ch);
+        _column += 1;
+    }
+
+
+    void
     TextWriter::writeZeroLength(const Utf8StringView& text)
     {
         _output += text;
@@ -362,6 +370,21 @@ namespace elet::foundation
 
 
     void
+    TextWriter::write(const Int128& integer)
+    {
+        if (integer < 0)
+        {
+            write("-");
+            writeDecimal(integer * Int128(-1));
+        }
+        else
+        {
+            writeDecimal(integer);
+        }
+    }
+
+
+    void
     TextWriter::write(uint64_t integer)
     {
         writeDecimal(integer);
@@ -369,18 +392,18 @@ namespace elet::foundation
 
 
     void
-    TextWriter::writeDecimal(uint64_t integer)
+    TextWriter::writeDecimal(Int128 integer)
     {
-        int rest = integer;
+        Int128 rest = integer;
         bool hasSeenNonZeroInt = false;
         int baseSize = 19;
         while (baseSize >= 0)
         {
-            uint64_t base = pow(10, baseSize);
-            uint64_t result = rest / base;
-            if (result != 0 || hasSeenNonZeroInt)
+            Int128 base = Int128::pow(10, baseSize);
+            Int128 result = rest / base;
+            if (result != Int128(0) || hasSeenNonZeroInt)
             {
-                writeCharacter(result + '0');
+                writeCharacter(static_cast<uint32_t>(result) + '0');
                 hasSeenNonZeroInt = true;
             }
             rest = rest % base;
@@ -389,6 +412,41 @@ namespace elet::foundation
         if (!hasSeenNonZeroInt)
         {
             write("0");
+        }
+    }
+
+
+    void
+    TextWriter::writeIndentedText(const Utf8String& text)
+    {
+        bool firstLine = true;
+        bool trackIndentation = true;
+        int currentIndentation = 0;
+        for (const Utf8String::Character ch : text)
+        {
+            if (ch == Utf8String::Character::Newline)
+            {
+                trackIndentation = true;
+                newline();
+                continue;
+            }
+            if (trackIndentation && ch == Utf8String::Character::Space)
+            {
+                currentIndentation++;
+                continue;
+            }
+            if (trackIndentation && !firstLine)
+            {
+                writeIndent();
+            }
+            for (int i = 0; i < currentIndentation; i++)
+            {
+                space();
+            }
+            currentIndentation = 0;
+            trackIndentation = false;
+            firstLine = false;
+            write(ch);
         }
     }
 }

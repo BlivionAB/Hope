@@ -118,35 +118,65 @@ namespace elet::foundation
     Int128
     Int128::operator *(const Int128& other) const
     {
-        Int128 s;
         M64 c;
-        c.u64 = static_cast<uint64_t>(value[0]) * static_cast<uint64_t>(other.value[0]);
-        s.value[0] = c.u32.lo;
-        c.u64 = static_cast<uint64_t>(value[1]) * static_cast<uint64_t>(other.value[0]) + c.u32.hi;
-        s.value[1] = c.u32.lo;
-        c.u64 = static_cast<uint64_t>(value[2]) * static_cast<uint64_t>(other.value[0]) + c.u32.hi;
-        s.value[2] = c.u32.lo;
-        c.u64 = static_cast<uint64_t>(value[3]) * static_cast<uint64_t>(other.value[0]) + c.u32.hi;
-        s.value[3] = c.u32.lo;
+        M64 co1;
+        std::array<uint32_t, 8> Z;
+        bool thisSign = isNegative();
+        bool otherSign = other.isNegative();
+
+        mulSet(Z, value, other.value[0]);
+        std::array<uint32_t, 5>* s = reinterpret_cast<std::array<uint32_t, 5>*>(&Z[1]);
+        mulAdd(*s, value, other.value[1]);
+        s = reinterpret_cast<std::array<uint32_t, 5>*>(&Z[2]);
+        mulAdd(*s, value, other.value[2]);
+        s = reinterpret_cast<std::array<uint32_t, 5>*>(&Z[3]);
+        mulAdd(*s, value, 0x7fffffff & other.value[3]);
+
+        co1.u64 = static_cast<uint64_t>(thisSign) * (static_cast<uint64_t>(~other.value[0]) + 1);
+        c.u64 = static_cast<uint64_t>(Z[3]) + (co1.u32.lo << 31);
+        Z[3] = c.u32.lo;
+
+        co1.u64 = static_cast<uint64_t>(otherSign) * (static_cast<uint64_t>(~value[0]) + 1);
+        c.u64 = static_cast<uint64_t>(Z[3]) + (co1.u32.lo << 31);
+        Z[3] = c.u32.lo;
+
+        std::array<uint32_t, 4>* s2 = reinterpret_cast<std::array<uint32_t, 4>*>(&Z[0]);
+        return Int128(*s2);
+    }
 
 
-        c.u64 = static_cast<uint64_t>(value[0]) * static_cast<uint64_t>(other.value[1]);
-        s.value[1] += c.u32.lo;
-        c.u64 = static_cast<uint64_t>(value[1]) * static_cast<uint64_t>(other.value[1]) + c.u32.hi;
-        s.value[2] += c.u32.lo;
-        c.u64 = static_cast<uint64_t>(value[2]) * static_cast<uint64_t>(other.value[1]) + c.u32.hi;
-        s.value[3] += c.u32.lo;
+    void
+    Int128::mulAdd(std::array<uint32_t, 5>& Z, const std::array<uint32_t, 4>& Y, const uint32_t& X) const
+    {
+        M64 c;
+        c.u64 = static_cast<uint64_t>(Y[0]) * X + Z[0];
+        Z[0] = c.u32.lo;
+        c.u64 = static_cast<uint64_t>(Y[1]) * X + c.u32.hi + Z[1];
+        Z[1] = c.u32.lo;
+        c.u64 = static_cast<uint64_t>(Y[2]) * X + c.u32.hi + Z[2];
+        Z[2] = c.u32.lo;
+        c.u64 = static_cast<uint64_t>(0x7fffffff & Y[3]) * X + Z[3] + c.u32.hi;
+        Z[3] = c.u32.lo;
+        c.u64 = static_cast<uint64_t>(Z[4]) + c.u32.hi;
+        Z[4] = c.u32.lo;
+    }
 
-
-        c.u64 = static_cast<uint64_t>(value[0]) * static_cast<uint64_t>(other.value[2]);
-        s.value[2] += c.u32.lo;
-        c.u64 = static_cast<uint64_t>(value[1]) * static_cast<uint64_t>(other.value[2]) + c.u32.hi;
-        s.value[3] += c.u32.lo;
-
-
-        c.u64 = static_cast<uint64_t>(value[0]) * static_cast<uint64_t>(other.value[3]);
-        s.value[3] += c.u32.lo;
-        return s;
+    void
+    Int128::mulSet(std::array<uint32_t, 8>& Z, const std::array<uint32_t, 4>& Y, uint32_t X) const
+    {
+        M64 c;
+        c.u64 = static_cast<uint64_t>(Y[0]) * X;
+        Z[0] = c.u32.lo;
+        c.u64 = static_cast<uint64_t>(Y[1]) * X + c.u32.hi;
+        Z[1] = c.u32.lo;
+        c.u64 = static_cast<uint64_t>(Y[2]) * X + c.u32.hi;
+        Z[2] = c.u32.lo;
+        c.u64 = static_cast<uint64_t>(0x7fffffff & Y[3]) * X + c.u32.hi;
+        Z[3] = c.u32.lo;
+        Z[4] = c.u32.hi;
+        Z[5] = 0;
+        Z[6] = 0;
+        Z[7] = 0;
     }
 
 
@@ -197,7 +227,7 @@ namespace elet::foundation
             A = A << 1;
             if (Q.isNegative())
             {
-                A = A + 1;
+                A = A + Int128(1);
             }
             if (success)
             {
@@ -215,7 +245,7 @@ namespace elet::foundation
             else
             {
                 Q = Q << 1;
-                Q = Q + 1;
+                Q = Q + Int128(1);
                 success = true;
             }
         }
@@ -719,6 +749,23 @@ namespace elet::foundation
 
 
     bool
+    Int128::operator !=(const Int128& other) const
+    {
+        return !(*this == other);
+    }
+
+
+    bool
+    Int128::operator ==(const Int128& other) const
+    {
+        return value[0] == other.value[0]
+            && value[1] == other.value[1]
+            && value[2] == other.value[2]
+            && value[3] == other.value[3];
+    }
+
+
+    bool
     Int128::operator >=(uint64_t other) const
     {
         if (*this == other)
@@ -738,7 +785,7 @@ namespace elet::foundation
         v[1] = ~value[1];
         v[0] = ~value[0];
         Int128 res(v);
-        return res + 1;
+        return res + Int128(1);
     }
 
 
@@ -817,13 +864,6 @@ namespace elet::foundation
         });
 
         return s;
-    }
-
-
-    bool
-    operator ==(const Int128& op1, const Int128& op2)
-    {
-        return op1.isEqual(op2);
     }
 
 
@@ -908,7 +948,7 @@ namespace elet::foundation
             Int128 accumulated = *this;
             for (int e = 38; e >= 0; e--)
             {
-                Int128 f = power(10, e);
+                Int128 f = pow(10, e);
                 Int128 quotient = accumulated / f;
                 if (!encounteredNonZero && quotient != Int128(0))
                 {
@@ -932,9 +972,19 @@ namespace elet::foundation
         return "-" + s.toString();
     }
 
+    Int128
+    Int128::abs(Int128 v)
+    {
+        if (v.isNegative())
+        {
+            return v.onesComplement() + Int128(1);
+        }
+        return v;
+    }
+
 
     Int128
-    power(Int128 a, Int128 b)
+    Int128::pow(Int128 a, Int128 b)
     {
         Int128 temp;
         Int128 zero(0);
@@ -942,8 +992,8 @@ namespace elet::foundation
         {
             return 1;
         }
-        temp = power(a, b / 2);
-        if (b % 2 == zero)
+        temp = pow(a, b / Int128(2));
+        if (b % Int128(2) == zero)
         {
             return temp * temp;
         }
@@ -952,7 +1002,7 @@ namespace elet::foundation
 
 
     Int128
-    max(Int128 a, Int128 b)
+    Int128::max(Int128 a, Int128 b)
     {
         if (a >= b)
         {
@@ -966,21 +1016,21 @@ namespace elet::foundation
 
 
     Int128
-    max(Int128 a, Int128 b, Int128 c)
+    Int128::max(Int128 a, Int128 b, Int128 c)
     {
         return max(max(a, b), c);
     }
 
 
     Int128
-    max(Int128 a, Int128 b, Int128 c, Int128 d)
+    Int128::max(Int128 a, Int128 b, Int128 c, Int128 d)
     {
         return max(max(a, b, c), d);
     }
 
 
     Int128
-    min(Int128 a, Int128 b)
+    Int128::min(Int128 a, Int128 b)
     {
         if (a <= b)
         {
@@ -994,15 +1044,20 @@ namespace elet::foundation
 
 
     Int128
-    min(Int128 a, Int128 b, Int128 c)
+    Int128::min(Int128 a, Int128 b, Int128 c)
     {
         return min(min(a, b), c);
     }
 
 
     Int128
-    min(Int128 a, Int128 b, Int128 c, Int128 d)
+    Int128::min(Int128 a, Int128 b, Int128 c, Int128 d)
     {
         return min(min(a, b, c), d);
+    }
+
+    Int128::operator uint32_t() const
+    {
+        return value[0];
     }
 }

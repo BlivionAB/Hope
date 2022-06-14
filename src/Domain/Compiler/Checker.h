@@ -154,13 +154,13 @@ namespace elet::domain::compiler::ast
         checkBooleanLiteral(BooleanLiteral* literal);
 
         bool
-        isBooleanType(Type* type);
+        isBooleanType(const Type* type) const;
 
         bool
         isLogicalOperation(BinaryExpression* binaryExpression);
 
         bool
-        isAny(Type* type);
+        isAny(const Type* type) const;
 
         std::string
         getTypeString(const Type* type);
@@ -197,6 +197,9 @@ namespace elet::domain::compiler::ast
 
     Type*
     checkTypeCast(const TypeCast* typeCast);
+
+    void
+    setMinMaxOfModuloExpression(const Type* left, const Type* right, Int128& minValue, Int128& maxValue) const;
 };
 }
 

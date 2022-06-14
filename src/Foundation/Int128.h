@@ -41,6 +41,12 @@ namespace elet::foundation
         Int128
         operator *(const Int128& other) const;
 
+        void
+        mulSet(std::array<uint32_t, 8>& Z, const std::array<uint32_t, 4>& Y, uint32_t X) const;
+
+        void
+        mulAdd(std::array<uint32_t, 5>& Z, const std::array<uint32_t, 4>& Y, const uint32_t& X) const;
+
         Int128
         operator /(const Int128& other) const;
 
@@ -87,6 +93,12 @@ namespace elet::foundation
         operator ==(int64_t other) const;
 
         bool
+        operator ==(const Int128& other) const;
+
+        bool
+        operator !=(const Int128& other) const;
+
+        bool
         operator <=(uint64_t other) const;
 
         bool
@@ -97,6 +109,8 @@ namespace elet::foundation
 
         bool
         operator >=(int64_t other) const;
+
+        operator uint32_t() const;
 
         Int128
         operator &(const Int128& other) const;
@@ -128,6 +142,38 @@ namespace elet::foundation
         Int128
         onesComplement() const;
 
+        static
+        Int128
+        abs(Int128 v);
+
+        static
+        Int128
+        pow(Int128 a, Int128 b);
+
+        static
+        Int128
+        max(Int128 a, Int128 b);
+
+        static
+        Int128
+        max(Int128 a, Int128 b, Int128 c);
+
+        static
+        Int128
+        max(Int128 a, Int128 b, Int128 c, Int128 d);
+
+        static
+        Int128
+        min(Int128 a, Int128 b);
+
+        static
+        Int128
+        min(Int128 a, Int128 b, Int128 c);
+
+        static
+        Int128
+        min(Int128 a, Int128 b, Int128 c, Int128 d);
+
     private:
 
         std::array<uint32_t, 4>
@@ -146,31 +192,6 @@ namespace elet::foundation
         remainder;
     };
 
-
-    bool
-    operator ==(const Int128& op1, const Int128& op2);
-
-
-    Int128
-    power(Int128 a, Int128 b);
-
-    Int128
-    max(Int128 a, Int128 b);
-
-    Int128
-    max(Int128 a, Int128 b, Int128 c);
-
-    Int128
-    max(Int128 a, Int128 b, Int128 c, Int128 d);
-
-    Int128
-    min(Int128 a, Int128 b);
-
-    Int128
-    min(Int128 a, Int128 b, Int128 c);
-
-    Int128
-    min(Int128 a, Int128 b, Int128 c, Int128 d);
 
     Int128
     operator ~(const Int128& op);

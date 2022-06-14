@@ -29,10 +29,10 @@ namespace elet::domain::compiler::ast::error
         message;
 
         template<typename... Args>
-        explicit CompileError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, Args... args):
+        explicit CompileError(const SourceFile* sourceFile, const Syntax* syntax, std::string_view message, Args... args):
             syntax(syntax),
             sourceFile(sourceFile),
-            message(std::format(message, args...).c_str())
+            message(std::vformat(message, std::make_format_args(args...)).c_str())
         { }
 
         explicit CompileError(const SourceFile* sourceFile, const Syntax* syntax, std::string message):
@@ -63,7 +63,7 @@ namespace elet::domain::compiler::ast::error
             sourceFile(sourceFile),
             positionAddress(position),
             endAddress(nullptr),
-            message(std::format(message, args...).c_str())
+            message(std::vformat(message, std::make_format_args(args...)).c_str())
         { }
 
 
@@ -72,7 +72,7 @@ namespace elet::domain::compiler::ast::error
             sourceFile(sourceFile),
             positionAddress(position),
             endAddress(endAddress),
-            message(std::format(message, args...).c_str())
+            message(std::vformat(message, std::make_format_args(args...)).c_str())
         { }
     };
 
@@ -101,20 +101,20 @@ namespace elet::domain::compiler::ast::error
 
         TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, const Type* type1);
 
-        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, const Type* type1, const Type* type2):
-            SyntaxError(sourceFile, syntax, std::format(message, getTypeString(type1), getTypeString(type2)))
+        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string_view message, const Type* type1, const Type* type2):
+            SyntaxError(sourceFile, syntax, std::vformat(message, std::make_format_args(getTypeString(type1), getTypeString(type2))))
         { }
 
-        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, std::string str1):
-            SyntaxError(sourceFile, syntax, std::format(message, str1))
+        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string_view message, std::string str1):
+            SyntaxError(sourceFile, syntax, std::vformat(message, std::make_format_args(str1)))
         { }
 
-        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, Utf8StringView str1, const Type* type1):
-            SyntaxError(sourceFile, syntax, std::format(message, std::string(str1.cStringBegin(), str1.cStringEnd()), getTypeString(type1)))
+        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string_view message, Utf8StringView str1, const Type* type1):
+            SyntaxError(sourceFile, syntax, std::vformat(message, std::make_format_args(std::string(str1.cStringBegin(), str1.cStringEnd()), getTypeString(type1))))
         { }
 
-        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string message, std::string str1, std::string str2):
-            SyntaxError(sourceFile, syntax, std::format(message, str1, str2))
+        TypeCheckError(const SourceFile* sourceFile, const Syntax* syntax, std::string_view message, std::string str1, std::string str2):
+            SyntaxError(sourceFile, syntax, std::vformat(message, std::make_format_args(str1, str2)))
         { }
 
         static

@@ -1,0 +1,5 @@
+error: Integral expression of type 's32 2147483648' exceeds maximum value of type 's32'.
+--> main.hs:9:16
+  | 
+9 |         return x + y;
+  |                ^^^^^

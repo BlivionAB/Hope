@@ -1,8 +1,0 @@
-Test():
-    StrQ [Sp + #-8], #0x1
-    StrQ [Sp + #-16], #0x8000_0001
-    LdrQ X0, [Sp + #-8]
-    LdrQ X1, [Sp + #-16]
-    SubQ X0, X0, X1
-    MovQ OpRet, X0
-

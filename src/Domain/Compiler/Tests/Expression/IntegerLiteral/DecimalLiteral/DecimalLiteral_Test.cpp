@@ -38,6 +38,7 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
+            .acceptBaselines = true
         }));
     }
 
@@ -51,6 +52,7 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
+            .acceptBaselines = true
         }));
     }
 
@@ -92,6 +94,7 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
+            .acceptBaselines = true
         }));
     }
 
@@ -106,6 +109,7 @@ namespace elet::domain::compiler::test
                 CompilationTarget::StashIR
             },
             .printTypeBaseline = true,
+            .acceptBaselines = true
         }));
     }
 
@@ -119,13 +123,15 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .printTypeBaseline = true
+            .printTypeBaseline = true,
+            .acceptBaselines = true
         }));
     }
 
 
     TEST_F(DecimalLiteralFixture, DecimalLiteral_S64Overflow)
     {
+        // FIXME: U64 excession instead of s64?
         testFunction("return 9223372036854775808;", "s64");
 
         EXPECT_TRUE(testProject({

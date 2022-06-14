@@ -58,14 +58,14 @@ namespace elet::domain::compiler::test
         void
         writeExpression(const ast::Expression* expression, List<TypeEntry>& typeEntries);
 
-        void
-        writeIntegerLiteral(const ast::IntegerLiteral* integerLiteral, List<TypeEntry>& typeEntries);
-
         TextScanner::Location
         writeUntilPositionAddress(const char* positionAddress);
 
         void
         writeType(ast::Type* type);
+
+        void
+        writeBounds(const ast::Type* type);
     };
 }
 

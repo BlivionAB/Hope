@@ -303,8 +303,9 @@ namespace elet::domain::compiler::test
             tw.writeLine("fn Test(): " + _testReturnType);
             tw.writeLine("{");
             tw.indent();
-            tw.write(_testSource);
+            tw.writeIndentedText(_testSource);
             tw.unindent();
+            tw.newline();
             tw.write("}");
             if (options.writeExecutable)
             {
@@ -316,6 +317,7 @@ namespace elet::domain::compiler::test
                 tw.writeLine("}");
             }
             tw.unindent();
+            tw.newline();
             tw.write("}");
             project.setEntrySourceFile("main.hs",tw.toString());
         }
@@ -344,7 +346,7 @@ namespace elet::domain::compiler::test
                     Utf8String typeBaseline = typeBaselinePrinter.printSourceFiles(sourceFiles);
                     checkBaseline(typeBaseline, options, compilerOptions, result, "types");
                 }
-                if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
+                else if (compilerOptions.assemblyTarget == AssemblyTarget::StashIR)
                 {
                     std::queue<output::FunctionRoutine*> output = compiler.getStashIR();
                     checkStashIRBaseline(output, options, compilerOptions, result);

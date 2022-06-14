@@ -67,21 +67,9 @@ namespace elet::domain::compiler::test
     void
     TypeBaselinePrinter::writeExpression(const ast::Expression* expression, List<TypeEntry>& typeEntries)
     {
-        switch (expression->kind)
-        {
-            case ast::SyntaxKind::IntegerLiteral:
-                writeIntegerLiteral(reinterpret_cast<const ast::IntegerLiteral*>(expression), typeEntries);
-                break;
-        }
-    }
-
-
-    void
-    TypeBaselinePrinter::writeIntegerLiteral(const ast::IntegerLiteral* integerLiteral, List<TypeEntry>& typeEntries)
-    {
-        TextScanner::Location startLocation = writeUntilPositionAddress(integerLiteral->start);
-        TextScanner::Location endLocation = writeUntilPositionAddress(integerLiteral->end);
-        typeEntries.emplace(startLocation, integerLiteral->resultingType, endLocation.column - startLocation.column);
+        TextScanner::Location startLocation = writeUntilPositionAddress(expression->start);
+        TextScanner::Location endLocation = writeUntilPositionAddress(expression->end);
+        typeEntries.emplace(startLocation, expression->resultingType, endLocation.column - startLocation.column);
     }
 
 
@@ -116,6 +104,24 @@ namespace elet::domain::compiler::test
                 break;
             default:
                 throw std::runtime_error("Have not implemented integer type yet.");
+        }
+        _tw.space();
+        writeBounds(type);
+    }
+
+
+    void
+    TypeBaselinePrinter::writeBounds(const ast::Type* type)
+    {
+        if (type->minValue == type->maxValue)
+        {
+            _tw.write(type->minValue);
+        }
+        else
+        {
+            _tw.write(type->minValue);
+            _tw.write("..");
+            _tw.write(type->maxValue);
         }
     }
 

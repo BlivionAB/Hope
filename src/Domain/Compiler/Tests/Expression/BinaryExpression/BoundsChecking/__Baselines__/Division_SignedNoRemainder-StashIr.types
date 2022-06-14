@@ -1,0 +1,14 @@
+domain Common::MyApplication
+{
+
+public:
+    fn Test(): s32
+    {
+        var x: s32 = -4;
+                      ~  s32 -4
+        var y: s32 = 2;
+                     ~  s32 2
+        return x / y;
+               ~~~~~  s32 -2
+    }
+}
