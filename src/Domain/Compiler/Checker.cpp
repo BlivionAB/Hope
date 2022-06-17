@@ -142,12 +142,12 @@ namespace elet::domain::compiler::ast
     {
         if (integerLiteral->value > getMaxLimitFromType(operatingType))
         {
-            addError<error::IntegralExpressionGlobalOverflowError>(integerLiteral);
+            addError<error::IntegralLiteralOverflowError>(integerLiteral, getIntegerKind(operatingType));
             return anyType;
         }
         if (integerLiteral->value < getMinLimitFromType(operatingType))
         {
-            addError<error::IntegralExpressionGlobalUnderflowError>(integerLiteral);
+            addError<error::IntegralLiteralUnderflowError>(integerLiteral, getIntegerKind(operatingType));
             return anyType;
         }
         if (integerLiteral->typeCast)
@@ -165,6 +165,33 @@ namespace elet::domain::compiler::ast
                 integerLiteral->value,
                 integerLiteral->value);
     }
+
+    IntegerKind
+    Checker::getIntegerKind(const Type* operatingType) const
+    {
+        switch (operatingType->kind)
+        {
+            case TypeKind::U64:
+                return IntegerKind::U64;
+            case TypeKind::S64:
+                return IntegerKind::S64;
+            case TypeKind::U32:
+                return IntegerKind::U32;
+            case TypeKind::S32:
+                return IntegerKind::S32;
+            case TypeKind::U16:
+                return IntegerKind::U16;
+            case TypeKind::S16:
+                return IntegerKind::S16;
+            case TypeKind::U8:
+                return IntegerKind::U8;
+            case TypeKind::S8:
+                return IntegerKind::S8;
+            default:
+                throw std::runtime_error("Not supported type.");
+        }
+    }
+
 
     Type*
     Checker::checkTypeCast(const TypeCast* typeCast)
@@ -1068,4 +1095,6 @@ namespace elet::domain::compiler::ast
         }
         return type2->kind;
     }
+
+
 }

@@ -2,7 +2,7 @@
 #define ELET_ASSEMBLYWRITER_H
 
 
-#include "Domain/Compiler/Instruction/Assembly/x86/X86_64Writer.h"
+#include "Domain/Compiler/Instruction/Assembly/X86/X86_64Writer.h"
 #include "Domain/Compiler/Compiler.h"
 #include "Instruction.h"
 

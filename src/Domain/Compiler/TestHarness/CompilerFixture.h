@@ -7,6 +7,7 @@
 #include <optional>
 #include "MachOBaselineParser.h"
 #include <Foundation/File.h>
+#include <stdlib.h>
 #include <filesystem>
 #include "Domain/Compiler/TestHarness/TextDiff/MyersDiff.h"
 #include "Domain/Compiler/TestHarness/TextDiff/DiffPrinter.h"
@@ -277,7 +278,10 @@ namespace elet::domain::compiler::test
             {
                 generateTestFunction(options);
             }
-            const char* envvar = std::getenv("ACCEPT_BASELINES");
+            size_t len;
+            char* value;
+            const char* envvar;
+            getenv_s(&len, value, 100, "ACCEPT_BASELINES");
             if (envvar && std::strcmp(envvar, "true") == 0)
             {
                 options.acceptBaselines = true;
@@ -375,10 +379,12 @@ namespace elet::domain::compiler::test
                                         checkTextSegmentBaselines<Aarch64Parser, Aarch64Printer, OneOfInstruction>(options, compilerOptions, output,result);
                                         break;
                                     default:
-                                        assert("Unknown assembly target for MachO.");
+                                        throw std::runtime_error("Unknown assembly target for MachO.");
                                 }
                                 break;
                             case ObjectFileTarget::Pe32:
+                                throw std::runtime_error("We have not implemented Pe32 baseline tests yet.");
+                            default:
                                 throw std::runtime_error("We have not implemented Pe32 baseline tests yet.");
                         }
                     }
@@ -404,11 +410,14 @@ namespace elet::domain::compiler::test
                             return result + "-Aarch64";
                         case AssemblyTarget::x86_64:
                             return result + "-X86_64";
+                        default:
+                            throw std::runtime_error("Architecture not supported.");
                     }
                     break;
                 }
+                default:
+                    throw std::runtime_error("Unknown target in getArchitecture.");
             }
-            throw std::runtime_error("Unknown target in getArchitecture.");
         }
 
 

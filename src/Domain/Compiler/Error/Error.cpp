@@ -100,6 +100,7 @@ namespace elet::domain::compiler::ast::error
                         return result;
                     }
                     break;
+                default:;
             }
             if (type->minValue != type->maxValue)
             {

@@ -7,8 +7,8 @@
 
 #include <Domain/Compiler/Instruction/Assembly/AssemblyWriterInterface.h>
 #include <Domain/Compiler/Instruction/Instruction.h>
-#include "Domain/Compiler/Instruction/Assembly/x86/OpCode/GeneralOpCodes.h"
-#include "Domain/Compiler/Instruction/Assembly/x86/OpCode/AddressForm32.h"
+#include "Domain/Compiler/Instruction/Assembly/X86/OpCode/GeneralOpCodes.h"
+#include "Domain/Compiler/Instruction/Assembly/X86/OpCode/AddressForm32.h"
 
 namespace elet::domain::compiler::instruction::output::x86
 {
@@ -57,7 +57,7 @@ namespace elet::domain::compiler::instruction::output::x86
         writeCStringSection() override;
 
         void
-        setCallingConvention(CallingConvention callingConvention);
+        setCallingConvention(CallingConvention callingConvention) override;
 
     private:
 
@@ -92,7 +92,7 @@ namespace elet::domain::compiler::instruction::output::x86
         writePointer(std::uint64_t address);
 
         void
-        writeFunctionRelocationAddresses(FunctionRoutine* routine);
+        writeFunctionRelocationAddresses(FunctionRoutine* routine) override;
 
         void
         writeInstructionsPadding(uint64_t length);
@@ -107,7 +107,7 @@ namespace elet::domain::compiler::instruction::output::x86
         relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) override;
 
         void
-        relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
+        relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset) override;
 
         void
         writeStoreImmediateInstruction(StoreImmediateInstruction* instruction, FunctionRoutine* function) override;

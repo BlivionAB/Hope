@@ -29,13 +29,14 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
+            .acceptBaselines = true
         }));
     }
 
     Utf8String S32MaxIntString = std::to_string(static_cast<int64_t>(SignedIntegerLimit::S32Max));
     Utf8String U64MaxIntString = std::to_string(static_cast<uint64_t>(IntegerLimit::U64Max));
 
-    INSTANTIATE_TEST_CASE_P(
+    INSTANTIATE_TEST_SUITE_P(
         BinaryExpression_OverflowError,
         BinaryExpression_OverflowErrorFixture,
         ::testing::Values(

@@ -45,7 +45,7 @@ TEST_F(FunctionFixture, ExternalFunction)
 //            CompilationTarget::Pe32_x86_64,
             CompilationTarget::MachO_x86_64,
             CompilationTarget::MachO_Aarch64,
-            CompilationTarget::StashIR
+//            CompilationTarget::StashIR
         },
         .generateTestFunction = false
     }));

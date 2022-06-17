@@ -46,7 +46,7 @@ namespace elet::domain::compiler::instruction::output
         relocateStubHelperOffset(uint64_t offset, uint64_t stubHelperAddress, uint64_t textSegmentStartOffset) override;
 
         void
-        relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset);
+        relocateGotBoundRoutine(uint64_t gotOffset, uint64_t offset) override;
 
         void
         writeFunctionPrologue(FunctionRoutine* function) override;
@@ -117,7 +117,7 @@ namespace elet::domain::compiler::instruction::output
     //    writeParameter(ParameterDeclaration* parameterDeclaration, unsigned int index, FunctionRoutine* routine) override;
 
         void
-        writeFunctionRelocationAddresses(FunctionRoutine* routine);
+        writeFunctionRelocationAddresses(FunctionRoutine* routine) override;
 
         void
         writeAddImmediate64(Aarch64Register rd, Aarch64Register rn, int16_t value, output::FunctionRoutine* function);

@@ -4,27 +4,27 @@ error: Hexadecimal literal must consist of at least one hexadecimal character.
 7 |         var a: s32 = 0xF;
   |                        ^
 error: Hexadecimal literal must consist of at least one hexadecimal character.
---> main.hs:8:16
+--> main.hs:8:24
   | 
-8 | var b: s32 = 0xE;
-  |                ^
+8 |         var b: s32 = 0xE;
+  |                        ^
 error: Hexadecimal literal must consist of at least one hexadecimal character.
---> main.hs:9:16
+--> main.hs:9:24
   | 
-9 | var c: s32 = 0xD;
-  |                ^
+9 |         var c: s32 = 0xD;
+  |                        ^
 error: Hexadecimal literal must consist of at least one hexadecimal character.
---> main.hs:10:16
+--> main.hs:10:24
    | 
-10 | var d: s32 = 0xC;
-   |                ^
+10 |         var d: s32 = 0xC;
+   |                        ^
 error: Hexadecimal literal must consist of at least one hexadecimal character.
---> main.hs:11:16
+--> main.hs:11:24
    | 
-11 | var e: s32 = 0xB;
-   |                ^
+11 |         var e: s32 = 0xB;
+   |                        ^
 error: Hexadecimal literal must consist of at least one hexadecimal character.
---> main.hs:12:16
+--> main.hs:12:24
    | 
-12 | var f: s32 = 0xA;}}
-   |                ^
+12 |         var f: s32 = 0xA;
+   |                        ^

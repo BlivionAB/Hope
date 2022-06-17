@@ -60,21 +60,6 @@ namespace elet::domain::compiler
     };
 
 
-    struct CompilerOptions
-    {
-        AssemblyTarget
-        assemblyTarget;
-
-        ObjectFileTarget
-        objectFileTarget;
-
-        CompilerOptions(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
-            assemblyTarget(assemblyTarget),
-            objectFileTarget(objectFileTarget)
-        { }
-    };
-
-
     // Note: there are no checking in CLion, due to forward declaration of class Compiler in Parser.h
     class Compiler
     {
@@ -82,7 +67,7 @@ namespace elet::domain::compiler
 
         Compiler(
             FileStreamReader& fileReader,
-            CompilerOptions options);
+            CompilerOptions& options);
 
         void
         startWorkers();

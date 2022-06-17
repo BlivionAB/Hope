@@ -20,7 +20,7 @@ namespace elet::domain::compiler::test
         }));
     }
 
-    INSTANTIATE_TEST_CASE_P(
+    INSTANTIATE_TEST_SUITE_P(
         BinaryExpression_BooleanToBoolean_And,
         BinaryExpression_BooleanToBooleanFixture,
         ::testing::Values(
@@ -31,7 +31,7 @@ namespace elet::domain::compiler::test
         ));
 
 
-    INSTANTIATE_TEST_CASE_P(
+    INSTANTIATE_TEST_SUITE_P(
         BinaryExpression_BooleanToBoolean_Or,
         BinaryExpression_BooleanToBooleanFixture,
         ::testing::Values(
@@ -56,7 +56,7 @@ namespace elet::domain::compiler::test
     }
 
 
-    INSTANTIATE_TEST_CASE_P(
+    INSTANTIATE_TEST_SUITE_P(
         BinaryExpression_BooleanToBoolean_OperatorPrecedence,
         BinaryExpression_BooleanToBoolean_OperatorPrecedenceFixture,
         ::testing::Values(

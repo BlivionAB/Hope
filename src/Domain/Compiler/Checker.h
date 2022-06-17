@@ -200,6 +200,9 @@ namespace elet::domain::compiler::ast
 
     void
     setMinMaxOfModuloExpression(const Type* left, const Type* right, Int128& minValue, Int128& maxValue) const;
+
+    IntegerKind
+    getIntegerKind(const Type* operatingType) const;
 };
 }
 

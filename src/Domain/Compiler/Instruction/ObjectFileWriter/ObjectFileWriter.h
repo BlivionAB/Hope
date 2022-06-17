@@ -55,6 +55,8 @@ namespace elet::domain::compiler::instruction::output
                 case AssemblyTarget::Aarch64:
                     assemblyWriter = new Aarch64Writer(&_text);
                     break;
+                default:
+                    throw std::runtime_error("Assembly target is not supported.");
             }
         }
 

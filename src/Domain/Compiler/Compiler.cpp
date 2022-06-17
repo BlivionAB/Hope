@@ -15,7 +15,7 @@ namespace elet::domain::compiler
     using namespace linker::vs;
 
 
-    Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions options):
+    Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions& options):
         _fileStreamReader(fileStreamReader),
         _options(options),
         _parser(new ast::Parser(this->files)),
@@ -26,7 +26,6 @@ namespace elet::domain::compiler
         _transformer = new instruction::Transformer(_dataMutex, options);
         _optimizer = new instruction::output::Optimizer(getOptimizerOptions(options));
         _objectFileWriter = createObjectFileWriter(options);
-
     }
 
 

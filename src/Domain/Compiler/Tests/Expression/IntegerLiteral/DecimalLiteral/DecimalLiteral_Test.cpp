@@ -131,7 +131,6 @@ namespace elet::domain::compiler::test
 
     TEST_F(DecimalLiteralFixture, DecimalLiteral_S64Overflow)
     {
-        // FIXME: U64 excession instead of s64?
         testFunction("return 9223372036854775808;", "s64");
 
         EXPECT_TRUE(testProject({
@@ -141,7 +140,6 @@ namespace elet::domain::compiler::test
             },
         }));
     }
-
 
 
     TEST_F(DecimalLiteralFixture, DecimalLiteral_GlobalUnderflow)

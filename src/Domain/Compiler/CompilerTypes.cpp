@@ -36,4 +36,9 @@ namespace elet::domain::compiler
         }
         return result;
     }
+
+    CompilerOptions::CompilerOptions(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget):
+        assemblyTarget(assemblyTarget),
+        objectFileTarget(objectFileTarget)
+    { }
 }

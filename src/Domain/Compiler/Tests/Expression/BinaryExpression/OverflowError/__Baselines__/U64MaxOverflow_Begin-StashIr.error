@@ -1,5 +1,5 @@
 error: Integral expression exceeds global maximum limit (u64_max).
 --> main.hs:7:16
   | 
-7 |         return 18446744073709551615 + 1;}}
+7 |         return 18446744073709551615 + 1;
   |                ^^^^^^^^^^^^^^^^^^^^^^^^

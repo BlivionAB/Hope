@@ -1,5 +1,5 @@
-error: Integral expression of type 'u64 9223372036854775808' exceeds maximum value of type 's64'.
+error: Value exceeds max limit of 's64'.
 --> main.hs:7:16
   | 
-7 |         return 9223372036854775808;}}
+7 |         return 9223372036854775808;
   |                ^^^^^^^^^^^^^^^^^^^

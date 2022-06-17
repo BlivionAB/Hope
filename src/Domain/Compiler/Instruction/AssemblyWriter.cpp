@@ -1,6 +1,6 @@
 #include "AssemblyWriter.h"
 #include "Domain/Compiler/Instruction/Assembly/Baseline/BaselineWriter.h"
-#include "Domain/Compiler/Instruction/Assembly/x86/X86_64Writer.h"
+#include "Domain/Compiler/Instruction/Assembly/X86/X86_64Writer.h"
 #include "Domain/Compiler/Instruction/Assembly/Aarch/Aarch64Writer.h"
 
 namespace elet::domain::compiler::instruction::output

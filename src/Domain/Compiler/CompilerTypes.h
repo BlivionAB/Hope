@@ -12,6 +12,8 @@ namespace fs = std::filesystem;
 
 namespace elet::domain::compiler
 {
+
+
     enum class IntegerLimit : uint64_t
     {
         U8Min = 0,
@@ -60,6 +62,7 @@ namespace elet::domain::compiler
         U64 = 7,
         S64 = 8,
     };
+
 
     std::string
     integerToString(IntegerKind integerKind);
@@ -156,6 +159,18 @@ namespace elet::domain::compiler
         StashIR,
         MachO,
         Pe32,
+    };
+
+
+    struct CompilerOptions
+    {
+        AssemblyTarget
+        assemblyTarget;
+
+        ObjectFileTarget
+        objectFileTarget;
+
+        CompilerOptions(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget);
     };
 }
 

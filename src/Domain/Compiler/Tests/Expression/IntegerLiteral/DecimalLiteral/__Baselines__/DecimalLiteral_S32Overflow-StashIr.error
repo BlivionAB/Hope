@@ -1,5 +1,5 @@
-error: Integral expression of type 'u32 2147483648' exceeds maximum value of type 's32'.
+error: Value exceeds max limit of 's32'.
 --> main.hs:7:16
   | 
-7 |         return 2147483648;}}
+7 |         return 2147483648;
   |                ^^^^^^^^^^
