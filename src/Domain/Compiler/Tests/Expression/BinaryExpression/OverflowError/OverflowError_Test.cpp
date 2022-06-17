@@ -29,7 +29,6 @@ namespace elet::domain::compiler::test
             .targets = {
                 CompilationTarget::StashIR
             },
-            .acceptBaselines = true
         }));
     }
 
