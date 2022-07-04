@@ -10,22 +10,14 @@ namespace elet::domain::compiler::instruction::output
     class Optimizer
     {
     public:
-
-        struct Options
-        {
-            bool
-            assemblyHasMultiRegisterOperands;
-        };
-
-
-        Optimizer(Options options);
+        Optimizer(const ExpandedCompilerOptions& options);
 
         void
         optimizeRoutine(FunctionRoutine* functionRoutine);
 
     private:
 
-        Options
+        const ExpandedCompilerOptions&
         _options;
 
         bool

@@ -61,6 +61,9 @@ namespace elet::domain::compiler::test
 
         std::optional<bool>
         generateTestFunction = true;
+
+        std::optional<StashIrOption>
+        stashIrOptions;
     };
 
 
@@ -241,8 +244,8 @@ namespace elet::domain::compiler::test
         }
 
 
-        CompilerOptions
-        getCompilerOptionsFromCompilationTarget(const CompilationTarget compilationTarget)
+        ExpandedCompilerOptions
+        getCompilerOptionsFromCompilationTarget(const CompilationTarget compilationTarget, std::optional<StashIrOption> stashIrOption)
         {
             AssemblyTarget assemblyTarget;
             ObjectFileTarget objectFileTarget;
@@ -267,7 +270,17 @@ namespace elet::domain::compiler::test
                 default:
                     throw std::runtime_error("Unknown compilation target.");
             }
-            return CompilerOptions(assemblyTarget, objectFileTarget);
+            ExpandedCompilerOptions options(assemblyTarget, objectFileTarget);
+            if (compilationTarget == CompilationTarget::StashIR)
+            {
+                if (stashIrOption)
+                {
+                    options.assemblyHasMultiRegisterOperands = stashIrOption->assemblyHasMultiRegisterOperands;
+                    options.treatModuloAsDivision = stashIrOption->treatModuloAsDivision;
+                    options.hasProvidedStashIrOptions = true;
+                }
+            }
+            return options;
         }
 
 
@@ -330,7 +343,7 @@ namespace elet::domain::compiler::test
         void
         compileTarget(const CompilationTarget target, const TestProjectOptions& options, testing::AssertionResult& result)
         {
-            CompilerOptions compilerOptions = getCompilerOptionsFromCompilationTarget(target);
+            ExpandedCompilerOptions compilerOptions = getCompilerOptionsFromCompilationTarget(target, options.stashIrOptions);
             Compiler compiler(*project.fileReader, compilerOptions);
 
             compiler.startWorkers();

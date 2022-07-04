@@ -3,7 +3,7 @@
 
 namespace elet::domain::compiler::instruction::output
 {
-    Optimizer::Optimizer(Optimizer::Options options):
+    Optimizer::Optimizer(const ExpandedCompilerOptions& options):
         _options(options)
     {
 

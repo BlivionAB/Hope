@@ -67,7 +67,7 @@ namespace elet::domain::compiler
 
         Compiler(
             FileStreamReader& fileReader,
-            CompilerOptions& options);
+            const ExpandedCompilerOptions& options);
 
         void
         startWorkers();
@@ -329,9 +329,6 @@ namespace elet::domain::compiler
 
         std::mutex
         _relocationWorkMutex;
-
-        const output::Optimizer::Options
-        getOptimizerOptions(CompilerOptions options);
 
         output::ObjectFileWriter*
         createObjectFileWriter(CompilerOptions options);

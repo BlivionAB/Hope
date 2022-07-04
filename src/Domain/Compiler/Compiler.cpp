@@ -1,4 +1,5 @@
 #include "Compiler.h"
+#include "CompilerTypes.h"
 #include <fcntl.h>
 #include <filesystem>
 #include <vector>
@@ -15,7 +16,7 @@ namespace elet::domain::compiler
     using namespace linker::vs;
 
 
-    Compiler::Compiler(FileStreamReader& fileStreamReader, CompilerOptions& options):
+    Compiler::Compiler(FileStreamReader& fileStreamReader, const ExpandedCompilerOptions& options):
         _fileStreamReader(fileStreamReader),
         _options(options),
         _parser(new ast::Parser(this->files)),
@@ -24,7 +25,7 @@ namespace elet::domain::compiler
         _checker(new ast::Checker(_binder))
     {
         _transformer = new instruction::Transformer(_dataMutex, options);
-        _optimizer = new instruction::output::Optimizer(getOptimizerOptions(options));
+        _optimizer = new instruction::output::Optimizer(options);
         _objectFileWriter = createObjectFileWriter(options);
     }
 
@@ -467,17 +468,6 @@ namespace elet::domain::compiler
     Compiler::getSourceFiles()
     {
         return _sourceFiles;
-    }
-
-
-    const output::Optimizer::Options
-    Compiler::getOptimizerOptions(CompilerOptions options)
-    {
-        if (options.assemblyTarget == AssemblyTarget::x86_64)
-        {
-            return { .assemblyHasMultiRegisterOperands = true };
-        }
-        return { .assemblyHasMultiRegisterOperands = false };
     }
 
 

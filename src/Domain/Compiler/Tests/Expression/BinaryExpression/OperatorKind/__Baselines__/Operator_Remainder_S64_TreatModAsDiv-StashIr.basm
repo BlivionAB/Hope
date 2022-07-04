@@ -3,6 +3,7 @@ Test():
     StrQ [Sp + #-16], #0x3
     LdrQ X0, [Sp + #-8]
     LdrQ X1, [Sp + #-16]
-    DivsQ X0, X0, X1
-    MovQ OpRet, X0
+    DivsQ X2, X0, X1
+    MovQ X2, Rem
+    MovQ OpRet, X2
 

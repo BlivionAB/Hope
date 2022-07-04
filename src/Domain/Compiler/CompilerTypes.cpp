@@ -41,4 +41,23 @@ namespace elet::domain::compiler
         assemblyTarget(assemblyTarget),
         objectFileTarget(objectFileTarget)
     { }
+
+
+    ExpandedCompilerOptions::ExpandedCompilerOptions(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget)
+        : CompilerOptions(assemblyTarget, objectFileTarget)
+    {
+        switch (assemblyTarget)
+        {
+            case AssemblyTarget::x86_64:
+                assemblyHasMultiRegisterOperands = true;
+                treatModuloAsDivision = true;
+                break;
+            case AssemblyTarget::Aarch64:
+                assemblyHasMultiRegisterOperands = false;
+                treatModuloAsDivision = false;
+                break;
+            default:;
+        }
+
+    }
 }

@@ -100,7 +100,10 @@ namespace elet::domain::compiler::test
                 writeRegisterToRegisterOperation("Mul", reinterpret_cast<const output::MultiplySignedRegisterToRegisterInstruction*>(instruction));
                 break;
             case output::InstructionKind::DivideSignedRegisterToRegister:
-                writeRegisterToRegisterOperation("Div", reinterpret_cast<const output::DivideSignedRegisterToRegisterInstruction*>(instruction));
+                writeRegisterToRegisterOperation("Divs", reinterpret_cast<const output::DivideSignedRegisterToRegisterInstruction*>(instruction));
+                break;
+            case output::InstructionKind::DivideUnsignedRegisterToRegister:
+                writeRegisterToRegisterOperation("Divu", reinterpret_cast<const output::DivideSignedRegisterToRegisterInstruction*>(instruction));
                 break;
             case output::InstructionKind::OrRegisterToRegister:
                 writeRegisterToRegisterOperation("Or", reinterpret_cast<const output::OrRegisterToRegisterInstruction*>(instruction));
@@ -111,10 +114,28 @@ namespace elet::domain::compiler::test
             case output::InstructionKind::AndRegisterToRegister:
                 writeRegisterToRegisterOperation("And", reinterpret_cast<const output::AndRegisterToRegisterInstruction*>(instruction));
                 break;
+            case output::InstructionKind::MsubRegisterToRegister:
+                writeMsubRegisterToRegisterOperation("Msub", reinterpret_cast<const output::MsubRegisterToRegisterInstruction*>(instruction));
+                break;
             default:
                 throw std::runtime_error("Unknown instruction");
         }
         _tw.newline();
+    }
+
+
+    void
+    StashIRPrinter::writeMsubRegisterToRegisterOperation(const char* name, const output::MsubRegisterToRegisterInstruction* instruction)
+    {
+        writeOperationName("Msub", instruction);
+        _tw.space();
+        writeOperandRegister(instruction->destination);
+        _tw.write(", ");
+        writeOperandRegister(instruction->target);
+        _tw.write(", ");
+        writeOperandRegister(instruction->multiplicand);
+        _tw.write(", ");
+        writeOperandRegister(instruction->multiplier);
     }
 
 
@@ -230,6 +251,9 @@ namespace elet::domain::compiler::test
                 break;
             case output::OperandRegister::Arg3:
                 _tw.write("Arg3");
+                break;
+            case output::OperandRegister::Remainder:
+                _tw.write("Rem");
                 break;
             default:
                 throw std::runtime_error("Unknown OperandRegister in writeOperandRegister.");

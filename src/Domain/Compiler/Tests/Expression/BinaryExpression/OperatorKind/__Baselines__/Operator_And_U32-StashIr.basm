@@ -1,8 +1,8 @@
 Test():
-    StrL [Sp + #-4], #0x3
-    StrL [Sp + #-8], #0x3
+    StrL [Sp + #-4], #0x1
+    StrL [Sp + #-8], #0x8
     LdrL X0, [Sp + #-4]
     LdrL X1, [Sp + #-8]
-    DivsL X0, X0, X1
+    AndL X0, X0, X1
     MovL OpRet, X0
 

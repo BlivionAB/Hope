@@ -40,7 +40,7 @@ namespace elet::domain::compiler::test
             "return 1 + x;", "u64");
 
         EXPECT_TRUE(testProject({
-            .baselineName = "VariableToImmediate_VariableRight_OverflowError",
+            .baselineName = "VariableToImmediate_VariableRightSubType",
             .targets = {
                 CompilationTarget::StashIR
             }

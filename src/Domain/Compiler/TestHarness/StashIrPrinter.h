@@ -77,6 +77,9 @@ namespace elet::domain::compiler::test
 
         void
         writeLoadSignedInstruction(const output::LoadSignedInstruction* instruction);
+
+        void
+        writeMsubRegisterToRegisterOperation(const char* name, const output::MsubRegisterToRegisterInstruction* instruction);
     };
 }
 #endif //ELET_STASHIRPRINTER_H

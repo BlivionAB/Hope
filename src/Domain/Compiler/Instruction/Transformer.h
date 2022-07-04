@@ -8,6 +8,7 @@
 #include <stack>
 #include <cstdint>
 #include <Domain/Compiler/Compiler.h>
+#include <Domain/Compiler/CompilerTypes.h>
 
 
 using namespace elet::domain::compiler::instruction;
@@ -98,7 +99,7 @@ namespace elet::domain::compiler::instruction
     {
     public:
 
-        Transformer(std::mutex& dataMutex, CompilerOptions& compilerOptions);
+        Transformer(std::mutex& dataMutex, const ExpandedCompilerOptions& compilerOptions);
 
         output::FunctionRoutine*
         transform(ast::Declaration* declaration);
@@ -138,7 +139,7 @@ namespace elet::domain::compiler::instruction
         uint64_t
         _defaultFunctionStackOffset;
 
-        CompilerOptions&
+        const ExpandedCompilerOptions&
         _compilerOptions;
 
         List<output::String*>
@@ -221,6 +222,9 @@ namespace elet::domain::compiler::instruction
 
         output::CanonicalExpression
         transformBooleanLiteral(ast::BooleanLiteral* booleanLiteral, uint64_t& offset);
+
+        output::OperandRegister
+        transformModuloExpression(const ast::BinaryExpression* binaryExpression, const output::OperandRegister& target, const output::OperandRegister& value, const RegisterSize& registerSize);
     };
 
 

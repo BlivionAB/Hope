@@ -172,6 +172,37 @@ namespace elet::domain::compiler
 
         CompilerOptions(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget);
     };
+
+    enum class Trilean
+    {
+        Undefined,
+        True,
+        False,
+    };
+
+    struct ExpandedCompilerOptions : CompilerOptions
+    {
+        bool
+        assemblyHasMultiRegisterOperands = false;
+
+        bool
+        treatModuloAsDivision = false;
+
+        bool
+        hasProvidedStashIrOptions = false;
+
+        ExpandedCompilerOptions(AssemblyTarget assemblyTarget, ObjectFileTarget objectFileTarget);
+    };
+
+
+    struct StashIrOption
+    {
+        bool
+        assemblyHasMultiRegisterOperands = false;
+
+        bool
+        treatModuloAsDivision = false;
+    };
 }
 
 

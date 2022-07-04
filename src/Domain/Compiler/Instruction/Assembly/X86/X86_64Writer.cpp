@@ -674,7 +674,7 @@ namespace elet::domain::compiler::instruction::output::x86
     {
         writeQuadInstructionMultipleInFunction({
             OneByteOpCode::Xor_Ev_Gv,
-                ModBits::Mod3 | RegBits::Reg_RDX | RmBits::Rm2 },
+                static_cast<uint8_t>(ModBits::Mod3) | static_cast<uint8_t>(RegBits::Reg_RDX) | RmBits::Rm2 },
             instruction, function);
         writeQuadInstructionInFunction(OneByteOpCode::ExtGroup3, instruction, function);
         writeEbpReferenceBytes(instruction->stackOffset, OneByteOpCode::ExtGroup3_DivRegBits, function);

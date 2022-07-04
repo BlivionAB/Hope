@@ -1,8 +1,8 @@
 Test():
-    StrQ [Sp + #-8], #0x3
-    StrQ [Sp + #-16], #0x3
+    StrQ [Sp + #-8], #0x1
+    StrQ [Sp + #-16], #0x8
     LdrQ X0, [Sp + #-8]
     LdrQ X1, [Sp + #-16]
-    DivsQ X0, X0, X1
+    AndQ X0, X0, X1
     MovQ OpRet, X0
 

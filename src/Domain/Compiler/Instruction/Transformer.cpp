@@ -5,7 +5,7 @@ namespace elet::domain::compiler::instruction
     using namespace compiler;
 
 
-    Transformer::Transformer(std::mutex& dataMutex, CompilerOptions& compilerOptions) :
+    Transformer::Transformer(std::mutex& dataMutex, const ExpandedCompilerOptions& compilerOptions) :
         _dataMutex(dataMutex),
         _compilerOptions(compilerOptions),
         _defaultFunctionStackOffset(getDefaultFunctionStackOffset(compilerOptions))
@@ -154,7 +154,7 @@ namespace elet::domain::compiler::instruction
                 if (returnStatement->expectedType->size() > result.registerSize)
                 {
                     addInstruction(new output::MoveSignExtendInstruction(
-                        output::OperandRegister::Scratch0,
+                        result._register,
                         output::OperandRegister::Return,
                         result.registerSize,
                         returnStatement->expectedType->size()));
@@ -171,7 +171,7 @@ namespace elet::domain::compiler::instruction
                 if (returnStatement->expectedType->size() != result.registerSize)
                 {
                     addInstruction(new output::MoveZeroExtendInstruction(
-                        output::OperandRegister::Scratch0,
+                        result._register,
                         output::OperandRegister::Return,
                         returnStatement->expectedType->size(),
                         result.registerSize));
@@ -182,7 +182,7 @@ namespace elet::domain::compiler::instruction
             {
                 addInstruction(new output::MoveRegisterToRegisterInstruction(
                     output::OperandRegister::Return,
-                    output::OperandRegister::Scratch0,
+                    result._register,
                     returnStatement->expectedType->size()));
             }
         }
@@ -479,17 +479,7 @@ namespace elet::domain::compiler::instruction
         RegisterSize registerSize = binaryExpression->operatingType->size();
         if (binaryExpression->binaryOperatorKind == ast::BinaryOperatorKind::Modulo)
         {
-            output::OperandRegister divisionResultRegister = borrowScratchRegister();
-            _scratchRegisterIndex -= 3;
-            output::OperandRegister destination = borrowScratchRegister();
-            if (binaryExpression->resultingType->sign() == Sign::Signed)
-            {
-                addInstruction(new output::ModuloSignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
-            }
-            else
-            {
-                addInstruction(new output::ModuloUnsignedRegisterToRegisterInstruction(destination, target, value, divisionResultRegister, registerSize));
-            }
+            output::OperandRegister destination = transformModuloExpression(binaryExpression, target, value, registerSize);
             return output::RegisterResult(destination, registerSize);
         }
         // Decrease scratch register index, since we should leave them back after usage
@@ -534,6 +524,45 @@ namespace elet::domain::compiler::instruction
         }
 
         return output::RegisterResult(destination, registerSize);
+    }
+
+    output::OperandRegister
+    Transformer::transformModuloExpression(const ast::BinaryExpression* binaryExpression, const output::OperandRegister& target, const output::OperandRegister& value, const RegisterSize& registerSize)
+    {
+        output::OperandRegister destination = borrowScratchRegister();
+        if (_compilerOptions.assemblyTarget == AssemblyTarget::StashIR && !_compilerOptions.hasProvidedStashIrOptions)
+        {
+            throw std::runtime_error("You have not provided stashIrOptions (.treatModuloAsDivision).");
+        }
+        if (binaryExpression->resultingType->sign() == Sign::Signed)
+        {
+            if (_compilerOptions.treatModuloAsDivision)
+            {
+                addInstruction(new output::DivideSignedRegisterToRegisterInstruction(destination, target, value, registerSize));
+                addInstruction(new output::MoveRegisterToRegisterInstruction(destination, output::OperandRegister::Remainder, registerSize));
+            }
+            else
+            {
+                addInstruction(new output::DivideSignedRegisterToRegisterInstruction(destination, target, value, registerSize));
+                addInstruction(new output::MsubRegisterToRegisterInstruction(
+                    destination, /*minuend*/ target, /*multiplicand*/ value, /*multiplier*/ destination, registerSize));
+            }
+        }
+        else
+        {
+            if (_compilerOptions.treatModuloAsDivision)
+            {
+                addInstruction(new output::DivideUnsignedRegisterToRegisterInstruction(destination, target, value, registerSize));
+                addInstruction(new output::MoveRegisterToRegisterInstruction(destination, output::OperandRegister::Remainder, registerSize));
+            }
+            else
+            {
+                addInstruction(new output::DivideUnsignedRegisterToRegisterInstruction(destination, target, value, registerSize));
+                addInstruction(new output::MsubRegisterToRegisterInstruction(
+                    destination, /*minuend*/ target, /*multiplicand*/ value, /*multiplier*/ destination, registerSize));
+            }
+        }
+        return destination;
     }
 
 

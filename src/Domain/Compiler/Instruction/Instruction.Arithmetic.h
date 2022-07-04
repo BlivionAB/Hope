@@ -155,6 +155,22 @@ namespace elet::domain::compiler::instruction::output
     };
 
 
+    struct MsubRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
+    {
+        OperandRegister
+        multiplicand;
+
+        OperandRegister
+        multiplier;
+
+        MsubRegisterToRegisterInstruction(OperandRegister destination, OperandRegister minuend, OperandRegister multiplicand, OperandRegister multiplier, RegisterSize registerSize):
+            OperationRegisterToRegisterInstruction(InstructionKind::MsubRegisterToRegister, destination, minuend, static_cast<OperandRegister>(0), registerSize),
+            multiplicand(multiplicand),
+            multiplier(multiplier)
+        { }
+    };
+
+
     struct ModuloUnsignedRegisterToRegisterInstruction : OperationRegisterToRegisterInstruction
     {
         OperandRegister

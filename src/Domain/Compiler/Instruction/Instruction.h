@@ -90,6 +90,7 @@ namespace elet::domain::compiler::instruction::output
         FramePointer,
         StackPointer,
         LinkRegister,
+        Remainder,
 
         Arg0,
         Arg1,
@@ -150,6 +151,7 @@ namespace elet::domain::compiler::instruction::output
         DivideUnsignedAddressToRegister,
         DivideSignedRegisterToRegister,
         DivideSignedAddressToRegister,
+        MsubRegisterToRegister,
         ModuloUnsignedRegisterToRegister,
         ModuloUnsignedAddressToRegister,
         ModuloSignedRegisterToRegister,

@@ -3,6 +3,7 @@ Test():
     StrL [Sp + #-8], #0x3
     LdrL X0, [Sp + #-4]
     LdrL X1, [Sp + #-8]
-    DivsL X0, X0, X1
-    MovL OpRet, X0
+    DivsL X2, X0, X1
+    MovL X2, Rem
+    MovL OpRet, X2
 
